@@ -1,0 +1,59 @@
+/*
+ * AddressList.cc
+ * Copyright 2015 Alexandr Mansurov
+ *
+ * AddressList implementation
+ * @see AddressList.h
+ *
+ */
+
+#include <pthread.h>
+#include <deque>
+#include <string>
+#include "./ServerAgent.h"  // NOLINT
+#include "./AddressList.h"  // NOLINT
+
+using crawlcheck::proxy::uri_t;
+using crawlcheck::proxy::ServerAgent;
+using crawlcheck::proxy::AddressList;
+
+AddressList::AddressList(ServerAgent & sa):
+  listMutex(PTHREAD_MUTEX_INITIALIZER), serverAgent(sa) {}
+
+AddressList::~AddressList() {
+  // wait for all threads to finish
+  pthread_mutex_lock(serverAgent.getThreadsRunningMutex());
+  while (serverAgent.threadsRunning()) {
+    pthread_cond_wait(serverAgent.getThreadsRunningCondition(),
+      serverAgent.getThreadsRunningMutex());
+  }
+  pthread_mutex_unlock(serverAgent.getThreadsRunningMutex());
+}
+
+uri_t AddressList::getURI() {
+  pthread_mutex_lock(&listMutex);
+  if (!list.empty()) {
+    uri_t uri = list.front();
+    list.pop_front();
+    pthread_mutex_unlock(&listMutex);
+    return uri;
+  } else {
+    pthread_mutex_unlock(&listMutex);
+    return "";
+  }
+}
+
+void AddressList::putURI(uri_t address) {
+  pthread_mutex_lock(&listMutex);
+  list.push_back(address);
+  pthread_mutex_unlock(&listMutex);
+  // TODO(alex): probudi pripadne cekajici vlakno
+}
+
+bool AddressList::getURIavailable() {
+  bool rv = false;
+  pthread_mutex_lock(&listMutex);
+  rv = !list.empty();
+  pthread_mutex_unlock(&listMutex);
+  return rv;
+}
