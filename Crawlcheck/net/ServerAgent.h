@@ -13,9 +13,12 @@
 #include <pthread.h>
 #include <memory>
 #include "./DownloaderThread.h"  // NOLINT
+#include "./AddressList.h"
 
 namespace crawlcheck {
 namespace proxy {
+class AddressList;
+
 class ServerAgent {
  public:
   ServerAgent();
@@ -31,7 +34,9 @@ class ServerAgent {
   pthread_mutex_t* getThreadsRunningMutex();
   pthread_cond_t* getThreadsRunningCondition();
 
+  void setAddressList(crawlcheck::proxy::AddressList *);
   void run();
+
  private:
   pthread_mutex_t threadsRunningMutex;
   int thread_active;
@@ -39,6 +44,7 @@ class ServerAgent {
   int thread_max;
   pthread_t * threads;
   std::unique_ptr< crawlcheck::proxy::DownloaderThread > * downloaders;
+  crawlcheck::proxy::AddressList * addrListPtr;
 };
 }  // namespace proxy
 }  // namespace crawlcheck

@@ -1,8 +1,6 @@
 /*
  * DownloaderThread.h
- *
- *  Created on: 15 Feb 2015
- *      Author: alex
+ * Copyright 2015 Alexandr Mansurov
  */
 
 #ifndef _NET_DOWNLOADERTHREAD_H_

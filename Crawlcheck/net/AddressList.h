@@ -18,9 +18,10 @@ namespace crawlcheck {
 namespace proxy {
 typedef std::string uri_t;
 
+class ServerAgent;
 class AddressList {
  public:
-  AddressList(crawlcheck::proxy::ServerAgent &sa);
+  explicit AddressList(crawlcheck::proxy::ServerAgent *sa);
   AddressList();
   ~AddressList();
 
@@ -52,7 +53,7 @@ class AddressList {
  private:
   pthread_mutex_t listMutex;
   std::deque<uri_t> list;
-  crawlcheck::proxy::ServerAgent& serverAgent;
+  crawlcheck::proxy::ServerAgent* serverAgent;
 };
 }  // namespace proxy
 }  // namespace crawlcheck

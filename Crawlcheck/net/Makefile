@@ -1,6 +1,6 @@
 CC=g++
-LDFLAGS=-Wall -lpthread
-CFLAGS=-Wall -c -lpthread -std=c++11
+LDFLAGS=-Wall -pthread
+CFLAGS=-Wall -g -pg -c -pthread -std=c++11
 
 objs := AddressList.o AddressListTest.o ServerAgent.o DownloaderThread.o
 prog := AddressList

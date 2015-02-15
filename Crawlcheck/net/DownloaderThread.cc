@@ -1,17 +1,20 @@
 /*
  * DownloaderThread.cpp
+ * Copyright 2015 Alexandr Mansurov
  *
- *  Created on: 15 Feb 2015
- *      Author: alex
+ * Actual downloading done here
  */
 
+#include <unistd.h>
 #include "DownloaderThread.h"
 #include "AddressList.h"
 
 using crawlcheck::proxy::DownloaderThread;
-using crawlcheck::proxy::AddressList;
 
-void * work(void *) {
-	// TODO (alex): downloading
-	return nullptr;
+void * DownloaderThread::work(void *) {
+  // TODO(alex): downloading
+  printf("Hello\n");
+  sleep(3);
+  printf("Goodbye\n");
+  return nullptr;
 }

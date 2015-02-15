@@ -17,17 +17,17 @@ using crawlcheck::proxy::uri_t;
 using crawlcheck::proxy::ServerAgent;
 using crawlcheck::proxy::AddressList;
 
-AddressList::AddressList(ServerAgent & sa):
+AddressList::AddressList(ServerAgent * sa):
   listMutex(PTHREAD_MUTEX_INITIALIZER), serverAgent(sa) {}
 
 AddressList::~AddressList() {
   // wait for all threads to finish
-  pthread_mutex_lock(serverAgent.getThreadsRunningMutex());
-  while (serverAgent.threadsRunning()) {
-    pthread_cond_wait(serverAgent.getThreadsRunningCondition(),
-      serverAgent.getThreadsRunningMutex());
+  pthread_mutex_lock(serverAgent->getThreadsRunningMutex());
+  while (serverAgent->threadsRunning()) {
+    pthread_cond_wait(serverAgent->getThreadsRunningCondition(),
+      serverAgent->getThreadsRunningMutex());
   }
-  pthread_mutex_unlock(serverAgent.getThreadsRunningMutex());
+  pthread_mutex_unlock(serverAgent->getThreadsRunningMutex());
 }
 
 uri_t AddressList::getURI() {
