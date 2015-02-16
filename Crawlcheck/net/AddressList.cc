@@ -18,7 +18,8 @@ using crawlcheck::proxy::ServerAgent;
 using crawlcheck::proxy::AddressList;
 
 AddressList::AddressList(ServerAgent * sa):
-  listMutex(PTHREAD_MUTEX_INITIALIZER), serverAgent(sa) {}
+  listMutex(PTHREAD_MUTEX_INITIALIZER), publicMutex(PTHREAD_MUTEX_INITIALIZER),
+  condition(PTHREAD_COND_INITIALIZER), list(), serverAgent(sa) {}
 
 AddressList::~AddressList() {
   // wait for all threads to finish
@@ -56,4 +57,12 @@ bool AddressList::getURIavailable() {
   rv = !list.empty();
   pthread_mutex_unlock(&listMutex);
   return rv;
+}
+
+pthread_mutex_t* AddressList::getMutex() {
+	return &publicMutex;
+}
+
+pthread_cond_t* AddressList::getCondition() {
+	return &condition;
 }

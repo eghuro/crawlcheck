@@ -6,8 +6,8 @@
  * may be modified throughout the time)
  */
 
-#ifndef _NET_ADDRESSLIST_H_  // NOLINT
-#define _NET_ADDRESSLIST_H_  // NOLINT
+#ifndef CRAWLCHECK_NET_ADDRESSLIST_H_
+#define CRAWLCHECK_NET_ADDRESSLIST_H_
 
 #include <pthread.h>
 #include <string>
@@ -50,8 +50,12 @@ class AddressList {
    */
   bool getURIavailable();
 
+  pthread_mutex_t* getMutex();
+  pthread_cond_t* getCondition();
+
  private:
-  pthread_mutex_t listMutex;
+  pthread_mutex_t listMutex, publicMutex;
+  pthread_cond_t condition;
   std::deque<uri_t> list;
   crawlcheck::proxy::ServerAgent* serverAgent;
 };
@@ -59,4 +63,4 @@ class AddressList {
 }  // namespace crawlcheck
 
 
-#endif /* _NET_ADDRESSLIST_H_ */  // NOLINT
+#endif  // CRAWLCHECK_NET_ADDRESSLIST_H_

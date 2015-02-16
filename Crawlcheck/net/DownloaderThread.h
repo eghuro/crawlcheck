@@ -3,16 +3,24 @@
  * Copyright 2015 Alexandr Mansurov
  */
 
-#ifndef _NET_DOWNLOADERTHREAD_H_
-#define _NET_DOWNLOADERTHREAD_H_
+#ifndef CRAWLCHECK_NET_DOWNLOADERTHREAD_H_
+#define CRAWLCHECK_NET_DOWNLOADERTHREAD_H_
+
+#include <memory>
+#include "AddressList.h"
 
 namespace crawlcheck {
 namespace proxy {
+class AddressList;
 class DownloaderThread {
  public:
+  //DownloaderThread(crawlcheck::proxy::AddressList * al):addrListPtr(al){}
+
   static void * work(void *);
+ private:
+  //std::unique_ptr<AddressList> addrListPtr;
 };
 
 } /* namespace proxy */
 } /* namespace crawlcheck */
-#endif /* _NET_DOWNLOADERTHREAD_H_ */
+#endif  // CRAWLCHECK_NET_DOWNLOADERTHREAD_H_

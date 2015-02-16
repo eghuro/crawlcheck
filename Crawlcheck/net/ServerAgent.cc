@@ -8,11 +8,12 @@
  */
 
 #include <pthread.h>
+#include <stdlib.h>
 #include <err.h>
 #include <memory>
-#include "./ServerAgent.h"
-#include "./DownloaderThread.h"
-#include "./AddressList.h"
+#include "ServerAgent.h"
+#include "DownloaderThread.h"
+#include "AddressList.h"
 
 using crawlcheck::proxy::ServerAgent;
 using crawlcheck::proxy::DownloaderThread;
@@ -23,12 +24,13 @@ ServerAgent::ServerAgent(int threadsCount):
   threadsRunningCondition(PTHREAD_COND_INITIALIZER), thread_max(threadsCount),
   addrListPtr(nullptr) {
   threads = new pthread_t[threadsCount];
-  downloaders = new std::unique_ptr<DownloaderThread>[threadsCount];
+  // downloaders = new std::unique_ptr<DownloaderThread>[threadsCount];
+  // downloaders = malloc(threadsCount * sizeof (DownloaderThread));
 }
 
 ServerAgent::~ServerAgent() {
   delete [] threads;
-  delete [] downloaders;
+  // delete [] downloaders;
 }
 
 bool ServerAgent::threadsRunning() {
@@ -47,17 +49,19 @@ void ServerAgent::run() {
   if (thread_active != 0) {
     err(1, "Already running");
   } else {
-    for (int i = 0; i < thread_max; i++) {
-      printf("Creating thread #%d\n", i);
-      downloaders[i] =
-        std::unique_ptr<DownloaderThread>(new DownloaderThread());
+    if(addrListPtr!=nullptr){
+      for (int i = 0; i < thread_max; i++) {
+        printf("Creating thread #%d\n", i);
 
-      if (pthread_create(&threads[i], NULL, (*downloaders[i]).work, NULL)
-        != 0) {
-        printf("Fail!\n");
-      } else {
-        thread_active++;
+        if (pthread_create(&threads[i], NULL, DownloaderThread::work, addrListPtr)
+          != 0) {
+          printf("Fail!\n");
+        } else {
+          thread_active++;
+        }
       }
+    } else {
+    	err(2,"AddressList not set in ServerAgent");
     }
 
     for (int i = 0; i < thread_max; i++) {

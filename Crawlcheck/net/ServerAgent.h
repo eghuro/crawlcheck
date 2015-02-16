@@ -7,8 +7,8 @@
  * Each thread is downloading at most one address at same time
  */
 
-#ifndef _NET_SERVERAGENT_H_  // NOLINT
-#define _NET_SERVERAGENT_H_  // NOLINT
+#ifndef CRAWLCHECK_NET_SERVERAGENT_H_
+#define CRAWLCHECK_NET_SERVERAGENT_H_
 
 #include <pthread.h>
 #include <memory>
@@ -43,10 +43,10 @@ class ServerAgent {
   pthread_cond_t threadsRunningCondition;
   int thread_max;
   pthread_t * threads;
-  std::unique_ptr< crawlcheck::proxy::DownloaderThread > * downloaders;
+  // std::unique_ptr< crawlcheck::proxy::DownloaderThread > * downloaders;
   crawlcheck::proxy::AddressList * addrListPtr;
 };
 }  // namespace proxy
 }  // namespace crawlcheck
 
-#endif /* _NET_SERVERAGENT_H_ */  // NOLINT
+#endif  // CRAWLCHECK_NET_SERVERAGENT_H_
