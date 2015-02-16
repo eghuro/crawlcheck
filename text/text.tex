@@ -2,63 +2,67 @@
 \usepackage[czech]{babel}
 \usepackage[utf8]{inputenc}
 \begin{document}
-	\section{Definice probl\'emu}
-	\paragraph{Zad\'an\'i}
-	Koloťuk – program, který „oťukává webovým stránkám kola, než vyjedou na trať“ – základem by mohla být kontrola syntaxe HTML, CSS a provázanosti odkazů. K tomu už pár programů existuje, ale málokterý respektuje aktuální webové standardy a je dost efektivní na kontrolu rozsáhlého webu. 
-	\paragraph{Seznam po\v{z}adavk\r{u}}
-	\begin{itemize}
-		\item Proxy
-		\item Valid\'atory a log
-		\item Prol\'ezadlo - omezeno na doménu či seznam domén
-		\item Konfigura\v{c}n\'i jazyk s pravidly - vč. exclude (např. adresář), implicitní nastavení (např. nesleduj odkazy), pro danou cestu zapni hlubší kontrolu
-		\item Lidsky \v{c}iteln\'y v\'ystup - náhledy s různými parametry, clustrovat, kde jsou chyby a co je ok
-		\item Cache
-	\end{itemize}
-	\paragraph{Vstupy} Vstupem je nastaven\'i konfigurace a adresy kontrolovan\'ych str\'anek.
-	\paragraph{V\'ystupy} V\'ystupem je seznam syntaktick\'ych chyb a seznam nefunk\v{c}n\'ich odkaz\r{u} v\v{c}. nedostupn\'ych vlo\v{z}en\'ych skript\r{u} a multim\'edi\'i na testovan\'ych str\'ank\'ach
-	\paragraph{U\v{z}ivatelsk\'e \'ulohy} U\v{z}ivatel proch\'az\'i str\'anky ve sv\'em prohl\'i\v{z}e\v{c}i, kter\'y vyu\v{z}\'iv\'a rozhran\'i proxy serveru. Kontroly jsou prov\'ad\v{e}ny na pozad\'i. U\v{z}ivatel dost\'av\'a odpov\v{e}di od kontrolovan\'eho web serveru, m\r{u}\v{z}e ru\v{c}n\v{e} kontrolovat vzhled, spr\'avnost obsahu i funk\v{c}nost skript\r{u} na stran\v{e} serveru a klienta. U\v{z}ivatel d\'ale m\r{u}\v{z}e p\v{r}istupovat do rozhran\'i programu, kde je mu zobrazen v\'ystup z kontrol a může k výstupu přidat vlastní anotaci či komentář.
-	\section{Specifikace architektury poprv\'e}
-	\paragraph{Stavebn\'i bloky}
-	\begin{enumerate}
-		\item Proxy
-		\item Analyzer
-		\item Report
-		\item Crawler
-		\item Dispatcher
-		\item Configurator
-	\end{enumerate}
-	\paragraph{Proxy} Proxy server představuje základní rozhraní komunikace s uživatelem. Vyvíjený nástroj má primárně sloužit ke kontrole jednoho rozsáhlého webu v jeden moment. Tento může obsahovat řadu odkazů na externí stránky, ale zároveň může obsahovat dílčí celky rozmístěné na vlastních subdoménách. Zároveň může obsahovat řadu skriptů na straně klienta, které ovlivňují jeho podobu.
-	\paragraph{~} Prvotní nápad, že uživatel zadá vstupní bod, ze kterého se bude automaticky procházet web do hloubky proto není nejvhodnější, jelikož by vyžadoval podporu detailní analýzy skriptů - pro detekci odkazů - i hlídání hloubky průzkumu, aby, na jedné straně, byla pokryta co největší část vlastního webu, avšak zároveň, aby nedošlo k plýtvání zdrojů nežádoucím průzkumem externích webů.
-	\paragraph{~} Na druhé straně, při testování či verifikaci webu před finálním nasazením může být vhodná asistence uživatele - testera. Ten má možnost kontrolovat další požadavky, které jsou automaticky hůře testovatelné - jak činnost klientských skriptů, tak i správnost obsahu a požadavky na vzhled.
-	\paragraph{~} Z tohoto důvodu byla po konzultacích zvolena varianta testovacího modulu mezi klientem a webovým serverem, která automaticky provádí kontroly syntaxe, existence odkazovaných zdrojů a případně další testy. Dále zde lze provádět hloubkové průzkumy omezeného rozsahu, přičemž vždy je přehled o tom, které stránky byly zobrazeny testerovi v prohlížeči.
-	\paragraph{~} Modul proxy komunikuje s uživatelem a webovým  serverem, předává požadavky uživatele webovému serveru a odpovědi webového serveru uživateli. Zároveň předává data dalším modulům vlastní činnosti aplikace.
-	\paragraph{~}Ošetřování chyb. Dojde-li k HTTP chybě definované chybovým kódem, tak se tato hlásí "tak jak je". Dojde-li k výpadku spojení s uživatelem, avšak běží spojení s webovým serverem, lze nadále zpracovávat nahromaděné odkazy. Dojde-li k výpadku spojení s webovým serverem, lze uživateli dodávat data uložená v cache. Pokud tato nejsou k dispozici, vracíme uživateli HTTP chybu.
-	\paragraph{~}Vlákna proxy směrem k webovému serveru. Komunikace se serverem prob\'ih\'a v\'icevl\'aknov\v{e}, v ka\v{z}d\'em vl\'akn\v{e} b\v{e}\v{z}\'i individu\'aln\'i spojen\'i. Vl\'akna si berou adresy ze spole\v{c}n\'eho seznamu, do kter\'eho p\v{r}ich\'azej\'i po\v{z}adavky od u\v{z}ivatele a od crawleru.
-	\paragraph{~}Single user vs. multi user. Povaha aplikace p\v{r}edpok\'ad\'a zpracov\'an\'i jednoho po\v{z}adavku od u\v{z}ivatele v jeden okam\v{z}ik. Tedy sm\v{e}rem k u\v{z}ivateli bude proxy fungovat jednovl\'aknov\v{e} se sekven\v{c}n\'im zpracov\'an\'im. Alternativa je roz\v{z}\'i\v{r}it zpracov\'an\'i na obdobu komunikace se serverem, bude-li v budoucnu pot\v{r}eba. Nicm\'en\v{e} se p\v{r}edpokl\'ad\'a, \v{z}e od u\v{z}ivatele p\v{r}ich\'az\'i m\'en\v{e} po\v{z}adavk\r{u}, ne\v{z}-li generuje modul Crawler.
-	\paragraph{Analyzer} Analyzer je klíčový modul celé aplikace. Má na starosti provádění kontrol dat od webového serveru a předávání výsledků kontrol do výstupního modulu. Vlastní kontroly jsou prováděny jednotlivými "podmoduly". Ty mohou mít podobu pluginů s jednotným rozhraním. Tato volba zajistí rozšiřitelnost aplikace dalšími formami kontrol. 
-	\paragraph{~}World wide web consorcium (W3C)  definuje sadu standardů pro moderní web. \footnote{http://www.w3.org/standards/} Zároveň posktytuje validátor HTML psaný v Perlu\footnote{http://validator.w3.org/source/}, validátor CSS psaný v Javě\footnote{https://jigsaw.w3.org/css-validator/documentation.html} a řadu dalších validátorů. \footnote{http://www.w3.org/QA/Tools/} Licence dovoluje bezplatnou modifikaci i distribuci modifikované verze.\footnote{http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231} Existující validátory proto lze využít v aplikaci. W3C poskytuje komerční nástroj Validator Suite (TM) poskytující podobnou fukncionalitu jako tato aplikace.
-	\paragraph{~}Rozhraní pluginů
-	\paragraph{~}Interoperabilita se skripty
-	\paragraph{~}Ošetřování chyb. Pokud neexistuje plugin pro daný typ dat nebo dojde k chybě při analýze, data se ignorují a nepředávají modulu report. Pokud nefunguje modul dispatcher nebo databáze modulu report, neprobíhá analýza.
-	\paragraph{Report} Modul report uschováná výsledky kontrol získané od modulu analyzer a tyto dále zpřístupňuje. Definuje grafické uživatelské rozhraní pro zobrazení výsledků. Zpřístupňuje nalezené odkazy k hloubkovému průzkumu. Definuje rozhraní k anotaci výsledků testerem. Skrze toto rozhraní bude tester moci doplnit vlastní poznámky k jednotlivým výsledkům. Toto především zahrnuje poznatky ručního testování - nedostatky v obsahu, vzhledu, fungování skriptů. Lze poznamenat případná "false positive" zjištění automatických validátorů. Kromě interaktivního rozhraní umožňuje modul proxy vygenerování textového dokumentu s evidovanými poznatky. 
-	\paragraph{~}Co obsahuje report
-	\paragraph{~}Jak se uchovávají poznatky
-	\paragraph{~}Zabezpečení dat reportu
-	\paragraph{~}Rozhraní pro interakci s dalšími moduly
-	\paragraph{~}Funkce interaktivní aplikace
-	\paragraph{~}Lokalizace reportu
-	\paragraph{~}Ošetřování chyb. Pokud nefunguje databáze, neprobíhá analýza, crawling ani zobrazování reportu. Pokud nefunguje zobrazování reportu nebo generátor dokumentu, zbytek aplikace běží dále a data budou dostupná později.
-	\paragraph{Crawler} Modul crawler průběžně bere detekované odkazy, stahuje je a spouští na ně separátní analýzu, pokud již nebylo provedeno.
-	\paragraph{Dispatcher} Modul dispatcher hlídá tok dat. Pro požadavky uživatele rozhodne, zda je třeba spouštět analýzu, nebo zda již daná stránka byla kontrolována. Pokud je analýza třeba, předá data získaná od modulu proxy modulu analyzer. Předává data od modulu crawler modulu proxy a hlídá, že tato data nejdou uživateli. Hlídá, že v době, kdy jdou požadavky od uživatele nejsou generovány požadavky od crawleru a naopak, když nejdou požadavky od uživatele testuje získané odkazy. 
-	\paragraph{~} Získané odpovědi serveru ukládá do cache a naopak, je-li požadavek uložený, uložená verze není zastaralá a nejde o chybovou odpověď, vrací se uživateli již dostupná verze. Jinak dojde k získání dat ze serveru a jejich analýze.
-	\paragraph{~} Ošetřování chyb. Pokud dojde k chybě v dispatcheru, zároveň končí i moduly proxy, crawler a analyzer, které jsou z tohoto modulu řízeny. Modul report běží dále, umožňuje prohlížet, anotovat získané poznatky i generovat textové dokumenty.
-	\paragraph{~} Formát dat předávaných mezi moduly.
-	\paragraph{Configurator} Modul configurator má na starosti načtení uživatelské konfigurace. Na jejím základě nastaví parametry jednotlivým modulům.  Konfigurace se načte při spuštění aplikace.
-	\paragraph{~}Parametry konfigurace
-	\paragraph{~}Existující řešení konfigurace
-	\paragraph{~}Ošetřování chyb. V případě, že konfigurace neexistuje, se použije implicitní nastavení. Pokud je chyba v konfiguračním souboru, aplikace se nespustí.
-	%% správa paměti - cache, report
-	%% výkon
+\title{Crawlcheck - specifikace}
+\author{Alex Mansurov}
+\maketitle
+\newpage
+\section{Definice probl\'emu}
+\paragraph{Zad\'an\'i}
+Koloťuk – program, který „oťukává webovým stránkám kola, než vyjedou na trať“ – základem by mohla být kontrola syntaxe HTML, CSS a provázanosti odkazů. K tomu už pár programů existuje, ale málokterý respektuje aktuální webové standardy a je dost efektivní na kontrolu rozsáhlého webu. 
+\paragraph{Seznam po\v{z}adavk\r{u}}
+\begin{itemize}
+	\item Proxy
+	\item Valid\'atory a log
+	\item Prol\'ezadlo - omezeno na doménu či seznam domén
+	\item Konfigura\v{c}n\'i jazyk s pravidly - vč. exclude (např. adresář), implicitní nastavení (např. nesleduj odkazy), pro danou cestu zapni hlubší kontrolu
+	\item Lidsky \v{c}iteln\'y v\'ystup - náhledy s různými parametry, clustrovat, kde jsou chyby a co je ok
+	\item Cache
+\end{itemize}
+\paragraph{Vstupy} Vstupem je nastaven\'i konfigurace a adresy kontrolovan\'ych str\'anek.
+\paragraph{V\'ystupy} V\'ystupem je seznam syntaktick\'ych chyb a seznam nefunk\v{c}n\'ich odkaz\r{u} v\v{c}. nedostupn\'ych vlo\v{z}en\'ych skript\r{u} a multim\'edi\'i na testovan\'ych str\'ank\'ach
+\paragraph{U\v{z}ivatelsk\'e \'ulohy} U\v{z}ivatel proch\'az\'i str\'anky ve sv\'em prohl\'i\v{z}e\v{c}i, kter\'y vyu\v{z}\'iv\'a rozhran\'i proxy serveru. Kontroly jsou prov\'ad\v{e}ny na pozad\'i. U\v{z}ivatel dost\'av\'a odpov\v{e}di od kontrolovan\'eho web serveru, m\r{u}\v{z}e ru\v{c}n\v{e} kontrolovat vzhled, spr\'avnost obsahu i funk\v{c}nost skript\r{u} na stran\v{e} serveru a klienta. U\v{z}ivatel d\'ale m\r{u}\v{z}e p\v{r}istupovat do rozhran\'i programu, kde je mu zobrazen v\'ystup z kontrol a může k výstupu přidat vlastní anotaci či komentář.
+\section{Specifikace architektury poprv\'e}
+\paragraph{Stavebn\'i bloky}
+\begin{enumerate}
+	\item Proxy
+	\item Analyzer
+	\item Report
+	\item Crawler
+	\item Dispatcher
+	\item Configurator
+\end{enumerate}
+\paragraph{Proxy} Proxy server představuje základní rozhraní komunikace s uživatelem. Vyvíjený nástroj má primárně sloužit ke kontrole jednoho rozsáhlého webu v jeden moment. Tento může obsahovat řadu odkazů na externí stránky, ale zároveň může obsahovat dílčí celky rozmístěné na vlastních subdoménách. Zároveň může obsahovat řadu skriptů na straně klienta, které ovlivňují jeho podobu.
+\paragraph{~} Prvotní nápad, že uživatel zadá vstupní bod, ze kterého se bude automaticky procházet web do hloubky proto není nejvhodnější, jelikož by vyžadoval podporu detailní analýzy skriptů - pro detekci odkazů - i hlídání hloubky průzkumu, aby, na jedné straně, byla pokryta co největší část vlastního webu, avšak zároveň, aby nedošlo k plýtvání zdrojů nežádoucím průzkumem externích webů.
+\paragraph{~} Na druhé straně, při testování či verifikaci webu před finálním nasazením může být vhodná asistence uživatele - testera. Ten má možnost kontrolovat další požadavky, které jsou automaticky hůře testovatelné - jak činnost klientských skriptů, tak i správnost obsahu a požadavky na vzhled.
+\paragraph{~} Z tohoto důvodu byla po konzultacích zvolena varianta testovacího modulu mezi klientem a webovým serverem, která automaticky provádí kontroly syntaxe, existence odkazovaných zdrojů a případně další testy. Dále zde lze provádět hloubkové průzkumy omezeného rozsahu, přičemž vždy je přehled o tom, které stránky byly zobrazeny testerovi v prohlížeči.
+\paragraph{~} Modul proxy komunikuje s uživatelem a webovým  serverem, předává požadavky uživatele webovému serveru a odpovědi webového serveru uživateli. Zároveň předává data dalším modulům vlastní činnosti aplikace.
+\paragraph{~}Ošetřování chyb. Dojde-li k HTTP chybě definované chybovým kódem, tak se tato hlásí "tak jak je". Dojde-li k výpadku spojení s uživatelem, avšak běží spojení s webovým serverem, lze nadále zpracovávat nahromaděné odkazy. Dojde-li k výpadku spojení s webovým serverem, lze uživateli dodávat data uložená v cache. Pokud tato nejsou k dispozici, vracíme uživateli HTTP chybu.
+\paragraph{~}Vlákna proxy směrem k webovému serveru. Komunikace se serverem prob\'ih\'a v\'icevl\'aknov\v{e}, v ka\v{z}d\'em vl\'akn\v{e} b\v{e}\v{z}\'i individu\'aln\'i spojen\'i. Vl\'akna si berou adresy ze spole\v{c}n\'eho seznamu, do kter\'eho p\v{r}ich\'azej\'i po\v{z}adavky od u\v{z}ivatele a od crawleru.
+\paragraph{~}Single user vs. multi user. Povaha aplikace p\v{r}edpok\'ad\'a zpracov\'an\'i jednoho po\v{z}adavku od u\v{z}ivatele v jeden okam\v{z}ik. Tedy sm\v{e}rem k u\v{z}ivateli bude proxy fungovat jednovl\'aknov\v{e} se sekven\v{c}n\'im zpracov\'an\'im. Alternativa je roz\v{z}\'i\v{r}it zpracov\'an\'i na obdobu komunikace se serverem, bude-li v budoucnu pot\v{r}eba. Nicm\'en\v{e} se p\v{r}edpokl\'ad\'a, \v{z}e od u\v{z}ivatele p\v{r}ich\'az\'i m\'en\v{e} po\v{z}adavk\r{u}, ne\v{z}-li generuje modul Crawler.
+\paragraph{Analyzer} Analyzer je klíčový modul celé aplikace. Má na starosti provádění kontrol dat od webového serveru a předávání výsledků kontrol do výstupního modulu. Vlastní kontroly jsou prováděny jednotlivými "podmoduly". Ty mohou mít podobu pluginů s jednotným rozhraním. Tato volba zajistí rozšiřitelnost aplikace dalšími formami kontrol. 
+\paragraph{~}World wide web consorcium (W3C)  definuje sadu standardů pro moderní web. \footnote{http://www.w3.org/standards/} Zároveň posktytuje validátor HTML psaný v Perlu\footnote{http://validator.w3.org/source/}, validátor CSS psaný v Javě\footnote{https://jigsaw.w3.org/css-validator/documentation.html} a řadu dalších validátorů. \footnote{http://www.w3.org/QA/Tools/} Licence dovoluje bezplatnou modifikaci i distribuci modifikované verze.\footnote{http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231} Existující validátory proto lze využít v aplikaci. W3C poskytuje komerční nástroj Validator Suite (TM) poskytující podobnou fukncionalitu jako tato aplikace.
+\paragraph{~}Rozhraní pluginů
+\paragraph{~}Interoperabilita se skripty
+\paragraph{~}Ošetřování chyb. Pokud neexistuje plugin pro daný typ dat nebo dojde k chybě při analýze, data se ignorují a nepředávají modulu report. Pokud nefunguje modul dispatcher nebo databáze modulu report, neprobíhá analýza.
+\paragraph{Report} Modul report uschováná výsledky kontrol získané od modulu analyzer a tyto dále zpřístupňuje. Definuje grafické uživatelské rozhraní pro zobrazení výsledků. Zpřístupňuje nalezené odkazy k hloubkovému průzkumu. Definuje rozhraní k anotaci výsledků testerem. Skrze toto rozhraní bude tester moci doplnit vlastní poznámky k jednotlivým výsledkům. Toto především zahrnuje poznatky ručního testování - nedostatky v obsahu, vzhledu, fungování skriptů. Lze poznamenat případná "false positive" zjištění automatických validátorů. Kromě interaktivního rozhraní umožňuje modul proxy vygenerování textového dokumentu s evidovanými poznatky. 
+\paragraph{~}Co obsahuje report
+\paragraph{~}Jak se uchovávají poznatky
+\paragraph{~}Zabezpečení dat reportu
+\paragraph{~}Rozhraní pro interakci s dalšími moduly
+\paragraph{~}Funkce interaktivní aplikace
+\paragraph{~}Lokalizace reportu
+\paragraph{~}Ošetřování chyb. Pokud nefunguje databáze, neprobíhá analýza, crawling ani zobrazování reportu. Pokud nefunguje zobrazování reportu nebo generátor dokumentu, zbytek aplikace běží dále a data budou dostupná později.
+\paragraph{Crawler} Modul crawler průběžně bere detekované odkazy, stahuje je a spouští na ně separátní analýzu, pokud již nebylo provedeno.
+\paragraph{Dispatcher} Modul dispatcher hlídá tok dat. Pro požadavky uživatele rozhodne, zda je třeba spouštět analýzu, nebo zda již daná stránka byla kontrolována. Pokud je analýza třeba, předá data získaná od modulu proxy modulu analyzer. Předává data od modulu crawler modulu proxy a hlídá, že tato data nejdou uživateli. Hlídá, že v době, kdy jdou požadavky od uživatele nejsou generovány požadavky od crawleru a naopak, když nejdou požadavky od uživatele testuje získané odkazy. 
+\paragraph{~} Získané odpovědi serveru ukládá do cache a naopak, je-li požadavek uložený, uložená verze není zastaralá a nejde o chybovou odpověď, vrací se uživateli již dostupná verze. Jinak dojde k získání dat ze serveru a jejich analýze.
+\paragraph{~} Ošetřování chyb. Pokud dojde k chybě v dispatcheru, zároveň končí i moduly proxy, crawler a analyzer, které jsou z tohoto modulu řízeny. Modul report běží dále, umožňuje prohlížet, anotovat získané poznatky i generovat textové dokumenty.
+\paragraph{~} Formát dat předávaných mezi moduly.
+\paragraph{Configurator} Modul configurator má na starosti načtení uživatelské konfigurace. Na jejím základě nastaví parametry jednotlivým modulům.  Konfigurace se načte při spuštění aplikace.
+\paragraph{~}Parametry konfigurace
+\paragraph{~}Existující řešení konfigurace
+\paragraph{~}Ošetřování chyb. V případě, že konfigurace neexistuje, se použije implicitní nastavení. Pokud je chyba v konfiguračním souboru, aplikace se nespustí.
+%% správa paměti - cache, report
+%% výkon
 \section{Specifikace architektury podruh\'e}
 \paragraph{Motivace} Jin\'y pohled na architekturu je z hlediska p\v{r}ed\'avan\'ych dat. Z prvn\'iho pohledu na architekturu vyplynulo, \v{z}e syst\'emem koluj\'i dva druhy dat: data s\'it\v{e} - HTTP po\v{z}adavky a odpov\v{e}di a data o datech - poznatky, zji\v{s}t\v{e}n\'e chyby apod.
 \paragraph{Stavebn\'i bloky}
@@ -69,7 +73,9 @@
 	\item Report
 	\item Configurator
 \end{itemize}
-\paragraph{~}Jednotliv\'e moduly maj\'i podobnou funkci, li\v{s}\'i se zp\r{u}sobem komunikace. S\'i\v{t}ov\'a data koluj\'i modulem proxy. Poznatky jsou obsa\v{z}eny v modulu report. Modul Analyzer slou\v{z}\'i jako Adapt\'er od Proxy k Reportu a Crawler naopak jako Adapt\'er od Reportu k Proxy. Struktur\'aln\v{e} Analyzer je konzument pro HTTP response produkovan\'ymi Proxy. Crawler je producent HTTP request\r{u} pro Proxy. Modul dispatcher je zjednodu\v{s}en do jednotliv\'ych komunika\v{c}n\'ich rozhran\'i mezi moduly. Cache je \v{r}e\v{s}ena v r\'amci Proxy.
+\paragraph{~}Jednotliv\'e moduly maj\'i podobnou funkci, li\v{s}\'i se zp\r{u}sobem komunikace. S\'i\v{t}ov\'a data koluj\'i modulem proxy. Poznatky jsou obsa\v{z}eny v modulu report. Modul Analyzer slou\v{z}\'i jako Adapt\'er od Proxy k Reportu a Crawler naopak jako Adapt\'er od Reportu k Proxy. Struktur\'aln\v{e} Analyzer je konzument pro HTTP response produkovan\'ymi Proxy. Crawler je producent HTTP request\r{u} pro Proxy. Modul Dispatcher je zjednodu\v{s}en do jednotliv\'ych komunika\v{c}n\'ich rozhran\'i mezi moduly. Cache je \v{r}e\v{s}ena v r\'amci Proxy. T\'im jsou izolov\'any moduly pro pr\'aci se s\'it\'i a moduly pro pr\'aci s poznatky o str\'ank\'ach.
+\paragraph{~}Modul Proxy se skl\'ad\'a z rozhran\'i komunikuj\'ic\'im s u\v{z}ivatelem, rozhran\'i komunikuj\'ic\'im se serverem a mezirozhran\'i p\v{r}ed\'avaj\'ic\'i data - krom\v{e} jednotliv\'ych komunika\v{c}n\'ich rozhran\'i tak\'e od/ke zbytku aplikace.
+\paragraph{~}Modul Report se skl\'ad\'a z datab\'aze z\'iskan\'ych poznatk\r{u} a jejich u\v{z}ivatelem dopln\v{e}n\'e anotace a komunika\v{c}n\'ich rozhran\'i s okol\'im - jak fas\'ad pro Crawler a Analyzer, tak i komplexn\v{e}j\v{s}\'iho rozhran\'i pro testera - proh\'i\v{z}en\'i a anotace v\'ysledk\r{u}. Vnit\v{r}n\'i architektura je Model-(View)-Controller.
 \section{Existuj\'ic\'i n\'astroje}
 \begin{itemize}
 	\item W3C validator suite
