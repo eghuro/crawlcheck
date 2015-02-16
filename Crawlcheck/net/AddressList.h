@@ -19,7 +19,7 @@ namespace proxy {
 typedef std::string uri_t;
 
 class ServerAgent;
-class AddressList {
+class AddressList {  // BEWARE: need to differentiate user generated and crawler generated traffic for performance
  public:
   explicit AddressList(crawlcheck::proxy::ServerAgent *sa);
   AddressList();

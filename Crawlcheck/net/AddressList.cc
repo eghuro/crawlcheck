@@ -60,9 +60,9 @@ bool AddressList::getURIavailable() {
 }
 
 pthread_mutex_t* AddressList::getMutex() {
-	return &publicMutex;
+  return &publicMutex;
 }
 
 pthread_cond_t* AddressList::getCondition() {
-	return &condition;
+  return &condition;
 }

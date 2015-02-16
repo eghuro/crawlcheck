@@ -23,7 +23,7 @@ using crawlcheck::proxy::DownloaderThread;
 using crawlcheck::proxy::AddressList;
 
 void * DownloaderThread::work(void * foo) {
-  AddressList * al = (AddressList *) foo;
+  AddressList * al = reinterpret_cast<AddressList *>(foo);
 
   struct addrinfo hints;
   memset(&hints, 0, sizeof (hints));
@@ -31,29 +31,29 @@ void * DownloaderThread::work(void * foo) {
   hints.ai_socktype = SOCK_STREAM;
 
   bool runCondition = true;
-  //TODO(alex): potrebuji druhou metodu - podminka ukonceni cyklu
+  // TODO(alex): potrebuji druhou metodu - podminka ukonceni cyklu
 
-  while(runCondition){
-	printf("Get mutex on address list\n");
+  while (runCondition) {
+    printf("Get mutex on address list\n");
     pthread_mutex_lock((*al).getMutex());
     while (!(*al).getURIavailable()) {
       printf("Wait for address\n");
-	  pthread_cond_wait((*al).getCondition(),(*al).getMutex());
+      pthread_cond_wait((*al).getCondition(), (*al).getMutex());
     }
     crawlcheck::proxy::uri_t uri = (*al).getURI();
-    //printf("%s\n",&uri);
+    // printf("%s\n",&uri);
     std::cout << uri << std::endl;
     pthread_mutex_unlock((*al).getMutex());
     printf("Release mutex on address list\n");
 
-    //getaddrinfo
-    //socket
-    //connect
-    //write
-    //poll
-    //read
+    // getaddrinfo
+    // socket
+    // connect
+    // write
+    // poll
+    // read
 
-    runCondition=false;
+    runCondition = false;
   }
 
 

@@ -14,11 +14,7 @@ namespace proxy {
 class AddressList;
 class DownloaderThread {
  public:
-  //DownloaderThread(crawlcheck::proxy::AddressList * al):addrListPtr(al){}
-
   static void * work(void *);
- private:
-  //std::unique_ptr<AddressList> addrListPtr;
 };
 
 } /* namespace proxy */

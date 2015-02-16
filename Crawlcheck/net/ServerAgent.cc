@@ -49,19 +49,19 @@ void ServerAgent::run() {
   if (thread_active != 0) {
     err(1, "Already running");
   } else {
-    if(addrListPtr!=nullptr){
+    if (addrListPtr != nullptr) {
       for (int i = 0; i < thread_max; i++) {
         printf("Creating thread #%d\n", i);
 
-        if (pthread_create(&threads[i], NULL, DownloaderThread::work, addrListPtr)
-          != 0) {
+        if (pthread_create(&threads[i], NULL, DownloaderThread::work,
+            addrListPtr) != 0) {
           printf("Fail!\n");
         } else {
           thread_active++;
         }
       }
     } else {
-    	err(2,"AddressList not set in ServerAgent");
+      err(2, "AddressList not set in ServerAgent");
     }
 
     for (int i = 0; i < thread_max; i++) {
