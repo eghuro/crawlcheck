@@ -7,14 +7,16 @@
 #define CRAWLCHECK_NET_DOWNLOADERTHREAD_H_
 
 #include <memory>
-#include "AddressList.h"
+#include <string>
+#include "./proxy.h"  // NOLINT
 
 namespace crawlcheck {
 namespace proxy {
-class AddressList;
 class DownloaderThread {
  public:
   static void * work(void *);
+ private:
+  static std::string generateRequest(const crawlcheck::proxy::uri_t & uri);
 };
 
 } /* namespace proxy */

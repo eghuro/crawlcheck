@@ -12,14 +12,14 @@
 #include <pthread.h>
 #include <string>
 #include <deque>
+#include "./proxy.h"  // NOLINT
 #include "./ServerAgent.h"  // NOLINT
 
 namespace crawlcheck {
 namespace proxy {
-typedef std::string uri_t;
-
-class ServerAgent;
-class AddressList {  // BEWARE: need to differentiate user generated and crawler generated traffic for performance
+class AddressList {
+// BEWARE: need to differentiate user generated and crawler generated traffic
+// for performance
  public:
   explicit AddressList(crawlcheck::proxy::ServerAgent *sa);
   AddressList();
@@ -51,11 +51,11 @@ class AddressList {  // BEWARE: need to differentiate user generated and crawler
   bool getURIavailable();
 
   pthread_mutex_t* getMutex();
-  pthread_cond_t* getCondition();
+  pthread_cond_t* getAvailableCondition();
 
  private:
   pthread_mutex_t listMutex, publicMutex;
-  pthread_cond_t condition;
+  pthread_cond_t availableCondition;
   std::deque<uri_t> list;
   crawlcheck::proxy::ServerAgent* serverAgent;
 };

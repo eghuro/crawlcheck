@@ -10,6 +10,7 @@
 #include <pthread.h>
 #include <deque>
 #include <string>
+#include "./proxy.h"  // NOLINT
 #include "./ServerAgent.h"  // NOLINT
 #include "./AddressList.h"  // NOLINT
 
@@ -19,7 +20,7 @@ using crawlcheck::proxy::AddressList;
 
 AddressList::AddressList(ServerAgent * sa):
   listMutex(PTHREAD_MUTEX_INITIALIZER), publicMutex(PTHREAD_MUTEX_INITIALIZER),
-  condition(PTHREAD_COND_INITIALIZER), list(), serverAgent(sa) {}
+  availableCondition(PTHREAD_COND_INITIALIZER), list(), serverAgent(sa) {}
 
 AddressList::~AddressList() {
   // wait for all threads to finish
@@ -40,7 +41,7 @@ uri_t AddressList::getURI() {
     return uri;
   } else {
     pthread_mutex_unlock(&listMutex);
-    return "";
+    return uri_t();
   }
 }
 
@@ -48,7 +49,7 @@ void AddressList::putURI(uri_t address) {
   pthread_mutex_lock(&listMutex);
   list.push_back(address);
   pthread_mutex_unlock(&listMutex);
-  // TODO(alex): probudi pripadne cekajici vlakno
+  pthread_cond_broadcast(&availableCondition);
 }
 
 bool AddressList::getURIavailable() {
@@ -63,6 +64,6 @@ pthread_mutex_t* AddressList::getMutex() {
   return &publicMutex;
 }
 
-pthread_cond_t* AddressList::getCondition() {
-  return &condition;
+pthread_cond_t* AddressList::getAvailableCondition() {
+  return &availableCondition;
 }

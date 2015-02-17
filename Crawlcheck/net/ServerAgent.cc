@@ -24,13 +24,10 @@ ServerAgent::ServerAgent(int threadsCount):
   threadsRunningCondition(PTHREAD_COND_INITIALIZER), thread_max(threadsCount),
   addrListPtr(nullptr) {
   threads = new pthread_t[threadsCount];
-  // downloaders = new std::unique_ptr<DownloaderThread>[threadsCount];
-  // downloaders = malloc(threadsCount * sizeof (DownloaderThread));
 }
 
 ServerAgent::~ServerAgent() {
   delete [] threads;
-  // delete [] downloaders;
 }
 
 bool ServerAgent::threadsRunning() {
