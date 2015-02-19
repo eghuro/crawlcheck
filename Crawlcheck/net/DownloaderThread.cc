@@ -54,7 +54,10 @@ void * DownloaderThread::work(void * foo) {
     } else {
       // socket
       struct addrinfo *res;
-      for (res = addr; res != NULL; res=res->ai_next) {
+      for (res = addr; res != NULL; res=res->ai_next) {  // one hostname can
+    	  // map to multiple addresses
+        if (res->ai_family != AF_INET && res->ai_family != AF_INET6)
+        	continue;
         int fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
         if (fd != -1) {
           // connect
@@ -63,39 +66,46 @@ void * DownloaderThread::work(void * foo) {
             // write
         	std::cout << "Generate request" << std::endl;
             std::string request = generateRequest(uri);
+            std::cout << request << std::endl;
             const char * msg = request.c_str();
-            if (write(fd, msg, sizeof (msg)) == -1) {
+            int written;
+            if ((written = write(fd, msg, strlen (msg))) == -1) {
               std::cout << "Write error" << std::endl;
             } else {
               // poll
+              std::cout << "Written " << written << std::endl << "Polling" << std::endl;
               struct pollfd pfd[1];
               pfd[0].fd = fd;
               pfd[0].events = POLLIN | POLLPRI;
-              const int BUFSIZE = 255;
+              const int BUFSIZE = 10000;
               const int TIMEOUT = 60000;
               char buffer[BUFSIZE];
               if (poll(pfd, 1, TIMEOUT) > 0) {
                 // read
                 std::cout<<std::endl<<"Printout"<<std::endl<<std::endl;
                 char *bufptr = buffer;
-                while (read(fd, bufptr, BUFSIZE) > 0) {
-                  bufptr = buffer;
-                  std::cout << buffer << std::endl;
+                int x;
+                while ((x = read(fd, bufptr, BUFSIZE)) > 0) {
+                  std::cout << buffer;
                 }
-                bufptr = buffer;
-                std::cout << buffer << std::endl;
+                std::cout << x << std::endl;
                 // TODO(alex): HTTP Response se vytvori a preda pryc nekde zde
+              } else {
+            	  std::cout << "Timeout" <<std::endl;
               }
             }
           }
           close(fd);
+          break;
         }
+        // std::cout<<"@@@@@@@@@@"<<std::endl;
       }
+      freeaddrinfo(addr);
     }
   }
   return nullptr;
 }
 
 std::string DownloaderThread::generateRequest(const uri_t & uri) {
-  return "GET " + (uri.page != "" ? uri.page : "/")+"\n";
+  return "GET " /*+ uri.addr */+ (uri.page == "" ? "/" : ("/"+uri.page)) +" HTTP/1.1\nHost: "+uri.addr+"\n\n\0";
 }
