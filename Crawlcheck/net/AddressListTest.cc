@@ -15,15 +15,15 @@ int main(int argc, char ** argv) {
   sa.setAddressList(&al);
 
   crawlcheck::proxy::uri_t u1, u2, u3;
-  //u1.addr = std::string("google.com");
-  //u1.port = std::string("80");
-  //u2.addr = std::string("seznam.cz");
-  //u2.port = std::string("80");
-  u3.addr = std::string("www.mff.cuni.cz");
+  // u1.addr = std::string("google.com");
+  // u1.port = std::string("80");
+  // u2.addr = std::string("seznam.cz");
+  // u2.port = std::string("80");
+  u3.addr = std::string("www.kame.net");
   u3.port = std::string("80");
 
-  //al.putURI(u1);
-  //al.putURI(u2);
+  // al.putURI(u1);
+  // al.putURI(u2);
   al.putURI(u3);
 
   // std::cout << al.getURI().addr<<":"<<al.getURI().port << std::endl;

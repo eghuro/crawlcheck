@@ -17,6 +17,9 @@ class DownloaderThread {
   static void * work(void *);
  private:
   static std::string generateRequest(const crawlcheck::proxy::uri_t & uri);
+  static void parseResponse(const std::ostringstream & response);
+  static void poller(int fd);
+  static uri_t getUri(AddressList * al);
 };
 
 } /* namespace proxy */
