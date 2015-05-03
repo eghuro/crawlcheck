@@ -5,7 +5,11 @@ class UserAgent
   def initialize(port)
     uris = []
     contents = []
+
+    @database = Database.new('','','','')
+
     @server = WEBrick::HTTPProxyServer.new Port: port, ProxyContentHandler: getHandler(uris)
+
     trap 'INT' do
       @server.shutdown
       shutdown(uris)   
@@ -21,6 +25,7 @@ class UserAgent
   def getHandler (uris)
     return Proc.new{|req,res| 
      if response_filter(res)
+       @database.storeURIfromProxy(res.request_uri)
        uris.push(res.request_uri)
      end
     }

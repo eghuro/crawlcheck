@@ -3,8 +3,9 @@ class Validator
 
   include W3CValidators
 
-  def initialize
+  def initialize(db)
     @validator = MarkupValidator.new
+    @database = db
 
     # override the DOCTYPE
     @validator.set_doctype!(:html32)
@@ -19,12 +20,19 @@ class Validator
     if results.errors.length > 0
       results.errors.each do |err|
         puts err.to_s
+        setFinding(err.:type, uri, err.:line, err.:col, err.:message)
       end
     else
       puts 'Valid!'
+      @database.setValid(uri)
     end
   end
 end
 
 @validator = Validator.new
-@validator.validate('http://www.mff.cuni.cz')
+@db = Database.new('','','','')
+uri = @db.getUriFromDB()
+while uri != false
+ @validator.validate(uri)
+ uri = @db.getUriFromDB()
+end

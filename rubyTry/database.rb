@@ -18,4 +18,18 @@ class Database
     @connection = Mysql.new (dbserver, userName, password, dbName)
     
   end
+
+  def storeURIfromProxy(uri)
+    
+  end
+
+  def getURIfromDB()
+    return false
+  end
+
+  def setValid(uri)
+  end
+
+  def setFinding(type, uri, line, col, message)
+  end
 end
