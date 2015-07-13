@@ -1,9 +1,7 @@
-#ifndef CRAWLCHECK_PROXY_PROXY_H
-#define CRAWLCHECK_PROXY_PROXY_H
+// Copyright 2015 Alexandr Mansurov
+#ifndef SRC_PROXY_PROXY_H_
+#define SRC_PROXY_PROXY_H_
 
-#include "../checker//checker.h"
-#include "../db/db.h"
-#include <string>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <stdlib.h>
@@ -12,42 +10,45 @@
 #include <netdb.h>
 #include <unistd.h>
 #include <assert.h>
+#include <string>
+#include "../checker/checker.h"
+#include "../db/db.h"
 
 class ProxyConfiguration {
  public:
-  ProxyConfiguration():in_pool_count(0),  max_in(0), max_out(0), 
-    in_pool_port(-1), dbc_fd(-1){};
+  ProxyConfiguration():in_pool_count(0),  max_in(0), max_out(0),
+    in_pool_port(-1), dbc_fd(-1) {}
 
   void setPoolCount(int count) {
     if (count >= 0) {
       in_pool_count = count;
     }
-    //TODO(alex): co, kdyz ne?
+    // TODO(alex): co, kdyz ne?
   }
 
   void setMaxIn(int max) {
     if (max >= 0) {
       max_in = max;
     }
-    //TODO(alex): co, kdyz ne?
+    // TODO(alex): co, kdyz ne?
   }
 
   void setMaxOut(int out) {
     if (out >= 0) {
       max_out = out;
     }
-    //TODO(alex): co, kdyz ne?
+    // TODO(alex): co, kdyz ne?
   }
 
   void setInPoolPort(int port) {
     if (acceptablePort(port)) {
       in_pool_port = port;
     }
-    //TODO(alex): co, kdyz ne?
+    // TODO(alex): co, kdyz ne?
   }
 
   void setDbcFd(int fd) {
-    //TODO(alex): kontroly?
+    // TODO(alex): kontroly?
     dbc_fd = fd;
   }
 
@@ -58,7 +59,7 @@ class ProxyConfiguration {
     if (count >= 0) {
       in_backlog = count;
     }
-    //TODO(alex): co, kdyz ne?
+    // TODO(alex): co, kdyz ne?
   }
 
   int getPoolCount() const {
@@ -88,6 +89,7 @@ class ProxyConfiguration {
   std::string getInPortString() const {
     return std::to_string(in_pool_port);
   }
+
  private:
   int in_pool_count;
   int max_in, max_out;
@@ -96,15 +98,15 @@ class ProxyConfiguration {
   int in_backlog;
 
   bool acceptablePort(int port) {
-    return port > 0;  //TODO(alex): detailnejsi kontrola?
+    return port > 0;  // TODO(alex): detailnejsi kontrola?
   }
 };
 
 class Proxy {
  public:
-  Proxy(const ProxyConfiguration & conf, const Checker & check, 
-   const Database & db): configuration(conf), checker(check), database(db){};
-  
+  Proxy(const ProxyConfiguration & conf, const Checker & check,
+    const Database & db): configuration(conf), checker(check), database(db) {}
+
   void start() {
     struct addrinfo hi;
     memset(&hi, 0, sizeof(hi));
@@ -114,25 +116,25 @@ class Proxy {
 
     struct addrinfo *r, *rorig;
 
-    fprintf(stdout, "GETADDRINFO\n");
-    if (0 != getaddrinfo(NULL, configuration.getInPortString().c_str(), &hi, &r)) {
+    const char * port = configuration.getInPortString().c_str();
+    if (0 != getaddrinfo(NULL, port, &hi, &r)) {
       perror("ERROR getaddrinfo");
       exit(EXIT_FAILURE);
     }
 
-    fprintf(stdout,"SOCKET\n");
     int socket_fd;
     for (rorig = r; r != NULL; r = r->ai_next) {
       socket_fd = socket(r->ai_family, r->ai_socktype, r->ai_protocol);
-      if (0 != bind(socket_fd, r->ai_addr, r->ai_addrlen)) break;
+      if (0 == bind(socket_fd, r->ai_addr, r->ai_addrlen)) break;
+      else
+        close(socket_fd);
     }
     freeaddrinfo(rorig);
     if (r == nullptr) {
       perror("ERROR binding");
       exit(EXIT_FAILURE);
     }
-    
-    fprintf(stdout, "LISTEN\n");
+
     if (listen(socket_fd, configuration.getInBacklog()) == -1) {
       perror("listen ERROR");
       exit(EXIT_FAILURE);
@@ -140,12 +142,14 @@ class Proxy {
     struct sockaddr_storage ca;
     for (;;) {
       fprintf(stdout, "ACCEPT\n");
-      auto sz = sizeof(ca);
-      int new_fd = accept(socket_fd, (struct sockaddr *)&ca, &sz);
+      // auto sz = sizeof(ca);
+      // fprintf(stdout, "Size: %d\n", sz);
+      int new_fd = accept(socket_fd, NULL, NULL);
       if (new_fd == -1) {
         perror("accept ERROR");
         exit(EXIT_FAILURE);
       }
+      fprintf(stdout, "Opened a file descriptior %d\n", new_fd);
       /* komunikace s klientem */
       int buf_len = 1000;
       char buf[1000];
@@ -158,10 +162,12 @@ class Proxy {
       close(new_fd);
       fprintf(stderr, ".. connection closed ..\n");
     }
+    close(socket_fd);
   }
+
  private:
   const ProxyConfiguration & configuration;
   const Checker & checker;
   const Database & database;
 };
-#endif //CRAWLCHECK_PROXY_PROXY_H
+#endif  // SRC_PROXY_PROXY_H_
