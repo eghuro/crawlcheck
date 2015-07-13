@@ -1,11 +1,17 @@
 #ifndef CRAWLCHECK_PROXY_PROXY_H
 #define CRAWLCHECK_PROXY_PROXY_H
 
-#include "checker/checker.h"
-#include "db/db.h"
+#include "../checker//checker.h"
+#include "../db/db.h"
+#include <string>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <netdb.h>
+#include <unistd.h>
+#include <assert.h>
 
 class ProxyConfiguration {
  public:
@@ -55,28 +61,32 @@ class ProxyConfiguration {
     //TODO(alex): co, kdyz ne?
   }
 
-  int getPoolCount() {
+  int getPoolCount() const {
     return in_pool_count;
   }
 
-  int getMaxIn() {
+  int getMaxIn() const {
     return max_in;
   }
 
-  int getMaxOut() {
+  int getMaxOut() const {
     return max_out;
   }
 
-  int getInPoolPort() {
+  int getInPoolPort() const {
     return in_pool_port;
   }
 
-  int getDbcFd() {
+  int getDbcFd() const {
     return dbc_fd;
   }
 
-  int getInbacklog() {
+  int getInBacklog() const {
     return in_backlog;
+  }
+
+  std::string getInPortString() const {
+    return std::to_string(in_pool_port);
   }
  private:
   int in_pool_count;
@@ -96,32 +106,58 @@ class Proxy {
    const Database & db): configuration(conf), checker(check), database(db){};
   
   void start() {
-    // socket
-    int socket_fd = socket(AF_INET6, SOCK_STREAM | SOCK_NONBLOCK, 0);
-    if (socket_fd == -1) {
-      perror("ERROR opening socket");
+    struct addrinfo hi;
+    memset(&hi, 0, sizeof(hi));
+    hi.ai_family = AF_UNSPEC;
+    hi.ai_socktype = SOCK_STREAM;
+    hi.ai_flags = AI_PASSIVE;
+
+    struct addrinfo *r, *rorig;
+
+    fprintf(stdout, "GETADDRINFO\n");
+    if (0 != getaddrinfo(NULL, configuration.getInPortString().c_str(), &hi, &r)) {
+      perror("ERROR getaddrinfo");
+      exit(EXIT_FAILURE);
+    }
+
+    fprintf(stdout,"SOCKET\n");
+    int socket_fd;
+    for (rorig = r; r != NULL; r = r->ai_next) {
+      socket_fd = socket(r->ai_family, r->ai_socktype, r->ai_protocol);
+      if (0 != bind(socket_fd, r->ai_addr, r->ai_addrlen)) break;
+    }
+    freeaddrinfo(rorig);
+    if (r == nullptr) {
+      perror("ERROR binding");
       exit(EXIT_FAILURE);
     }
     
-    // bind
-    struct sockaddr in_addr;
-    bzero((char *) &in_addr), sizeof(in_addr));
-    in_addr.sin_faminly = AF_INET6;
-    in_addr.sin_addr.s_addr = in6addr_any;
-    in_addr.sin_port = htons(conf.getInPoolPort());
-
-    if (bind(socket_fd, (struct sockaddr *) &in_addr, sizeof(inaddr)) != 0) {
-      perror("ERROR on binding");
+    fprintf(stdout, "LISTEN\n");
+    if (listen(socket_fd, configuration.getInBacklog()) == -1) {
+      perror("listen ERROR");
       exit(EXIT_FAILURE);
     }
+    struct sockaddr_storage ca;
+    for (;;) {
+      fprintf(stdout, "ACCEPT\n");
+      auto sz = sizeof(ca);
+      int new_fd = accept(socket_fd, (struct sockaddr *)&ca, &sz);
+      if (new_fd == -1) {
+        perror("accept ERROR");
+        exit(EXIT_FAILURE);
+      }
+      /* komunikace s klientem */
+      int buf_len = 1000;
+      char buf[1000];
+      fprintf(stderr, ".. connection accepted ..\n");
+      int n;
+      while ((n = read(new_fd, buf, buf_len)) != 0) {
+        write(1, buf, n);
+      }
 
-    // listen
-   if (listen(socket_fd, conf.getInBacklog()) != 0) {
-     perror("ERROR on listen");
-     exit(EXIT_FAILURE);
-   }
-
-    // nekolik vlaken/procesu delaji accept
+      close(new_fd);
+      fprintf(stderr, ".. connection closed ..\n");
+    }
   }
  private:
   const ProxyConfiguration & configuration;
