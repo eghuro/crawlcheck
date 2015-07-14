@@ -11,6 +11,8 @@
 #include <unistd.h>
 #include <assert.h>
 #include <poll.h>
+#include <err.h>
+#include <pthread.h>
 #include <string>
 #include <vector>
 #include "../checker/checker.h"
@@ -101,6 +103,46 @@ class ProxyConfiguration {
 
   bool acceptablePort(int port) {
     return port > 0;  // TODO(alex): detailnejsi kontrola?
+  }
+};
+
+class ProxyWorker {
+ public:
+  ProxyWorker() : thread(0) {}
+
+  void startThread(int fd) {
+    int e;
+    assert(sizeof (void *) >= sizeof (int));
+    if ((e = pthread_create(&thread, NULL, threadRoutine, ((void *)fd))) != 0) {
+      errx(1, "pthread_create: %s", strerror(e));
+    }
+  }
+
+ private:
+  pthread_t thread;
+  static void* threadRoutine(void * arg) {
+    int fd = (int) arg;
+
+    int new_fd = accept(fd, NULL, NULL);
+    if (new_fd == -1) {
+      perror("accept ERROR");
+      exit(EXIT_FAILURE);
+    }
+
+    int buf_len = 1000;
+    char buf[1000];
+    fprintf(stderr, ".. connection accepted ..\n");
+    int n;
+    while ((n = read(new_fd, buf, buf_len)) != 0) {
+      if (n == -1) {
+        perror("READ");
+      } else {
+        write(1, buf, n);
+      }
+    }
+
+    close(new_fd);
+    fprintf(stderr, ".. connection closed ..\n");
   }
 };
 
@@ -212,25 +254,8 @@ class Proxy {
   }
 
   void handle(int fd) {
-    int new_fd = accept(fd, NULL, NULL);
-    if (new_fd == -1) {
-      perror("accept ERROR");
-      exit(EXIT_FAILURE);
-    }
-
-    int buf_len = 1000;
-    char buf[1000];
-    fprintf(stderr, ".. connection accepted ..\n");
-    int n;
-    while ((n = read(new_fd, buf, buf_len)) != 0) {
-      if (n == -1) {
-    	perror("READ");
-      } else {
-        write(1, buf, n);
-      }
-    }
-    close(new_fd);
-    fprintf(stderr, ".. connection closed ..\n");
+	 ProxyWorker pw;
+	 pw.startThread(fd);
   }
 };
 #endif  // SRC_PROXY_PROXY_H_
