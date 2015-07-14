@@ -5,10 +5,10 @@
 
 main(int argc, char **argv) {
   ProxyConfiguration conf;
-  conf.setInPoolPort(88);
+  conf.setInPoolPort(90);
   conf.setInBacklog(100);
 
-  assert(conf.getInPoolPort() == 88);
+  assert(conf.getInPoolPort() == 90);
   assert(conf.getInBacklog() == 100);
 
   Database d;
