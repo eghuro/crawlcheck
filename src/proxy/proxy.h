@@ -18,6 +18,13 @@
 #include "../checker/checker.h"
 #include "../db/db.h"
 
+class HelperRoutines {
+ public:
+  static void error(const std::string & message) {
+    perror(message.c_str());
+    exit(EXIT_FAILURE);
+  }
+};
 class ProxyConfiguration {
  public:
   ProxyConfiguration():in_pool_count(0),  max_in(0), max_out(0),
@@ -122,12 +129,11 @@ class ProxyWorker {
  private:
   pthread_t thread;
   static void* threadRoutine(void * arg) {
-    int fd = static_cast<int>(arg);
+    int fd = reinterpret_cast<int>(arg);
 
     int new_fd = accept(fd, NULL, NULL);
     if (new_fd == -1) {
-      perror("accept ERROR");
-      exit(EXIT_FAILURE);
+      HelperRoutines::error("accept ERROR");
     }
 
     int buf_len = 1000;
@@ -158,8 +164,7 @@ class Proxy {
 
     const char * port = configuration.getInPortString().c_str();
     if (0 != getaddrinfo(NULL, port, &hi, &r)) {
-      perror("ERROR getaddrinfo");
-      exit(EXIT_FAILURE);
+      HelperRoutines::error("ERROR getaddrinfo");
     }
 
     auto sockets = bindSockets(r);
@@ -187,8 +192,7 @@ class Proxy {
         // timeout
         fprintf(stdout, "Connection timeout\n");
       } else {
-        perror("ERROR polling");
-        exit(EXIT_FAILURE);
+        HelperRoutines::error("ERROR polling");
       }
     }
 
@@ -202,7 +206,7 @@ class Proxy {
   const Checker & checker;
   const Database & database;
 
-  struct addrinfo getAddrInfo() {
+  static struct addrinfo getAddrInfo() {
     struct addrinfo hi;
     memset(&hi, 0, sizeof(hi));
     hi.ai_family = AF_UNSPEC;
@@ -211,7 +215,7 @@ class Proxy {
     return hi;
   }
 
-  std::vector<int> bindSockets(struct addrinfo *r) {
+  static std::vector<int> bindSockets(struct addrinfo *r) {
     int socket_fd;
     std::vector<int> sockets;
     struct addrinfo *rorig;
@@ -227,8 +231,7 @@ class Proxy {
     }
 
     if (sockets.size() == 0) {
-      perror("ERROR binding");
-      exit(EXIT_FAILURE);
+      HelperRoutines::error("ERROR binding");
     }
     freeaddrinfo(rorig);
     return sockets;
@@ -238,13 +241,12 @@ class Proxy {
     for (auto it = sockets.begin(); it != sockets.end(); it++) {
       fprintf(stdout, "LISTEN\n");
       if (listen((*it), configuration.getInBacklog()) == -1) {
-        perror("listen ERROR");
-        exit(EXIT_FAILURE);
+        HelperRoutines::error("listen ERROR");
       }
     }
   }
 
-  struct pollfd * sockets4poll(const std::vector<int> & sockets) {
+  static struct pollfd * sockets4poll(const std::vector<int> & sockets) {
     std::size_t size = sockets.size();
     struct pollfd * array = new struct pollfd[size];
 
@@ -252,13 +254,12 @@ class Proxy {
     for (auto it = sockets.begin(); it != sockets.end(); ++it, index++) {
       array[index].fd = (*it);
       array[index].events = POLLIN | POLLPRI;
-      fprintf(stdout, "%d\n", (*it));
     }
 
     return array;
   }
 
-  void handle(int fd) {
+  static void handle(int fd) {
     ProxyWorker pw;
     pw.startThread(fd);
   }
