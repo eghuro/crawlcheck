@@ -111,9 +111,10 @@ class ProxyWorker {
   ProxyWorker() : thread(0) {}
 
   void startThread(int fd) {
-    int e;
     assert(sizeof (void *) >= sizeof (int));
-    if ((e = pthread_create(&thread, NULL, threadRoutine, ((void *)fd))) != 0) {
+    void * parameter = reinterpret_cast<void *>(fd);
+    int e = pthread_create(&thread, NULL, threadRoutine, parameter);
+    if (e != 0) {
       errx(1, "pthread_create: %s", strerror(e));
     }
   }
@@ -121,7 +122,7 @@ class ProxyWorker {
  private:
   pthread_t thread;
   static void* threadRoutine(void * arg) {
-    int fd = (int) arg;
+    int fd = static_cast<int>(arg);
 
     int new_fd = accept(fd, NULL, NULL);
     if (new_fd == -1) {
@@ -168,28 +169,31 @@ class Proxy {
     auto pollstr = sockets4poll(sockets);
 
     int timeout = -1;  // unlimited
-    fprintf(stdout, "Polling ... %d\n",sockets.size());
-    for(;;) {
+    fprintf(stdout, "Polling ... %d\n", sockets.size());
+    for (;;) {
       int poll_ret = poll(pollstr, sockets.size(), timeout);
       if (poll_ret > 0) {
         // success
         const std::size_t mask = POLLIN | POLLPRI;
         for (int i = 0; i < sockets.size(); i++) {
-          if ( ((pollstr[i].revents & mask) == POLLIN) || ((pollstr[i].revents & mask) == POLLPRI) ) {
+          bool accepted;
+          accepted = ((pollstr[i].revents & mask) == POLLIN);
+          accepted = accepted || ((pollstr[i].revents & mask) == POLLPRI);
+          if (accepted) {
             handle(pollstr[i].fd);
           }
         }
       } else if (poll_ret == 0) {
-    	// timeout
-    	fprintf(stdout, "Connection timeout\n");
+        // timeout
+        fprintf(stdout, "Connection timeout\n");
       } else {
-    	perror("ERROR polling");
-    	exit(EXIT_FAILURE);
+        perror("ERROR polling");
+        exit(EXIT_FAILURE);
       }
     }
 
-    for(auto it = sockets.begin(); it!=sockets.end(); ++it) {
-    	close(*it);
+    for (auto it = sockets.begin(); it != sockets.end(); ++it) {
+      close(*it);
     }
   }
 
@@ -208,54 +212,55 @@ class Proxy {
   }
 
   std::vector<int> bindSockets(struct addrinfo *r) {
-	int socket_fd;
-	std::vector<int> sockets;
-	struct addrinfo *rorig;
+    int socket_fd;
+    std::vector<int> sockets;
+    struct addrinfo *rorig;
 
-	for (rorig = r; r != NULL; r = r->ai_next) {
-	  if (r->ai_family != AF_INET && r->ai_family != AF_INET6) continue;
-	  socket_fd = socket(r->ai_family, r->ai_socktype, r->ai_protocol);
-	  if (0 == bind(socket_fd, r->ai_addr, r->ai_addrlen)) {
-	    sockets.push_back(socket_fd);
-	  } else {
-	    close(socket_fd);
-	  }
-	}
-	if (sockets.size() == 0) {
-	  perror("ERROR binding");
-	  exit(EXIT_FAILURE);
-	}
-	freeaddrinfo(rorig);
-	return sockets;
+    for (rorig = r; r != NULL; r = r->ai_next) {
+      if (r->ai_family != AF_INET && r->ai_family != AF_INET6) continue;
+      socket_fd = socket(r->ai_family, r->ai_socktype, r->ai_protocol);
+      if (0 == bind(socket_fd, r->ai_addr, r->ai_addrlen)) {
+        sockets.push_back(socket_fd);
+      } else {
+        close(socket_fd);
+      }
+    }
+
+    if (sockets.size() == 0) {
+      perror("ERROR binding");
+      exit(EXIT_FAILURE);
+    }
+    freeaddrinfo(rorig);
+    return sockets;
   }
 
   void listenSockets(const std::vector<int> & sockets) {
-    for(auto it = sockets.begin(); it != sockets.end(); it++) {
-	  fprintf(stdout, "LISTEN\n");
-	  if (listen((*it), configuration.getInBacklog()) == -1) {
+    for (auto it = sockets.begin(); it != sockets.end(); it++) {
+      fprintf(stdout, "LISTEN\n");
+      if (listen((*it), configuration.getInBacklog()) == -1) {
         perror("listen ERROR");
-		exit(EXIT_FAILURE);
-	  }
-	}
+        exit(EXIT_FAILURE);
+      }
+    }
   }
 
   struct pollfd * sockets4poll(const std::vector<int> & sockets) {
-	  std::size_t size = sockets.size();
-	  struct pollfd * array = new struct pollfd[size];
+    std::size_t size = sockets.size();
+    struct pollfd * array = new struct pollfd[size];
 
-	  std::size_t index = 0;
-	  for(auto it = sockets.begin(); it != sockets.end(); ++it, index++) {
-		  array[index].fd = (*it);
-		  array[index].events = POLLIN | POLLPRI;
-		  fprintf(stdout, "%d\n", (*it));
-	  }
+    std::size_t index = 0;
+    for (auto it = sockets.begin(); it != sockets.end(); ++it, index++) {
+      array[index].fd = (*it);
+      array[index].events = POLLIN | POLLPRI;
+      fprintf(stdout, "%d\n", (*it));
+    }
 
-	  return array;
+    return array;
   }
 
   void handle(int fd) {
-	 ProxyWorker pw;
-	 pw.startThread(fd);
+    ProxyWorker pw;
+    pw.startThread(fd);
   }
 };
 #endif  // SRC_PROXY_PROXY_H_
