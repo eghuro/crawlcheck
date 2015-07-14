@@ -121,28 +121,19 @@ class Proxy {
 
     auto sockets = bindSockets(r);
 
-    for(auto it = sockets.begin(); it != sockets.end(); it++) {
-      fprintf(stdout, "LISTEN\n");
-      if (listen((*it), configuration.getInBacklog()) == -1) {
-        perror("listen ERROR");
-        exit(EXIT_FAILURE);
-      }
-    }
+    listenSockets(sockets);
 
     auto pollstr = sockets4poll(sockets);
 
     int timeout = -1;  // unlimited
     fprintf(stdout, "Polling ... %d\n",sockets.size());
-    //for(;;) {
+    for(;;) {
       int poll_ret = poll(pollstr, sockets.size(), timeout);
       if (poll_ret > 0) {
-        fprintf(stdout, "Polling succeeded\n");
         // success
         const std::size_t mask = POLLIN | POLLPRI;
         for (int i = 0; i < sockets.size(); i++) {
           if ( ((pollstr[i].revents & mask) == POLLIN) || ((pollstr[i].revents & mask) == POLLPRI) ) {
-            // data can be read from socket i
-            fprintf(stdout, "Reading file descriptor %d\n", pollstr[i].fd);
             handle(pollstr[i].fd);
           }
         }
@@ -153,7 +144,7 @@ class Proxy {
     	perror("ERROR polling");
     	exit(EXIT_FAILURE);
       }
-    //}
+    }
 
     for(auto it = sockets.begin(); it!=sockets.end(); ++it) {
     	close(*it);
@@ -196,7 +187,17 @@ class Proxy {
 	return sockets;
   }
 
-  struct pollfd * sockets4poll(std::vector<int> sockets) {
+  void listenSockets(const std::vector<int> & sockets) {
+    for(auto it = sockets.begin(); it != sockets.end(); it++) {
+	  fprintf(stdout, "LISTEN\n");
+	  if (listen((*it), configuration.getInBacklog()) == -1) {
+        perror("listen ERROR");
+		exit(EXIT_FAILURE);
+	  }
+	}
+  }
+
+  struct pollfd * sockets4poll(const std::vector<int> & sockets) {
 	  std::size_t size = sockets.size();
 	  struct pollfd * array = new struct pollfd[size];
 
@@ -228,7 +229,7 @@ class Proxy {
         write(1, buf, n);
       }
     }
-    close(fd);
+    close(new_fd);
     fprintf(stderr, ".. connection closed ..\n");
   }
 };
