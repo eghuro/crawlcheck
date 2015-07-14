@@ -11,24 +11,18 @@
 #include <unistd.h>
 #include <assert.h>
 #include <poll.h>
-#include <err.h>
-#include <pthread.h>
 #include <string>
 #include <vector>
 #include "../checker/checker.h"
 #include "../db/db.h"
+#include "./ProxyWorker.h"
+#include "./HelperRoutines.h"
 
-class HelperRoutines {
- public:
-  static void error(const std::string & message) {
-    perror(message.c_str());
-    exit(EXIT_FAILURE);
-  }
-};
 class ProxyConfiguration {
  public:
   ProxyConfiguration():in_pool_count(0),  max_in(0), max_out(0),
     in_pool_port(-1), dbc_fd(-1), in_backlog(-1) {}
+  virtual ~ProxyConfiguration() {}
 
   void setPoolCount(int count) {
     if (count >= 0) {
@@ -113,98 +107,20 @@ class ProxyConfiguration {
   }
 };
 
-class ProxyWorker {
- public:
-  ProxyWorker() : thread(0) {}
-
-  void startThread(int fd) {
-    assert(sizeof (void *) >= sizeof (int));
-    void * parameter = reinterpret_cast<void *>(fd);
-    int e = pthread_create(&thread, NULL, threadRoutine, parameter);
-    if (e != 0) {
-      errx(1, "pthread_create: %s", strerror(e));
-    }
-  }
-
- private:
-  pthread_t thread;
-  static void* threadRoutine(void * arg) {
-    int fd = reinterpret_cast<int>(arg);
-
-    int new_fd = accept(fd, NULL, NULL);
-    if (new_fd == -1) {
-      HelperRoutines::error("accept ERROR");
-    }
-
-    int buf_len = 1000;
-    char buf[1000];
-    fprintf(stderr, ".. connection accepted ..\n");
-    int n;
-    while ((n = read(new_fd, buf, buf_len)) != 0) {
-      if (n == -1) {
-        perror("READ");
-      } else {
-        write(1, buf, n);
-      }
-    }
-
-    close(new_fd);
-    fprintf(stderr, ".. connection closed ..\n");
-  }
-};
-
 class Proxy {
  public:
   Proxy(const ProxyConfiguration & conf, const Checker & check,
     const Database & db): configuration(conf), checker(check), database(db) {}
 
-  void start() {
-    struct addrinfo hi = getAddrInfo();
-    struct addrinfo *r;
-
-    const char * port = configuration.getInPortString().c_str();
-    if (0 != getaddrinfo(NULL, port, &hi, &r)) {
-      HelperRoutines::error("ERROR getaddrinfo");
-    }
-
-    auto sockets = bindSockets(r);
-
-    listenSockets(sockets);
-
-    auto pollstr = sockets4poll(sockets);
-
-    int timeout = -1;  // unlimited
-    fprintf(stdout, "Polling ... %d\n", sockets.size());
-    for (;;) {
-      int poll_ret = poll(pollstr, sockets.size(), timeout);
-      if (poll_ret > 0) {
-        // success
-        const std::size_t mask = POLLIN | POLLPRI;
-        for (int i = 0; i < sockets.size(); i++) {
-          bool accepted;
-          accepted = ((pollstr[i].revents & mask) == POLLIN);
-          accepted = accepted || ((pollstr[i].revents & mask) == POLLPRI);
-          if (accepted) {
-            handle(pollstr[i].fd);
-          }
-        }
-      } else if (poll_ret == 0) {
-        // timeout
-        fprintf(stdout, "Connection timeout\n");
-      } else {
-        HelperRoutines::error("ERROR polling");
-      }
-    }
-
-    for (auto it = sockets.begin(); it != sockets.end(); ++it) {
-      close(*it);
-    }
-  }
+  void start();
 
  private:
   const ProxyConfiguration & configuration;
   const Checker & checker;
   const Database & database;
+
+  static std::vector<int> bindSockets(struct addrinfo *r);
+  static struct pollfd * sockets4poll(const std::vector<int> & sockets);
 
   static struct addrinfo getAddrInfo() {
     struct addrinfo hi;
@@ -215,28 +131,6 @@ class Proxy {
     return hi;
   }
 
-  static std::vector<int> bindSockets(struct addrinfo *r) {
-    int socket_fd;
-    std::vector<int> sockets;
-    struct addrinfo *rorig;
-
-    for (rorig = r; r != NULL; r = r->ai_next) {
-      if (r->ai_family != AF_INET && r->ai_family != AF_INET6) continue;
-      socket_fd = socket(r->ai_family, r->ai_socktype, r->ai_protocol);
-      if (0 == bind(socket_fd, r->ai_addr, r->ai_addrlen)) {
-        sockets.push_back(socket_fd);
-      } else {
-        close(socket_fd);
-      }
-    }
-
-    if (sockets.size() == 0) {
-      HelperRoutines::error("ERROR binding");
-    }
-    freeaddrinfo(rorig);
-    return sockets;
-  }
-
   void listenSockets(const std::vector<int> & sockets) {
     for (auto it = sockets.begin(); it != sockets.end(); it++) {
       fprintf(stdout, "LISTEN\n");
@@ -244,19 +138,6 @@ class Proxy {
         HelperRoutines::error("listen ERROR");
       }
     }
-  }
-
-  static struct pollfd * sockets4poll(const std::vector<int> & sockets) {
-    std::size_t size = sockets.size();
-    struct pollfd * array = new struct pollfd[size];
-
-    std::size_t index = 0;
-    for (auto it = sockets.begin(); it != sockets.end(); ++it, index++) {
-      array[index].fd = (*it);
-      array[index].events = POLLIN | POLLPRI;
-    }
-
-    return array;
   }
 
   static void handle(int fd) {
