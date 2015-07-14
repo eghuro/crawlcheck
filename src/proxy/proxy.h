@@ -140,11 +140,11 @@ class Proxy {
         // success
         const std::size_t mask = POLLIN | POLLPRI;
         for (int i = 0; i < sockets.size(); i++) {
-          //if ( ((pollstr[i].revents & mask) == POLLIN) || ((pollstr[i].revents & mask) == POLLPRI) ) {
+          if ( ((pollstr[i].revents & mask) == POLLIN) || ((pollstr[i].revents & mask) == POLLPRI) ) {
             // data can be read from socket i
             fprintf(stdout, "Reading file descriptor %d\n", pollstr[i].fd);
             handle(pollstr[i].fd);
-          //}
+          }
         }
       } else if (poll_ret == 0) {
     	// timeout
