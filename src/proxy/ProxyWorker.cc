@@ -3,6 +3,7 @@
 #include "./ProxyWorker.h"
 #include <string>
 #include <memory>
+#include <utility>
 #include <stdio.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -10,10 +11,11 @@
 #include "./RequestStorage.h"
 
 const int ProxyWorker::buffer_size = 1000;
-const std::unique_ptr<RequestStorage> request_storage = std::unique_ptr<RequestStorage>(new RequestStorage());
 
 void* ProxyWorker::clientThreadRoutine(void * arg) {
-  int fd = reinterpret_cast<int>(arg); //TODO(alex): arg ~> std::pair<int, std::unique_ptr<RequestStorage>>
+  std::pair<int, std::shared_ptr<RequestStorage>> params = reinterpret_cast<std::pair<int, std::shared_ptr<RequestStorage>>&>(arg);
+  int fd = params.first;
+  std::shared_ptr<RequestStorage> storage = params.second;
 
   int new_fd = accept(fd, NULL, NULL);
   if (new_fd == -1) {
@@ -34,7 +36,7 @@ void* ProxyWorker::clientThreadRoutine(void * arg) {
       write(1, buf, n);
 
       if (result.request()) {
-    	 // (*ProxyWorker::request_storage).insertParserResult(result);
+        (*storage).insertParserResult(result);
       }
     }
   }

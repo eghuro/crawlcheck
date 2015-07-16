@@ -33,7 +33,8 @@ class ProxyWorker {
 
   void startThread(int fd) {
     assert(sizeof (void *) >= sizeof (int));
-    void * parameter = reinterpret_cast<void *>(fd);
+    std::pair<int, std::shared_ptr<RequestStorage>> parameter_pair(fd, request_storage);
+    void * parameter = reinterpret_cast<void *>(&parameter_pair);
 
     // vytvorit client thread
     int e = pthread_create(&client_thread, NULL, clientThreadRoutine, parameter);
@@ -56,9 +57,10 @@ class ProxyWorker {
     }
   }
 
-  static std::unique_ptr<RequestStorage> request_storage;
+  
  private:
   pthread_t client_thread, server_thread;
+  std::shared_ptr<RequestStorage> request_storage = std::unique_ptr<RequestStorage>(new RequestStorage());
 
   static const int buffer_size;
 
