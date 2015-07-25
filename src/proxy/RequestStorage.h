@@ -11,7 +11,9 @@
 #include <memory>
 #include <string>
 #include <sstream>
+#include "pthread.h"
 #include "./HttpParser.h"
+#include "./HelperRoutines.h"
 
 class HttpRequestFactory {
  public:
@@ -24,21 +26,50 @@ class HttpRequestFactory {
 
 class RequestStorage {
  public:
-  RequestStorage() : results() {};
+  RequestStorage() : results(), results_mutex(PTHREAD_MUTEX_INITIALIZER) {};
   virtual ~RequestStorage() {};
 
-  // TODO(alex): zamky!!
   void insertParserResult(const HttpParserResult & result) {
-    results.push_back(result);
+    if (pthread_mutex_lock(&results_mutex) == 0) {
+      results.push_back(result);
+      if (pthread_mutex_unlock(&results_mutex) == 0) {
+    	  HelperRoutines::warning("Cannot unlock mutex on a request storage.");
+      }
+    } else {
+      HelperRoutines::warning("Cannot lock mutex on a request storage.");
+    }
   }
+
   std::string retrieveRequest() {
-    auto result = results.front();
-    std::string request = HttpRequestFactory::createHttpRequest(result);
-    results.pop_front();
-    return request;
+	if (pthread_mutex_lock(&results_mutex) == 0) {
+      auto result = results.front();
+      results.pop_front();
+      if (pthread_mutex_unlock(&results_mutex) != 0) {
+    	  HelperRoutines::warning("Cannot unlock mutex on a request storage.");
+      }
+
+      std::string request = HttpRequestFactory::createHttpRequest(result);
+      return request;
+	} else {
+	  HelperRoutines::warning("Cannot lock mutex on a request storage.");
+	}
+    return "";  // TODO(alex): exception?
+  }
+
+  std::string retrieveResponse() {
+    return "";
+  }
+
+  bool responseAvailable() {
+    return false;
+  }
+
+  bool done() {
+    return false;
   }
  private:
   std::deque<HttpParserResult> results;
+  pthread_mutex_t results_mutex;
 };
 
 #endif /* SRC_PROXY_REQUESTSTORAGE_H_ */

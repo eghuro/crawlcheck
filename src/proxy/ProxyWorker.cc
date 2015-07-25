@@ -13,12 +13,13 @@
 const int ProxyWorker::buffer_size = 1000;
 
 void* ProxyWorker::clientThreadRoutine(void * arg) {
-  std::pair<int, std::shared_ptr<RequestStorage>> params = reinterpret_cast<std::pair<int, std::shared_ptr<RequestStorage>>&>(arg);
-  int fd = params.first;
-  std::shared_ptr<RequestStorage> storage = params.second;
+  auto params = reinterpret_cast<std::pair<int, std::shared_ptr<RequestStorage>> *>(arg);
+  int fd = params->first;
+  std::shared_ptr<RequestStorage> storage = params->second;
 
   int new_fd = accept(fd, NULL, NULL);
   if (new_fd == -1) {
+    std::cout << fd <<std::endl;
     HelperRoutines::error("accept ERROR");
   }
 
@@ -27,21 +28,32 @@ void* ProxyWorker::clientThreadRoutine(void * arg) {
 
   HttpParser parser;
 
+  // REQUEST
   int n;
   while ((n = read(new_fd, buf, ProxyWorker::buffer_size)) != 0) {
     if (n == -1) {
       perror("READ");
     } else {
       HttpParserResult result = parser.parse(std::string(buf, n));
-      write(1, buf, n);
 
       if (result.request()) {
         (*storage).insertParserResult(result);
       }
+
+      if ((*storage).responseAvailable()) {
+	    std::string response = (*storage).retrieveResponse();
+	    write(new_fd, response.c_str(), response.size());
+      }
     }
   }
 
-  // TODO (alex): poslouchat, zda neni pripravena response, ve vhodny okamzik odeslat response
+  // RESPONSE
+  while (!(*storage).done()) {
+    if ((*storage).responseAvailable()) {
+	  std::string response = (*storage).retrieveResponse();
+	  write(new_fd, response.c_str(), response.size());
+    }
+  }
 
   close(new_fd);
   fprintf(stderr, ".. connection closed ..\n");

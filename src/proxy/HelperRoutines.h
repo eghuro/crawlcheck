@@ -11,6 +11,10 @@ class HelperRoutines {
     perror(message.c_str());
     exit(EXIT_FAILURE);
   }
+
+  static void warning(const std::string & message) {
+    perror(message.c_str());
+  }
 };
 
 #endif  // SRC_PROXY_HELPERROUTINES_H_

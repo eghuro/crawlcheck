@@ -14,7 +14,7 @@ ${prog}: $(objs)
 	$(CC) $(LDFLAGS) ${TFLAGS} -o $@ $^
 
 RequestStorage.o : proxy/RequestStorage.cc
-	$(CC) $(CFLAGS) -o $@ $<
+	$(CC) $(CFLAGS) ${TFLAGS} -o $@ $<
 HttpParser.o : proxy/HttpParser.cc
 	$(CC) $(CFLAGS) -o $@ $<
 ProxyWorker.o : proxy/ProxyWorker.cc

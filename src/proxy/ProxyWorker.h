@@ -32,8 +32,9 @@ class ProxyWorker {
   }
 
   void startThread(int fd) {
-    assert(sizeof (void *) >= sizeof (int));
+    std::cout << fd << std::endl;
     std::pair<int, std::shared_ptr<RequestStorage>> parameter_pair(fd, request_storage);
+    std::cout <<parameter_pair.first << std::endl;
     void * parameter = reinterpret_cast<void *>(&parameter_pair);
 
     // vytvorit client thread
