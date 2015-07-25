@@ -56,6 +56,19 @@ class RequestStorage {
     return "";  // TODO(alex): exception?
   }
 
+  bool requestAvailable() {
+    bool available = false;
+	if (pthread_mutex_lock(&results_mutex) == 0) {
+      available = !results.empty();
+      if (pthread_mutex_unlock(&results_mutex) != 0) {
+        HelperRoutines::warning("Cannot unlock mutex on a request storage.");
+      }
+	} else {
+	  HelperRoutines::warning("Cannot lock mutex on a request storage.");
+	}
+	return available;
+  }
+
   std::string retrieveResponse() {
     return "";
   }

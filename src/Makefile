@@ -24,7 +24,7 @@ proxy.o : proxy/proxy.cc
   
 proxy/RequestStorage.cc : proxy/HttpParser.h
 proxy/HttpParser.cc : proxy/HttpParser.h
-proxy/ProxyWorker.cc : proxy/ProxyWorker.h proxy/HelperRoutines.h proxy/HttpParser.h proxy/RequestStorage.h
+proxy/ProxyWorker.cc : proxy/ProxyWorker.h proxy/HelperRoutines.h proxy/HttpParser.h proxy/RequestStorage.h proxy/proxy.h
 proxy/proxy.cc : proxy/proxy.h db/db.h checker/checker.h proxy/ProxyWorker.h proxy/HelperRoutines.h proxy/RequestStorage.h
   
 clean:

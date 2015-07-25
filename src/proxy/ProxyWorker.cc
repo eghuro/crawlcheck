@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include "./HttpParser.h"
 #include "./RequestStorage.h"
+#include "./ProxyConfiguration.h"
 
 const int ProxyWorker::buffer_size = 1000;
 
@@ -38,9 +39,9 @@ void ProxyWorker::createThreads(void* parameter) {
 
 void ProxyWorker::startThread(int fd) {
     std::cout << fd << std::endl;
-    std::pair<int, std::shared_ptr<RequestStorage>> parameter_pair(fd, request_storage);
-    std::cout <<parameter_pair.first << std::endl;
-    void * parameter = reinterpret_cast<void *>(&parameter_pair);
+    std::tuple<int, std::shared_ptr<RequestStorage>, std::shared_ptr<ProxyConfiguration>> parameters(fd, request_storage, configuration);
+    std::cout << std::get<1>(parameters) << std::endl;
+    void * parameter = reinterpret_cast<void *>(&parameters);
 
     // vytvorit vlakna
 	createThreads(parameter);
@@ -78,9 +79,9 @@ void ProxyWorker::handleClientResponse(int new_fd, std::shared_ptr<RequestStorag
 }
 
 void* ProxyWorker::clientThreadRoutine(void * arg) {
-  auto params = reinterpret_cast<std::pair<int, std::shared_ptr<RequestStorage>> *>(arg);
-  int fd = params->first;
-  std::shared_ptr<RequestStorage> storage = params->second;
+  auto params = reinterpret_cast<std::tuple<int, std::shared_ptr<RequestStorage>, std::shared_ptr<ProxyConfiguration>> *>(arg);
+  int fd = std::get<0>(*params);
+  std::shared_ptr<RequestStorage> storage = std::get<1>(*params);
 
   int new_fd = accept(fd, NULL, NULL);
   if (new_fd == -1) {
@@ -99,8 +100,32 @@ void* ProxyWorker::clientThreadRoutine(void * arg) {
 }
 
 void* ProxyWorker::serverThreadRoutine(void * arg) {
+  auto params = reinterpret_cast<std::tuple<int, std::shared_ptr<RequestStorage>, std::shared_ptr<ProxyConfiguration>> *>(arg);
+  std::shared_ptr<RequestStorage> storage = std::get<1>(*params);
+  std::shared_ptr<ProxyConfiguration> conf_ptr = std::get<2>(*params);
+
+  auto ai = getAddrInfo(conf_ptr);
+  auto sockets = getSockets(ai);
+
+  int fd = *sockets.begin();
+
+  // TODO(alex): ziskat struct sockaddr * pro adresu serveru, kam sel originalni request
+  // connect(fd, addr, addrlen)
+  // write request
+  if (storage -> requestAvailable()) {
+    std::string request = storage->retrieveRequest();
+    write(fd, request.c_str(), request.size());
+
+    // read response - opsat
+  }
+
+  for(auto it = sockets.begin(); it != sockets.end(); ++it) {
+    close(*it);
+  }
   return NULL;
 }
+
+
 
 ProxyWorker::~ProxyWorker() {
   void *retval_client, *retval_server;

@@ -1,15 +1,17 @@
 // Copyright 2015 Alexandr Mansurov
 #include "./proxy.h"
+#include <memory>
 #include "../db/db.h"
 #include "../checker/checker.h"
+#include "./ProxyConfiguration.h"
 
 int main(int argc, char **argv) {
-  ProxyConfiguration conf;
-  conf.setInPoolPort(90);
-  conf.setInBacklog(100);
+  std::shared_ptr<ProxyConfiguration> conf = std::make_shared<ProxyConfiguration>();
+  conf->setInPoolPort(90);
+  conf->setInBacklog(100);
 
-  assert(conf.getInPoolPort() == 90);
-  assert(conf.getInBacklog() == 100);
+  assert(conf->getInPoolPort() == 90);
+  assert(conf->getInBacklog() == 100);
 
   Database d;
   Checker c;
@@ -20,19 +22,13 @@ int main(int argc, char **argv) {
 }
 
 void Proxy::start() {
-  struct addrinfo hi = getAddrInfo();
-  struct addrinfo *r;
-
-  const char * port = configuration.getInPortString().c_str();
-  if (0 != getaddrinfo(NULL, port, &hi, &r)) {
-    HelperRoutines::error("ERROR getaddrinfo");
-  }
+  auto r = getAddrInfo();
 
   auto sockets = bindSockets(r);
 
   listenSockets(sockets);
 
-  auto pollstr = sockets4poll(sockets);
+  auto pollstr = sockets4poll(sockets);  // needs to be deleted manually!!
 
   int timeout = -1;  // unlimited
   fprintf(stdout, "Polling ... %d\n", sockets.size());
@@ -46,7 +42,7 @@ void Proxy::start() {
         accepted = ((pollstr[i].revents & mask) == POLLIN);
         accepted = accepted || ((pollstr[i].revents & mask) == POLLPRI);
         if (accepted) {
-          handle(pollstr[i].fd);
+          handle(pollstr[i].fd, configuration);
         }
       }
     } else if (poll_ret == 0) {
@@ -56,6 +52,8 @@ void Proxy::start() {
       HelperRoutines::error("ERROR polling");
     }
   }
+
+  delete pollstr;
 
   for (auto it = sockets.begin(); it != sockets.end(); ++it) {
     close(*it);
@@ -70,10 +68,14 @@ std::vector<int> Proxy::bindSockets(struct addrinfo *r) {
   for (rorig = r; r != NULL; r = r->ai_next) {
     if (r->ai_family != AF_INET && r->ai_family != AF_INET6) continue;
     socket_fd = socket(r->ai_family, r->ai_socktype, r->ai_protocol);
-    if (0 == bind(socket_fd, r->ai_addr, r->ai_addrlen)) {
-      sockets.push_back(socket_fd);
+    if (-1 != socket_fd) {
+      if (0 == bind(socket_fd, r->ai_addr, r->ai_addrlen)) {
+        sockets.push_back(socket_fd);
+      } else {
+        close(socket_fd);
+      }
     } else {
-      close(socket_fd);
+      HelperRoutines::warning("Opening socket failed");
     }
   }
 
