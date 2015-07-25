@@ -15,48 +15,9 @@ class ProxyWorker {
  public:
   // TODO(alex):make singleton!
   ProxyWorker() : client_thread(0), server_thread(0) {}
-  virtual ~ProxyWorker() {
-    void *retval_client, *retval_server;
+  virtual ~ProxyWorker();
 
-    // zrusit client thread
-    int e = pthread_join(client_thread, &retval_client);
-    if (e != 0) {
-    	errx(1, "pthread_join (client): %s", strerror (e));
-    }
-
-    // zrusit server thread
-    e = pthread_join(server_thread, &retval_server);
-    if (e != 0) {
-      errx(1, "pthread_join (client): %s", strerror (e));
-    }
-  }
-
-  void startThread(int fd) {
-    std::cout << fd << std::endl;
-    std::pair<int, std::shared_ptr<RequestStorage>> parameter_pair(fd, request_storage);
-    std::cout <<parameter_pair.first << std::endl;
-    void * parameter = reinterpret_cast<void *>(&parameter_pair);
-
-    // vytvorit client thread
-    int e = pthread_create(&client_thread, NULL, clientThreadRoutine, parameter);
-    if (e != 0) {
-      errx(1, "pthread_create (client): %s", strerror(e));
-    } else {
-    	// povedlo se
-    	// vytvorit server thread
-    	e = pthread_create(&server_thread, NULL, serverThreadRoutine, parameter);
-        if (e != 0) {
-          // nepovedlo se
-          errx(1, "pthread_create (server): %s", strerror(e));
-          // zrusit client thread
-          void *retval_client;
-          e = pthread_join(client_thread, &retval_client);
-          if (e != 0) {
-          	errx(1, "pthread_join (client): %s", strerror (e));
-          }
-        }
-    }
-  }
+  void startThread(int fd);
 
   
  private:
@@ -67,5 +28,11 @@ class ProxyWorker {
 
   static void* clientThreadRoutine(void * arg);
   static void* serverThreadRoutine(void * arg);
+  static void handleClientRequest(int new_fd,
+    std::shared_ptr<RequestStorage> storage);
+  static void handleClientResponse(int new_fd,
+    std::shared_ptr<RequestStorage> storage);
+
+  void createThreads(void* parameter);
 };
 #endif  // SRC_PROXY_PROXYWORKER_H_
