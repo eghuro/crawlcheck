@@ -7,12 +7,12 @@
 
 class HelperRoutines {
  public:
-  static void error(const std::string & message) {
+  static inline void error(const std::string & message) {
     perror(message.c_str());
     exit(EXIT_FAILURE);
   }
 
-  static void warning(const std::string & message) {
+  static inline void warning(const std::string & message) {
     perror(message.c_str());
   }
 };

@@ -10,6 +10,7 @@
 #include "./HttpParser.h"
 #include "./RequestStorage.h"
 #include "./ProxyConfiguration.h"
+#include "./HelperRoutines.h"
 
 const int ProxyWorker::buffer_size = 1000;
 

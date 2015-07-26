@@ -36,7 +36,7 @@ class Proxy {
   static std::vector<int> bindSockets(struct addrinfo *r);
   static struct pollfd * sockets4poll(const std::vector<int> & sockets);
 
-  static struct addrinfo getAddrInfoConfiguration() {
+  static inline struct addrinfo getAddrInfoConfiguration() {
 	struct addrinfo hi;
 	memset(&hi, 0, sizeof(hi));
 	hi.ai_family = AF_UNSPEC;
@@ -45,7 +45,7 @@ class Proxy {
 	return hi;
   }
 
-  struct addrinfo * getAddrInfo() {
+  inline struct addrinfo * getAddrInfo() {
     struct addrinfo hi = getAddrInfoConfiguration();
     struct addrinfo *r;
 
@@ -56,7 +56,7 @@ class Proxy {
     return r;
   }
 
-  void listenSockets(const std::vector<int> & sockets) {
+  inline void listenSockets(const std::vector<int> & sockets) {
     for (auto it = sockets.begin(); it != sockets.end(); it++) {
       fprintf(stdout, "LISTEN\n");
       if (listen((*it), configuration->getInBacklog()) == -1) {

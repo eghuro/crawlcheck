@@ -24,11 +24,11 @@ class HttpParserResult {
     request_uri() {}
   virtual ~HttpParserResult() {}
 
-  bool request() const {
+  bool inline request() const {
     return state_ == HttpParserResultState::REQUEST;
   }
 
-  std::string getRequestUri() const {
+  std::string inline getRequestUri() const {
     return request_uri;
   }
 
