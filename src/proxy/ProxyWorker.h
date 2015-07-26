@@ -15,6 +15,16 @@
 #include "./HelperRoutines.h"
 #include "./RequestStorage.h"
 
+class ConnectionIdentifierFactory {
+ public:
+  typedef int identifier;
+  static identifier getId() {
+    return next++;
+  }
+ private:
+  static identifier next;
+};
+
 class ProxyWorker {
  public:
   // TODO(alex):make singleton!
@@ -24,6 +34,8 @@ class ProxyWorker {
   void startThread(int fd);
 
  private:
+  typedef std::tuple<int, std::shared_ptr<RequestStorage>, std::shared_ptr<ProxyConfiguration>, ConnectionIdentifierFactory::identifier> parameter_type;
+
   pthread_t client_thread, server_thread;
   std::shared_ptr<RequestStorage> request_storage = std::unique_ptr<RequestStorage>(new RequestStorage());
   std::shared_ptr<ProxyConfiguration> configuration;
@@ -33,9 +45,9 @@ class ProxyWorker {
   static void* clientThreadRoutine(void * arg);
   static void* serverThreadRoutine(void * arg);
   static void handleClientRequest(int new_fd,
-    std::shared_ptr<RequestStorage> storage);
+    std::shared_ptr<RequestStorage> storage, ConnectionIdentifierFactory::identifier id);
   static void handleClientResponse(int new_fd,
-    std::shared_ptr<RequestStorage> storage);
+    std::shared_ptr<RequestStorage> storage, ConnectionIdentifierFactory::identifier id);
 
   void createThreads(void* parameter);
 

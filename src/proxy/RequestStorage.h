@@ -29,7 +29,7 @@ class RequestStorage {
   RequestStorage() : results(), results_mutex(PTHREAD_MUTEX_INITIALIZER) {};
   virtual ~RequestStorage() {};
 
-  void insertParserResult(const HttpParserResult & result) {
+  void insertParserResult(const HttpParserResult & result, int id) {
     if (pthread_mutex_lock(&results_mutex) == 0) {
       results.push_back(result);
       if (pthread_mutex_unlock(&results_mutex) == 0) {
@@ -40,7 +40,7 @@ class RequestStorage {
     }
   }
 
-  std::string retrieveRequest() {
+  std::pair<std::string, int> retrieveRequest() {
 	if (pthread_mutex_lock(&results_mutex) == 0) {
       auto result = results.front();
       results.pop_front();
@@ -48,12 +48,12 @@ class RequestStorage {
     	  HelperRoutines::warning("Cannot unlock mutex on a request storage.");
       }
 
-      std::string request = HttpRequestFactory::createHttpRequest(result);
-      return request;
+      int id = 0;  // TODO(alex): identifiers
+      return std::pair<std::string, int>(HttpRequestFactory::createHttpRequest(result), id);
 	} else {
 	  HelperRoutines::warning("Cannot lock mutex on a request storage.");
 	}
-    return "";  // TODO(alex): exception?
+    return std::pair<std::string, int>("",-1);  // TODO(alex): exception?
   }
 
   bool requestAvailable() {
@@ -69,7 +69,7 @@ class RequestStorage {
 	return available;
   }
 
-  std::string retrieveResponse() {
+  std::string retrieveResponse(int id) {
     return "";
   }
 

@@ -12,6 +12,7 @@
 #include "./ProxyConfiguration.h"
 #include "./HelperRoutines.h"
 
+ConnectionIdentifierFactory::identifier ConnectionIdentifierFactory::next = 0;
 const int ProxyWorker::buffer_size = 1000;
 
 void ProxyWorker::createThreads(void* parameter) {
@@ -40,7 +41,8 @@ void ProxyWorker::createThreads(void* parameter) {
 
 void ProxyWorker::startThread(int fd) {
     std::cout << fd << std::endl;
-    std::tuple<int, std::shared_ptr<RequestStorage>, std::shared_ptr<ProxyConfiguration>> parameters(fd, request_storage, configuration);
+    ConnectionIdentifierFactory::identifier id = ConnectionIdentifierFactory::getId();
+    ProxyWorker::parameter_type parameters(fd, request_storage, configuration, id);
     std::cout << std::get<1>(parameters) << std::endl;
     void * parameter = reinterpret_cast<void *>(&parameters);
 
@@ -49,40 +51,37 @@ void ProxyWorker::startThread(int fd) {
   }
 
 void ProxyWorker::handleClientRequest(int new_fd,
-		std::shared_ptr<RequestStorage> storage) {
+		std::shared_ptr<RequestStorage> storage, ConnectionIdentifierFactory::identifier id) {
   HttpParser parser;
   char buf[ProxyWorker::buffer_size];
   int n;
   while ((n = read(new_fd, buf, ProxyWorker::buffer_size)) != 0) {
     if (n == -1) {
-      perror("READ");
+      perror("READ request");
     } else {
       HttpParserResult result = parser.parse(std::string(buf, n));
-      if (result.request()) {
-        (*storage).insertParserResult(result);
-      }
-      if ((*storage).responseAvailable()) {
-        std::string response = (*storage).retrieveResponse();
-        write(new_fd, response.c_str(), response.size());
+      if (result.isRequest()) {
+        (*storage).insertParserResult(result, id);
       }
     }
   }
 }
 
-void ProxyWorker::handleClientResponse(int new_fd, std::shared_ptr<RequestStorage> storage) {
+void ProxyWorker::handleClientResponse(int new_fd, std::shared_ptr<RequestStorage> storage, ConnectionIdentifierFactory::identifier id) {
   // RESPONSE
   while (!(*storage).done()) {
     if ((*storage).responseAvailable()) {
-      std::string response = (*storage).retrieveResponse();
+      std::string response = (*storage).retrieveResponse(id);
       write(new_fd, response.c_str(), response.size());
     }
   }
 }
 
 void* ProxyWorker::clientThreadRoutine(void * arg) {
-  auto params = reinterpret_cast<std::tuple<int, std::shared_ptr<RequestStorage>, std::shared_ptr<ProxyConfiguration>> *>(arg);
+  auto params = reinterpret_cast<ProxyWorker::parameter_type *>(arg);
   int fd = std::get<0>(*params);
   std::shared_ptr<RequestStorage> storage = std::get<1>(*params);
+  auto id = std::get<3>(*params);
 
   int new_fd = accept(fd, NULL, NULL);
   if (new_fd == -1) {
@@ -92,8 +91,8 @@ void* ProxyWorker::clientThreadRoutine(void * arg) {
 
   fprintf(stderr, ".. connection accepted ..\n");
 
-  handleClientRequest(new_fd, storage);
-  handleClientResponse(new_fd, storage);
+  handleClientRequest(new_fd, storage, id);
+  handleClientResponse(new_fd, storage, id);
 
   close(new_fd);
   fprintf(stderr, ".. connection closed ..\n");
@@ -101,7 +100,7 @@ void* ProxyWorker::clientThreadRoutine(void * arg) {
 }
 
 void* ProxyWorker::serverThreadRoutine(void * arg) {
-  auto params = reinterpret_cast<std::tuple<int, std::shared_ptr<RequestStorage>, std::shared_ptr<ProxyConfiguration>> *>(arg);
+  auto params = reinterpret_cast<ProxyWorker::parameter_type *>(arg);
   std::shared_ptr<RequestStorage> storage = std::get<1>(*params);
   std::shared_ptr<ProxyConfiguration> conf_ptr = std::get<2>(*params);
 
@@ -112,12 +111,29 @@ void* ProxyWorker::serverThreadRoutine(void * arg) {
 
   // TODO(alex): ziskat struct sockaddr * pro adresu serveru, kam sel originalni request
   // connect(fd, addr, addrlen)
+  int new_fd=-1;
   // write request
   if (storage -> requestAvailable()) {
-    std::string request = storage->retrieveRequest();
+	auto req_bundle = storage->retrieveRequest();
+    std::string request = std::get<0>(req_bundle);
+    int id = std::get<1>(req_bundle);
+
     write(fd, request.c_str(), request.size());
 
     // read response - opsat
+    HttpParser parser;
+    char buf[ProxyWorker::buffer_size];
+    int n;
+    while ((n = read(new_fd, buf, ProxyWorker::buffer_size)) != 0) {
+      if (n == -1) {
+        perror("READ response");
+      } else {
+        HttpParserResult result = parser.parse(std::string(buf, n));
+        if (result.isResponse()) {
+          (*storage).insertParserResult(result, id);
+        }
+      }
+    }
   }
 
   for(auto it = sockets.begin(); it != sockets.end(); ++it) {

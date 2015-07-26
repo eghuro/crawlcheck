@@ -11,7 +11,7 @@
 #include <unistd.h>
 
 enum HttpParserResultState {
-  CONTINUE, REQUEST
+  CONTINUE, REQUEST, RESPONSE
 };
 
 enum HttpParserState {
@@ -24,8 +24,12 @@ class HttpParserResult {
     request_uri() {}
   virtual ~HttpParserResult() {}
 
-  bool inline request() const {
+  inline bool isRequest() const {
     return state_ == HttpParserResultState::REQUEST;
+  }
+
+  inline bool isResponse() const {
+    return state_ == HttpParserResultState::RESPONSE;
   }
 
   std::string inline getRequestUri() const {
