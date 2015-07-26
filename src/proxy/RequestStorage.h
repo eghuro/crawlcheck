@@ -17,15 +17,18 @@
 
 class HttpRequestFactory {
  public:
-  static std::string createHttpRequest(HttpParserResult result) {
+  // first the request itself, second the uri to connect, third port to connect
+  static std::tuple<std::string,std::string, int> createHttpRequest(HttpParserResult result) {
 	  std::ostringstream stream;
 	  // TODO(alex): create the request
-	  return stream.str();
+	  return std::tuple<std::string, std::string,int>(stream.str(),"",80);
   }
 };
 
 class RequestStorage {
  public:
+  typedef std::tuple<std::string, int, std::string, int> request_type;
+
   RequestStorage() : results(), results_mutex(PTHREAD_MUTEX_INITIALIZER) {};
   virtual ~RequestStorage() {};
 
@@ -40,7 +43,7 @@ class RequestStorage {
     }
   }
 
-  std::pair<std::string, int> retrieveRequest() {
+  request_type retrieveRequest() {
 	if (pthread_mutex_lock(&results_mutex) == 0) {
       auto result = results.front();
       results.pop_front();
@@ -49,11 +52,12 @@ class RequestStorage {
       }
 
       int id = 0;  // TODO(alex): identifiers
-      return std::pair<std::string, int>(HttpRequestFactory::createHttpRequest(result), id);
+      auto request = HttpRequestFactory::createHttpRequest(result);
+      return request_type(std::get<0>(request), id, std::get<1>(request), std::get<2>(request));
 	} else {
 	  HelperRoutines::warning("Cannot lock mutex on a request storage.");
 	}
-    return std::pair<std::string, int>("",-1);  // TODO(alex): exception?
+    return request_type("",-1,"", 0);  // TODO(alex): exception?
   }
 
   bool requestAvailable() {

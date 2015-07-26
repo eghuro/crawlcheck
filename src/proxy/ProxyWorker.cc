@@ -104,40 +104,44 @@ void* ProxyWorker::serverThreadRoutine(void * arg) {
   std::shared_ptr<RequestStorage> storage = std::get<1>(*params);
   std::shared_ptr<ProxyConfiguration> conf_ptr = std::get<2>(*params);
 
-  auto ai = getAddrInfo(conf_ptr);
-  auto sockets = getSockets(ai);
-
-  int fd = *sockets.begin();
-
-  // TODO(alex): ziskat struct sockaddr * pro adresu serveru, kam sel originalni request
-  // connect(fd, addr, addrlen)
-  int new_fd=-1;
   // write request
   if (storage -> requestAvailable()) {
 	auto req_bundle = storage->retrieveRequest();
     std::string request = std::get<0>(req_bundle);
     int id = std::get<1>(req_bundle);
+    std::string connect_to = std::get<2>(req_bundle);
+    int port = std::get<3>(req_bundle);
 
-    write(fd, request.c_str(), request.size());
+    struct addrinfo *r, *rorig, hi;
+    memset(&hi, 0, sizeof (hi));
+    hi.ai_family = AF_UNSPEC;
+    hi.ai_socktype = SOCK_STREAM;
+    getaddrinfo(connect_to.c_str(), HelperRoutines::to_string(port).c_str(), &hi, &r);
+    int fd=-1;
+    for (rorig = r; r != NULL; r=r->ai_next) {
+    	fd = socket(r->ai_family, r->ai_socktype, r->ai_protocol);
+    	if (connect(fd, (struct sockaddr *)r->ai_addr, r->ai_addrlen) == -1) continue;
+    }
+    freeaddrinfo(rorig);
 
-    // read response - opsat
-    HttpParser parser;
-    char buf[ProxyWorker::buffer_size];
-    int n;
-    while ((n = read(new_fd, buf, ProxyWorker::buffer_size)) != 0) {
-      if (n == -1) {
-        perror("READ response");
-      } else {
-        HttpParserResult result = parser.parse(std::string(buf, n));
-        if (result.isResponse()) {
-          (*storage).insertParserResult(result, id);
+    if (write(fd, request.c_str(), request.size()) != -1) {
+
+    // read response
+      HttpParser parser;
+      char buf[ProxyWorker::buffer_size];
+      int n;
+      while ((n = read(fd, buf, ProxyWorker::buffer_size)) != 0) {
+        if (n == -1) {
+          perror("READ response");
+        } else {
+          HttpParserResult result = parser.parse(std::string(buf, n));
+          if (result.isResponse()) {
+            (*storage).insertParserResult(result, id);
+          }
         }
       }
     }
-  }
-
-  for(auto it = sockets.begin(); it != sockets.end(); ++it) {
-    close(*it);
+    close(fd);
   }
   return NULL;
 }

@@ -4,6 +4,7 @@
 #define SRC_PROXY_HELPERROUTINES_H_
 
 #include <string>
+#include <sstream>
 
 class HelperRoutines {
  public:
@@ -14,6 +15,13 @@ class HelperRoutines {
 
   static inline void warning(const std::string & message) {
     perror(message.c_str());
+  }
+
+  // https://stackoverflow.com/a/20861692/2561483
+  template < typename T > static std::string to_string( const T& n ) {
+    std::ostringstream stm ;
+    stm << n ;
+    return stm.str() ;
   }
 };
 

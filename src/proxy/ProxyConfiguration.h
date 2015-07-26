@@ -8,9 +8,9 @@
 #ifndef SRC_PROXY_PROXYCONFIGURATION_H_
 #define SRC_PROXY_PROXYCONFIGURATION_H_
 
+#include "./HelperRoutines.h"
 #include <sys/socket.h>
 #include <string>
-#include <sstream>
 
 class ProxyConfiguration {
  public:
@@ -86,7 +86,7 @@ class ProxyConfiguration {
   }
 
   inline std::string getInPortString() const {
-    return to_string(in_pool_port);
+    return HelperRoutines::to_string(in_pool_port);
   }
 
  private:
@@ -98,13 +98,6 @@ class ProxyConfiguration {
 
   inline bool acceptablePort(int port) {
     return port > 0;  // TODO(alex): detailnejsi kontrola?
-  }
-
-  // https://stackoverflow.com/a/20861692/2561483
-  template < typename T > std::string to_string( const T& n ) const {
-    std::ostringstream stm ;
-    stm << n ;
-    return stm.str() ;
   }
 };
 

@@ -26,7 +26,7 @@ ProxyWorker.o : proxy/ProxyWorker.cc
 proxy.o : proxy/proxy.cc
 	$(CC) $(CFLAGS) -o $@ $<
 
-proxy/ProxyConfiguration.cc : proxy/ProxyConfiguration.h
+proxy/ProxyConfiguration.cc : proxy/ProxyConfiguration.h proxy/HelperRoutines.h
 proxy/HelperRoutines.cc : proxy/HelperRoutines.h
 proxy/RequestStorage.cc : proxy/HttpParser.h proxy/HelperRoutines.h
 proxy/HttpParser.cc : proxy/HttpParser.h
