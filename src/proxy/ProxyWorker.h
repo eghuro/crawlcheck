@@ -32,7 +32,7 @@ class ProxyWorker {
   // TODO(alex): make singleton!
   explicit ProxyWorker(std::shared_ptr<ProxyConfiguration> config) :
     client_thread(0), server_thread(0), configuration(config) {}
-  virtual ~ProxyWorker() {}
+  virtual ~ProxyWorker();
 
   void startThread(int fd);
 

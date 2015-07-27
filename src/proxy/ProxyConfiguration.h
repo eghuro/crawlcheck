@@ -13,32 +13,36 @@ class ProxyConfiguration {
     in_pool_port(-1), dbc_fd(-1), in_backlog(-1) {}
   virtual ~ProxyConfiguration() {}
 
-  inline void setPoolCount(int count) {
+  inline bool setPoolCount(int count) {
     if (count >= 0) {
       in_pool_count = count;
+      return true;
     }
-    // TODO(alex): co, kdyz ne?
+    return false;
   }
 
-  inline void setMaxIn(int max) {
+  inline bool setMaxIn(int max) {
     if (max >= 0) {
       max_in = max;
+      return true;
     }
-    // TODO(alex): co, kdyz ne?
+    return false;
   }
 
-  inline void setMaxOut(int out) {
-    if (out >= 0) {
-      max_out = out;
+  inline bool setMaxOut(int max) {
+    if (max >= 0) {
+      max_out = max;
+      return true;
     }
-    // TODO(alex): co, kdyz ne?
+    return false;
   }
 
-  inline void setInPoolPort(int port) {
+  inline bool setInPoolPort(int port) {
     if (acceptablePort(port)) {
       in_pool_port = port;
+      return true;
     }
-    // TODO(alex): co, kdyz ne?
+    return false;
   }
 
   inline void setDbcFd(int fd) {
@@ -46,14 +50,16 @@ class ProxyConfiguration {
     dbc_fd = fd;
   }
 
-  inline void setInBacklog(int count) {
+  inline bool setInBacklog(int count) {
     if (count > SOMAXCONN) {
       count = SOMAXCONN;
+      // TODO(alex): ohlasit?
     }
     if (count >= 0) {
       in_backlog = count;
+      return true;
     }
-    // TODO(alex): co, kdyz ne?
+    return false;
   }
 
   inline int getPoolCount() const {
@@ -92,7 +98,7 @@ class ProxyConfiguration {
   int in_backlog;
 
   inline bool acceptablePort(int port) {
-    return port > 0;  // TODO(alex): detailnejsi kontrola?
+    return (port > 0) && (port <= 65535);
   }
 };
 

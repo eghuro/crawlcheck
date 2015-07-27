@@ -154,8 +154,6 @@ void* ProxyWorker::serverThreadRoutine(void * arg) {
   return NULL;
 }
 
-
-
 ProxyWorker::~ProxyWorker() {
   void *retval_client, *retval_server;
 
