@@ -1,10 +1,12 @@
-#ifndef CRAWLCHECK_CHECKER_CHECKER_H
-#define CRAWLCHECK_CHECKER_CHECKER_H
+// Copyright 2015 Alexandr Mansurov
+
+#ifndef SRC_CHECKER_CHECKER_H_
+#define SRC_CHECKER_CHECKER_H_
 
 
 class Checker{
  public:
-  Checker(){};
+  Checker(){}
 };
 
-#endif //CRAWLCHECK_CHECKER_CHECKER_H
+#endif  // SRC_CHECKER_CHECKER_H_

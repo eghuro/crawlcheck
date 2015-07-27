@@ -1,8 +1,3 @@
-/*
- * ProxyConfiguration.cpp
- *
- *  Created on: Jul 25, 2015
- *      Author: alex
- */
+// Copyright 2015 Alexandr Mansurov
 
-#include "ProxyConfiguration.h"
+#include "./ProxyConfiguration.h"

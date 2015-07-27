@@ -1,16 +1,11 @@
-/*
- * ProxyConfiguration.h
- *
- *  Created on: Jul 25, 2015
- *      Author: alex
- */
+// Copyright 2015 Alexandr Mansurov
 
 #ifndef SRC_PROXY_PROXYCONFIGURATION_H_
 #define SRC_PROXY_PROXYCONFIGURATION_H_
 
-#include "./HelperRoutines.h"
 #include <sys/socket.h>
 #include <string>
+#include "./HelperRoutines.h"
 
 class ProxyConfiguration {
  public:
@@ -101,4 +96,4 @@ class ProxyConfiguration {
   }
 };
 
-#endif /* SRC_PROXY_PROXYCONFIGURATION_H_ */
+#endif  // SRC_PROXY_PROXYCONFIGURATION_H_

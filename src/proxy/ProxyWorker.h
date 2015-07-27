@@ -3,7 +3,6 @@
 #ifndef SRC_PROXY_PROXYWORKER_H_
 #define SRC_PROXY_PROXYWORKER_H_
 
-#include <memory>
 #include <string.h>
 #include <assert.h>
 #include <pthread.h>
@@ -11,6 +10,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <memory>
+#include <tuple>
+#include <vector>
 #include "./ProxyConfiguration.h"
 #include "./HelperRoutines.h"
 #include "./RequestStorage.h"
@@ -27,17 +29,21 @@ class ConnectionIdentifierFactory {
 
 class ProxyWorker {
  public:
-  // TODO(alex):make singleton!
-  ProxyWorker(std::shared_ptr<ProxyConfiguration> config) : client_thread(0), server_thread(0), configuration(config){}
-  virtual ~ProxyWorker();
+  // TODO(alex): make singleton!
+  explicit ProxyWorker(std::shared_ptr<ProxyConfiguration> config) :
+    client_thread(0), server_thread(0), configuration(config) {}
+  virtual ~ProxyWorker() {}
 
   void startThread(int fd);
 
  private:
-  typedef std::tuple<int, std::shared_ptr<RequestStorage>, std::shared_ptr<ProxyConfiguration>, ConnectionIdentifierFactory::identifier> parameter_type;
+  typedef std::tuple<int, std::shared_ptr<RequestStorage>,
+    std::shared_ptr<ProxyConfiguration>,
+    ConnectionIdentifierFactory::identifier> parameter_type;
 
   pthread_t client_thread, server_thread;
-  std::shared_ptr<RequestStorage> request_storage = std::unique_ptr<RequestStorage>(new RequestStorage());
+  std::shared_ptr<RequestStorage> request_storage =
+    std::unique_ptr<RequestStorage>(new RequestStorage());
   std::shared_ptr<ProxyConfiguration> configuration;
 
   static const int buffer_size;
@@ -45,22 +51,26 @@ class ProxyWorker {
   static void* clientThreadRoutine(void * arg);
   static void* serverThreadRoutine(void * arg);
   static void handleClientRequest(int new_fd,
-    std::shared_ptr<RequestStorage> storage, ConnectionIdentifierFactory::identifier id);
+    std::shared_ptr<RequestStorage> storage,
+    ConnectionIdentifierFactory::identifier id);
   static void handleClientResponse(int new_fd,
-    std::shared_ptr<RequestStorage> storage, ConnectionIdentifierFactory::identifier id);
+    std::shared_ptr<RequestStorage> storage,
+    ConnectionIdentifierFactory::identifier id);
 
   void createThreads(void* parameter);
 
   static struct addrinfo getAddrInfoConfiguration() {
-	struct addrinfo hi;
-	memset(&hi, 0, sizeof(hi));
-	hi.ai_family = AF_UNSPEC;
-	hi.ai_socktype = SOCK_STREAM;
-	hi.ai_flags = AI_PASSIVE;
-	return hi;
+    struct addrinfo hi;
+    memset(&hi, 0, sizeof(hi));
+    hi.ai_family = AF_UNSPEC;
+    hi.ai_socktype = SOCK_STREAM;
+    hi.ai_flags = AI_PASSIVE;
+    return hi;
   }
 
-  static struct addrinfo * getAddrInfo(std::shared_ptr<ProxyConfiguration> conf) {
+  static struct addrinfo * getAddrInfo(
+    std::shared_ptr<ProxyConfiguration> conf) {
+
     struct addrinfo hi = getAddrInfoConfiguration();
     struct addrinfo *r;
 

@@ -3,12 +3,12 @@
 #ifndef SRC_PROXY_HTTPPARSER_H_
 #define SRC_PROXY_HTTPPARSER_H_
 
+#include <unistd.h>
 #include <memory>
 #include <string>
 #include <deque>
 #include <regex>
 #include <iostream>
-#include <unistd.h>
 
 enum HttpParserResultState {
   CONTINUE, REQUEST, RESPONSE
@@ -47,13 +47,13 @@ class HttpParser {
   virtual ~HttpParser() {}
 
   HttpParserResult parse(const std::string & chunk) {
-    //write(1, chunk.c_str(), chunk.size());
+    // write(1, chunk.c_str(), chunk.size());
 
     std::smatch sm;
     std::regex re("([A-Z]+) ([a-zA-Z0-9:/]+) HTTP/1.1\r\n");
     std::regex_match(chunk.cbegin(), chunk.cend(), sm, re);
     for (auto it = sm.cbegin(); it != sm.cend(); ++it) {
-    	std::cout << *it << std::endl;
+      std::cout << *it << std::endl;
     }
 
     return HttpParserResult(HttpParserResultState::CONTINUE);

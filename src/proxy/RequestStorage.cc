@@ -1,9 +1,3 @@
-/*
- * RequestStorage.cpp
- *
- *  Created on: Jul 16, 2015
- *      Author: alex
- */
-
-#include "RequestStorage.h"
+// Copyright 2015 Alexandr Mansurov
+#include "./RequestStorage.h"
 

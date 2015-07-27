@@ -6,7 +6,8 @@
 #include "./ProxyConfiguration.h"
 
 int main(int argc, char **argv) {
-  std::shared_ptr<ProxyConfiguration> conf = std::make_shared<ProxyConfiguration>();
+  std::shared_ptr<ProxyConfiguration> conf =
+    std::make_shared<ProxyConfiguration>();
   conf->setInPoolPort(90);
   conf->setInBacklog(100);
 

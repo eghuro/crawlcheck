@@ -1,10 +1,12 @@
-#ifndef CRAWLCHECK_DB_DB_H
-#define CRAWLCHECK_DB_DB_H
+// Copyright 2015 Alexandr Mansurov
+
+#ifndef SRC_DB_DB_H_
+#define SRC_DB_DB_H_
 
 
 class Database{
  public:
-  Database(){};
+  Database(){}
 };
 
-#endif //CRAWLCHECK_DB_DB_H
+#endif  // SRC_DB_DB_H_

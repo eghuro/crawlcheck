@@ -1,12 +1,12 @@
 // Copyright 2015 Alexandr Mansurov
 
 #include "./ProxyWorker.h"
-#include <string>
-#include <memory>
-#include <utility>
 #include <stdio.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <string>
+#include <memory>
+#include <utility>
 #include "./HttpParser.h"
 #include "./RequestStorage.h"
 #include "./ProxyConfiguration.h"
@@ -31,7 +31,7 @@ void ProxyWorker::createThreads(void* parameter) {
       errx(1, "pthread_create (server): %s", strerror(e));
       // zrusit client thread
       void *retval_client;
-	  e = pthread_join(client_thread, &retval_client);
+      e = pthread_join(client_thread, &retval_client);
       if (e != 0) {
         errx(1, "pthread_join (client): %s", strerror(e));
       }
@@ -41,20 +41,24 @@ void ProxyWorker::createThreads(void* parameter) {
 
 void ProxyWorker::startThread(int fd) {
     std::cout << fd << std::endl;
-    ConnectionIdentifierFactory::identifier id = ConnectionIdentifierFactory::getId();
-    ProxyWorker::parameter_type parameters(fd, request_storage, configuration, id);
+    ConnectionIdentifierFactory::identifier id =
+      ConnectionIdentifierFactory::getId();
+    ProxyWorker::parameter_type parameters
+      (fd, request_storage, configuration, id);
     std::cout << std::get<1>(parameters) << std::endl;
     void * parameter = reinterpret_cast<void *>(&parameters);
 
     // vytvorit vlakna
-	createThreads(parameter);
+    createThreads(parameter);
   }
 
 void ProxyWorker::handleClientRequest(int new_fd,
-		std::shared_ptr<RequestStorage> storage, ConnectionIdentifierFactory::identifier id) {
+  std::shared_ptr<RequestStorage> storage,
+  ConnectionIdentifierFactory::identifier id) {
   HttpParser parser;
   char buf[ProxyWorker::buffer_size];
   int n;
+
   while ((n = read(new_fd, buf, ProxyWorker::buffer_size)) != 0) {
     if (n == -1) {
       perror("READ request");
@@ -67,7 +71,9 @@ void ProxyWorker::handleClientRequest(int new_fd,
   }
 }
 
-void ProxyWorker::handleClientResponse(int new_fd, std::shared_ptr<RequestStorage> storage, ConnectionIdentifierFactory::identifier id) {
+void ProxyWorker::handleClientResponse(int new_fd,
+  std::shared_ptr<RequestStorage> storage,
+  ConnectionIdentifierFactory::identifier id) {
   // RESPONSE
   while (!(*storage).done()) {
     if ((*storage).responseAvailable()) {
@@ -106,7 +112,7 @@ void* ProxyWorker::serverThreadRoutine(void * arg) {
 
   // write request
   if (storage -> requestAvailable()) {
-	auto req_bundle = storage->retrieveRequest();
+    auto req_bundle = storage->retrieveRequest();
     std::string request = std::get<0>(req_bundle);
     int id = std::get<1>(req_bundle);
     std::string connect_to = std::get<2>(req_bundle);
@@ -116,17 +122,19 @@ void* ProxyWorker::serverThreadRoutine(void * arg) {
     memset(&hi, 0, sizeof (hi));
     hi.ai_family = AF_UNSPEC;
     hi.ai_socktype = SOCK_STREAM;
-    getaddrinfo(connect_to.c_str(), HelperRoutines::to_string(port).c_str(), &hi, &r);
-    int fd=-1;
+    getaddrinfo(connect_to.c_str(), HelperRoutines::to_string(port).c_str(),
+      &hi, &r);
+    int fd = -1;
     for (rorig = r; r != NULL; r=r->ai_next) {
-    	fd = socket(r->ai_family, r->ai_socktype, r->ai_protocol);
-    	if (connect(fd, (struct sockaddr *)r->ai_addr, r->ai_addrlen) == -1) continue;
+      fd = socket(r->ai_family, r->ai_socktype, r->ai_protocol);
+      if (connect(fd, (struct sockaddr *)r->ai_addr, r->ai_addrlen) == -1) {
+        continue;
+      }
     }
     freeaddrinfo(rorig);
 
     if (write(fd, request.c_str(), request.size()) != -1) {
-
-    // read response
+      // read response
       HttpParser parser;
       char buf[ProxyWorker::buffer_size];
       int n;
@@ -154,13 +162,13 @@ ProxyWorker::~ProxyWorker() {
   // zrusit client thread
   int e = pthread_join(client_thread, &retval_client);
   if (e != 0) {
-  	errx(1, "pthread_join (client): %s", strerror (e));
+    errx(1, "pthread_join (client): %s", strerror(e));
   }
 
   // zrusit server thread
   e = pthread_join(server_thread, &retval_server);
   if (e != 0) {
-    errx(1, "pthread_join (client): %s", strerror (e));
+    errx(1, "pthread_join (client): %s", strerror(e));
   }
 }
 

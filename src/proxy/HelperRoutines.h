@@ -18,10 +18,11 @@ class HelperRoutines {
   }
 
   // https://stackoverflow.com/a/20861692/2561483
-  template < typename T > static std::string to_string( const T& n ) {
-    std::ostringstream stm ;
-    stm << n ;
-    return stm.str() ;
+  template < typename T >
+  static std::string to_string(const T& n) {
+    std::ostringstream stm;
+    stm << n;
+    return stm.str();
   }
 };
 
