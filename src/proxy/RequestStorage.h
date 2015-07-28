@@ -32,7 +32,7 @@ class RequestStorage {
 
   void insertParserResult(const HttpParserResult & result, int id) {
     if (pthread_mutex_lock(&results_mutex) == 0) {
-      results.push_back(result);
+      results.push_back(queue_type(result, id));
       if (pthread_mutex_unlock(&results_mutex) == 0) {
         HelperRoutines::warning("Cannot unlock mutex on a request storage.");
       }
@@ -43,13 +43,14 @@ class RequestStorage {
 
   request_type retrieveRequest() {
     if (pthread_mutex_lock(&results_mutex) == 0) {
-      auto result = results.front();
+      auto result_bundle = results.front();
       results.pop_front();
       if (pthread_mutex_unlock(&results_mutex) != 0) {
         HelperRoutines::warning("Cannot unlock mutex on a request storage.");
       }
 
-      int id = 0;  // TODO(alex): identifiers
+      int id = std::get<0>(result_bundle);
+      auto result = std::get<1>(result_bundle);
       auto request = HttpRequestFactory::createHttpRequest(result);
       return request_type(std::get<0>(request), id, std::get<1>(request),
         std::get<2>(request));
@@ -85,7 +86,8 @@ class RequestStorage {
   }
 
  private:
-  std::deque<HttpParserResult> results;
+  typedef std::pair<HttpParserResult, int> queue_type;
+  std::deque<queue_type> results;
   pthread_mutex_t results_mutex;
 };
 
