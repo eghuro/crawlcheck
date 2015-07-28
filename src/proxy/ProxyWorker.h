@@ -17,9 +17,18 @@
 #include "./HelperRoutines.h"
 #include "./RequestStorage.h"
 
+/**
+ * Connection identifiers are used to bond connections with client and server.
+ * ConnectionIdentifierFactory generates a new such identifier.
+ */
 class ConnectionIdentifierFactory {
  public:
   typedef int identifier;
+
+  /**
+   * Get new identifier
+   * @return new connection identifier
+   */
   static identifier getId() {
     return next++;
   }
@@ -34,6 +43,10 @@ class ProxyWorker {
     client_thread(0), server_thread(0), configuration(config) {}
   virtual ~ProxyWorker();
 
+  /**
+   * Create a new pair of client & server threads to handle a single connection
+   * @param fd a file descriptor of a socket to accept - connection with client
+   */
   void startThread(int fd);
 
  private:

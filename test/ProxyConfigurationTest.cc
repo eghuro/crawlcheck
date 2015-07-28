@@ -80,11 +80,11 @@ TEST(ProxyConfiguration, InBacklog) {
 
   EXPECT_TRUE(pc.setInBacklog(0));
   ASSERT_TRUE(pc.setInBacklog(1));
-  ASSERT_EQ(1,pc.getInBacklog());
+  ASSERT_EQ(1, pc.getInBacklog());
 
   ASSERT_FALSE(pc.setInBacklog(-10));
 
-  ASSERT_EQ(1,pc.getInBacklog());
+  ASSERT_EQ(1, pc.getInBacklog());
   int x = SOMAXCONN + 1;
   EXPECT_TRUE(pc.setInBacklog(x));
   ASSERT_EQ(SOMAXCONN, pc.getInBacklog());

@@ -40,12 +40,12 @@ void ProxyWorker::createThreads(void* parameter) {
 }
 
 void ProxyWorker::startThread(int fd) {
-    std::cout << fd << std::endl;
+    // std::cout << fd << std::endl;
     ConnectionIdentifierFactory::identifier id =
       ConnectionIdentifierFactory::getId();
     ProxyWorker::parameter_type parameters
       (fd, request_storage, configuration, id);
-    std::cout << std::get<1>(parameters) << std::endl;
+    // std::cout << std::get<0>(parameters) << std::endl;
     void * parameter = reinterpret_cast<void *>(&parameters);
 
     // vytvorit vlakna
