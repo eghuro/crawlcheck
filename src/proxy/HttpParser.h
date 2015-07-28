@@ -54,13 +54,16 @@ class HttpParser {
   virtual ~HttpParser() {}
 
   HttpParserResult parse(const std::string & chunk) {
-    // write(1, chunk.c_str(), chunk.size());
+    const std::string reg("[GET|HEAD|POST|PUT|DELETE|TRACE|CONNECT]{1} http://[a-zA-Z0-9./]+ HTTP/1.1\r\n([a-zA-Z: -]+\r\n)*\r\n");
 
-    std::smatch sm;
-    std::regex re("([A-Z]+) ([a-zA-Z0-9:/]+) HTTP/1.1\r\n");
-    std::regex_match(chunk.cbegin(), chunk.cend(), sm, re);
-    for (auto it = sm.cbegin(); it != sm.cend(); ++it) {
-      std::cout << *it << std::endl;
+    std::cout << reg << std::endl<<chunk<<std::endl;
+    std::regex re(reg);
+    if(std::regex_match(chunk,re)) {
+      HttpParserResult result(HttpParserResultState::REQUEST);
+      result.setRequestUri("http://olga.majling.eu");
+      return result;
+    } else {
+      std::cout << "Not matched" <<std::endl;
     }
 
     return HttpParserResult(HttpParserResultState::CONTINUE);
