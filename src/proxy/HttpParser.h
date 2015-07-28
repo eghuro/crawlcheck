@@ -9,6 +9,7 @@
 #include <deque>
 #include <regex>
 #include <iostream>
+#include <cassert>
 
 enum HttpParserResultState {
   CONTINUE, REQUEST, RESPONSE
@@ -32,8 +33,14 @@ class HttpParserResult {
     return state_ == HttpParserResultState::RESPONSE;
   }
 
-  std::string inline getRequestUri() const {
+  inline std::string getRequestUri() const {
+    assert(state_ == HttpParserResultState::REQUEST);
     return request_uri;
+  }
+
+  inline void setRequestUri(const std::string & uri) {
+    assert(state_ == HttpParserResultState::REQUEST);
+    request_uri = uri;
   }
 
  private:

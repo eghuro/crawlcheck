@@ -49,8 +49,8 @@ class RequestStorage {
         HelperRoutines::warning("Cannot unlock mutex on a request storage.");
       }
 
-      int id = std::get<0>(result_bundle);
-      auto result = std::get<1>(result_bundle);
+      int id = std::get<1>(result_bundle);
+      auto result = std::get<0>(result_bundle);
       auto request = HttpRequestFactory::createHttpRequest(result);
       return request_type(std::get<0>(request), id, std::get<1>(request),
         std::get<2>(request));
