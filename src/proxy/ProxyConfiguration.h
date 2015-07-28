@@ -4,6 +4,8 @@
 #define SRC_PROXY_PROXYCONFIGURATION_H_
 
 #include <sys/socket.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string>
 #include "./HelperRoutines.h"
 
@@ -45,9 +47,13 @@ class ProxyConfiguration {
     return false;
   }
 
-  inline void setDbcFd(int fd) {
-    // TODO(alex): kontroly?
-    dbc_fd = fd;
+  inline bool setDbcFd(int fd) {
+    if (fd >= 0) {
+      dbc_fd = fd;
+      return true;
+    } else {
+      return false;
+    }
   }
 
   inline bool setInBacklog(int count) {

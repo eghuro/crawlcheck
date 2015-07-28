@@ -1,7 +1,7 @@
 // Copyright 2015 Alexandr Mansurov
 
 #include <sys/socket.h>
-#include "src/proxy/ProxyConfiguration.h"
+#include "../src/proxy/ProxyConfiguration.h"
 #include "gtest/gtest.h"
 
 TEST(ProxyConfiguration, PoolCount) {
@@ -59,7 +59,7 @@ TEST(ProxyConfiguration, InPort) {
   EXPECT_FALSE(pc.setInPoolPort(0));
   EXPECT_TRUE(pc.setInPoolPort(1));
 
-  ASSERT_TRUE(pc.setInPoolPort(80))
+  ASSERT_TRUE(pc.setInPoolPort(80));
   ASSERT_EQ(80, pc.getInPoolPort());
   ASSERT_EQ("80", pc.getInPortString());
   ASSERT_TRUE(pc.setInPoolPort(8080));
@@ -91,5 +91,17 @@ TEST(ProxyConfiguration, InBacklog) {
 }
 
 TEST(ProxyConfiguration, DbcFd) {
-  //TODO(alex): test DBC fd
+  ProxyConfiguration pc;
+
+  EXPECT_EQ(-1, pc.getDbcFd());
+
+  EXPECT_TRUE(pc.setDbcFd(0));  // stdin
+  EXPECT_TRUE(pc.setDbcFd(1));  // stdout
+  EXPECT_TRUE(pc.setDbcFd(2));  // stderr
+
+  ASSERT_TRUE(pc.setDbcFd(13));
+  ASSERT_EQ(13, pc.getDbcFd());
+
+  ASSERT_FALSE(pc.setDbcFd(-1));
+  ASSERT_EQ(13, pc.getDbcFd());
 }
