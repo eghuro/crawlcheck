@@ -54,14 +54,24 @@ class HttpParser {
   virtual ~HttpParser() {}
 
   HttpParserResult parse(const std::string & chunk) {
-    const std::string reg("[GET|HEAD|POST|PUT|DELETE|TRACE|CONNECT]{1} http://[a-zA-Z0-9./]+ HTTP/1.1\r\n([a-zA-Z: -]+\r\n)*\r\n");
+    const std::string reg("(GET|HEAD|POST|PUT|DELETE|TRACE|CONNECT) http://([a-zA-Z0-9]([./])?)+ HTTP/1.1\r\n([a-zA-Z: -]+\r\n)*\r\n");
 
-    std::cout << reg << std::endl<<chunk<<std::endl;
     std::regex re(reg);
     if(std::regex_match(chunk,re)) {
       HttpParserResult result(HttpParserResultState::REQUEST);
-      result.setRequestUri("http://olga.majling.eu");
-      return result;
+
+      auto begin = findSpace(chunk,0);
+      if (begin != -1) {
+        begin++; // zacatek adresy na znaku po 1. mezere - viz regex
+
+        int end = findSpace(chunk,begin);
+        if (end != -1) {
+          auto length = end-begin;
+          std::string uri = chunk.substr(begin,length);
+          result.setRequestUri(uri);
+          return result;
+        }
+      }
     } else {
       std::cout << "Not matched" <<std::endl;
     }
@@ -71,5 +81,15 @@ class HttpParser {
 
  private:
   HttpParserState state_;
+
+  int findSpace(const std::string & chunk, std::size_t start) const {
+    std::size_t pos = start;
+    while (pos < chunk.length()) {
+      if (chunk[pos] != ' ') {
+        pos++;
+      } else return pos;
+    }
+    return -1;
+  }
 };
 #endif  // SRC_PROXY_HTTPPARSER_H_
