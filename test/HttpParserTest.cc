@@ -100,6 +100,30 @@ TEST(HttpParser, RawRequest) {
   ASSERT_TRUE(request == result.getRawRequest());
 }
 
+TEST(HttpParser, ChunkedRequest) {
+  HttpParser parser;
+  const std::string chunk0 = "GET http:/";
+  const std::string chunk1 = "/olga.majl";
+  const std::string chunk2 = "ing.eu HTT";
+  const std::string chunk3 = "P/1.1\r\n\r\n";
+
+  auto result0 = parser.parse(chunk0);
+  ASSERT_TRUE(result0.doContinue());
+
+  auto result1 = parser.parse(chunk1);
+  ASSERT_TRUE(result1.doContinue());
+
+  auto result2 = parser.parse(chunk2);
+  ASSERT_TRUE(result2.doContinue());
+
+  auto result3 = parser.parse(chunk3);
+  ASSERT_FALSE(result3.doContinue());
+  ASSERT_FALSE(result3.isResponse());
+  ASSERT_TRUE(result3.isRequest());
+  ASSERT_TRUE("http://olga.majling.eu" == result3.getRequestUri());
+  ASSERT_TRUE("GET http://olga.majling.eu HTTP/1.1\r\n\r\n" == result3.getRawRequest());
+}
+
 TEST(HttpParser, Response) {
 
 }

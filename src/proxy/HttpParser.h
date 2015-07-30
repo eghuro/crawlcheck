@@ -27,6 +27,10 @@ class HttpParserResult {
     request_uri(), request_string() {}
   virtual ~HttpParserResult() {}
 
+  inline bool doContinue() const {
+    return state_ == HttpParserResultState::CONTINUE;
+  }
+
   inline bool isRequest() const {
     return state_ == HttpParserResultState::REQUEST;
   }
