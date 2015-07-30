@@ -29,7 +29,7 @@ proxy.o : proxy/proxy.cc
 proxy/ProxyConfiguration.cc : proxy/ProxyConfiguration.h proxy/HelperRoutines.h
 proxy/HelperRoutines.cc : proxy/HelperRoutines.h
 proxy/RequestStorage.cc : proxy/HttpParser.h proxy/HelperRoutines.h
-proxy/HttpParser.cc : proxy/HttpParser.h
+proxy/HttpParser.cc : proxy/HttpParser.h proxy/HelperRoutines.h
 proxy/ProxyWorker.cc : proxy/ProxyWorker.h proxy/HelperRoutines.h proxy/HttpParser.h proxy/RequestStorage.h proxy/ProxyConfiguration.h
 proxy/proxy.cc : proxy/proxy.h db/db.h checker/checker.h proxy/ProxyWorker.h proxy/HelperRoutines.h proxy/ProxyConfiguration.h
   

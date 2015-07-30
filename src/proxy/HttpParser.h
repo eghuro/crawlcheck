@@ -4,12 +4,14 @@
 #define SRC_PROXY_HTTPPARSER_H_
 
 #include <unistd.h>
+#include <errno.h>
 #include <memory>
 #include <string>
 #include <deque>
 #include <regex>
 #include <iostream>
 #include <cassert>
+#include "./HelperRoutines.h"
 
 enum HttpParserResultState {
   CONTINUE, REQUEST, RESPONSE
@@ -22,7 +24,7 @@ enum HttpParserState {
 class HttpParserResult {
  public:
   explicit HttpParserResult(HttpParserResultState state):state_(state),
-    request_uri() {}
+    request_uri(), request_string() {}
   virtual ~HttpParserResult() {}
 
   inline bool isRequest() const {
@@ -43,9 +45,19 @@ class HttpParserResult {
     request_uri = uri;
   }
 
+  inline void setRawRequest(const std::string & request) {
+    assert(state_ == HttpParserResultState::REQUEST);
+    request_string = request;
+  }
+
+  inline std::string getRawRequest() const {
+    assert(state_ == HttpParserResultState::REQUEST);
+    return request_string;
+  }
+
  private:
   const HttpParserResultState state_;
-  std::string request_uri;
+  std::string request_uri, request_string;
 };
 
 class HttpParser {
@@ -69,11 +81,13 @@ class HttpParser {
           auto length = end-begin;
           std::string uri = chunk.substr(begin,length);
           result.setRequestUri(uri);
+          result.setRawRequest(chunk);
           return result;
         }
       }
     } else {
-      std::cout << "Not matched" <<std::endl;
+      errno = EINVAL;
+      HelperRoutines::warning("Error while parsing input");
     }
 
     return HttpParserResult(HttpParserResultState::CONTINUE);

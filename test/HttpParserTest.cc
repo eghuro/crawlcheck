@@ -56,7 +56,6 @@ TEST(HttpParser, GetAbsolute) {
 }
 
 TEST(HttpParser, Methods) {
-  // GET HEAD POST PUT DELETE TRACE CONNECT
   std::vector<std::string> methods;
   methods.push_back("GET");
   methods.push_back("HEAD");
@@ -83,8 +82,6 @@ TEST(HttpParser, VariousUris) {
   uris.push_back("http://tvprogram.idnes.cz");
   uris.push_back("http://intercitybuslanzarote.es");
 
-  //uris.push_back("http://olga.majling.eu/Vyuka", "http://tvprogram.idnes.cz", "http://intercitybuslanzarote.es", "http://kdmanalytics.com/about.html" )
-
   HttpParser parser;
   for (auto uri : uris) {;
     auto result = parser.parse("GET "+uri+" HTTP/1.1\r\n\r\n");
@@ -94,6 +91,13 @@ TEST(HttpParser, VariousUris) {
 
     ASSERT_TRUE(uri == result.getRequestUri());
   }
+}
+
+TEST(HttpParser, RawRequest) {
+  HttpParser parser;
+  const std::string request = "GET http://olga.majling.eu HTTP/1.1\r\n\r\n";
+  auto result = parser.parse(request);
+  ASSERT_TRUE(request == result.getRawRequest());
 }
 
 TEST(HttpParser, Response) {
