@@ -33,7 +33,7 @@ TEST(HttpParserResult, RequestUri) {
 }
 
 const std::string uri = "http://olga.majling.eu";
-TEST(HttpParser, GetRelative) {
+TEST(RequestParser, GetRelative) {
   HttpParser parser;
 
   const std::string request0 = "GET / HTTP/1.1\r\nHost: olga.majling.eu\r\n\r\n";
@@ -43,7 +43,7 @@ TEST(HttpParser, GetRelative) {
   ASSERT_FALSE(result.isResponse());
 }
 
-TEST(HttpParser, GetAbsolute) {
+TEST(RequestParser, GetAbsolute) {
   HttpParser parser;
 
   const std::string request1 = "GET http://olga.majling.eu HTTP/1.1\r\n\r\n";
@@ -55,7 +55,7 @@ TEST(HttpParser, GetAbsolute) {
   ASSERT_TRUE(uri == result.getRequestUri());
 }
 
-TEST(HttpParser, Methods) {
+TEST(RequestParser, Methods) {
   std::vector<std::string> methods;
   methods.push_back("GET");
   methods.push_back("HEAD");
@@ -76,7 +76,7 @@ TEST(HttpParser, Methods) {
   }
 }
 
-TEST(HttpParser, VariousUris) {
+TEST(RequestParser, VariousUris) {
   std::vector<std::string> uris;
   uris.push_back("http://olga.majling.eu/Vyuka");
   uris.push_back("http://tvprogram.idnes.cz");
@@ -93,14 +93,14 @@ TEST(HttpParser, VariousUris) {
   }
 }
 
-TEST(HttpParser, RawRequest) {
+TEST(RequestParser, RawRequest) {
   HttpParser parser;
   const std::string request = "GET http://olga.majling.eu HTTP/1.1\r\n\r\n";
   auto result = parser.parse(request);
-  ASSERT_TRUE(request == result.getRawRequest());
+  ASSERT_TRUE(request == result.getRaw());
 }
 
-TEST(HttpParser, ChunkedRequest) {
+/*TEST(RequestParser, ChunkedRequest) {
   HttpParser parser;
   const std::string chunk0 = "GET http:/";
   const std::string chunk1 = "/olga.majl";
@@ -121,9 +121,44 @@ TEST(HttpParser, ChunkedRequest) {
   ASSERT_FALSE(result3.isResponse());
   ASSERT_TRUE(result3.isRequest());
   ASSERT_TRUE("http://olga.majling.eu" == result3.getRequestUri());
-  ASSERT_TRUE("GET http://olga.majling.eu HTTP/1.1\r\n\r\n" == result3.getRawRequest());
+  ASSERT_TRUE("GET http://olga.majling.eu HTTP/1.1\r\n\r\n" == result3.getRaw());
 }
 
-TEST(HttpParser, Response) {
+TEST(RequestParser, ComplexUrisRequest) {
+  // TODO(alex): test all sort of acceptable URIs
+}*/
 
+TEST(ResponseParser, ResponseIdentification) {
+  HttpParser parser;
+  const std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 13\r\nContent-Type: text/html; charset=ISO-8859-4\r\n\r\n<html></html>";
+  auto result = parser.parse(response);
+
+  ASSERT_TRUE(result.isResponse());
+  ASSERT_FALSE(result.doContinue());
+  ASSERT_FALSE(result.isRequest());
+}
+
+TEST(ResponseParser, ResponseStatus) {
+  HttpParser parser;
+  const std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 13\r\nContent-Type: text/html; charset=ISO-8859-4\r\n\r\n<html></html>";
+  auto result = parser.parse(response);
+
+  ASSERT_TRUE(result.getStatus() == HttpResponseStatus(200));
+}
+
+TEST(ResponseParser, ResponseContent) {
+  HttpParser parser;
+  const std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 13\r\nContent-Type: text/html; charset=ISO-8859-4\r\n\r\n<html></html>";
+  auto result = parser.parse(response);
+
+  ASSERT_TRUE(result.getContentType() == "text/html");
+  ASSERT_TRUE(result.getContent() == "<html></html>");
+}
+
+TEST(ResponseParser, RawResponse) {
+  HttpParser parser;
+  const std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 13\r\nContent-Type: text/html; charset=ISO-8859-4\r\n\r\n<html></html>";
+  auto result = parser.parse(response);
+
+  ASSERT_TRUE(result.getRaw() == response);
 }
