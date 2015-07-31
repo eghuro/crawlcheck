@@ -36,9 +36,9 @@ const std::string uri = "http://olga.majling.eu";
 TEST(RequestParser, GetRelative) {
   HttpParser parser;
 
-  const std::string request0 = "GET / HTTP/1.1\r\nHost: olga.majling.eu\r\n\r\n";
+  const std::string req = "GET / HTTP/1.1\r\nHost: olga.majling.eu\r\n\r\n";
   // The absoluteURI form is REQUIRED when the request is being made to a proxy.
-  auto result = parser.parse(request0);
+  auto result = parser.parse(req);
   ASSERT_FALSE(result.isRequest());
   ASSERT_FALSE(result.isResponse());
 }
@@ -65,14 +65,18 @@ TEST(RequestParser, Methods) {
   methods.push_back("TRACE");
   methods.push_back("CONNECT");
 
-  for(auto method : methods) {
+  std::ostringstream oss;
+  oss << " http://kdmanalytics.com/about.html HTTP/1.1\r\n";
+  oss << "Pragma:no-cache\r\n\r\n";
+  for (auto method : methods) {
     HttpParser p;
-    auto result = p.parse(method+" http://kdmanalytics.com/about.html HTTP/1.1\r\nPragma:no-cache\r\n\r\n");
+
+    auto result = p.parse(method+oss.str());
 
     ASSERT_TRUE(result.isRequest());
     ASSERT_FALSE(result.isResponse());
 
-    ASSERT_TRUE(result.getRequestUri() == "http://kdmanalytics.com/about.html");
+    ASSERT_EQ(result.getRequestUri(), "http://kdmanalytics.com/about.html");
   }
 }
 
@@ -130,8 +134,12 @@ TEST(RequestParser, ComplexUrisRequest) {
 
 TEST(ResponseParser, ResponseIdentification) {
   HttpParser parser;
-  const std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 13\r\nContent-Type: text/html; charset=ISO-8859-4\r\n\r\n<html></html>";
-  auto result = parser.parse(response);
+  std::ostringstream oss;
+  oss << "HTTP/1.1 200 OK\r\nContent-Length: 13\r\n";
+  oss << "Content-Type: text/html; charset=ISO-8859-4\r\n\r\n";
+  oss << "<html></html>";
+
+  auto result = parser.parse(oss.str());
 
   ASSERT_TRUE(result.isResponse());
   ASSERT_FALSE(result.doContinue());
@@ -140,25 +148,38 @@ TEST(ResponseParser, ResponseIdentification) {
 
 TEST(ResponseParser, ResponseStatus) {
   HttpParser parser;
-  const std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 13\r\nContent-Type: text/html; charset=ISO-8859-4\r\n\r\n<html></html>";
-  auto result = parser.parse(response);
+
+  std::ostringstream oss;
+  oss << "HTTP/1.1 200 OK\r\nContent-Length: 13\r\n";
+  oss << "Content-Type: text/html; charset=ISO-8859-4\r\n\r\n<html></html>";
+
+  auto result = parser.parse(oss.str());
 
   ASSERT_TRUE(result.getStatus() == HttpResponseStatus(200));
 }
 
 TEST(ResponseParser, ResponseContent) {
   HttpParser parser;
-  const std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 13\r\nContent-Type: text/html; charset=ISO-8859-4\r\n\r\n<html></html>";
-  auto result = parser.parse(response);
 
-  ASSERT_TRUE(result.getContentType() == "text/html");
-  ASSERT_TRUE(result.getContent() == "<html></html>");
+  std::ostringstream oss;
+  oss << "HTTP/1.1 200 OK\r\nContent-Length: 13\r\n";
+  oss << "Content-Type: text/html; charset=ISO-8859-4\r\n\r\n";
+  oss << "<html></html>";
+
+  auto result = parser.parse(oss.str());
+
+  ASSERT_EQ(result.getContentType(), "text/html");
+  ASSERT_EQ(result.getContent(), "<html></html>");
 }
 
 TEST(ResponseParser, RawResponse) {
   HttpParser parser;
-  const std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 13\r\nContent-Type: text/html; charset=ISO-8859-4\r\n\r\n<html></html>";
-  auto result = parser.parse(response);
+  std::ostringstream oss;
+  oss << "HTTP/1.1 200 OK\r\nContent-Length: 13\r\n";
+  oss << "Content-Type: text/html; charset=ISO-8859-4\r\n\r\n";
+  oss << "<html></html>";
 
-  ASSERT_TRUE(result.getRaw() == response);
+  auto result = parser.parse(oss.str());
+
+  ASSERT_TRUE(result.getRaw() == oss.str());
 }

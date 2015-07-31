@@ -9,6 +9,7 @@
 #include <sstream>
 #include <deque>
 #include <tuple>
+#include <utility>
 #include "./HttpParser.h"
 #include "./HelperRoutines.h"
 

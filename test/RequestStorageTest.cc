@@ -4,8 +4,4 @@
 #include "gtest/gtest.h"
 
 TEST(RequestStorage, Insert) {
-
 }
-
-
-
