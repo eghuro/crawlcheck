@@ -132,6 +132,20 @@ TEST(RequestParser, ComplexUrisRequest) {
   // TODO(alex): test all sort of acceptable URIs
 }*/
 
+TEST(RequestParser, RequestPortImplicit) {
+  HttpParser parser;
+  const std::string request = "GET http://olga.majling.eu HTTP/1.1\r\n\r\n";
+  auto result = parser.parse(request);
+  ASSERT_TRUE(80 == result.getPort());
+}
+
+TEST(RequestParser, RequestPortExplicit) {
+  HttpParser parser;
+  const std::string request = "GET http://poseidon.eghuro.cz:3333/login HTTP/1.1\r\n\r\n";
+  auto result = parser.parse(request);
+  ASSERT_TRUE(3333 == result.getPort());
+}
+
 TEST(ResponseParser, ResponseIdentification) {
   HttpParser parser;
   std::ostringstream oss;

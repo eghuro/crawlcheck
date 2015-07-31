@@ -13,20 +13,9 @@
 #include "./HttpParser.h"
 #include "./HelperRoutines.h"
 
-class HttpRequestFactory {
- public:
-  // first the request itself, second the uri to connect, third port to connect
-  static std::tuple<std::string, std::string, int> createHttpRequest
-    (HttpParserResult result) {
-    std::ostringstream stream;
-    // TODO(alex): create the request
-    return std::tuple<std::string, std::string, int>(stream. str(), "", 80);
-  }
-};
-
 class RequestStorage {
  public:
-  typedef std::tuple<std::string, int, std::string, int> request_type;
+  typedef std::tuple<std::string, int, std::string, std::size_t> request_type;
 
   RequestStorage() : results(), results_mutex(PTHREAD_MUTEX_INITIALIZER) {}
   virtual ~RequestStorage() {}
@@ -34,6 +23,8 @@ class RequestStorage {
   void insertParserResult(const HttpParserResult & result, int id) {
     if (pthread_mutex_lock(&results_mutex) == 0) {
       results.push_back(queue_type(result, id));
+      // TODO(alex): push DB
+      // TODO(alex): distinguish reqests and resopnses
       if (pthread_mutex_unlock(&results_mutex) == 0) {
         HelperRoutines::warning("Cannot unlock mutex on a request storage.");
       }
@@ -52,9 +43,8 @@ class RequestStorage {
 
       int id = std::get<1>(result_bundle);
       auto result = std::get<0>(result_bundle);
-      auto request = HttpRequestFactory::createHttpRequest(result);
-      return request_type(std::get<0>(request), id, std::get<1>(request),
-        std::get<2>(request));
+      return request_type(result.getRaw(), id, result.getRequestUri(),
+          result.getPort());
     } else {
       HelperRoutines::warning("Cannot lock mutex on a request storage.");
     }

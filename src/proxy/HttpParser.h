@@ -114,10 +114,23 @@ class HttpParserResult {
     return content;
   }
 
+  inline void setPort(std::size_t port) {
+    assert((state_ == HttpParserResultState::REQUEST) ||
+                (state_ == HttpParserResultState::RESPONSE));
+    HttpParserResult::port = port;
+  }
+
+  inline std::size_t getPort() const {
+    assert((state_ == HttpParserResultState::REQUEST) ||
+                (state_ == HttpParserResultState::RESPONSE));
+    return port;
+  }
+
  private:
   const HttpParserResultState state_;
   std::string request_uri, raw_message, content_type, content;
   HttpResponseStatus response_status;
+  std::size_t port;
 };
 
 class HttpParser {
