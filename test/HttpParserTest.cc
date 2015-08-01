@@ -32,6 +32,40 @@ TEST(HttpParserResult, RequestUri) {
   // r2.setRequestUri(uri); assertion failed
 }
 
+
+TEST(HttpParserResult, Equality) {
+  HttpParserResult r1(HttpParserResultState::INVALID);
+  HttpParserResult r2(HttpParserResultState::INVALID);
+  ASSERT_FALSE(r1 == r2);
+
+  HttpParserResult r3(HttpParserResultState::CONTINUE);
+  HttpParserResult r4(HttpParserResultState::CONTINUE);
+  ASSERT_FALSE(r1 == r3);
+  ASSERT_TRUE(r3 == r4);
+
+  HttpParserResult r5(HttpParserResultState::REQUEST);
+  HttpParserResult r6(HttpParserResultState::REQUEST);
+  r5.setRaw("bflmpsvz");
+  r6.setRaw("hchkrdtn");
+  ASSERT_TRUE(r5 == r5);
+  ASSERT_FALSE(r5 == r3);
+  ASSERT_FALSE(r5 == r2);
+  ASSERT_FALSE(r5 == r6);
+  r6.setRaw(r5.getRaw());
+  ASSERT_TRUE(r5 == r6);
+
+  HttpParserResult r7(HttpParserResultState::RESPONSE);
+  HttpParserResult r8(HttpParserResultState::RESPONSE);
+  r7.setRaw("bflmpsvz");
+  r8.setRaw("hchkrdtn");
+  ASSERT_TRUE(r7 == r7);
+  ASSERT_FALSE(r7 == r2);
+  ASSERT_FALSE(r7 == r4);
+  ASSERT_FALSE(r7 == r5);
+  ASSERT_FALSE(r7 == r8);
+  r8.setRaw(r7.getRaw());
+  ASSERT_TRUE(r7 == r8);
+}
 const std::string uri = "http://olga.majling.eu";
 TEST(RequestParser, GetRelative) {
   HttpParser parser;

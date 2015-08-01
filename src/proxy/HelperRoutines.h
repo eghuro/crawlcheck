@@ -17,6 +17,10 @@ class HelperRoutines {
     perror(message.c_str());
   }
 
+  static inline void warning(const std::string & message, const std::string & err) {
+    fprintf(stderr, "%s: %s\n\n", message.c_str(), err.c_str());
+  }
+
   // https://stackoverflow.com/a/20861692/2561483
   template < typename T >
   static std::string to_string(const T& n) {

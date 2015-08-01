@@ -16,7 +16,7 @@
 #include "./HelperRoutines.h"
 
 enum HttpParserResultState {
-  CONTINUE, REQUEST, RESPONSE
+  CONTINUE, REQUEST, RESPONSE, INVALID
 };
 
 enum HttpParserState {
@@ -44,10 +44,31 @@ class HttpResponseStatus {
 
 class HttpParserResult {
  public:
-  explicit HttpParserResult(HttpParserResultState state):state_(state),
+  explicit HttpParserResult(HttpParserResultState state = HttpParserResultState::INVALID):state_(state),
     request_uri(), raw_message(), content_type(), content(),
     response_status(0) {}
   virtual ~HttpParserResult() {}
+
+  bool operator==(const HttpParserResult & result) {
+    switch(state_) {
+    case HttpParserResultState::INVALID : return false;
+    case HttpParserResultState::CONTINUE:
+      return result.doContinue();
+    case HttpParserResultState::REQUEST:
+      if (result.isRequest()) {
+        return result.getRaw() == getRaw();
+      } else {
+        return false;
+      }
+    case HttpParserResultState::RESPONSE:
+      if(result.isResponse()) {
+        return result.getRaw() == getRaw();
+      } else {
+        return false;
+      }
+    default: assert(false);
+    }
+  }
 
   inline bool doContinue() const {
     return state_ == HttpParserResultState::CONTINUE;

@@ -31,7 +31,7 @@ CXXFLAGS += -g -Wall -Wextra -pthread -std=c++11
 
 # All tests produced by this Makefile.  Remember to add new tests you
 # created to the list.
-TESTS = ProxyConfigurationTest HttpParserTest
+TESTS = ProxyConfigurationTest HttpParserTest RequestStorageTest
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
@@ -103,4 +103,11 @@ HttpParserTest.o : $(TEST_DIR)/HttpParserTest.cc $(SRC_DIR)/proxy/HttpParser.h $
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(TEST_DIR)/HttpParserTest.cc
 	
 HttpParserTest : HttpParser.o HttpParserTest.o gtest_main.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
+RequestStorage.o : $(SRC_DIR)/proxy/RequestStorage.cc
+		$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(SRC_DIR)/proxy/RequestStorage.cc
+RequestStorageTest.o : $(TEST_DIR)/HttpParserTest.cc $(SRC_DIR)/proxy/RequestStorage.h $(SRC_DIR)/proxy/HttpParser.h $(GTEST_HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(TEST_DIR)/RequestStorageTest.cc
+	
+RequestStorageTest : RequestStorage.o RequestStorageTest.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
