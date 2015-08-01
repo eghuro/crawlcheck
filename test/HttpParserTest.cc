@@ -25,8 +25,8 @@ TEST(HttpParserResult, CreateContinue) {
 TEST(HttpParserResult, RequestUri) {
   HttpParserResult r1(HttpParserResultState::REQUEST);
   std::string uri = "http://olga.majling.eu;";
-  r1.setRequestUri(uri);
-  ASSERT_EQ(uri, r1.getRequestUri());
+  r1.setRequestUri(HttpUri(uri));
+  ASSERT_TRUE(HttpUri(uri) == r1.getRequestUri());
 
   HttpParserResult r2(HttpParserResultState::RESPONSE);
   // r2.setRequestUri(uri); assertion failed
@@ -86,7 +86,7 @@ TEST(RequestParser, GetAbsolute) {
   ASSERT_TRUE(result.isRequest());
   ASSERT_FALSE(result.isResponse());
 
-  ASSERT_TRUE(uri == result.getRequestUri());
+  ASSERT_TRUE(HttpUri(uri) == result.getRequestUri());
 }
 
 TEST(RequestParser, Methods) {
@@ -110,7 +110,7 @@ TEST(RequestParser, Methods) {
     ASSERT_TRUE(result.isRequest());
     ASSERT_FALSE(result.isResponse());
 
-    ASSERT_EQ(result.getRequestUri(), "http://kdmanalytics.com/about.html");
+    ASSERT_TRUE(result.getRequestUri() == HttpUri("http://kdmanalytics.com/about.html"));
   }
 }
 
@@ -127,7 +127,7 @@ TEST(RequestParser, VariousUris) {
     ASSERT_TRUE(result.isRequest());
     ASSERT_FALSE(result.isResponse());
 
-    ASSERT_TRUE(uri == result.getRequestUri());
+    ASSERT_TRUE(HttpUri(uri) == result.getRequestUri());
   }
 }
 

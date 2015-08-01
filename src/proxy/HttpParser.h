@@ -23,6 +23,61 @@ enum HttpParserState {
   START
 };
 
+class HttpUri {
+ public:
+  HttpUri():host(), abs_path(), query(), port() {}
+
+  explicit HttpUri(const std::string & uri) {
+    HttpUri("","","", 80);
+    // TODO(alex): parse uri
+  }
+
+  HttpUri(const std::string & host_, const std::string & abs_path_,
+    const std::string & query_, std::size_t port_ = 80):host(host_),
+    abs_path(abs_path_), query(query_), port(port_){}
+
+  HttpUri(const HttpUri & uri):host(uri.getHost()), abs_path(uri.getPath()), query(uri.getQuery()), port(uri.getPort()) {}
+
+  bool operator==(const HttpUri & result) {
+    return result.getURI() == getURI();
+  }
+
+  std::string getHost() const {
+    return host;
+  }
+
+  std::string getURI() const {
+    std::ostringstream oss;
+    oss << "http://";
+    oss << host;
+    if (port != 80) {
+      oss << port;
+    }
+    if (abs_path != "") {
+      oss << abs_path;
+      if (query != "") {
+        oss << query;
+      }
+    }
+    return oss.str();
+  }
+
+  std::size_t getPort() const {
+    return port;
+  }
+
+  std::string getPath() const {
+    return abs_path;
+  }
+
+  std::string getQuery() const {
+    return query;
+  }
+ private:
+  std::string host, abs_path, query;
+  std::size_t port;
+};
+
 class HttpResponseStatus {
  public:
   explicit HttpResponseStatus(std::size_t code):status_code(code) {}
@@ -82,12 +137,12 @@ class HttpParserResult {
     return state_ == HttpParserResultState::RESPONSE;
   }
 
-  inline std::string getRequestUri() const {
+  inline HttpUri getRequestUri() const {
     assert(state_ == HttpParserResultState::REQUEST);
     return request_uri;
   }
 
-  inline void setRequestUri(const std::string & uri) {
+  inline void setRequestUri(const HttpUri & uri) {
     assert(state_ == HttpParserResultState::REQUEST);
     request_uri = uri;
   }
@@ -149,7 +204,8 @@ class HttpParserResult {
 
  private:
   const HttpParserResultState state_;
-  std::string request_uri, raw_message, content_type, content;
+  HttpUri request_uri;
+  std::string raw_message, content_type, content;
   HttpResponseStatus response_status;
   std::size_t port;
 };
@@ -182,7 +238,7 @@ class HttpParser {
         int end = findSpace(chunk, begin);
         if (end != -1) {
           auto length = end-begin;
-          std::string uri = chunk.substr(begin, length);
+          auto uri = HttpUri(chunk.substr(begin, length));
           result.setRequestUri(uri);
           result.setRaw(chunk);
           return result;
