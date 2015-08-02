@@ -42,6 +42,15 @@ TEST(HttpUri, CopyConstructor) {
   ASSERT_TRUE(uri1 == uri0);
 }
 
+TEST(HttpUriFactory, FullScopeUri) {
+  HttpUri uri1 = HttpUriFactory::createUri(std::string("http://google.com:90/search?q=bflm"));
+  ASSERT_TRUE(std::string("google.com") == uri1.getHost());
+  ASSERT_TRUE(90 == uri1.getPort());
+  ASSERT_TRUE(std::string("/search") == uri1.getPath());
+  ASSERT_TRUE(std::string("q=bflm") == uri1.getQuery());
+  ASSERT_TRUE(std::string("http://google.com:90/search?q=bflm") == uri1.getUri());
+}
+
 TEST(HttpParserResult, CreateRequest) {
   HttpParserResult r(HttpParserResultState::REQUEST);
   ASSERT_TRUE(r.isRequest());
@@ -126,9 +135,6 @@ TEST(RequestParser, GetAbsolute) {
 
   ASSERT_TRUE(result.isRequest());
   ASSERT_FALSE(result.isResponse());
-
-  std::cout << uri.getUri() << std::endl;
-  std::cout << result.getRequestUri().getUri() << std::endl;
   ASSERT_TRUE(uri == result.getRequestUri());
 }
 

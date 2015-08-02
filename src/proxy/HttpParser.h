@@ -27,7 +27,7 @@ class HttpUri {
  public:
   HttpUri():host(), abs_path(), query(), port() {}
 
-  HttpUri(const std::string & host_, std::size_t port_ = 80, std::string abs_path_ = "/",
+  explicit HttpUri(const std::string & host_, std::size_t port_ = 80, std::string abs_path_ = "/",
     std::string query_ = ""):host(host_),
     abs_path(abs_path_), query(query_), port(port_){
     assert(abs_path[0] == '/');
@@ -189,16 +189,10 @@ class HttpParserResult {
     return content;
   }
 
-  inline void setPort(std::size_t port) {
-    assert((state_ == HttpParserResultState::REQUEST) ||
-                (state_ == HttpParserResultState::RESPONSE));
-    HttpParserResult::port = port;
-  }
-
   inline std::size_t getPort() const {
     assert((state_ == HttpParserResultState::REQUEST) ||
                 (state_ == HttpParserResultState::RESPONSE));
-    return port;
+    return request_uri.getPort();
   }
 
  private:
@@ -206,13 +200,12 @@ class HttpParserResult {
   HttpUri request_uri;
   std::string raw_message, content_type, content;
   HttpResponseStatus response_status;
-  std::size_t port;
 };
 
 class HttpUriFactory {
  public:
   static HttpUri createUri(const std::string & uri) {
-    if(uri.substr(0,6) == "http://") {
+    if(uri.substr(0,7) == "http://") {
       const int begin = 7;
       const int slash = findSlash(uri, begin);
 
@@ -224,8 +217,8 @@ class HttpUriFactory {
         int colon = findColon(host_, 0);
         std::string port;
         if (colon != -1) {
-          host = uri.substr(begin, colon);
-          port = uri.substr(colon+1, host_.length()-colon);
+          host = host_.substr(0, colon);
+          port = host_.substr(colon+1, host_.length()-colon);
         } else {
           // port neni uveden
           host = host_;
@@ -234,16 +227,16 @@ class HttpUriFactory {
 
         int question = findQuestion(uri, slash);
         std::string abs_path, query;
-        if (question != -1) {
+        if (question == -1) {
           // query neni pritomna, cela zbyla cast vc. / je abs_path
           abs_path = uri.substr(slash, uri.length() - slash);
-          return HttpUri(host, std::stoi(port), abs_path);
+          return HttpUri(host, HelperRoutines::toInt(port), abs_path);
         } else {
           auto pathLength = question - slash;
           abs_path = uri.substr(slash, pathLength);
 
-          query = uri.substr(question, uri.length() - question);
-          return HttpUri(host, std::stoi(port), abs_path, query);
+          query = uri.substr(question+1, uri.length() - question - 1); // nechceme ?
+          return HttpUri(host, HelperRoutines::toInt(port), abs_path, query);
         }
       } else {
         // uri je tvaru http://google.com
@@ -251,6 +244,7 @@ class HttpUriFactory {
         return HttpUri(host);
       }
     } else {
+      HelperRoutines::warning("Invalid uri: " + uri);
       // TODO(alex): napr. ftp://host/resource - co s tim?
     }
     return HttpUri();
@@ -292,7 +286,7 @@ class HttpParser {
   HttpParserResult parse(const std::string & chunk) {
     std::ostringstream oss_req;
     oss_req << "(GET|HEAD|POST|PUT|DELETE|TRACE|CONNECT) ";
-    oss_req << "http://([a-zA-Z0-9]([./])?)+ ";
+    oss_req << "http://([a-zA-Z0-9]([./:])?)+ ";
     oss_req << "HTTP/1.1\r\n([a-zA-Z0-9: -]+\r\n)*\r\n";
 
     std::ostringstream oss_res;
@@ -312,7 +306,7 @@ class HttpParser {
         int end = findSpace(chunk, begin);
         if (end != -1) {
           auto length = end-begin;
-          auto uri = HttpUri(chunk.substr(begin, length));
+          auto uri = HttpUriFactory::createUri(chunk.substr(begin, length));
           result.setRequestUri(uri);
           result.setRaw(chunk);
           return result;
@@ -329,7 +323,7 @@ class HttpParser {
         auto end = findSpace(chunk, begin);
         if (end != -1) {
           auto length = end-begin;
-          int code = std::stoi(chunk.substr(begin, length));
+          int code = HelperRoutines::toInt(chunk.substr(begin, length));
           result.setResponseStatus(HttpResponseStatus(code));
 
           // headers

@@ -3,6 +3,7 @@
 #ifndef SRC_PROXY_HELPERROUTINES_H_
 #define SRC_PROXY_HELPERROUTINES_H_
 
+#include <string.h>
 #include <string>
 #include <sstream>
 
@@ -28,10 +29,14 @@ class HelperRoutines {
 
   // https://stackoverflow.com/a/20861692/2561483
   template < typename T >
-  static std::string to_string(const T& n) {
+  static inline std::string to_string(const T& n) {
     std::ostringstream stm;
     stm << n;
     return stm.str();
+  }
+
+  static inline int toInt(const std::string & str) {
+    return atoi(str.c_str());
   }
 };
 
