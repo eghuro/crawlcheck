@@ -10,13 +10,14 @@
 #include <sstream>
 #include <deque>
 #include <tuple>
+#include <map>
 #include <utility>
 #include <cassert>
 #include "./HttpParser.h"
 #include "./HelperRoutines.h"
 
 // TODO(alex): rename
-// TODO(alex): refactoring!! - request vs response?
+// TODO(alex): refactoring!! - request vs response?, template method?
 /**
  * Storage for requests and responses
  */
@@ -48,25 +49,24 @@ class RequestStorage {
         requests.push_back(queue_type(result, id));
 
         if ((e = pthread_mutex_unlock(&requests_mutex)) != 0) {
-          HelperRoutines::warning("Cannot unlock mutex on a request storage.", strerror(e));
+          HelperRoutines::warning(unlock_request, strerror(e));
         }
       } else {
-        HelperRoutines::warning("Cannot lock mutex on a request storage.");
+        HelperRoutines::warning(lock_request, strerror(e));
       }
     } else if (result.isResponse()) {
       if ((e = pthread_mutex_lock(&responses_mutex)) == 0) {
         responses.insert(map_type(id, result));
 
         if ((e = pthread_mutex_unlock(&responses_mutex)) != 0) {
-          HelperRoutines::warning("Cannot unlock mutex on a response storage.", strerror(e));
+          HelperRoutines::warning(unlock_request, strerror(e));
         }
       } else {
-        HelperRoutines::warning("Cannot lock mutex on a response storage.");
+        HelperRoutines::warning(lock_request, strerror(e));
       }
     } else {
       assert(false);
     }
-
   }
 
   /**
@@ -79,13 +79,13 @@ class RequestStorage {
       auto result_bundle = requests.front();
       requests.pop_front();
       if ((e = pthread_mutex_unlock(&requests_mutex)) != 0) {
-        HelperRoutines::warning("Cannot unlock mutex on a request storage.", strerror(e));
+        HelperRoutines::warning(unlock_request, strerror(e));
       }
       return result_bundle;
     } else {
-      HelperRoutines::warning("Cannot lock mutex on a request storage.", strerror(e));
+      HelperRoutines::warning(lock_request, strerror(e));
     }
-    return queue_type(HttpParserResult(),-1);  // TODO(alex): exception?
+    return queue_type(HttpParserResult(), -1);  // TODO(alex): exception?
   }
 
   /**
@@ -98,10 +98,10 @@ class RequestStorage {
     if ((e = pthread_mutex_lock(&requests_mutex)) == 0) {
       available = !requests.empty();
       if ((e = pthread_mutex_unlock(&requests_mutex)) != 0) {
-        HelperRoutines::warning("Cannot unlock mutex on a request storage.", strerror(e));
+        HelperRoutines::warning(unlock_request, strerror(e));
       }
     } else {
-      HelperRoutines::warning("Cannot lock mutex on a request storage.", strerror(e));
+      HelperRoutines::warning(lock_request, strerror(e));
     }
     return available;
   }
@@ -121,13 +121,13 @@ class RequestStorage {
         ok = true;
       }
       if ((e = pthread_mutex_unlock(&responses_mutex)) != 0) {
-        HelperRoutines::warning("Cannot unlock mutex on a response storage.", strerror(e));
+        HelperRoutines::warning(unlock_response, strerror(e));
       }
       if (ok) {
         return std::get<1>(*result_bundle).getRaw();
       }
     } else {
-      HelperRoutines::warning("Cannot lock mutex on a response storage.", strerror(e));
+      HelperRoutines::warning(lock_response, strerror(e));
     }
 
     return "";  // TODO(alex): exception?
@@ -143,10 +143,10 @@ class RequestStorage {
     if ((e = pthread_mutex_lock(&responses_mutex)) == 0) {
       available = !responses.empty();
       if ((e = pthread_mutex_unlock(&responses_mutex)) != 0) {
-        HelperRoutines::warning("Cannot unlock mutex on a response storage.", strerror(e));
+        HelperRoutines::warning(unlock_response, strerror(e));
       }
     } else {
-      HelperRoutines::warning("Cannot lock mutex on a response storage.", strerror(e));
+      HelperRoutines::warning(lock_response, strerror(e));
     }
     return available;
   }
@@ -160,6 +160,11 @@ class RequestStorage {
   std::deque<queue_type> requests;
   std::map<int, HttpParserResult> responses;
   pthread_mutex_t requests_mutex, responses_mutex;
+
+  static const std::string lock_response;
+  static const std::string unlock_response;
+  static const std::string lock_request;
+  static const std::string unlock_request;
 };
 
 #endif  // SRC_PROXY_REQUESTSTORAGE_H_

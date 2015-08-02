@@ -23,7 +23,8 @@ class HelperRoutines {
     perror(message.c_str());
   }
 
-  static inline void warning(const std::string & message, const std::string & err) {
+  static inline void warning(const std::string & message,
+    const std::string & err) {
     fprintf(stderr, "%s: %s\n\n", message.c_str(), err.c_str());
   }
 

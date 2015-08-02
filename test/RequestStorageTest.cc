@@ -27,7 +27,7 @@ TEST(RequestStorage, Response) {
   ASSERT_FALSE(rs.responseAvailable());
 
   HttpParserResult response(HttpParserResultState::RESPONSE);
-  rs.insertParserResult(response,0);
+  rs.insertParserResult(response, 0);
   ASSERT_TRUE(rs.responseAvailable());
   ASSERT_FALSE(rs.requestAvailable());
 

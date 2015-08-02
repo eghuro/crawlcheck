@@ -27,13 +27,15 @@ class HttpUri {
  public:
   HttpUri():host(), abs_path(), query(), port() {}
 
-  explicit HttpUri(const std::string & host_, std::size_t port_ = 80, std::string abs_path_ = "/",
+  explicit HttpUri(const std::string & host_, std::size_t port_ = 80,
+    std::string abs_path_ = "/",
     std::string query_ = ""):host(host_),
-    abs_path(abs_path_), query(query_), port(port_){
+    abs_path(abs_path_), query(query_), port(port_) {
     assert(abs_path[0] == '/');
   }
 
-  HttpUri(const HttpUri & uri):host(uri.getHost()), abs_path(uri.getPath()), query(uri.getQuery()), port(uri.getPort()) {}
+  HttpUri(const HttpUri & uri):host(uri.getHost()), abs_path(uri.getPath()),
+    query(uri.getQuery()), port(uri.getPort()) {}
 
   bool operator==(const HttpUri & result) const {
     return result.getUri() == getUri();
@@ -72,6 +74,7 @@ class HttpUri {
   std::string getQuery() const {
     return query;
   }
+
  private:
   std::string host, abs_path, query;
   std::size_t port;
@@ -98,13 +101,13 @@ class HttpResponseStatus {
 
 class HttpParserResult {
  public:
-  explicit HttpParserResult(HttpParserResultState state = HttpParserResultState::INVALID):state_(state),
-    request_uri(), raw_message(), content_type(), content(),
-    response_status(0) {}
+  explicit HttpParserResult(HttpParserResultState state =
+    HttpParserResultState::INVALID):state_(state), request_uri(),
+    raw_message(), content_type(), content(), response_status(0) {}
   virtual ~HttpParserResult() {}
 
   bool operator==(const HttpParserResult & result) {
-    switch(state_) {
+    switch (state_) {
     case HttpParserResultState::INVALID : return false;
     case HttpParserResultState::CONTINUE:
       return result.doContinue();
@@ -115,7 +118,7 @@ class HttpParserResult {
         return false;
       }
     case HttpParserResultState::RESPONSE:
-      if(result.isResponse()) {
+      if (result.isResponse()) {
         return result.getRaw() == getRaw();
       } else {
         return false;
@@ -211,7 +214,7 @@ class HttpParserResult {
 class HttpUriFactory {
  public:
   static HttpUri createUri(const std::string & uri) {
-    if(uri.substr(0,7) == "http://") {
+    if (uri.substr(0, 7) == "http://") {
       const int begin = 7;
       const int slash = findSlash(uri, begin);
 
@@ -241,7 +244,8 @@ class HttpUriFactory {
           auto pathLength = question - slash;
           abs_path = uri.substr(slash, pathLength);
 
-          query = uri.substr(question+1, uri.length() - question - 1); // nechceme ?
+          query = uri.substr(question+1, uri.length() - question - 1);
+            // -1 ... nechceme "?"
           return HttpUri(host, HelperRoutines::toInt(port), abs_path, query);
         }
       } else {
@@ -255,6 +259,7 @@ class HttpUriFactory {
     }
     return HttpUri();
   }
+
  private:
   static inline int findSlash(const std::string & uri, std::size_t begin) {
     auto pos = uri.find_first_of("/", begin);
@@ -340,13 +345,14 @@ class HttpParser {
             auto headers_unparsed = chunk.substr(begin, end-begin+2);
 
             auto headers = parseHeaders(headers_unparsed);
-            transformHeadersToResults(headers, result);
+            transformHeadersToResults(headers, &result);
 
             // body
             end+=4;  // CRLFCRLF
             result.setContent(chunk.substr(end, chunk.length()-end));
 
             result.setRaw(chunk);
+
             return result;
           }
         }
@@ -452,7 +458,7 @@ class HttpParser {
   }
 
   inline void transformHeadersToResults(const storage & headers,
-      HttpParserResult & results) {
+      HttpParserResult * results) {
     auto it = headers.find("Content-Type");
     if (it != headers.end()) {
       std::string ct = it->second;
@@ -463,7 +469,7 @@ class HttpParser {
           break;
         }
       }
-      results.setContentType(cut);
+      results->setContentType(cut);
     }
   }
 };
