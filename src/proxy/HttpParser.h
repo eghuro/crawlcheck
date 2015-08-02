@@ -33,7 +33,7 @@ class HttpUri {
 
   HttpUri(const HttpUri & uri):host(uri.getHost()), abs_path(uri.getPath()), query(uri.getQuery()), port(uri.getPort()) {}
 
-  bool operator==(const HttpUri & result) {
+  bool operator==(const HttpUri & result) const {
     return result.getURI() == getURI();
   }
 
@@ -252,8 +252,8 @@ class HttpUriFactory {
     return HttpUri();
   }
  private:
-  inline int findSlash(const std::string & uri, std::size_t begin) {
-    auto pos = uri.find_first_of("/", begin)
+  static inline int findSlash(const std::string & uri, std::size_t begin) {
+    auto pos = uri.find_first_of("/", begin);
     if (pos != std::string::npos) {
       return pos;
     } else {
@@ -261,8 +261,8 @@ class HttpUriFactory {
     }
   }
 
-  inline int findQuestion(const std::string & uri, std::size_t begin) {
-    auto pos = uri.find_first_of("?", begin)
+  static inline int findQuestion(const std::string & uri, std::size_t begin) {
+    auto pos = uri.find_first_of("?", begin);
     if (pos != std::string::npos) {
       return pos;
     } else {
@@ -270,8 +270,8 @@ class HttpUriFactory {
     }
   }
 
-  inline int findColon(const std::string & uri, std::size_t begin) {
-    auto pos = uri.find_first_of(":", begin)
+  static inline int findColon(const std::string & uri, std::size_t begin) {
+    auto pos = uri.find_first_of(":", begin);
     if (pos != std::string::npos) {
       return pos;
     } else {
