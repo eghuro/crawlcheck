@@ -29,28 +29,32 @@ class HttpUri {
 
   HttpUri(const std::string & host_, std::size_t port_ = 80, std::string abs_path_ = "/",
     std::string query_ = ""):host(host_),
-    abs_path(abs_path_), query(query_), port(port_){}
+    abs_path(abs_path_), query(query_), port(port_){
+    assert(abs_path[0] == '/');
+  }
 
   HttpUri(const HttpUri & uri):host(uri.getHost()), abs_path(uri.getPath()), query(uri.getQuery()), port(uri.getPort()) {}
 
   bool operator==(const HttpUri & result) const {
-    return result.getURI() == getURI();
+    return result.getUri() == getUri();
   }
 
   std::string getHost() const {
     return host;
   }
 
-  std::string getURI() const {
+  std::string getUri() const {
     std::ostringstream oss;
     oss << "http://";
     oss << host;
     if (port != 80) {
+      oss << ":";
       oss << port;
     }
     if (abs_path != "") {
       oss << abs_path;
       if (query != "") {
+        oss << "?";
         oss << query;
       }
     }

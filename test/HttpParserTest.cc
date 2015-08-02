@@ -4,6 +4,44 @@
 #include "../src/proxy/HttpParser.h"
 #include "gtest/gtest.h"
 
+TEST(HttpUri, DefaultConstructor) {
+  HttpUri uri;
+  ASSERT_TRUE(std::string("") == uri.getHost());
+  ASSERT_TRUE(0 == uri.getPort());
+  ASSERT_TRUE(std::string("") == uri.getPath());
+  ASSERT_TRUE(std::string("") == uri.getQuery());
+  ASSERT_TRUE(std::string("http://:0") == uri.getUri());
+}
+
+TEST(HttpUri, CustomConstructor) {
+  HttpUri uri0("google.com");
+  ASSERT_TRUE(std::string("google.com") == uri0.getHost());
+  ASSERT_TRUE(80 == uri0.getPort());
+  ASSERT_TRUE(std::string("/") == uri0.getPath());
+  ASSERT_TRUE(std::string("") == uri0.getQuery());
+
+  ASSERT_TRUE(std::string("http://google.com/") == uri0.getUri());
+
+  HttpUri uri1(std::string("google.com"),90, std::string("/search"), std::string("q=bflm"));
+  ASSERT_TRUE(std::string("google.com") == uri1.getHost());
+  ASSERT_TRUE(90 == uri1.getPort());
+  ASSERT_TRUE(std::string("/search") == uri1.getPath());
+  ASSERT_TRUE(std::string("q=bflm") == uri1.getQuery());
+
+  ASSERT_TRUE(std::string("http://google.com:90/search?q=bflm") == uri1.getUri());
+}
+
+TEST(HttpUri, CopyConstructor) {
+  HttpUri uri0(std::string("google.com"),90, std::string("/search"), std::string("q=bflm"));
+  HttpUri uri1(uri0);
+
+  ASSERT_TRUE(std::string("google.com") == uri1.getHost());
+  ASSERT_TRUE(90 == uri1.getPort());
+  ASSERT_TRUE(std::string("/search") == uri1.getPath());
+  ASSERT_TRUE(std::string("q=bflm") == uri1.getQuery());
+  ASSERT_TRUE(uri1 == uri0);
+}
+
 TEST(HttpParserResult, CreateRequest) {
   HttpParserResult r(HttpParserResultState::REQUEST);
   ASSERT_TRUE(r.isRequest());
@@ -89,6 +127,8 @@ TEST(RequestParser, GetAbsolute) {
   ASSERT_TRUE(result.isRequest());
   ASSERT_FALSE(result.isResponse());
 
+  std::cout << uri.getUri() << std::endl;
+  std::cout << result.getRequestUri().getUri() << std::endl;
   ASSERT_TRUE(uri == result.getRequestUri());
 }
 
