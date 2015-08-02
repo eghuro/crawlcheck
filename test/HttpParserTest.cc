@@ -211,10 +211,7 @@ TEST(RequestParser, RawRequest) {
   ASSERT_TRUE("http://olga.majling.eu" == result3.getRequestUri());
   ASSERT_TRUE("GET http://olga.majling.eu HTTP/1.1\r\n\r\n" == result3.getRaw());
 }
-
-TEST(RequestParser, ComplexUrisRequest) {
-  // TODO(alex): test all sort of acceptable URIs
-}*/
+*/
 
 TEST(RequestParser, RequestPortImplicit) {
   HttpParser parser;

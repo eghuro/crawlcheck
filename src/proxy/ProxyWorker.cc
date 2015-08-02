@@ -111,12 +111,13 @@ void* ProxyWorker::serverThreadRoutine(void * arg) {
   std::shared_ptr<ProxyConfiguration> conf_ptr = std::get<2>(*params);
 
   // write request
+  // TODO(alex): wait for request to become available
   if (storage -> requestAvailable()) {
     auto req_bundle = storage->retrieveRequest();
-    std::string request = std::get<0>(req_bundle);
+    std::string request = std::get<0>(req_bundle).getRaw();
     int id = std::get<1>(req_bundle);
-    std::string connect_to = std::get<2>(req_bundle);
-    int port = std::get<3>(req_bundle);
+    std::string connect_to = std::get<0>(req_bundle).getHost();
+    int port = static_cast<int>(std::get<0>(req_bundle).getPort());
 
     struct addrinfo *r, *rorig, hi;
     memset(&hi, 0, sizeof (hi));

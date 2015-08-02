@@ -195,6 +195,12 @@ class HttpParserResult {
     return request_uri.getPort();
   }
 
+  inline std::string getHost() const {
+    assert((state_ == HttpParserResultState::REQUEST) ||
+                    (state_ == HttpParserResultState::RESPONSE));
+    return request_uri.getHost();
+  }
+
  private:
   const HttpParserResultState state_;
   HttpUri request_uri;
