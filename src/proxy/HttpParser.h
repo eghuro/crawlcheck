@@ -37,15 +37,15 @@ class HttpUri {
   HttpUri(const HttpUri & uri):host(uri.getHost()), abs_path(uri.getPath()),
     query(uri.getQuery()), port(uri.getPort()) {}
 
-  bool operator==(const HttpUri & result) const {
+  inline bool operator==(const HttpUri & result) const {
     return result.getUri() == getUri();
   }
 
-  std::string getHost() const {
+  inline std::string getHost() const {
     return host;
   }
 
-  std::string getUri() const {
+  inline std::string getUri() const {
     std::ostringstream oss;
     oss << "http://";
     oss << host;
@@ -63,15 +63,15 @@ class HttpUri {
     return oss.str();
   }
 
-  std::size_t getPort() const {
+  inline std::size_t getPort() const {
     return port;
   }
 
-  std::string getPath() const {
+  inline std::string getPath() const {
     return abs_path;
   }
 
-  std::string getQuery() const {
+  inline std::string getQuery() const {
     return query;
   }
 
