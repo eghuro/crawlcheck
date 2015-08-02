@@ -24,9 +24,10 @@ TEST(HttpParserResult, CreateContinue) {
 
 TEST(HttpParserResult, RequestUri) {
   HttpParserResult r1(HttpParserResultState::REQUEST);
-  std::string uri = "http://olga.majling.eu;";
-  r1.setRequestUri(HttpUri(uri));
-  ASSERT_TRUE(HttpUri(uri) == r1.getRequestUri());
+  const std::string uriStr = "http://olga.majling.eu;";
+  const HttpUri uri = HttpUriFactory.createUri(uriStr);
+  r1.setRequestUri(uri);
+  ASSERT_TRUE(uri == r1.getRequestUri());
 
   HttpParserResult r2(HttpParserResultState::RESPONSE);
   // r2.setRequestUri(uri); assertion failed
@@ -66,7 +67,9 @@ TEST(HttpParserResult, Equality) {
   r8.setRaw(r7.getRaw());
   ASSERT_TRUE(r7 == r8);
 }
-const std::string uri = "http://olga.majling.eu";
+const std::string uri_str = "http://olga.majling.eu";
+const HttpUri uri = HttpUriFactory.createUri(uri_str);
+
 TEST(RequestParser, GetRelative) {
   HttpParser parser;
 
@@ -86,7 +89,7 @@ TEST(RequestParser, GetAbsolute) {
   ASSERT_TRUE(result.isRequest());
   ASSERT_FALSE(result.isResponse());
 
-  ASSERT_TRUE(HttpUri(uri) == result.getRequestUri());
+  ASSERT_TRUE(uri == result.getRequestUri());
 }
 
 TEST(RequestParser, Methods) {
@@ -110,7 +113,8 @@ TEST(RequestParser, Methods) {
     ASSERT_TRUE(result.isRequest());
     ASSERT_FALSE(result.isResponse());
 
-    ASSERT_TRUE(result.getRequestUri() == HttpUri("http://kdmanalytics.com/about.html"));
+    const HttpUri uri = HttpUriFactory.createUri("http://kdmanalytics.com/about.html");
+    ASSERT_TRUE(result.getRequestUri() == uri);
   }
 }
 
@@ -122,12 +126,12 @@ TEST(RequestParser, VariousUris) {
 
   HttpParser parser;
   for (auto uri : uris) {;
-    auto result = parser.parse("GET "+uri+" HTTP/1.1\r\n\r\n");
+    auto result = parser.parse("GET "+uri_str+" HTTP/1.1\r\n\r\n");
 
     ASSERT_TRUE(result.isRequest());
     ASSERT_FALSE(result.isResponse());
 
-    ASSERT_TRUE(HttpUri(uri) == result.getRequestUri());
+    ASSERT_TRUE(uri == result.getRequestUri());
   }
 }
 

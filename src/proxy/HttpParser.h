@@ -27,13 +27,8 @@ class HttpUri {
  public:
   HttpUri():host(), abs_path(), query(), port() {}
 
-  explicit HttpUri(const std::string & uri) {
-    HttpUri("","","", 80);
-    // TODO(alex): parse uri
-  }
-
-  HttpUri(const std::string & host_, const std::string & abs_path_,
-    const std::string & query_, std::size_t port_ = 80):host(host_),
+  HttpUri(const std::string & host_, std::size_t port_ = 80, std::string abs_path_ = "/",
+    std::string query_ = ""):host(host_),
     abs_path(abs_path_), query(query_), port(port_){}
 
   HttpUri(const HttpUri & uri):host(uri.getHost()), abs_path(uri.getPath()), query(uri.getQuery()), port(uri.getPort()) {}
@@ -208,6 +203,81 @@ class HttpParserResult {
   std::string raw_message, content_type, content;
   HttpResponseStatus response_status;
   std::size_t port;
+};
+
+class HttpUriFactory {
+ public:
+  static HttpUri createUri(const std::string & uri) {
+    if(uri.substr(0,6) == "http://") {
+      const int begin = 7;
+      const int slash = findSlash(uri, begin);
+
+      std::string host;
+      if (slash != -1) {
+        auto length = slash - begin;
+        auto host_ = uri.substr(begin, length);
+
+        int colon = findColon(host_, 0);
+        std::string port;
+        if (colon != -1) {
+          host = uri.substr(begin, colon);
+          port = uri.substr(colon+1, host_.length()-colon);
+        } else {
+          // port neni uveden
+          host = host_;
+          port = "80";
+        }
+
+        int question = findQuestion(uri, slash);
+        std::string abs_path, query;
+        if (question != -1) {
+          // query neni pritomna, cela zbyla cast vc. / je abs_path
+          abs_path = uri.substr(slash, uri.length() - slash);
+          return HttpUri(host, std::stoi(port), abs_path);
+        } else {
+          auto pathLength = question - slash;
+          abs_path = uri.substr(slash, pathLength);
+
+          query = uri.substr(question, uri.length() - question);
+          return HttpUri(host, std::stoi(port), abs_path, query);
+        }
+      } else {
+        // uri je tvaru http://google.com
+        host = uri.substr(begin, uri.length() - begin);
+        return HttpUri(host);
+      }
+    } else {
+      // TODO(alex): napr. ftp://host/resource - co s tim?
+    }
+    return HttpUri();
+  }
+ private:
+  inline int findSlash(const std::string & uri, std::size_t begin) {
+    auto pos = uri.find_first_of("/", begin)
+    if (pos != std::string::npos) {
+      return pos;
+    } else {
+      return -1;
+    }
+  }
+
+  inline int findQuestion(const std::string & uri, std::size_t begin) {
+    auto pos = uri.find_first_of("?", begin)
+    if (pos != std::string::npos) {
+      return pos;
+    } else {
+      return -1;
+    }
+  }
+
+  inline int findColon(const std::string & uri, std::size_t begin) {
+    auto pos = uri.find_first_of(":", begin)
+    if (pos != std::string::npos) {
+      return pos;
+    } else {
+      return -1;
+    }
+  }
 };
 
 class HttpParser {
