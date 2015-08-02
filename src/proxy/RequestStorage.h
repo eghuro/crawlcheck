@@ -17,15 +17,27 @@
 
 // TODO(alex): rename
 // TODO(alex): refactoring!! - request vs response?
+/**
+ * Storage for requests and responses
+ */
 class RequestStorage {
  public:
   typedef std::pair<HttpParserResult, int> queue_type;
+  typedef std::pair<int, HttpParserResult> map_type;
 
   RequestStorage() : requests(), responses(),
       requests_mutex(PTHREAD_MUTEX_INITIALIZER),
       responses_mutex(PTHREAD_MUTEX_INITIALIZER) {}
-  virtual ~RequestStorage() {}
+  virtual ~RequestStorage() {
+    pthread_mutex_unlock(&requests_mutex);
+    pthread_mutex_unlock(&responses_mutex);
+  }
 
+  /**
+   * Insert HttpParseerResult into storage, pushes DB and notifies checker (TBD)
+   * @param result parsed communication HttpParserResult of type request or response
+   * @param id transaction identifier
+   */
   void insertParserResult(const HttpParserResult & result, int id) {
     // TODO(alex): push DB
     // TODO(alex): response goes to checker
@@ -43,7 +55,7 @@ class RequestStorage {
       }
     } else if (result.isResponse()) {
       if ((e = pthread_mutex_lock(&responses_mutex)) == 0) {
-        responses.push_back(queue_type(result, id));
+        responses.insert(map_type(id, result));
 
         if ((e = pthread_mutex_unlock(&responses_mutex)) != 0) {
           HelperRoutines::warning("Cannot unlock mutex on a response storage.", strerror(e));
@@ -57,6 +69,10 @@ class RequestStorage {
 
   }
 
+  /**
+   * Retrieve a new request from the storage and then remove it from there.
+   * @return HttpParser result and it's transaction identifier
+   */
   queue_type retrieveRequest() {
     int e;
     if ((e = pthread_mutex_lock(&requests_mutex)) == 0) {
@@ -72,6 +88,10 @@ class RequestStorage {
     return queue_type(HttpParserResult(),-1);  // TODO(alex): exception?
   }
 
+  /**
+   * Is there a new request in the storage?
+   * @return the request storage is not empty
+   */
   bool requestAvailable() {
     bool available = false;
     int e;
@@ -86,21 +106,37 @@ class RequestStorage {
     return available;
   }
 
+  /**
+   * Retrieve a response from the response storage
+   * @param id transaction id
+   * @return raw HTTP Response message
+   */
   std::string retrieveResponse(int id) {
     int e;
+    bool ok = false;
     if ((e = pthread_mutex_lock(&responses_mutex)) == 0) {
-      auto result_bundle = responses.front();
-      responses.pop_front();
+      auto result_bundle = responses.find(id);
+      if (result_bundle != responses.end()) {
+        responses.erase(result_bundle);
+        ok = true;
+      }
       if ((e = pthread_mutex_unlock(&responses_mutex)) != 0) {
         HelperRoutines::warning("Cannot unlock mutex on a response storage.", strerror(e));
       }
-      return std::get<0>(result_bundle).getRaw();
+      if (ok) {
+        return std::get<1>(*result_bundle).getRaw();
+      }
     } else {
       HelperRoutines::warning("Cannot lock mutex on a response storage.", strerror(e));
     }
+
     return "";  // TODO(alex): exception?
   }
 
+  /**
+   * Is there a response available?
+   * @param the ressponse storage is not empty
+   */
   bool responseAvailable() {
     bool available = false;
     int e;
@@ -115,12 +151,14 @@ class RequestStorage {
     return available;
   }
 
+  // TODO(alex): implement RequestStorage done
   bool done() {
     return false;
   }
 
  private:
-  std::deque<queue_type> requests, responses;
+  std::deque<queue_type> requests;
+  std::map<int, HttpParserResult> responses;
   pthread_mutex_t requests_mutex, responses_mutex;
 };
 

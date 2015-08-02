@@ -36,6 +36,9 @@ class ConnectionIdentifierFactory {
   static identifier next;
 };
 
+/**
+ * ProxyWorker handles a single connection from client to a remote server
+ */
 class ProxyWorker {
  public:
   // TODO(alex): make singleton!

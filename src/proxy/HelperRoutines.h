@@ -8,6 +8,11 @@
 
 class HelperRoutines {
  public:
+  /**
+   * Print an error message and exit the application.
+   * Message is printed via perror - message
+   * @param message a message to print
+   */
   static inline void error(const std::string & message) {
     perror(message.c_str());
     exit(EXIT_FAILURE);
