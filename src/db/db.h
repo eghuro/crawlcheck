@@ -17,13 +17,25 @@ class Database{
 
   Database(const DatabaseConfiguration& dbc):config(dbc) {}
 
-  std::size_t getClientRequestCount();
-  ClientRequestIdentifier setClientRequest(const HttpParserResult & request);
-  HttpParserResult getClientRequest(const ClientRequestIdentifier & identifier);
+  std::size_t getClientRequestCount() {
+    return 0;
+  }
+  ClientRequestIdentifier setClientRequest(const HttpParserResult & request) {
+    return 0;
+  }
+  HttpParserResult getClientRequest(const ClientRequestIdentifier & identifier) {
+    return HttpParserResult(HttpParserResultState::REQUEST);
+  }
 
-  std::size_t getServerResponseCount();
-  ServerResponseIdentifier setServerResponse(const HttpParserResult & response);
-  HttpParserResult getServerResponse(const ServerResponseIdentifier & identifier);
+  std::size_t getServerResponseCount() {
+    return 0;
+  }
+  ServerResponseIdentifier setServerResponse(const HttpParserResult & response) {
+    return 0;
+  }
+  HttpParserResult getServerResponse(const ServerResponseIdentifier & identifier) {
+    return HttpParserResult(HttpParserResultState::RESPONSE);
+  }
  private:
   const DatabaseConfiguration & config;
 };

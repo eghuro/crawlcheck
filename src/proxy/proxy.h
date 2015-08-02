@@ -128,8 +128,8 @@ class Proxy {
    * @param fd file descriptor of the server socket
    * @param config_ptr proxy configuration
    */
-  static void handle(int fd, std::shared_ptr<ProxyConfiguration> config_ptr) {
-    ProxyWorker pw(config_ptr);
+  static void handle(int fd, std::shared_ptr<ProxyConfiguration> config_ptr, std::shared_ptr<Database> db_ptr, std::shared_ptr<Checker> check_ptr) {
+    ProxyWorker pw(config_ptr, db_ptr, check_ptr);
     pw.startThread(fd);
   }
 };

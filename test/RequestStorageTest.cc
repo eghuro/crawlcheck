@@ -1,11 +1,17 @@
 // Copyright 2015 Alexandr Mansurov
 
+#include <memory>
 #include "../src/proxy/RequestStorage.h"
 #include "../src/proxy/HttpParser.h"
+#include "../src/db/db.h"
+#include "../src/checker/checker.h"
 #include "gtest/gtest.h"
 
 TEST(RequestStorage, Request) {
-  RequestStorage rs;
+  DatabaseConfiguration dbc;
+  std::shared_ptr<Database> db = std::make_shared<Database>(dbc);
+  std::shared_ptr<Checker> ch = std::make_shared<Checker>();
+  RequestStorage rs(db, ch);
   ASSERT_FALSE(rs.requestAvailable());
   ASSERT_FALSE(rs.responseAvailable());
 
@@ -22,7 +28,10 @@ TEST(RequestStorage, Request) {
 }
 
 TEST(RequestStorage, Response) {
-  RequestStorage rs;
+  DatabaseConfiguration dbc;
+  std::shared_ptr<Database> db = std::make_shared<Database>(dbc);
+  std::shared_ptr<Checker> ch = std::make_shared<Checker>();
+  RequestStorage rs(db, ch);
   ASSERT_FALSE(rs.requestAvailable());
   ASSERT_FALSE(rs.responseAvailable());
 

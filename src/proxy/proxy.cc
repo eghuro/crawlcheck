@@ -14,7 +14,8 @@ int main(int argc, char **argv) {
   assert(conf->getInPoolPort() == 90);
   assert(conf->getInBacklog() == 100);
 
-  Database d;
+  DatabaseConfiguration dbc
+  Database d(dbc);
   Checker c;
   Proxy proxy(conf, c, d);
 

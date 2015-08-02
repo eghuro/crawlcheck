@@ -15,6 +15,8 @@
 #include <cassert>
 #include "./HttpParser.h"
 #include "./HelperRoutines.h"
+#include "../db/db.h"
+#include "../checker/checker.h"
 
 // TODO(alex): rename
 // TODO(alex): refactoring!! - request vs response?, template method?
@@ -26,9 +28,10 @@ class RequestStorage {
   typedef std::pair<HttpParserResult, int> queue_type;
   typedef std::pair<int, HttpParserResult> map_type;
 
-  RequestStorage() : requests(), responses(),
+  RequestStorage(std::shared_ptr<Database> db, std::shared_ptr<Checker> check) : requests(), responses(),
       requests_mutex(PTHREAD_MUTEX_INITIALIZER),
-      responses_mutex(PTHREAD_MUTEX_INITIALIZER) {}
+      responses_mutex(PTHREAD_MUTEX_INITIALIZER),
+      database(db), checker(check){}
   virtual ~RequestStorage() {
     pthread_mutex_unlock(&requests_mutex);
     pthread_mutex_unlock(&responses_mutex);
@@ -40,11 +43,12 @@ class RequestStorage {
    * @param id transaction identifier
    */
   void insertParserResult(const HttpParserResult & result, int id) {
-    // TODO(alex): push DB
     // TODO(alex): response goes to checker
 
     int e;
     if (result.isRequest()) {
+      database->setClientRequest(result);
+
       if ((e = pthread_mutex_lock(&requests_mutex)) == 0) {
         requests.push_back(queue_type(result, id));
 
@@ -55,6 +59,8 @@ class RequestStorage {
         HelperRoutines::warning(lock_request, strerror(e));
       }
     } else if (result.isResponse()) {
+      database->setServerResponse(result);
+
       if ((e = pthread_mutex_lock(&responses_mutex)) == 0) {
         responses.insert(map_type(id, result));
 
@@ -160,6 +166,8 @@ class RequestStorage {
   std::deque<queue_type> requests;
   std::map<int, HttpParserResult> responses;
   pthread_mutex_t requests_mutex, responses_mutex;
+  std::shared_ptr<Database> database;
+  std::shared_ptr<Checker> checker;
 
   static const std::string lock_response;
   static const std::string unlock_response;
