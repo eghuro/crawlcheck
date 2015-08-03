@@ -43,8 +43,6 @@ class RequestStorage {
    * @param id transaction identifier
    */
   void insertParserResult(const HttpParserResult & result, int id) {
-    // TODO(alex): response goes to checker
-
     int e;
     if (result.isRequest()) {
       database->setClientRequest(result);
