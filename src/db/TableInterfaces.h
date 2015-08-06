@@ -14,18 +14,32 @@ class VerificationStatus {
 
   virtual std::string getDescription() const;
   virtual void setDescription(const std::string & description);
-
- protected:
-  // explicit virtual VerificationStatus(std::size_t id);
-  virtual ~VerificationStatus();
-
- private:
-  VerificationStatus() = delete;
 };
 
 class Transaction {
+ public:
+  virtual std::size_t getId() const;
 
+  virtual void setMethod(const RequestMethod & method);
+  virtual RequestMethod getMethod() const;
 
+  virtual void setUri(const HttpUri & uri);
+  virtual HttpUri getUri() const;
+
+  virtual void setResponseStatus(const HttpResponseStatus & status);
+  virtual HttpResponseStatus getResponseStatus() const;
+
+  virtual void setContentType(const std::string & ctype);
+  virtual std::string getContentType() const;
+
+  virtual void setContent(const std::string & content);
+  virtual void setContent(std::string * content);
+
+  virtual std::string getContent() const;
+  virtual std::string * getContent();
+
+  virtual void setVerificationStatus(std::size_t id);
+  virtual std::size_t getVerificationStatus() const;
 };
 
 class Finding {
@@ -33,13 +47,6 @@ class Finding {
   virtual std::size_t getFindingId() const;
   virtual std::size_t getResponseId() const;
   virtual void setResponseId(std::size_t responseId);
-
- protected:
-  // explicit virtual Finding(std::size_t findingId);
-  virtual ~Finding();
-
- private:
-   Finding() = delete;
 };
 
 class Link {
@@ -54,13 +61,6 @@ class Link {
 
   virtual void setRequestId(std::size_t);
   virtual std::size_t getRequestId() const;
-
- protected:
-  // explicit virtual Link(std::size_t findingId);
-  virtual ~Link();
-
- private:
-  Link() = delete;
 };
 
 class DefectType {
@@ -68,13 +68,6 @@ class DefectType {
   virtual std::size_t getId() const;
   virtual void setDescription(const std::string &) const;
   virtual std::string getDescription();
-
- protected:
-  // explicit virtual DefectType(std::size_t id);
-  virtual ~DefectType();
-
- private:
-  DefectType() = delete;
 };
 
 class Defect {
@@ -89,13 +82,6 @@ class Defect {
 
   virtual void setLocation(std::size_t);
   virtual std::size_t getLocation() const;
-
- protected:
-  // explicit virtual Defect(std::size_t findingId);
-  virtual ~Defect();
-
- private:
-  Defect() = delete;
 };
 
 class Annotation {
@@ -103,13 +89,6 @@ class Annotation {
   virtual std::size_t getFindingId() const;
   virtual std::string getComment() const;
   virtual void setComment(const std::string &);
-
- protected:
-  // explicit Annotation(std::size_t findingId);
-  virtual ~Annotation();
-
- private:
-  Annotation() = delete;
 };
 
 class DatabaseConnector {
