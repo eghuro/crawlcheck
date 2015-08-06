@@ -31,7 +31,7 @@ CXXFLAGS += -g -Wall -Wextra -pthread -std=c++11
 
 # All tests produced by this Makefile.  Remember to add new tests you
 # created to the list.
-TESTS = ProxyConfigurationTest HttpParserTest RequestStorageTest DBAPITest
+TESTS = ProxyConfigurationTest HttpParserTest RequestStorageTest DBAPITest XmlConnectorTest
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
@@ -119,4 +119,13 @@ DBAPITest.o : $(TEST_DIR)/DBAPITest.cc $(SRC_DIR)/db/db.h $(SRC_DIR)/proxy/HttpP
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(TEST_DIR)/DBAPITest.cc
 	
 DBAPITest : DBAPITest.o Db.o gtest_main.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
+	
+XmlConnector.o : $(SRC_DIR)/db/XMLConnector.cc $(SRC_DIR)/db/XMLConnector.h
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(SRC_DIR)/db/XMLConnector.cc -o XmlConnector.o
+
+XmlConnectorTest.o : $(TEST_DIR)/XMLConnectorTest.cc $(SRC_DIR)/db/TableInterfaces.h $(SRC_DIR)/db/XMLConnector.h $(GTEST_HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(TEST_DIR)/XMLConnectorTest.cc -o $@
+	
+XmlConnectorTest : XmlConnectorTest.o XmlConnector.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
