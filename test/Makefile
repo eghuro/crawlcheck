@@ -28,6 +28,7 @@ CPPFLAGS += -isystem $(GTEST_DIR)/include
 
 # Flags passed to the C++ compiler.
 CXXFLAGS += -g -Wall -Wextra -pthread -std=c++11
+XERCESFLAGS = -L/usr/local/lib -I/usr/local/include -lxerces-c
 
 # All tests produced by this Makefile.  Remember to add new tests you
 # created to the list.
@@ -122,10 +123,10 @@ DBAPITest : DBAPITest.o Db.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
 	
 XmlConnector.o : $(SRC_DIR)/db/XMLConnector.cc $(SRC_DIR)/db/XMLConnector.h
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(SRC_DIR)/db/XMLConnector.cc -o XmlConnector.o
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(XERCESFLAGS) -c $(SRC_DIR)/db/XMLConnector.cc -o XmlConnector.o
 
 XmlConnectorTest.o : $(TEST_DIR)/XMLConnectorTest.cc $(SRC_DIR)/db/TableInterfaces.h $(SRC_DIR)/db/XMLConnector.h $(GTEST_HEADERS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(TEST_DIR)/XMLConnectorTest.cc -o $@
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(XERCESFLAGS) -c $(TEST_DIR)/XMLConnectorTest.cc -o $@
 	
 XmlConnectorTest : XmlConnectorTest.o XmlConnector.o gtest_main.a
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(XERCESFLAGS) -lpthread $^ -o $@

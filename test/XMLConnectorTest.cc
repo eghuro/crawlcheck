@@ -6,11 +6,14 @@
 #include "gtest/gtest.h"
 
 TEST(XmlConnector, Create) {
-  const std::shared_ptr<DatabaseConnector> c = std::make_shared<DatabaseConnector>(XMLConnector("/tmp/ccdb.xml"));
+  //const std::shared_ptr<DatabaseConnector> c = std::make_shared<XMLConnector>(XMLConnector("/tmp/ccdb.xml"));
+  const DatabaseConnector * c = new XMLConnector("/tmp/ccdb.xml");
+  delete c;
 }
 
-/*TEST(XmlConnectorTransaction, RequestMethodGet) {
-  const std::shared_ptr<DatabaseConnector> c = std::make_shared<DatabaseConnector>(XMLConnector("/tmp/ccdb.xml"));
+TEST(XmlConnectorTransaction, RequestMethodGet) {
+  //const std::shared_ptr<DatabaseConnector> c = std::make_shared<XMLConnector>(XMLConnector("/tmp/ccdb.xml"));
+  DatabaseConnector * c = new XMLConnector("/tmp/ccdb.xml");
 
   auto tr(c -> createTransaction());
 
@@ -20,16 +23,16 @@ TEST(XmlConnector, Create) {
   ASSERT_TRUE(tr->getMethod() == RequestMethod::GET);
 
   delete c;
-  ASSERT_EQ(nullptr, c);
 
-  const std::shared_ptr<DatabaseConnector> c2 = std::make_shared<DatabaseConnector>(XMLConnector("/tmp/ccdb.xml"));
+  const std::shared_ptr<DatabaseConnector> c2 = std::make_shared<XMLConnector>(XMLConnector("/tmp/ccdb.xml"));
   auto tr2(c2->getTransaction(0));
 
+  ASSERT_FALSE(tr2 == nullptr);
   ASSERT_TRUE(0 == tr2->getId());
   ASSERT_TRUE(tr2->getMethod() == RequestMethod::GET);
 }
 
-TEST(XmlConnectorTransaction, RequestMethodPost) {
+/*TEST(XmlConnectorTransaction, RequestMethodPost) {
   const std::shared_ptr<DatabaseConnector> c = std::make_shared<DatabaseConnector>(XMLConnector("/tmp/ccdb.xml"));
 
   auto tr(c -> createTransaction());
