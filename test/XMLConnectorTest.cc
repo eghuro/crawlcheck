@@ -5,13 +5,13 @@
 #include "../src/db/XMLConnector.h"
 #include "gtest/gtest.h"
 
-TEST(XmlConnector, Create) {
+TEST(XMLConnector, Create) {
   //const std::shared_ptr<DatabaseConnector> c = std::make_shared<XMLConnector>(XMLConnector("/tmp/ccdb.xml"));
   const DatabaseConnector * c = new XMLConnector("/tmp/ccdb.xml");
   delete c;
 }
 
-TEST(XmlConnectorTransaction, RequestMethodGet) {
+TEST(XMLConnectorTransaction, RequestMethodGet) {
   //const std::shared_ptr<DatabaseConnector> c = std::make_shared<XMLConnector>(XMLConnector("/tmp/ccdb.xml"));
   DatabaseConnector * c = new XMLConnector("/tmp/ccdb.xml");
 
