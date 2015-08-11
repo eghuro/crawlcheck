@@ -32,7 +32,7 @@ XERCESFLAGS = -L/usr/local/lib -I/usr/local/include -lxerces-c
 
 # All tests produced by this Makefile.  Remember to add new tests you
 # created to the list.
-TESTS = ProxyConfigurationTest HttpParserTest RequestStorageTest DBAPITest XmlConnectorTest
+TESTS = ProxyConfigurationTest HttpParserTest RequestStorageTest DBAPITest MySqlConnectorTest # XmlConnectorTest
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
@@ -129,4 +129,14 @@ XmlConnectorTest.o : $(TEST_DIR)/XMLConnectorTest.cc $(SRC_DIR)/db/TableInterfac
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(XERCESFLAGS) -c $(TEST_DIR)/XMLConnectorTest.cc -o $@
 	
 XmlConnectorTest : XmlConnectorTest.o XmlConnector.o gtest_main.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(XERCESFLAGS) -lpthread $^ -o $@
+	
+	
+MySqlConnector.o : $(SRC_DIR)/db/MySqlConnector.cc $(SRC_DIR)/db/MySqlConnector.h
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(XERCESFLAGS) -c $(SRC_DIR)/db/MySqlConnector.cc -o MySqlConnector.o
+
+MySqlConnectorTest.o : $(TEST_DIR)/MySqlConnectorTest.cc $(SRC_DIR)/db/TableInterfaces.h $(SRC_DIR)/db/MySqlConnector.h $(GTEST_HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(XERCESFLAGS) -c $(TEST_DIR)/MySqlConnectorTest.cc -o $@
+	
+MySqlConnectorTest : MySqlConnectorTest.o MySqlConnector.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(XERCESFLAGS) -lpthread $^ -o $@
