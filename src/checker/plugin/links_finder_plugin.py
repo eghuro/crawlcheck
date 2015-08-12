@@ -1,8 +1,12 @@
 from bs4 import BeautifulSoup
+from yapsy.IPlugin import IPlugin
 
-class LinksFinder:
+class LinksFinder(IPlugin):
 
-    def __init__(self, DB):
+    def __init__(self):
+        self.database = None
+
+    def setDb(self, DB):
         self.database = DB
 
     def check(self, transactionId, content):
@@ -15,4 +19,4 @@ class LinksFinder:
         return
 
     def handleContent(self, contentType):
-        return contentType == "text/html"
+        return contentType == "text/html" 

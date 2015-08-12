@@ -1,0 +1,8 @@
+[Core]
+Name = W3C HTML Validator
+Module = py_w3c_html_validator_plugin
+
+[Documentation]
+Author = Alexandr Mansurov
+Version = 0.1
+Description = Validate HTML content

@@ -1,9 +1,12 @@
-
+from yapsy.IPlugin import IPlugin
 from py_w3c.validators.html.validator import HTMLValidator
 
-class PyW3C_HTML_Validator:
-    def __init__(self, DB):
+class PyW3C_HTML_Validator(IPlugin):
+    def __init__(self):
         self.validator = HTMLValidator()
+        self.database = None
+
+    def setDb(self, DB):
         self.database = DB
 
     def check(self, transactionId, content):

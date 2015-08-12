@@ -4,6 +4,7 @@ class PluginRunner:
         self.api = api
 
     def runOne(self, plugin):
+        plugin.setDb(self.api)
         info = self.api.getTransaction()
         while info.getId() != -1:
             if plugin.handleContent(info.getContentType):

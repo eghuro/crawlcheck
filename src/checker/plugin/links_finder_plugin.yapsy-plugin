@@ -1,0 +1,8 @@
+[Core]
+Name = Links finder plugin
+Module = links_finder_plugin
+
+[Documentation]
+Author = Alexandr Mansurov
+Version = 0.1
+Description = Discover links in HTML and add them into DB
