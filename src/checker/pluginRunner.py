@@ -1,7 +1,8 @@
-from pluginDBAPI import DBAPI
-from DBAPIconfiguration import DBAPIconfiguration
+from checker.pluginDBAPI import DBAPI
 
 class PluginRunner:
+    def __init__(self, dbconf):
+        self.dbconf = dbconf
 
     def runOne(self, plugin, api):
         plugin.setDb(api)
@@ -12,14 +13,6 @@ class PluginRunner:
             info = api.getTransaction()
 
     def run(self, plugins):
-        api = DBAPI(self.getDbconf())
+        api = DBAPI(self.dbconf)
         for plugin in plugins:
             self.runOne(plugin, api)
-
-    def getDbconf(self):
-        dbconf = DBAPIconfiguration()
-        dbconf.setUri('localhost')
-        dbconf.setUser('test')
-        dbconf.setPassword('')
-        dbconf.setDbname('crawlcheck')
-        return dbconf

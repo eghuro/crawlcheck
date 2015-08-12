@@ -1,23 +1,23 @@
 import unittest
-from pluginDBAPI import DBAPI
-from DBAPIconfiguration import DBAPIconfiguration
+from checker.pluginDBAPI import DBAPI
+from checker.pluginDBAPI import DBAPIconfiguration
 
 class DBAPITest(unittest.TestCase):
-  def setUp(_self):
-    _self.conf = DBAPIconfiguration()
-    _self.conf.setUri('localhost')
-    _self.conf.setUser('test')   
-    _self.conf.setPassword('')
-    _self.conf.setDbname('crawlcheck')
+    def setUp(self):
+        self.conf = DBAPIconfiguration()
+        self.conf.setUri('localhost')
+        self.conf.setUser('test')
+        self.conf.setPassword('')
+        self.conf.setDbname('crawlcheck')
 
-  def testInstance(_self):
-    api = DBAPI(_self.conf)
+    def testInstance(self):
+        DBAPI(self.conf)
 
-  def testGetTransaction(_self):
-    api = DBAPI(_self.conf)
-    tr = api.getTransaction()
-    assert tr.getId() == -1
-    assert tr.getContent() == ""
+    def testGetTransaction(self):
+        api = DBAPI(_self.conf)
+        tr = api.getTransaction()
+        assert tr.getId() == -1
+        assert tr.getContent() == ""
 
 if __name__ == '__main__':
     unittest.main()
