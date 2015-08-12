@@ -1,15 +1,18 @@
 import MySQLdb as mdb
 
 class TransactionInfo:
-  def __init__(_self, id, content):
-    _self.id = id
-    _self.content = content
+  def __init__(self, tid, content):
+    self.tid = tid
+    self.content = content
 
-  def getId(_self):
-    return _self.id
+  def getId(self):
+    return self.tid
 
-  def getContent(_self):
-    return _self.content
+  def getContent(self):
+    return self.content
+
+  def getContentType(self):
+    return "text/html"
 
 class DBAPI:
   def __init__(_self, conf):
