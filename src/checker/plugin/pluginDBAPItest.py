@@ -15,8 +15,9 @@ class DBAPITest(unittest.TestCase):
 
   def testGetTransaction(_self):
     api = DBAPI(_self.conf)
-    trId = api.getTransactionId()
-    assert trId == -1
+    tr = api.getTransaction()
+    assert tr.getId() == -1
+    assert tr.getContent() == ""
 
 if __name__ == '__main__':
     unittest.main()
