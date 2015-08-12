@@ -1,6 +1,6 @@
 from bs4 import BeautifulSoup
 
-class LinksFinderPlugin:
+class LinksFinder:
 
     def __init__(self, DB):
         self.database = DB
