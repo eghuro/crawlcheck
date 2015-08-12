@@ -1,17 +1,25 @@
+from pluginDBAPI import DBAPI
+from DBAPIconfiguration import DBAPIconfiguration
+
 class PluginRunner:
 
-    def __init__(self, api):
-        self.api = api
-
-    def runOne(self, plugin):
-        plugin.setDb(self.api)
-        info = self.api.getTransaction()
+    def runOne(self, plugin, api):
+        plugin.setDb(api)
+        info = api.getTransaction()
         while info.getId() != -1:
             if plugin.handleContent(info.getContentType):
                 plugin.check(info.getId(), info.getContent())
-            info = self.api.getTransaction()
+            info = api.getTransaction()
 
-    def run(self, plugin, *plugins):
-        self.runOne(plugin)
-        for nextPlugin in plugins:
-            self.runOne(nextPlugin)
+    def run(self, plugins):
+        api = DBAPI(self.getDbconf())
+        for plugin in plugins:
+            self.runOne(plugin, api)
+
+    def getDbconf(self):
+        dbconf = DBAPIconfiguration()
+        dbconf.setUri('localhost')
+        dbconf.setUser('test')
+        dbconf.setPassword('')
+        dbconf.setDbname('crawlcheck')
+        return dbconf
