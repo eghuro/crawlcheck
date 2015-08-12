@@ -3,8 +3,8 @@ import unittest
 from pluginRunner import PluginRunner
 from DBAPIconfiguration import DBAPIconfiguration
 from pluginDBAPI import DBAPI
-from py_w3c_html_validator_plugin import PyW3C_HTML_Validator
-from links_finder_plugin import LinksFinder
+from plugin.py_w3c_html_validator_plugin import PyW3C_HTML_Validator
+from plugin.links_finder_plugin import LinksFinder
 
 class PluginRunnerTest(unittest.TestCase):
 
