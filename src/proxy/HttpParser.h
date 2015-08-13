@@ -15,12 +15,40 @@
 #include <utility>
 #include "./HelperRoutines.h"
 
-enum HttpParserResultState {
+enum class HttpParserResultState {
   CONTINUE, REQUEST, RESPONSE, INVALID
 };
 
-enum HttpParserState {
-  START
+enum class RequestMethod {
+  GET, POST, PUT, CONNECT, HEAD, DELETE, TRACE
+};
+
+class RequestMethodTransformer {
+ public:
+  static inline std::string toString(RequestMethod method) {
+    if (method == RequestMethod::GET) return "GET";
+    switch (method) {
+    case RequestMethod::GET: return "GET"; break;
+    case RequestMethod::HEAD: return "HEAD"; break;
+    case RequestMethod::POST: return "POST"; break;
+    case RequestMethod::PUT: return "PUT"; break;
+    case RequestMethod::DELETE: return "DELETE"; break;
+    case RequestMethod::TRACE: return "TRACE"; break;
+    case RequestMethod::CONNECT: return "CONNECT"; break;
+    default: assert(false); return "";
+    }
+  }
+
+  static inline RequestMethod transformMethod(const std::string & methodStr) {
+    if (methodStr == "GET") return RequestMethod::GET;
+    if (methodStr == "HEAD") return RequestMethod::HEAD;
+    if (methodStr == "POST") return RequestMethod::POST;
+    if (methodStr == "PUT") return RequestMethod::PUT;
+    if (methodStr == "DELETE") return RequestMethod::DELETE;
+    if (methodStr == "TRACE") return RequestMethod::TRACE;
+    if (methodStr == "CONNECT") return RequestMethod::CONNECT;
+    assert(false);
+  }
 };
 
 class HttpUri {
@@ -204,11 +232,21 @@ class HttpParserResult {
     return request_uri.getHost();
   }
 
+  inline void setMethod(RequestMethod meth) {
+    assert(state_ == HttpParserResultState::REQUEST);
+    method = meth;
+  }
+  inline RequestMethod getMethod() const {
+    assert(state_ == HttpParserResultState::REQUEST);
+    return method;
+  }
+
  private:
   const HttpParserResultState state_;
   HttpUri request_uri;
   std::string raw_message, content_type, content;
   HttpResponseStatus response_status;
+  RequestMethod method;
 };
 
 class HttpUriFactory {
@@ -291,7 +329,7 @@ class HttpUriFactory {
 
 class HttpParser {
  public:
-  HttpParser():state_(HttpParserState::START) {}
+  HttpParser() {}
   virtual ~HttpParser() {}
 
   HttpParserResult parse(const std::string & chunk) {
@@ -312,6 +350,9 @@ class HttpParser {
 
       auto begin = findSpace(chunk, 0);
       if (begin != -1) {
+        //method - od zacatku po begin-1
+        auto method = RequestMethodTransformer::transformMethod(chunk.substr(0, begin));
+
         begin++;  // zacatek adresy na znaku po 1. mezere - viz regex
 
         int end = findSpace(chunk, begin);
@@ -320,6 +361,7 @@ class HttpParser {
           auto uri = HttpUriFactory::createUri(chunk.substr(begin, length));
           result.setRequestUri(uri);
           result.setRaw(chunk);
+          result.setMethod(method);
           return result;
         }
       }
@@ -366,7 +408,6 @@ class HttpParser {
   }
 
  private:
-  HttpParserState state_;
 
   inline int findSpace(const std::string & chunk, std::size_t start) const {
     std::size_t pos = start;

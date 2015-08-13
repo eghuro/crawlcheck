@@ -13,7 +13,7 @@ TEST(MySqlConnector, Create) {
 
 TEST(MySqlConnectorTransaction, RequestMethodGet) {
   //const std::shared_ptr<DatabaseConnector> c = std::make_shared<XMLConnector>(XMLConnector("/tmp/ccdb.xml"));
-  DatabaseConnector * c = new MySqlConnector("localhost", "alex", "pwd", "Crawlcheck");
+  DatabaseConnector * c = new MySqlConnector("localhost", "test", "", "Crawlcheck");
 
   auto tr(c -> createTransaction());
 

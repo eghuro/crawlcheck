@@ -28,7 +28,6 @@ CPPFLAGS += -isystem $(GTEST_DIR)/include
 
 # Flags passed to the C++ compiler.
 CXXFLAGS += -g -Wall -Wextra -pthread -std=c++11
-XERCESFLAGS = -L/usr/local/lib -I/usr/local/include -lxerces-c
 
 # All tests produced by this Makefile.  Remember to add new tests you
 # created to the list.
@@ -114,13 +113,13 @@ RequestStorageTest : RequestStorage.o RequestStorageTest.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
 	
 Db.o : $(SRC_DIR)/db/DatabaseAPI.cc
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(SRC_DIR)/db/DatabaseAPI.cc -o Db.o
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -l mysqlcppconn -c $(SRC_DIR)/db/DatabaseAPI.cc -o Db.o
 	
 DBAPITest.o : $(TEST_DIR)/DBAPITest.cc $(SRC_DIR)/db/db.h $(SRC_DIR)/proxy/HttpParser.h $(GTEST_HEADERS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(TEST_DIR)/DBAPITest.cc
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -l mysqlcppconn -c $(TEST_DIR)/DBAPITest.cc
 	
 DBAPITest : DBAPITest.o Db.o gtest_main.a
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -l mysqlcppconn -lpthread $^ -o $@
 	
 XmlConnector.o : $(SRC_DIR)/db/XMLConnector.cc $(SRC_DIR)/db/XMLConnector.h
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(XERCESFLAGS) -c $(SRC_DIR)/db/XMLConnector.cc -o XmlConnector.o
@@ -133,10 +132,10 @@ XmlConnectorTest : XmlConnectorTest.o XmlConnector.o gtest_main.a
 	
 	
 MySqlConnector.o : $(SRC_DIR)/db/MySqlConnector.cc $(SRC_DIR)/db/MySqlConnector.h
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(XERCESFLAGS) -c $(SRC_DIR)/db/MySqlConnector.cc -o MySqlConnector.o
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(SRC_DIR)/db/MySqlConnector.cc -o MySqlConnector.o
 
 MySqlConnectorTest.o : $(TEST_DIR)/MySqlConnectorTest.cc $(SRC_DIR)/db/TableInterfaces.h $(SRC_DIR)/db/MySqlConnector.h $(GTEST_HEADERS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(XERCESFLAGS) -l mysqlcppconn -c $(TEST_DIR)/MySqlConnectorTest.cc -o $@
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -l mysqlcppconn -c $(TEST_DIR)/MySqlConnectorTest.cc -o $@
 	
 MySqlConnectorTest : MySqlConnectorTest.o MySqlConnector.o gtest_main.a
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(XERCESFLAGS) -l mysqlcppconn -lpthread $^ -o $@
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -l mysqlcppconn -lpthread $^ -o $@

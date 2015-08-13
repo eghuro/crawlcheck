@@ -93,11 +93,11 @@ class Annotation {
 
 class DatabaseConnector {
  public:
-  virtual Transaction * createTransaction() = 0;
+  virtual Transaction * createTransaction(const RequestMethod, const HttpUri &) = 0;
   virtual Transaction * getTransaction(std::size_t) const = 0;
-  virtual Finding * createFinding() = 0;
+  virtual Finding * createFinding(std::size_t) = 0;
   virtual Finding * getFinding(std::size_t) const = 0;
-  virtual Link * createLink(Finding * finding) = 0;
+  virtual Link * createLink(Finding * finding, const HttpUri &) = 0;
   virtual Link * getLink(std::size_t) const = 0;
   virtual Defect * createDefect(Finding *) = 0;
   virtual Defect * getDefect(std::size_t) const = 0;

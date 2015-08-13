@@ -10,20 +10,25 @@ TEST(DatabaseConfiguration, BasicCheck) {
 
 TEST(DatabaseAPI, ClientRequest) {
   DatabaseConfiguration dbc;
+  dbc.setUser("test");
+  dbc.setDb("crawlcheck");
   Database db(dbc);
 
   HttpParserResult request(HttpParserResultState::REQUEST);
   request.setRequestUri(HttpUriFactory::createUri("http://www.mff.cuni.cz"));
+  request.setMethod(RequestMethod::GET);
 
   auto count = db.getClientRequestCount();
   auto request_id = db.setClientRequest(request);
-  ASSERT_TRUE(count+1 == db.getClientRequestCount());
-
+  auto count1 = db.getClientRequestCount();
+  ASSERT_TRUE(count+1 == count1);
   ASSERT_TRUE(request == db.getClientRequest(request_id));
 }
 
 TEST(DatabaseAPI, ServerResponse) {
   DatabaseConfiguration dbc;
+  dbc.setUser("test");
+  dbc.setDb("crawlcheck");
   Database db(dbc);
 
   HttpParserResult response(HttpParserResultState::RESPONSE);
