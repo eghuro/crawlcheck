@@ -5,6 +5,7 @@
 
 #include <cassert>
 #include <sstream>
+#include <mysql_connection.h>
 #include "mysql_driver.h"
 #include "cppconn/driver.h"
 #include "cppconn/exception.h"
@@ -51,8 +52,7 @@ class DatabaseConfiguration {
 
 class Database{
  public:
-  typedef std::size_t ClientRequestIdentifier;
-  typedef std::size_t ServerResponseIdentifier;
+  typedef std::size_t TransactionIdentifier;
 
   Database(const DatabaseConfiguration& dbc):config(dbc) {
     driver = get_driver_instance();
@@ -78,7 +78,7 @@ class Database{
     return count;
   }
 
-  ClientRequestIdentifier setClientRequest(const HttpParserResult & request) {
+  TransactionIdentifier setClientRequest(const HttpParserResult & request) {
     assert(request.isRequest());
 
     std::ostringstream oss;
@@ -107,7 +107,7 @@ class Database{
     return id;
   }
 
-  HttpParserResult getClientRequest(const ClientRequestIdentifier & identifier) {
+  HttpParserResult getClientRequest(const TransactionIdentifier & identifier) {
     std::ostringstream oss;
     oss << "SELECT method, uri FROM transaction WHERE id = ";
     oss << identifier;
@@ -132,14 +132,62 @@ class Database{
   }
 
   std::size_t getServerResponseCount() {
-    return 0;
+    sql::Statement *stmt = con->createStatement();
+
+    sql::ResultSet *res = stmt->executeQuery("SELECT count(id) AS id FROM transaction WHERE verificationStatusId= 3");
+
+    unsigned int count = 0;
+    if (res->next()) {
+      count = res->getUInt("id");
+    }
+    delete stmt;
+    delete res;
+    return count;
   }
-  ServerResponseIdentifier setServerResponse(const HttpParserResult & response) {
-    return 0;
+
+  void setServerResponse(const TransactionIdentifier tid, const HttpParserResult & response) {
+    assert(response.isResponse());
+
+    sql::mysql::MySQL_Connection * mysql_conn = dynamic_cast<sql::mysql::MySQL_Connection*>(con);
+    std::string escapedContent = mysql_conn->escapeString( response.getContent() );
+
+    std::ostringstream oss;
+    oss << "UPDATE transaction SET responseStatus = \"";
+    oss << response.getStatus().getCode();
+    oss << "\", contentType = \"" << response.getContentType() << "\", ";
+    oss <<  "content = \"" << escapedContent << "\", ";
+    oss << "verificationStatusId = 3 WHERE id = " << tid;
+
+    auto *stmt = con->createStatement();
+    stmt->executeUpdate(oss.str());
+
+    delete stmt;
   }
-  HttpParserResult getServerResponse(const ServerResponseIdentifier & identifier) {
-    return HttpParserResult(HttpParserResultState::RESPONSE);
+
+  HttpParserResult getServerResponse(const TransactionIdentifier & identifier) {
+    std::ostringstream oss;
+    oss << "SELECT responseStatus, contentType, content FROM transaction ";
+    oss << "WHERE id = " << identifier;
+
+    auto *stmt = con -> createStatement();
+    sql::ResultSet *res = stmt->executeQuery(oss.str());
+
+    if (res->next()) {
+      HttpParserResult ret(HttpParserResultState::RESPONSE);
+      ret.setResponseStatus(HttpResponseStatus(res->getUInt("responseStatus")));
+      ret.setContentType(res->getString("contentType"));
+      ret.setContent(res->getString("content"));
+
+      delete stmt;
+      delete res;
+      return ret;
+    } else {
+      delete stmt;
+      delete res;
+      return HttpParserResult(HttpParserResultState::RESPONSE);
+    }
   }
+
  private:
   const DatabaseConfiguration & config;
   sql::Driver *driver;

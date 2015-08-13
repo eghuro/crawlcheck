@@ -37,7 +37,7 @@ class RequestStorage {
   }
 
   /**
-   * Insert HttpParseerResult into storage, pushes DB and notifies checker (TBD)
+   * Insert HttpParseerResult into storage, pushes DB
    * @param result parsed communication HttpParserResult of type request or response
    * @param id transaction identifier
    */
