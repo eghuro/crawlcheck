@@ -85,7 +85,7 @@ class MySqlConnector: public DatabaseConnector {
 public:
   MySqlConnector(const std::string & srvr, const std::string & usr, const std::string & pwd, const std::string & db):
     server(srvr), user(usr), password(pwd), database(db), transactionId(0) {
-    driver = sql::mysql::MySQL_Driver::get_mysql_driver_instance();
+    driver = get_driver_instance();
     con = driver->connect(server, user, password);
   }
   virtual ~MySqlConnector() {
@@ -166,7 +166,7 @@ private:
   std::size_t transactionId;
   std::map<std::size_t, std::shared_ptr<MySqlTransaction>> transactions;
 
-  sql::mysql::MySQL_Driver *driver;
+  sql::Driver *driver;
   sql::Connection *con;
 };
 

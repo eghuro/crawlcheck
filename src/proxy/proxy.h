@@ -14,7 +14,6 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include "../checker/checker.h"
 #include "../db/db.h"
 #include "./ProxyWorker.h"
 #include "./HelperRoutines.h"
@@ -44,12 +43,11 @@ class Proxy {
    * No special preconditions on provided pointers and references.
    *
    * @param conf a pointer to ProxyConfiguration object containing the config
-   * @param check a reference to Checker that is not in use at the moment
-   * @param db a reference to Database that is not in use at the moment
+   * @param db a pointer to Database where requests are stored to and responses are retrieved from
    */
   // TODO(alex): update docs when checker and db are in use
-  Proxy(std::shared_ptr<ProxyConfiguration> conf, const Checker & check,
-    const Database & db): configuration(conf), checker(check), database(db) {}
+  Proxy(std::shared_ptr<ProxyConfiguration> conf, std::shared_ptr<Database> db):
+    configuration(conf), database(db) {}
 
   /**
    * Entry point for proxy.
@@ -60,8 +58,7 @@ class Proxy {
 
  private:
   const std::shared_ptr<ProxyConfiguration> configuration;
-  const Checker & checker;
-  const Database & database;
+  const std::shared_ptr<Database> database;
 
   /**
    * Create listening sockets on all interfaces and bind them.
@@ -127,9 +124,10 @@ class Proxy {
    * connection.
    * @param fd file descriptor of the server socket
    * @param config_ptr proxy configuration
+   * @param db_ptr database
    */
-  static void handle(int fd, std::shared_ptr<ProxyConfiguration> config_ptr, std::shared_ptr<Database> db_ptr, std::shared_ptr<Checker> check_ptr) {
-    ProxyWorker pw(config_ptr, db_ptr, check_ptr);
+  static void handle(int fd, std::shared_ptr<ProxyConfiguration> config_ptr, std::shared_ptr<Database> db_ptr) {
+    ProxyWorker pw(config_ptr, db_ptr);
     pw.startThread(fd);
   }
 };

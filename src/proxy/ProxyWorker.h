@@ -17,7 +17,6 @@
 #include "./HelperRoutines.h"
 #include "./RequestStorage.h"
 #include "../db/db.h"
-#include "../checker/checker.h"
 
 /**
  * Connection identifiers are used to bond connections with client and server.
@@ -44,9 +43,9 @@ class ConnectionIdentifierFactory {
 class ProxyWorker {
  public:
   // TODO(alex): make singleton!
-  explicit ProxyWorker(std::shared_ptr<ProxyConfiguration> config, std::shared_ptr<Database> db_ptr, std::shared_ptr<Checker> check_ptr) :
+  explicit ProxyWorker(std::shared_ptr<ProxyConfiguration> config, std::shared_ptr<Database> db_ptr) :
     client_thread(0), server_thread(0), configuration(config),
-    request_storage(std::shared_ptr<RequestStorage>(new RequestStorage(db_ptr, check_ptr));) {}
+    request_storage(std::make_shared<RequestStorage>(db_ptr)) {}
   virtual ~ProxyWorker();
 
   /**

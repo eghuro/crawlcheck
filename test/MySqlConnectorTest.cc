@@ -7,13 +7,13 @@
 
 TEST(MySqlConnector, Create) {
   //const std::shared_ptr<DatabaseConnector> c = std::make_shared<XMLConnector>(XMLConnector("/tmp/ccdb.xml"));
-  const DatabaseConnector * c = new MySqlConnector("localhost", "alex", "pwd", "crawlcheck_test_db");
+  const DatabaseConnector * c = new MySqlConnector("localhost", "test", "", "Crawlcheck");
   delete c;
 }
 
 TEST(MySqlConnectorTransaction, RequestMethodGet) {
   //const std::shared_ptr<DatabaseConnector> c = std::make_shared<XMLConnector>(XMLConnector("/tmp/ccdb.xml"));
-  DatabaseConnector * c = new MySqlConnector("localhost", "alex", "pwd", "crawlcheck_test_db");
+  DatabaseConnector * c = new MySqlConnector("localhost", "alex", "pwd", "Crawlcheck");
 
   auto tr(c -> createTransaction());
 
@@ -24,7 +24,7 @@ TEST(MySqlConnectorTransaction, RequestMethodGet) {
 
   delete c;
 
-  const std::shared_ptr<DatabaseConnector> c2 = std::make_shared<MySqlConnector>(MySqlConnector("localhost", "alex", "pwd", "crawlcheck_test_db"));
+  const std::shared_ptr<DatabaseConnector> c2 = std::make_shared<MySqlConnector>(MySqlConnector("localhost", "test", "", "Chrawlcheck"));
   auto tr2(c2->getTransaction(0));
 
   ASSERT_FALSE(tr2 == nullptr);

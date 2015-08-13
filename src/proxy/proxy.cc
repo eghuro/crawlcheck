@@ -2,7 +2,6 @@
 #include "./proxy.h"
 #include <memory>
 #include "../db/db.h"
-#include "../checker/checker.h"
 #include "./ProxyConfiguration.h"
 
 int main(int argc, char **argv) {
@@ -14,10 +13,9 @@ int main(int argc, char **argv) {
   assert(conf->getInPoolPort() == 90);
   assert(conf->getInBacklog() == 100);
 
-  DatabaseConfiguration dbc
-  Database d(dbc);
-  Checker c;
-  Proxy proxy(conf, c, d);
+  DatabaseConfiguration dbc;
+  std::shared_ptr<Database> d = std::make_shared<Database>(dbc);
+  Proxy proxy(conf, d);
 
   fprintf(stdout, "Starting proxy\n");
   proxy.start();
@@ -44,7 +42,7 @@ void Proxy::start() {
         accepted = ((pollstr[i].revents & mask) == POLLIN);
         accepted = accepted || ((pollstr[i].revents & mask) == POLLPRI);
         if (accepted) {
-          handle(pollstr[i].fd, configuration);
+          handle(pollstr[i].fd, configuration, database);
         }
       }
     } else if (poll_ret == 0) {

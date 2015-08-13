@@ -10,8 +10,7 @@
 TEST(RequestStorage, Request) {
   DatabaseConfiguration dbc;
   std::shared_ptr<Database> db = std::make_shared<Database>(dbc);
-  std::shared_ptr<Checker> ch = std::make_shared<Checker>();
-  RequestStorage rs(db, ch);
+  RequestStorage rs(db);
   ASSERT_FALSE(rs.requestAvailable());
   ASSERT_FALSE(rs.responseAvailable());
 
@@ -30,8 +29,7 @@ TEST(RequestStorage, Request) {
 TEST(RequestStorage, Response) {
   DatabaseConfiguration dbc;
   std::shared_ptr<Database> db = std::make_shared<Database>(dbc);
-  std::shared_ptr<Checker> ch = std::make_shared<Checker>();
-  RequestStorage rs(db, ch);
+  RequestStorage rs(db);
   ASSERT_FALSE(rs.requestAvailable());
   ASSERT_FALSE(rs.responseAvailable());
 

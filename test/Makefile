@@ -136,7 +136,7 @@ MySqlConnector.o : $(SRC_DIR)/db/MySqlConnector.cc $(SRC_DIR)/db/MySqlConnector.
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(XERCESFLAGS) -c $(SRC_DIR)/db/MySqlConnector.cc -o MySqlConnector.o
 
 MySqlConnectorTest.o : $(TEST_DIR)/MySqlConnectorTest.cc $(SRC_DIR)/db/TableInterfaces.h $(SRC_DIR)/db/MySqlConnector.h $(GTEST_HEADERS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(XERCESFLAGS) -c $(TEST_DIR)/MySqlConnectorTest.cc -o $@
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(XERCESFLAGS) -l mysqlcppconn -c $(TEST_DIR)/MySqlConnectorTest.cc -o $@
 	
 MySqlConnectorTest : MySqlConnectorTest.o MySqlConnector.o gtest_main.a
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(XERCESFLAGS) -lpthread $^ -o $@
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(XERCESFLAGS) -l mysqlcppconn -lpthread $^ -o $@
