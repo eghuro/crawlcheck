@@ -37,9 +37,9 @@ class DBAPITest(unittest.TestCase):
         cursor = con.cursor()
         cursor.execute("DELETE FROM transaction")
         response = ('<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">\n<html><head>\n<title>408 Request Timeout</title>\n</head><body>\n<h1>Request Timeout</h1>\n<p>Server timeout waiting for the HTTP request from the client.</p>\n<hr>\n<address>Apache/2.4.10 (Debian) Server at olga.majling.eu Port 80</address>\n</body></html>')
-        cursor.execute("INSERT INTO transaction (id, method, uri, responseStatus, contentType, content, verificationStatusId) VALUES (1, 'GET', \"http://olga.majling.eu/Vyuka\", 200, \"text/html; charset=iso-8859-1\",\""+con.escape_string(response)+"\", 2)")
+        cursor.execute("INSERT INTO transaction (id, method, uri, responseStatus, contentType, content, verificationStatusId) VALUES (1, 'GET', \"http://olga.majling.eu/Vyuka\", 200, \"text/html; charset=iso-8859-1\",\""+con.escape_string(response)+"\", 3)")
+        
         con.commit()
-
 
         api = DBAPI(self.conf)        
         tr = api.getTransaction()
@@ -55,7 +55,7 @@ class DBAPITest(unittest.TestCase):
         cursor = con.cursor()
         cursor.execute("DELETE FROM transaction")
         response = ('<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">\n<html><head>\n<title>408 Request Timeout</title>\n</head><body>\n<h1>Request Timeout</h1>\n<p>Server timeout waiting for the HTTP request from the client.</p>\n<hr>\n<address>Apache/2.4.10 (Debian) Server at olga.majling.eu Port 80</address>\n</body></html>')
-        cursor.execute("INSERT INTO transaction (id, method, uri, responseStatus, contentType, content, verificationStatusId) VALUES (1, 'GET', \"http://olga.majling.eu/Vyuka\", 200, \"text/html; charset=iso-8859-1\",\""+con.escape_string(response)+"\", 2)")
+        cursor.execute("INSERT INTO transaction (id, method, uri, responseStatus, contentType, content, verificationStatusId) VALUES (1, 'GET', \"http://olga.majling.eu/Vyuka\", 200, \"text/html; charset=iso-8859-1\",\""+con.escape_string(response)+"\", 3)")
         con.commit()
 
 
@@ -79,7 +79,7 @@ class DBAPITest(unittest.TestCase):
                      ' uvedené termíny – cílem je\n</td></tr>\n<tr><td> udržet v kanceláři rozumné pracovní prostředí \n</td></tr>\n<tr><td>\na agendu související se zápisem známek \n</td></tr>\n<tr><td>\nomezit na konkrétní den a čas.\n'
                      '</td></tr></table>\n</p> \n</div>\n</td>\n<td>\n</td>\n</tr><tr>\n<td class="upR" rowspan="1" width="15%">\n</td>\n</tr>\n<tr><td colspan="3" class="lowtab">\n<a href="http://www.toplist.cz/stat/1075666"><script\n'
                      ' language="JavaScript" type="text/javascript">\n</a>\n</td></tr>\n</table>\n</body>\n</html>\n')
-        cursor.execute("INSERT INTO transaction (id, method, uri, responseStatus, contentType, content, verificationStatusId) VALUES (2, 'GET', \"http://olga.majling.eu/\", 200, \"text/html; charset=UTF-8\",\""+con.escape_string(response2)+"\", 2)")
+        cursor.execute("INSERT INTO transaction (id, method, uri, responseStatus, contentType, content, verificationStatusId) VALUES (2, 'GET', \"http://olga.majling.eu/\", 200, \"text/html; charset=UTF-8\",\""+con.escape_string(response2)+"\", 3)")
         con.commit()
 
         api = DBAPI(self.conf)        
@@ -90,7 +90,7 @@ class DBAPITest(unittest.TestCase):
         self.assertEqual(tr.getContentType(), "text/html")
 
         cursor.execute("SELECT verificationStatusId from transaction where id = 2")
-        self.assertEqual(1, cursor.fetchone()[0])
+        self.assertEqual(4, cursor.fetchone()[0])
 
         con.close()
 
@@ -99,7 +99,7 @@ class DBAPITest(unittest.TestCase):
         cursor = con.cursor()
         cursor.execute("DELETE FROM transaction")
         response = ('<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">\n<html><head>\n<title>408 Request Timeout</title>\n</head><body>\n<h1>Request Timeout</h1>\n<p>Server timeout waiting for the HTTP request from the client.</p>\n<hr>\n<address>Apache/2.4.10 (Debian) Server at olga.majling.eu Port 80</address>\n</body></html>')
-        cursor.execute("INSERT INTO transaction (id, method, uri, responseStatus, contentType, content, verificationStatusId) VALUES (1, 'GET', \"http://olga.majling.eu/Vyuka\", 200, \"text/html; charset=iso-8859-1\",\""+con.escape_string(response)+"\", 2)")
+        cursor.execute("INSERT INTO transaction (id, method, uri, responseStatus, contentType, content, verificationStatusId) VALUES (1, 'GET', \"http://olga.majling.eu/Vyuka\", 200, \"text/html; charset=iso-8859-1\",\""+con.escape_string(response)+"\", 3)")
         con.commit()
 
         api = DBAPI(self.conf)        
@@ -109,7 +109,7 @@ class DBAPITest(unittest.TestCase):
         api.setFinished(tr.getId())
 
         cursor.execute("SELECT verificationStatusId from transaction where id = 1")
-        self.assertEqual(3, cursor.fetchone()[0])
+        self.assertEqual(5, cursor.fetchone()[0])
 
         con.close()
 
@@ -120,7 +120,7 @@ class DBAPITest(unittest.TestCase):
         cursor.execute("DELETE FROM link")
         cursor.execute("DELETE FROM finding")
         response = ('<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">\n<html><head>\n<title>408 Request Timeout</title>\n</head><body>\n<h1>Request Timeout</h1>\n<p>Server timeout waiting for the HTTP request from the client.</p>\n<hr>\n<address>Apache/2.4.10 (Debian) Server at olga.majling.eu Port 80</address>\n</body></html>')
-        cursor.execute("INSERT INTO transaction (id, method, uri, responseStatus, contentType, content, verificationStatusId) VALUES (1, 'GET', \"http://olga.majling.eu/Vyuka\", 200, \"text/html; charset=iso-8859-1\",\""+con.escape_string(response)+"\", 2)")
+        cursor.execute("INSERT INTO transaction (id, method, uri, responseStatus, contentType, content, verificationStatusId) VALUES (1, 'GET', \"http://olga.majling.eu/Vyuka\", 200, \"text/html; charset=iso-8859-1\",\""+con.escape_string(response)+"\", 3)")
         con.commit()
 
         api = DBAPI(self.conf)        
@@ -135,7 +135,9 @@ class DBAPITest(unittest.TestCase):
         row = cursor.fetchone()
         self.assertEqual("http://olga.majling.eu/", row[0])
         self.assertEqual(0, row[1])
+
 if __name__ == '__main__':
+    #testGetTransactionNonEmptyDb()
     unittest.main()
 
 

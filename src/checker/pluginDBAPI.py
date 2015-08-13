@@ -115,29 +115,24 @@ class DBAPI:
         content = ""
 
         try:
-            query = ('SELECT @A:=transaction.id, content '
-                     'FROM transaction '
-                     'INNER JOIN verificationStatus '
-                     'ON (transaction.verificationStatusId = verificationStatus.id) '
-                     'WHERE responseStatus = 200 '
-                     'AND contentType LIKE "text/html%" '
-                     'AND method = \'GET\' '
-                     'AND status = "UNVERIFIED"'
-                     'AND transaction.id IN (select MAX(transaction.id) from transaction)')
-            self.cursor.execute(query)
+            statusId = self.getUnverifiedStatusId()
+            idSelectorQuery = ('SELECT @A:=MAX(id)  FROM transaction WHERE method = \'GET\' AND responseStatus  = 200 AND contentType LIKE "text/html%" AND verificationStatusId = '+str(statusId) +'')
+            contentSelectorQuery = ('SELECT id, content FROM transaction WHERE id = @A')
+            self.cursor.execute(idSelectorQuery)           
+            self.cursor.execute(contentSelectorQuery)
             row = self.cursor.fetchone()
             if row is not None:
-                if row[0] is not None:
-                    transactionId = row[0]
-                    print transactionId
-                    assert row[1] is not None
-                    content = row[1]
-                    query = ('UPDATE transaction '
-                             'SET verificationStatusId = '
-                             '(SELECT id FROM verificationStatus WHERE status = "PROCESSING") '
-                             'WHERE id = @A')
-                    self.cursor.execute(query)
-                    self.con.commit()
+               if row[0] is not None:
+                   assert row[1] is not None
+                   transactionId = row[0]
+                   content = row[1]
+
+                   statusId = self.getProcessingStatusId()
+                   statusUpdateQuery = ('UPDATE transaction '
+                                        'SET verificationStatusId = '+str(statusId)+' '
+                                        'WHERE id = @A')
+                   self.cursor.execute(statusUpdateQuery)
+            self.con.commit()
 
         except mdb.Error, e:
             if self.con:
@@ -196,6 +191,12 @@ class DBAPI:
         return False
 
     def getFinishedStatusId(self):
+        return 5
+
+    def getProcessingStatusId(self):
+        return 4
+
+    def getUnverifiedStatusId(self):
         return 3
 
     def setFinished(self, transactionId):

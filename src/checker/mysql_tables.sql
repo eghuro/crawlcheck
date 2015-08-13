@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS transaction (
   contentType VARCHAR(255),
   content TEXT,
   verificationStatusId INT UNSIGNED,
+  origin ENUM( 'CLIENT', 'CHECKER'),
   PRIMARY KEY(id)
 );
 
@@ -56,6 +57,8 @@ CREATE TABLE IF NOT EXISTS annotation (
   PRIMARY KEY (id)
 );
 
-INSERT INTO verificationStatus(id, status) VALUES (1, "PROCESSING");
-INSERT INTO verificationStatus(id, status) VALUES (2, "UNVERIFIED");
-INSERT INTO verificationStatus(id, status) VALUES (3, "FINISHED");
+INSERT INTO verificationStatus(id, status) VALUES (1, "REQUESTED");
+INSERT INTO verificationStatus(id, status) VALUES (2, "RETRIEVING");
+INSERT INTO verificationStatus(id, status) VALUES (3, "RESPONDED");
+INSERT INTO verificationStatus(id, status) VALUES (4, "PROCESSING");
+INSERT INTO verificationStatus(id, status) VALUES (5, "FINISHED");
