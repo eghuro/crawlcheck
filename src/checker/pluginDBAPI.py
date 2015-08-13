@@ -115,14 +115,15 @@ class DBAPI:
         content = ""
 
         try:
-            query = ('SELECT @A:=MAX(transaction.id), content '
+            query = ('SELECT @A:=transaction.id, content '
                      'FROM transaction '
                      'INNER JOIN verificationStatus '
-                     'ON verificationStatus.id = transaction.id '
-                     'WHERE transaction.responseStatus = 200 '
-                     'AND transaction.contentType = "text/html" '
-                     'AND transaction.method = \'GET\' '
-                     'AND verificationStatus.status = "UNVERIFIED"')
+                     'ON (transaction.verificationStatusId = verificationStatus.id) '
+                     'WHERE responseStatus = 200 '
+                     'AND contentType LIKE "text/html%" '
+                     'AND method = \'GET\' '
+                     'AND status = "UNVERIFIED"'
+                     'AND transaction.id IN (select MAX(transaction.id) from transaction)')
             self.cursor.execute(query)
             row = self.cursor.fetchone()
             if row is not None:
@@ -182,8 +183,9 @@ class DBAPI:
             self.cursor.execute(query)
             findingId = self.cursor.lastrowid
             query = ('INSERT INTO link (findingId, toUri) VALUES (' + str(findingId) + ', '
-                     '' + self.con.escape_string(toUri) + ')')
+                     '"' + self.con.escape_string(toUri) + '")')
             self.cursor.execute(query)
+            self.con.commit()
             return True
 
         except mdb.Error, e:
@@ -193,8 +195,12 @@ class DBAPI:
 
         return False
 
-    def setFinished(self, transactionId, status):
+    def getFinishedStatusId(self):
+        return 3
+
+    def setFinished(self, transactionId):
         try:
+            statusId = self.getFinishedStatusId()
             query = ('UPDATE transaction SET verificationStatusId = ' + str(statusId) + ''
                      ' WHERE id = ' + str(transactionId) + '')
             self.cursor.execute(query)

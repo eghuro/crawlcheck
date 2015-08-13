@@ -56,5 +56,6 @@ CREATE TABLE IF NOT EXISTS annotation (
   PRIMARY KEY (id)
 );
 
-INSERT INTO verificationStatus(status) VALUES ("PROCESSING");
-INSERT INTO verificationStatus(status) VALUES ("UNVERIFIED");
+INSERT INTO verificationStatus(id, status) VALUES (1, "PROCESSING");
+INSERT INTO verificationStatus(id, status) VALUES (2, "UNVERIFIED");
+INSERT INTO verificationStatus(id, status) VALUES (3, "FINISHED");

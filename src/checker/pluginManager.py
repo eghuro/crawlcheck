@@ -1,7 +1,7 @@
 from yapsy.PluginManager import PluginManager
 
-from checker.pluginRunner import PluginRunner
-from checker.pluginDBAPI import DBAPIconfiguration
+from pluginRunner import PluginRunner
+from pluginDBAPI import DBAPIconfiguration
 
 import logging
 

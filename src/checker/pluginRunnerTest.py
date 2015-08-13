@@ -1,10 +1,10 @@
 import unittest
 
-from checker.pluginRunner import PluginRunner
-from checker.pluginDBAPI import DBAPIconfiguration
-from checker.pluginDBAPI import DBAPI
-from checker.plugin.py_w3c_html_validator_plugin import PyW3C_HTML_Validator
-from checker.plugin.links_finder_plugin import LinksFinder
+from pluginRunner import PluginRunner
+from pluginDBAPI import DBAPIconfiguration
+from pluginDBAPI import DBAPI
+from plugin.py_w3c_html_validator_plugin import PyW3C_HTML_Validator
+from plugin.links_finder_plugin import LinksFinder
 
 class PluginRunnerTest(unittest.TestCase):
 

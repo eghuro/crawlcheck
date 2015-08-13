@@ -1,4 +1,4 @@
-from checker.pluginDBAPI import DBAPI
+from pluginDBAPI import DBAPI
 
 class PluginRunner:
     def __init__(self, dbconf):
