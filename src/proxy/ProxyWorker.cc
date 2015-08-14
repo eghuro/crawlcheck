@@ -65,7 +65,8 @@ void ProxyWorker::handleClientRequest(int new_fd,
     } else {
       HttpParserResult result = parser.parse(std::string(buf, n));
       if (result.isRequest()) {
-        (*storage).insertParserResult(result, id);
+        (*storage).insertRequest(result);
+        //(*storage).insertParserResult(result, id);
       }
     }
   }
@@ -145,7 +146,8 @@ void* ProxyWorker::serverThreadRoutine(void * arg) {
         } else {
           HttpParserResult result = parser.parse(std::string(buf, n));
           if (result.isResponse()) {
-            (*storage).insertParserResult(result, id);
+            (*storage).insertResponse(result, id);
+            //(*storage).insertParserResult(result, id);
           }
         }
       }

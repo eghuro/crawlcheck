@@ -188,6 +188,23 @@ class Database{
     }
   }
 
+  bool isResponseAvailable(const TransactionIdentifier identifier) {
+    std::ostringstream oss;
+    oss << "SELECT verificationStatusId FROM transaction WHERE id = " << identifier;
+
+    auto *stmt = con -> createStatement();
+    sql::ResultSet *res = stmt->executeQuery(oss.str());
+
+    bool available = false;
+    if (res->next()) {
+      available = (res->getUInt("verificationStatusId") >= 3);
+    }
+
+    delete stmt;
+    delete res;
+    return available;
+  }
+
  private:
   const DatabaseConfiguration & config;
   sql::Driver *driver;

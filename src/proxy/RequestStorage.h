@@ -36,12 +36,62 @@ class RequestStorage {
     pthread_mutex_unlock(&responses_mutex);
   }
 
+  bool responseAvailable(std::size_t trid) {
+    int e;
+    bool available = false;
+    if ((e = pthread_mutex_lock(&requests_mutex)) == 0) {
+      available = database->isResponseAvailable(trid);
+      if ((e = pthread_mutex_unlock(&requests_mutex)) != 0) {
+        HelperRoutines::warning(unlock_request, strerror(e));
+      }
+    } else {
+      HelperRoutines::warning(lock_request, strerror(e));
+    }
+    return available;
+  }
+
+  std::size_t insertRequest(const HttpParserResult & result) {
+    if (result.isRequest()) {
+      int e;
+      if ((e = pthread_mutex_lock(&requests_mutex)) == 0) {
+
+        auto id = database->setClientRequest(result);
+        requests.push_back(queue_type(result, id));
+
+        if ((e = pthread_mutex_unlock(&requests_mutex)) != 0) {
+          HelperRoutines::warning(unlock_request, strerror(e));
+        }
+
+        return id;
+      } else {
+        HelperRoutines::warning(lock_request, strerror(e));
+      }
+    }
+    return 0;
+  }
+
+  void insertResponse(const HttpParserResult & result, std::size_t transactionId) {
+    if (result.isResponse()) {
+      int e;
+      if ((e = pthread_mutex_lock(&responses_mutex)) == 0) {
+        database->setServerResponse(transactionId, result);
+        responses.insert(map_type(transactionId, result));
+
+        if ((e = pthread_mutex_unlock(&responses_mutex)) != 0) {
+          HelperRoutines::warning(unlock_request, strerror(e));
+        }
+      } else {
+        HelperRoutines::warning(lock_request, strerror(e));
+      }
+    }
+  }
+
   /**
    * Insert HttpParseerResult into storage, pushes DB
    * @param result parsed communication HttpParserResult of type request or response
    * @param id transaction identifier
    */
-  void insertParserResult(const HttpParserResult & result, int id) {
+  void insertParserResult(const HttpParserResult & result, std::size_t id) {
     int e;
     if (result.isRequest()) {
       database->setClientRequest(result);
@@ -56,7 +106,7 @@ class RequestStorage {
         HelperRoutines::warning(lock_request, strerror(e));
       }
     } else if (result.isResponse()) {
-      database->setServerResponse(result);
+      database->setServerResponse(id, result);
 
       if ((e = pthread_mutex_lock(&responses_mutex)) == 0) {
         responses.insert(map_type(id, result));
