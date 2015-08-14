@@ -24,58 +24,24 @@ class ProxyConfiguration {
    * Constructor sets values to "safely invalid". Everything must be set
    * manually using setters.
    */
-  ProxyConfiguration():in_pool_count(0),  max_in(0), max_out(0),
-    in_pool_port(-1), dbc_fd(-1), in_backlog(-1) {}
+  ProxyConfiguration():in_pool_count(0), in_pool_port(-1), in_backlog(-1),
+  {}
   virtual ~ProxyConfiguration() {}
 
-  // TODO(alex): not in use
-  inline bool setPoolCount(int count) {
-    if (count >= 0) {
-      in_pool_count = count;
-      return true;
-    }
-    return false;
+  void setInPoolCount(std::size_t count) {
+    in_pool_count = static_cast<int>(count);
   }
 
-  // TODO(alex): not in use
-  inline bool setMaxIn(int max) {
-    if (max >= 0) {
-      max_in = max;
-      return true;
-    }
-    return false;
+  int getInPoolCount() const {
+    return in_pool_count;
   }
 
-  // TODO(alex): not in use
-  inline bool setMaxOut(int max) {
-    if (max >= 0) {
-      max_out = max;
-      return true;
-    }
-    return false;
+  void setOutPoolCount(std::size_t count) {
+    out_pool_count = static_cast<int>(count);
   }
 
-  /**
-   * Port to listen for incoming connections at.
-   * @param port port is greater or equal to 1 and less or equal to 65535
-   * @return if the port was acceptable and the value therefore changed or not
-   */
-  inline bool setInPoolPort(int port) {
-    if (acceptablePort(port)) {
-      in_pool_port = port;
-      return true;
-    }
-    return false;
-  }
-
-  // TODO(alex): not in use
-  inline bool setDbcFd(int fd) {
-    if (fd >= 0) {
-      dbc_fd = fd;
-      return true;
-    } else {
-      return false;
-    }
+  int getOutPoolCount() const {
+    return out_pool_count;
   }
 
   /**
@@ -106,32 +72,12 @@ class ProxyConfiguration {
     return false;
   }
 
-  // TODO(alex): not in use
-  inline int getPoolCount() const {
-    return in_pool_count;
-  }
-
-  // TODO(alex): not in use
-  inline int getMaxIn() const {
-    return max_in;
-  }
-
-  // TODO(alex): not in use
-  inline int getMaxOut() const {
-    return max_out;
-  }
-
   /**
    * Incoming port.
    * @return The port to listen for incoming connections at.
    */
   inline int getInPoolPort() const {
     return in_pool_port;
-  }
-
-  // TODO(alex): not in use
-  inline int getDbcFd() const {
-    return dbc_fd;
   }
 
   /**
@@ -152,10 +98,9 @@ class ProxyConfiguration {
 
  private:
   int in_pool_count;
-  int max_in, max_out;
   int in_pool_port;
-  int dbc_fd;
   int in_backlog;
+  int out_pool_count;
 
   static const int minPort, maxPort;
 
