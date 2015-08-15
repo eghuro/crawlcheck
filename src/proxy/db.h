@@ -82,20 +82,25 @@ class Database{
     assert(request.isRequest());
 
     std::ostringstream oss;
-    oss << "INSERT INTO transaction (uri, method, verificationStatusId) VALUES (\"";
+    oss << "INSERT INTO transaction (uri, method, verificationStatusId, origin, rawRequest) VALUES (\"";
     oss << request.getRequestUri().getUri();
     oss << "\", '";
     oss << RequestMethodTransformer::toString(request.getMethod());
-    oss << "', 1)";
+    oss << "', 1, 'CLIENT', \"";
+    oss << request.getRaw();
+    oss << "\")";
 
+    std::cout << oss.str() << std::endl;
+
+    con->setAutoCommit(0);
     auto *stmt = con->createStatement();
     int count = stmt->executeUpdate(oss.str());
 
-    delete stmt;
+    //delete stmt;
 
     unsigned int id = 0;
     if (count > 0) {
-      stmt = con->createStatement();
+      //stmt = con->createStatement();
       sql::ResultSet *res = stmt->executeQuery("SELECT LAST_INSERT_ID() AS id");
       if (res->next()) {
         id = res->getUInt("id");
@@ -103,13 +108,14 @@ class Database{
       delete res;
       delete stmt;
     }
+    con->setAutoCommit(1);
 
     return id;
   }
 
   HttpParserResult getClientRequest(const TransactionIdentifier & identifier) {
     std::ostringstream oss;
-    oss << "SELECT method, uri FROM transaction WHERE id = ";
+    oss << "SELECT method, uri, rawRequest as raw FROM transaction WHERE id = ";
     oss << identifier;
 
     auto *stmt = con->createStatement();
@@ -119,6 +125,7 @@ class Database{
       HttpParserResult ret(HttpParserResultState::REQUEST);
       ret.setMethod(RequestMethodTransformer::transformMethod(res->getString("method")));
       ret.setRequestUri(HttpUriFactory::createUri(res->getString("uri")));
+      ret.setRaw(res->getString("raw"));
 
       delete stmt;
       delete res;
@@ -132,7 +139,7 @@ class Database{
   }
 
   std::pair<HttpParserResult, std::size_t> getClientRequest() {
-    const std::string query("SELECT id, method, uri FROM transaction WHERE verificationStatusId = 1 LIMIT 1");
+    const std::string query("SELECT id, method, uri, rawRequest as raw FROM transaction WHERE verificationStatusId = 1 LIMIT 1");
 
     con->setAutoCommit(0);
 
@@ -143,6 +150,7 @@ class Database{
       HttpParserResult ret(HttpParserResultState::REQUEST);
       ret.setMethod(RequestMethodTransformer::transformMethod(res->getString("method")));
       ret.setRequestUri(HttpUriFactory::createUri(res->getString("uri")));
+      ret.setRaw(res->getString("raw"));
 
       id = res->getUInt("id");
       delete stmt;
@@ -189,7 +197,10 @@ class Database{
     oss << response.getStatus().getCode();
     oss << ", contentType = \"" << response.getContentType() << "\", ";
     oss <<  "content = \"" << escapedContent << "\", ";
-    oss << "verificationStatusId = 3 WHERE id = " << tid;
+    oss << "verificationStatusId = 3, rawResponse = \"";
+    oss << response.getRaw() <<"\" WHERE id = " << tid;
+
+    std::cout << oss.str() << std::endl;
 
     auto *stmt = con->createStatement();
     stmt->executeUpdate(oss.str());
@@ -199,7 +210,7 @@ class Database{
 
   HttpParserResult getServerResponse(const TransactionIdentifier & identifier) {
     std::ostringstream oss;
-    oss << "SELECT responseStatus, contentType, content FROM transaction ";
+    oss << "SELECT responseStatus, contentType, content, rawResponse as raw FROM transaction ";
     oss << "WHERE id = " << identifier;
 
     auto *stmt = con -> createStatement();
@@ -210,6 +221,7 @@ class Database{
       ret.setResponseStatus(HttpResponseStatus(res->getUInt("responseStatus")));
       ret.setContentType(res->getString("contentType"));
       ret.setContent(res->getString("content"));
+      ret.setRaw(res->getString("raw"));
 
       delete stmt;
       delete res;

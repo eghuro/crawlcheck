@@ -138,7 +138,7 @@ class HttpParserResult {
       return result.doContinue();
     case HttpParserResultState::REQUEST:
       if (result.isRequest()) {
-        return /*(result.getRaw() == getRaw()) &&*/
+        return (result.getRaw() == getRaw()) &&
             (result.getRequestUri() == getRequestUri()) &&
             (result.getMethod() == getMethod());
       } else {
@@ -146,7 +146,7 @@ class HttpParserResult {
       }
     case HttpParserResultState::RESPONSE:
       if (result.isResponse()) {
-        return /*(result.getRaw() == getRaw()) &&*/
+        return (result.getRaw() == getRaw()) &&
             (result.getStatus() == getStatus()) &&
             (result.getContentType() == getContentType()) &&
             (result.getContent() == getContent());

@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS transaction (
   content TEXT,
   verificationStatusId INT UNSIGNED,
   origin ENUM( 'CLIENT', 'CHECKER'),
+  rawRequest BLOB,
+  rawResponse BLOB,
   PRIMARY KEY(id)
 );
 
