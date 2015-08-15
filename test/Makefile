@@ -31,7 +31,7 @@ CXXFLAGS += -g -Wall -Wextra -pthread -std=c++11
 
 # All tests produced by this Makefile.  Remember to add new tests you
 # created to the list.
-TESTS = ProxyConfigurationTest HttpParserTest RequestStorageTest DBAPITest MySqlConnectorTest # XmlConnectorTest
+TESTS = ProxyConfigurationTest HttpParserTest RequestStorageTest DBAPITest # MySqlConnectorTest XmlConnectorTest
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
@@ -86,8 +86,6 @@ gtest_main.a : gtest-all.o gtest_main.o
 ProxyConfiguration.o : $(SRC_DIR)/proxy/ProxyConfiguration.cc
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(SRC_DIR)/proxy/ProxyConfiguration.cc
 
-# $(SRC_DIR)/proxy/ProxyConfiguration.cc : $(SRC_DIR)/proxy/ProxyConfiguration.h $(SRC_DIR)/proxy/HelperRoutines.h
-
 ProxyConfigurationTest.o : $(TEST_DIR)/ProxyConfigurationTest.cc $(SRC_DIR)/proxy/ProxyConfiguration.h $(GTEST_HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(TEST_DIR)/ProxyConfigurationTest.cc
 
@@ -96,46 +94,24 @@ ProxyConfigurationTest : ProxyConfiguration.o ProxyConfigurationTest.o gtest_mai
 
 HttpParser.o : $(SRC_DIR)/proxy/HttpParser.cc
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(SRC_DIR)/proxy/HttpParser.cc
-	
-# $#(SRC_DIR)/proxy/HttpParser.cc : proxy/HttpParser.h
 
 HttpParserTest.o : $(TEST_DIR)/HttpParserTest.cc $(SRC_DIR)/proxy/HttpParser.h $(GTEST_HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(TEST_DIR)/HttpParserTest.cc
 	
 HttpParserTest : HttpParser.o HttpParserTest.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
+	
 RequestStorage.o : $(SRC_DIR)/proxy/RequestStorage.cc
-		$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(SRC_DIR)/proxy/RequestStorage.cc
+		$(CXX) $(CPPFLAGS) $(CXXFLAGS) -l mysqlcppconn -c $(SRC_DIR)/proxy/RequestStorage.cc
+		
 RequestStorageTest.o : $(TEST_DIR)/HttpParserTest.cc $(SRC_DIR)/proxy/RequestStorage.h $(SRC_DIR)/proxy/HttpParser.h $(GTEST_HEADERS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(TEST_DIR)/RequestStorageTest.cc
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -l mysqlcppconn -c $(TEST_DIR)/RequestStorageTest.cc
 	
 RequestStorageTest : RequestStorage.o RequestStorageTest.o gtest_main.a
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
-	
-Db.o : $(SRC_DIR)/db/DatabaseAPI.cc
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -l mysqlcppconn -c $(SRC_DIR)/db/DatabaseAPI.cc -o Db.o
-	
-DBAPITest.o : $(TEST_DIR)/DBAPITest.cc $(SRC_DIR)/db/db.h $(SRC_DIR)/proxy/HttpParser.h $(GTEST_HEADERS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -l mysqlcppconn -c $(TEST_DIR)/DBAPITest.cc
-	
-DBAPITest : DBAPITest.o Db.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -l mysqlcppconn -lpthread $^ -o $@
 	
-XmlConnector.o : $(SRC_DIR)/db/XMLConnector.cc $(SRC_DIR)/db/XMLConnector.h
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(XERCESFLAGS) -c $(SRC_DIR)/db/XMLConnector.cc -o XmlConnector.o
-
-XmlConnectorTest.o : $(TEST_DIR)/XMLConnectorTest.cc $(SRC_DIR)/db/TableInterfaces.h $(SRC_DIR)/db/XMLConnector.h $(GTEST_HEADERS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(XERCESFLAGS) -c $(TEST_DIR)/XMLConnectorTest.cc -o $@
+DBAPITest.o : $(TEST_DIR)/DBAPITest.cc $(SRC_DIR)/proxy/db.h $(SRC_DIR)/proxy/HttpParser.h $(GTEST_HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -l mysqlcppconn -c $(TEST_DIR)/DBAPITest.cc
 	
-XmlConnectorTest : XmlConnectorTest.o XmlConnector.o gtest_main.a
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(XERCESFLAGS) -lpthread $^ -o $@
-	
-	
-MySqlConnector.o : $(SRC_DIR)/db/MySqlConnector.cc $(SRC_DIR)/db/MySqlConnector.h
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(SRC_DIR)/db/MySqlConnector.cc -o MySqlConnector.o
-
-MySqlConnectorTest.o : $(TEST_DIR)/MySqlConnectorTest.cc $(SRC_DIR)/db/TableInterfaces.h $(SRC_DIR)/db/MySqlConnector.h $(GTEST_HEADERS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -l mysqlcppconn -c $(TEST_DIR)/MySqlConnectorTest.cc -o $@
-	
-MySqlConnectorTest : MySqlConnectorTest.o MySqlConnector.o gtest_main.a
+DBAPITest : DBAPITest.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -l mysqlcppconn -lpthread $^ -o $@

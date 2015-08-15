@@ -19,24 +19,21 @@ enum class HttpParserResultState {
   CONTINUE, REQUEST, RESPONSE, INVALID
 };
 
-enum class RequestMethod {
-  GET, POST, PUT, CONNECT, HEAD, DELETE, TRACE
+enum class RequestMethod : char {
+  GET = 'G', POST = 'P', PUT = 'p', CONNECT = 'C', HEAD = 'H', DELETE = 'D', TRACE = 'T'
 };
 
 class RequestMethodTransformer {
  public:
   static inline std::string toString(RequestMethod method) {
     if (method == RequestMethod::GET) return "GET";
-    switch (method) {
-    case RequestMethod::GET: return "GET"; break;
-    case RequestMethod::HEAD: return "HEAD"; break;
-    case RequestMethod::POST: return "POST"; break;
-    case RequestMethod::PUT: return "PUT"; break;
-    case RequestMethod::DELETE: return "DELETE"; break;
-    case RequestMethod::TRACE: return "TRACE"; break;
-    case RequestMethod::CONNECT: return "CONNECT"; break;
-    default: assert(false); return "";
-    }
+    else if (method == RequestMethod::HEAD) return "HEAD";
+    else if (method == RequestMethod::POST) return "POST";
+    else if (method == RequestMethod::PUT) return "PUT";
+    else if (method == RequestMethod::DELETE) return "DELETE";
+    else if (method == RequestMethod::TRACE) return "TRACE";
+    else if (method == RequestMethod::CONNECT) return "CONNECT";
+    else { assert(false); return ""; }
   }
 
   static inline RequestMethod transformMethod(const std::string & methodStr) {

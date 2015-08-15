@@ -15,7 +15,7 @@
 #include <cassert>
 #include "./HttpParser.h"
 #include "./HelperRoutines.h"
-#include "../db/db.h"
+#include "./db.h"
 
 // TODO(alex): rename
 /**
@@ -23,8 +23,8 @@
  */
 class RequestStorage {
  public:
-  typedef std::pair<HttpParserResult, int> queue_type;
-  typedef std::pair<int, HttpParserResult> map_type;
+  typedef std::pair<HttpParserResult, std::size_t> queue_type;
+  typedef std::pair<std::size_t, HttpParserResult> map_type;
 
   RequestStorage(std::shared_ptr<Database> db) : requests(), responses(),
       requests_mutex(PTHREAD_MUTEX_INITIALIZER),

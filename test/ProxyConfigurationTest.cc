@@ -4,54 +4,6 @@
 #include "../src/proxy/ProxyConfiguration.h"
 #include "gtest/gtest.h"
 
-TEST(ProxyConfiguration, PoolCount) {
-  ProxyConfiguration pc;
-
-  EXPECT_EQ(0, pc.getPoolCount());
-  bool b1 = pc.setPoolCount(10);
-  EXPECT_TRUE(b1);
-  ASSERT_EQ(10, pc.getPoolCount());
-
-  ASSERT_FALSE(pc.setPoolCount(-1));
-  EXPECT_EQ(10, pc.getPoolCount());
-
-  bool b2 = pc.setPoolCount(0);
-  EXPECT_TRUE(b2);
-  ASSERT_EQ(0, pc.getPoolCount());
-}
-
-TEST(ProxyConfiguration, MaxIn) {
-  ProxyConfiguration pc;
-
-  EXPECT_EQ(0, pc.getMaxIn());
-  bool b1 = pc.setMaxIn(10);
-  EXPECT_TRUE(b1);
-  ASSERT_EQ(10, pc.getMaxIn());
-
-  ASSERT_FALSE(pc.setMaxIn(-1));
-  EXPECT_EQ(10, pc.getMaxIn());
-
-  bool b2 = pc.setMaxIn(0);
-  EXPECT_TRUE(b2);
-  ASSERT_EQ(0, pc.getMaxIn());
-}
-
-TEST(ProxyConfiguration, MaxOut) {
-  ProxyConfiguration pc;
-
-  EXPECT_EQ(0, pc.getMaxOut());
-  bool b1 = pc.setMaxOut(10);
-  EXPECT_TRUE(b1);
-  ASSERT_EQ(10, pc.getMaxOut());
-
-  ASSERT_FALSE(pc.setMaxOut(-1));
-  EXPECT_EQ(10, pc.getMaxOut());
-
-  bool b2 = pc.setMaxOut(0);
-  EXPECT_TRUE(b2);
-  ASSERT_EQ(0, pc.getMaxOut());
-}
-
 TEST(ProxyConfiguration, InPort) {
   ProxyConfiguration pc;
 
@@ -88,20 +40,4 @@ TEST(ProxyConfiguration, InBacklog) {
   int x = SOMAXCONN + 1;
   EXPECT_TRUE(pc.setInBacklog(x));
   ASSERT_EQ(SOMAXCONN, pc.getInBacklog());
-}
-
-TEST(ProxyConfiguration, DbcFd) {
-  ProxyConfiguration pc;
-
-  EXPECT_EQ(-1, pc.getDbcFd());
-
-  EXPECT_TRUE(pc.setDbcFd(0));  // stdin
-  EXPECT_TRUE(pc.setDbcFd(1));  // stdout
-  EXPECT_TRUE(pc.setDbcFd(2));  // stderr
-
-  ASSERT_TRUE(pc.setDbcFd(13));
-  ASSERT_EQ(13, pc.getDbcFd());
-
-  ASSERT_FALSE(pc.setDbcFd(-1));
-  ASSERT_EQ(13, pc.getDbcFd());
 }

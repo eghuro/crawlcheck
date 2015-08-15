@@ -24,8 +24,7 @@ class ProxyConfiguration {
    * Constructor sets values to "safely invalid". Everything must be set
    * manually using setters.
    */
-  ProxyConfiguration():in_pool_count(0), in_pool_port(-1), in_backlog(-1),
-  {}
+  ProxyConfiguration():in_pool_count(0), in_pool_port(-1), in_backlog(-1) {}
   virtual ~ProxyConfiguration() {}
 
   void setInPoolCount(std::size_t count) {
@@ -73,6 +72,14 @@ class ProxyConfiguration {
   }
 
   /**
+   * Backlog for listening to connections.
+   * @return backlog
+   */
+  inline int getInBacklog() const {
+    return in_backlog;
+  }
+
+  /**
    * Incoming port.
    * @return The port to listen for incoming connections at.
    */
@@ -81,11 +88,16 @@ class ProxyConfiguration {
   }
 
   /**
-   * Backlog for listening to connections.
-   * @return backlog
+   * Port to listen for incoming connections at.
+   * @param port port is greater or equal to 1 and less or equal to 65535
+   * @return if the port was acceptable and the value therefore changed or not
    */
-  inline int getInBacklog() const {
-    return in_backlog;
+  inline bool setInPoolPort(int port) {
+    if (acceptablePort(port)) {
+      in_pool_port = port;
+      return true;
+    }
+    return false;
   }
 
   /**
