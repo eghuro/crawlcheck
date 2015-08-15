@@ -55,7 +55,6 @@ class RequestStorage {
       if ((e = pthread_mutex_lock(&requests_mutex)) == 0) {
 
         auto id = database->setClientRequest(result);
-        requests.push_back(queue_type(result, id));
 
         for (auto it = requestSubscribers.begin();
             it != requestSubscribers.end();
@@ -82,7 +81,6 @@ class RequestStorage {
       int e;
       if ((e = pthread_mutex_lock(&responses_mutex)) == 0) {
         database->setServerResponse(transactionId, result);
-        responses.insert(map_type(transactionId, result));
 
         for (auto it = responseSubscribers.find(transactionId);
             it != responseSubscribers.end();
@@ -108,8 +106,7 @@ class RequestStorage {
   queue_type retrieveRequest() {
     int e;
     if ((e = pthread_mutex_lock(&requests_mutex)) == 0) {
-      auto result_bundle = requests.front();
-      requests.pop_front();
+      auto result_bundle = database->getClientRequest();
       if ((e = pthread_mutex_unlock(&requests_mutex)) != 0) {
         HelperRoutines::warning(unlock_request, strerror(e));
       }
@@ -128,7 +125,7 @@ class RequestStorage {
     bool available = false;
     int e;
     if ((e = pthread_mutex_lock(&requests_mutex)) == 0) {
-      available = !requests.empty();
+      available = database->isRequestAvailable();
       if ((e = pthread_mutex_unlock(&requests_mutex)) != 0) {
         HelperRoutines::warning(unlock_request, strerror(e));
       }
@@ -143,44 +140,21 @@ class RequestStorage {
    * @param id transaction id
    * @return raw HTTP Response message
    */
-  std::string retrieveResponse(int id) {
+  std::string retrieveResponse(std::size_t id) {
     int e;
-    bool ok = false;
     if ((e = pthread_mutex_lock(&responses_mutex)) == 0) {
-      auto result_bundle = responses.find(id);
-      if (result_bundle != responses.end()) {
-        responses.erase(result_bundle);
-        ok = true;
+      auto response = database->getServerResponse(id);
+      if (response.isResponse()) {
+        return response.getRaw();
       }
       if ((e = pthread_mutex_unlock(&responses_mutex)) != 0) {
         HelperRoutines::warning(unlock_response, strerror(e));
-      }
-      if (ok) {
-        return std::get<1>(*result_bundle).getRaw();
       }
     } else {
       HelperRoutines::warning(lock_response, strerror(e));
     }
 
     return "";  // TODO(alex): exception?
-  }
-
-  /**
-   * Is there a response available?
-   * @param the ressponse storage is not empty
-   */
-  bool responseAvailable() {
-    bool available = false;
-    int e;
-    if ((e = pthread_mutex_lock(&responses_mutex)) == 0) {
-      available = !responses.empty();
-      if ((e = pthread_mutex_unlock(&responses_mutex)) != 0) {
-        HelperRoutines::warning(unlock_response, strerror(e));
-      }
-    } else {
-      HelperRoutines::warning(lock_response, strerror(e));
-    }
-    return available;
   }
 
   void subscribeWait4Response(const int transactionId, pthread_mutex_t * mutex, pthread_cond_t * cond) {

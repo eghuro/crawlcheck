@@ -88,6 +88,8 @@ class Database{
     oss << RequestMethodTransformer::toString(request.getMethod());
     oss << "', 1)";
 
+    std::cout << oss.str() <<std::endl;
+
     auto *stmt = con->createStatement();
     int count = stmt->executeUpdate(oss.str());
 
@@ -127,14 +129,47 @@ class Database{
 
       delete stmt;
       delete res;
-      return HttpParserResult(HttpParserResultState::REQUEST);
+      return HttpParserResult(HttpParserResultState::INVALID);
     }
+  }
+
+  std::pair<HttpParserResult, std::size_t> getClientRequest() {
+    const std::string query("SELECT id, method, uri FROM transaction WHERE verificationStatusId = 1 LIMIT 1");
+
+    con->setAutoCommit(0);
+
+    std::size_t id = 0;
+    auto *stmt = con->createStatement();
+    sql::ResultSet *res = stmt->executeQuery(query);
+    if (res->next()) {
+      HttpParserResult ret(HttpParserResultState::REQUEST);
+      ret.setMethod(RequestMethodTransformer::transformMethod(res->getString("method")));
+      ret.setRequestUri(HttpUriFactory::createUri(res->getString("uri")));
+
+      id = res->getUInt("id");
+      delete stmt;
+      delete res;
+
+      stmt = con->createStatement();
+      std::ostringstream oss;
+      oss << "UPDATE transaction SET verificationStatusId = 2 WHERE id = " << id;
+
+      if (stmt->executeUpdate(oss.str()) == 1) {
+        con->commit();
+        con->setAutoCommit(1);
+        return std::pair<HttpParserResult, std::size_t>(ret, id);
+      } else {
+        con->rollback();
+      }
+    }
+    con->setAutoCommit(1);
+    return std::pair<HttpParserResult, std::size_t>(HttpParserResult(HttpParserResultState::INVALID), 0);
   }
 
   std::size_t getServerResponseCount() {
     sql::Statement *stmt = con->createStatement();
 
-    sql::ResultSet *res = stmt->executeQuery("SELECT count(id) AS id FROM transaction WHERE verificationStatusId= 3");
+    sql::ResultSet *res = stmt->executeQuery("SELECT count(id) AS id FROM transaction WHERE verificationStatusId = 3");
 
     unsigned int count = 0;
     if (res->next()) {
@@ -184,25 +219,33 @@ class Database{
     } else {
       delete stmt;
       delete res;
-      return HttpParserResult(HttpParserResultState::RESPONSE);
+      return HttpParserResult(HttpParserResultState::INVALID);
     }
   }
 
   bool isResponseAvailable(const TransactionIdentifier identifier) {
     std::ostringstream oss;
-    oss << "SELECT verificationStatusId FROM transaction WHERE id = " << identifier;
+    oss << "SELECT COUNT(verificationStatusId) as count ";
+    oss << "FROM transaction WHERE id = ";
+    oss << identifier <<  " AND verificationStatusId >= 3";
+
+    std::cout << oss.str() << std::endl;
 
     auto *stmt = con -> createStatement();
     sql::ResultSet *res = stmt->executeQuery(oss.str());
 
     bool available = false;
     if (res->next()) {
-      available = (res->getUInt("verificationStatusId") >= 3);
+      available = (res->getUInt("count") > 0) ;
     }
 
     delete stmt;
     delete res;
     return available;
+  }
+
+  bool isRequestAvailable() {
+    return getClientRequestCount() > 0;
   }
 
  private:
