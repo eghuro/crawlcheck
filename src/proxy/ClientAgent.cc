@@ -77,13 +77,14 @@ void ClientThread::response(const std::vector<std::size_t> & transactionIds, con
   //wait for response
   pthread_mutex_t * response_mutex = parameters->getResponseAvailabilityMutex();
   pthread_cond_t * response_available = parameters->getResponseAvailabilityCondition();
+  storage->subscribeWait4Response(transactionIds[0], response_mutex, response_available);
   pthread_mutex_lock(response_mutex);
   while (!storage->responseAvailable(transactionIds[0])) {
     pthread_cond_wait(response_available, response_mutex);
   }
   std::string response = storage->retrieveResponse(transactionIds[0]);
+  pthread_mutex_unlock(response_mutex);
 
   //write response
   write(static_cast<int>(connection), response.c_str(), response.size());
-  pthread_mutex_unlock(response_mutex);
 }

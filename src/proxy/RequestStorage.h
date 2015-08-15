@@ -29,7 +29,7 @@ class RequestStorage {
   RequestStorage(std::shared_ptr<Database> db) : requests(), responses(),
       requests_mutex(PTHREAD_MUTEX_INITIALIZER),
       responses_mutex(PTHREAD_MUTEX_INITIALIZER),
-      database(db){}
+      database(db), responseSubscribers(), requestSubscribers(){}
   virtual ~RequestStorage() {
     pthread_mutex_unlock(&requests_mutex);
     pthread_mutex_unlock(&responses_mutex);
@@ -57,6 +57,14 @@ class RequestStorage {
         auto id = database->setClientRequest(result);
         requests.push_back(queue_type(result, id));
 
+        for (auto it = requestSubscribers.begin();
+            it != requestSubscribers.end();
+            it++) {
+          pthread_mutex_lock(it->first);
+          pthread_cond_broadcast(it->second);
+          pthread_mutex_unlock(it->first);
+        }
+
         if ((e = pthread_mutex_unlock(&requests_mutex)) != 0) {
           HelperRoutines::warning(unlock_request, strerror(e));
         }
@@ -75,6 +83,14 @@ class RequestStorage {
       if ((e = pthread_mutex_lock(&responses_mutex)) == 0) {
         database->setServerResponse(transactionId, result);
         responses.insert(map_type(transactionId, result));
+
+        for (auto it = responseSubscribers.find(transactionId);
+            it != responseSubscribers.end();
+            ++it) {
+          pthread_mutex_lock(it->second.first);
+          pthread_cond_broadcast(it->second.second);
+          pthread_mutex_unlock(it->second.first);
+        }
 
         if ((e = pthread_mutex_unlock(&responses_mutex)) != 0) {
           HelperRoutines::warning(unlock_request, strerror(e));
@@ -167,11 +183,22 @@ class RequestStorage {
     return available;
   }
 
+  void subscribeWait4Response(const int transactionId, pthread_mutex_t * mutex, pthread_cond_t * cond) {
+    responseSubscribers.insert(
+        std::pair<int, std::pair<pthread_mutex_t *, pthread_cond_t *>>(
+            transactionId, std::pair<pthread_mutex_t *, pthread_cond_t *>(mutex, cond)));
+  }
+
+  void subscribeWait4Request(pthread_mutex_t * mutex, pthread_cond_t * cond) {
+    requestSubscribers.push_back(std::pair<pthread_mutex_t *, pthread_cond_t *>(mutex, cond));
+  }
  private:
   std::deque<queue_type> requests;
   std::map<int, HttpParserResult> responses;
   pthread_mutex_t requests_mutex, responses_mutex;
   std::shared_ptr<Database> database;
+  std::multimap<int, const std::pair<pthread_mutex_t *, pthread_cond_t *>> responseSubscribers;
+  std::deque<std::pair<pthread_mutex_t *, pthread_cond_t *>> requestSubscribers;
 
   static const std::string lock_response;
   static const std::string unlock_response;

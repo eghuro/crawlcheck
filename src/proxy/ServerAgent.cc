@@ -21,6 +21,7 @@ void * ServerThread::serverThreadRoutine (void * arg) {
     pthread_mutex_t * mutex = parameters->getRequestAvailabilityMutex();
     pthread_cond_t * condition = parameters->getRequestAvailabilityCondition();
 
+    storage->subscribeWait4Request(mutex, condition);
     pthread_mutex_lock(mutex);
     while(!storage->requestAvailable()) {
       pthread_cond_wait(condition, mutex);
