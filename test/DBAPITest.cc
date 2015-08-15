@@ -1,6 +1,6 @@
 // Copyright 2015 Alexandr Mansurov
 
-#include "../src/db/db.h"
+#include "../src/proxy/db.h"
 #include "../src/proxy/HttpParser.h"
 #include "gtest/gtest.h"
 

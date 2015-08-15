@@ -12,8 +12,8 @@
 #include "cppconn/resultset.h"
 #include "cppconn/statement.h"
 #include "cppconn/prepared_statement.h"
-#include "../proxy/HttpParser.h"
-#include "../proxy/HelperRoutines.h"
+#include "HttpParser.h"
+#include "HelperRoutines.h"
 
 class DatabaseConfiguration {
  public:

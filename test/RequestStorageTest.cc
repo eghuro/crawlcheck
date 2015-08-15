@@ -3,7 +3,7 @@
 #include <memory>
 #include "../src/proxy/RequestStorage.h"
 #include "../src/proxy/HttpParser.h"
-#include "../src/db/db.h"
+#include "../src/proxy/db.h"
 #include "../src/checker/checker.h"
 #include "gtest/gtest.h"
 

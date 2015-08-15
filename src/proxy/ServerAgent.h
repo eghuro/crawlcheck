@@ -6,6 +6,8 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "RequestStorage.h"
+#include "ProxyConfiguration.h"
 
 class ServerWorkerParameters {
  public:

@@ -1,5 +1,12 @@
 // Copyright 2015 Alexandr Mansurov
 #include "ClientAgent.h"
+#include <unistd.h>
+#include <stdio.h>
+#include <pthread.h>
+#include <sys/socket.h>
+#include <memory>
+#include "./RequestStorage.h"
+#include "./HttpParser.h"
 
 void * ClientThread::clientThreadRoutine(void * arg) {
   const ClientWorkerParameters * parameters = reinterpret_cast<ClientWorkerParameters *>(*arg);
@@ -74,9 +81,9 @@ void ClientThread::response(const std::vector<std::size_t> & transactionIds, con
   while (!storage->responseAvailable(transactionIds[0])) {
     pthread_cond_wait(response_available, response_mutex);
   }
-  auto response = storage->retrieveResponse(transactionIds[0]);
+  std::string response = storage->retrieveResponse(transactionIds[0]);
 
   //write response
-  write(connection, response.c_str(), response.size());
+  write(static_cast<int>(connection), response.c_str(), response.size());
   pthread_mutex_unlock(response_mutex);
 }

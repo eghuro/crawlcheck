@@ -13,8 +13,10 @@
 #include <memory>
 #include <vector>
 #include <cassert>
-#include "../db/db.h"
+#include "db.h"
 #include "RequestStorage.h"
+#include "HelperRoutines.h"
+#include "ProxyConfiguration.h"
 
 /**
  * ClientWorkerParameters is a container for data needed inside a thread.
