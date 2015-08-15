@@ -12,7 +12,8 @@
 class ServerWorkerParameters {
  public:
   explicit ServerWorkerParameters(std::shared_ptr<RequestStorage> store):
-      storage(store), requestAvailabilityMutex(PTHREAD_MUTEX_INITIALIZER) {
+      storage(store), requestAvailabilityMutex(PTHREAD_MUTEX_INITIALIZER),
+      work(true) {
     pthread_cond_init(&requestAvailabilityCondition, NULL);
   }
 
@@ -27,14 +28,28 @@ class ServerWorkerParameters {
   pthread_mutex_t * getRequestAvailabilityMutex() const {
     return &requestAvailabilityMutex;
   }
+
   pthread_cond_t * getRequestAvailabilityCondition() const {
     return &requestAvailabilityCondition;
   }
 
+  void setWork(bool value) {
+    work = value;
+  }
+
+  bool getWork() const {
+    return work;
+  }
+
  private:
+  bool work;
   const std::shared_ptr<RequestStorage> store;
   const pthread_mutex_t requestAvailabilityMutex;
   const pthread_cond_t requestAvailabilityCondition;
+
+  // prevent copy
+  ServerWorkerParameters(const ServerWorkerParameters&) = delete;
+  ServerWorkerParameters& operator=(const ServerWorkerParameters&) = delete;
 };
 
 class ServerThread {
@@ -44,7 +59,9 @@ class ServerThread {
     parameters = new ServerWorkerParameters(store);
     pthread_create(&thread, NULL, ServerThread::serverThreadRoutine, &parameters);
   }
+
   virtual ~ServerThread() {
+    parameters->setWork(false);
     pthread_join(thread, NULL);
     delete parameters;
   }
@@ -71,6 +88,7 @@ class ServerAgent {
       std::shared_ptr<RequestStorage> store):
         threads(conf->getOutPoolCount()), configuration(conf),
         storage(store) {}
+
   virtual ~ServerAgent() {}
 
   void start() {
@@ -87,8 +105,8 @@ class ServerAgent {
   std::vector<ServerThread> threads;
 
   // prevent copy
-   ServerAgent(const ServerAgent&) = delete;
-   ServerAgent& operator=(const ServerAgent&) = delete;
+  ServerAgent(const ServerAgent&) = delete;
+  ServerAgent& operator=(const ServerAgent&) = delete;
 };
 
 #endif  // SRC_PROXY_SERVERAGENT_H_

@@ -90,7 +90,7 @@ ProxyConfigurationTest.o : $(TEST_DIR)/ProxyConfigurationTest.cc $(SRC_DIR)/prox
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(TEST_DIR)/ProxyConfigurationTest.cc
 
 ProxyConfigurationTest : ProxyConfiguration.o ProxyConfigurationTest.o gtest_main.a
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
 
 HttpParser.o : $(SRC_DIR)/proxy/HttpParser.cc
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(SRC_DIR)/proxy/HttpParser.cc
@@ -99,7 +99,7 @@ HttpParserTest.o : $(TEST_DIR)/HttpParserTest.cc $(SRC_DIR)/proxy/HttpParser.h $
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(TEST_DIR)/HttpParserTest.cc
 	
 HttpParserTest : HttpParser.o HttpParserTest.o gtest_main.a
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
 	
 RequestStorage.o : $(SRC_DIR)/proxy/RequestStorage.cc
 		$(CXX) $(CPPFLAGS) $(CXXFLAGS) -l mysqlcppconn -c $(SRC_DIR)/proxy/RequestStorage.cc
@@ -108,10 +108,10 @@ RequestStorageTest.o : $(TEST_DIR)/HttpParserTest.cc $(SRC_DIR)/proxy/RequestSto
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -l mysqlcppconn -c $(TEST_DIR)/RequestStorageTest.cc
 	
 RequestStorageTest : RequestStorage.o RequestStorageTest.o gtest_main.a
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -l mysqlcppconn -lpthread $^ -o $@
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -l mysqlcppconn $^ -o $@
 	
 DBAPITest.o : $(TEST_DIR)/DBAPITest.cc $(SRC_DIR)/proxy/db.h $(SRC_DIR)/proxy/HttpParser.h $(GTEST_HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -l mysqlcppconn -c $(TEST_DIR)/DBAPITest.cc
 	
 DBAPITest : DBAPITest.o gtest_main.a
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -l mysqlcppconn -lpthread $^ -o $@
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -l mysqlcppconn $^ -o $@

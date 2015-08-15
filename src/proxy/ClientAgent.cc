@@ -12,7 +12,7 @@ void * ClientThread::clientThreadRoutine(void * arg) {
   const ClientWorkerParameters * parameters = reinterpret_cast<ClientWorkerParameters *>(*arg);
   std::shared_ptr<RequestStorage> storage = parameters->getStorage();
 
-  while (true) {
+  while (parameters->work()) {
     // establish connection
     int connection = ClientThread::establishConnection(parameters);
 

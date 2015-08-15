@@ -28,9 +28,9 @@
 class ClientWorkerParameters {
  public:
   explicit ClientWorkerParameters(std::shared_ptr<RequestStorage> stor):
-    socket(-1), storage(stor),
+    socket(-1), storage(stor), work(true)
     connectionAvailabilityMutex(PTHREAD_MUTEX_INITIALIZER),
-    responseAvailabilityMutex(PTHREAD_MUTEX_INITIALIZER) {
+    responseAvailabilityMutex(PTHREAD_MUTEX_INITIALIZER)  {
     pthread_cond_init(&connectionAvailabilityCondition, NULL);
     pthread_cond_init(&responseAvailabilityCondition, NULL);
   }
@@ -71,11 +71,20 @@ class ClientWorkerParameters {
     return storage;
   }
 
+  void setWork(bool value) {
+    work = value;
+  }
+
+  bool getWork() const {
+    return work;
+  }
+
  private:
   int socket;
-  const pthread_mutex_t connectionAvailabilityMutex, responseAvailabilityMutex;
-  const pthread_cond_t connectionAvailabilityCondition, responseAvailabilityCondition;
-  const std::shared_ptr<RequestStorage> storage;
+  bool work;
+  pthread_mutex_t connectionAvailabilityMutex, responseAvailabilityMutex, workMutex;
+  pthread_cond_t connectionAvailabilityCondition, responseAvailabilityCondition;
+  std::shared_ptr<RequestStorage> storage;
 
   // prevent copy
   ClientWorkerParameters(const ClientWorkerParameters&) = delete;
@@ -90,6 +99,7 @@ class ClientThread {
   }
 
   virtual ~ClientThread() {
+    parameters->setWork(false);
     pthread_join(thread, NULL);
     delete parameters;
   }
