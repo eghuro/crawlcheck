@@ -146,7 +146,7 @@ class HttpParserResult {
       }
     case HttpParserResultState::RESPONSE:
       if (result.isResponse()) {
-        return (result.getRaw() == getRaw()) &&
+        return /*(result.getRaw() == getRaw()) &&*/
             (result.getStatus() == getStatus()) &&
             (result.getContentType() == getContentType()) &&
             (result.getContent() == getContent());

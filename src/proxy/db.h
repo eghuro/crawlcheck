@@ -88,8 +88,6 @@ class Database{
     oss << RequestMethodTransformer::toString(request.getMethod());
     oss << "', 1)";
 
-    std::cout << oss.str() <<std::endl;
-
     auto *stmt = con->createStatement();
     int count = stmt->executeUpdate(oss.str());
 
@@ -187,9 +185,9 @@ class Database{
     std::string escapedContent = mysql_conn->escapeString( response.getContent() );
 
     std::ostringstream oss;
-    oss << "UPDATE transaction SET responseStatus = \"";
+    oss << "UPDATE transaction SET responseStatus = ";
     oss << response.getStatus().getCode();
-    oss << "\", contentType = \"" << response.getContentType() << "\", ";
+    oss << ", contentType = \"" << response.getContentType() << "\", ";
     oss <<  "content = \"" << escapedContent << "\", ";
     oss << "verificationStatusId = 3 WHERE id = " << tid;
 
@@ -228,8 +226,6 @@ class Database{
     oss << "SELECT COUNT(verificationStatusId) as count ";
     oss << "FROM transaction WHERE id = ";
     oss << identifier <<  " AND verificationStatusId >= 3";
-
-    std::cout << oss.str() << std::endl;
 
     auto *stmt = con -> createStatement();
     sql::ResultSet *res = stmt->executeQuery(oss.str());

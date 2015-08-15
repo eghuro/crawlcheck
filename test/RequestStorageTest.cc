@@ -17,6 +17,7 @@ TEST(RequestStorage, Request) {
 
   HttpParserResult request(HttpParserResultState::REQUEST);
   request.setMethod(RequestMethod::GET);
+  request.setRequestUri(HttpUriFactory::createUri("http://google.com/"));
   auto id = rs.insertRequest(request);
   ASSERT_TRUE(rs.requestAvailable());
   ASSERT_FALSE(rs.responseAvailable(id));
@@ -39,9 +40,17 @@ TEST(RequestStorage, Response) {
   RequestStorage rs(db);
   ASSERT_FALSE(rs.requestAvailable());
 
+  HttpParserResult request(HttpParserResultState::REQUEST);
+  request.setMethod(RequestMethod::GET);
+  request.setRequestUri(HttpUriFactory::createUri("http://google.com/"));
+  auto id = rs.insertRequest(request);
+
+  EXPECT_TRUE(rs.requestAvailable());
+  rs.retrieveRequest();
+
   HttpParserResult response(HttpParserResultState::RESPONSE);
-  rs.insertResponse(response, 0);
-  ASSERT_TRUE(rs.responseAvailable(0));
+  rs.insertResponse(response, id);
+  ASSERT_TRUE(rs.responseAvailable(id));
   ASSERT_FALSE(rs.requestAvailable());
 
   auto retrieved = rs.retrieveResponse(0);
