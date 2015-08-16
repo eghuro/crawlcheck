@@ -54,6 +54,6 @@ Rails.application.routes.draw do
   #     resources :products
   #   end
 
-  resources :transactions
-  resources :findings
+  resources :transaction
+  resources :finding
 end
