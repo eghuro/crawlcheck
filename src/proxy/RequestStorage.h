@@ -31,7 +31,7 @@ class RequestStorage {
       database(db), responseSubscribers(), requestSubscribers(),
       database_mutex(PTHREAD_MUTEX_INITIALIZER) {}
   virtual ~RequestStorage() {
-    int e = pthread_mutex_unlock(&database_mutex)
+    int e = pthread_mutex_unlock(&database_mutex);
     if (e != 0) {
       HelperRoutines::warning(unlock, strerror(e));
     }
@@ -39,11 +39,11 @@ class RequestStorage {
 
   bool responseAvailable(std::size_t trid) {
     bool available = false;
-    int e0 = pthread_mutex_lock(&database_mutex)
+    int e0 = pthread_mutex_lock(&database_mutex);
     if (e0 == 0) {
       available = database->isResponseAvailable(trid);
 
-      int e1 = pthread_mutex_unlock(&database_mutex)
+      int e1 = pthread_mutex_unlock(&database_mutex);
       if (e1 != 0) {
         HelperRoutines::warning(unlock, strerror(e1));
       }
@@ -136,12 +136,14 @@ class RequestStorage {
     int e0 = pthread_mutex_lock(&database_mutex);
     queue_type cr = queue_type(HttpParserResult(), -1);
     if (e0 == 0) {
-      cr = database->getClientRequest();
+      auto cr_ = database->getClientRequest();
 
       int e1 = pthread_mutex_unlock(&database_mutex);
       if (e1 != 0) {
         HelperRoutines::warning(unlock, strerror(e1));
       }
+
+      return cr_;
     } else {
       HelperRoutines::warning(lock, strerror(e0));
     }
@@ -160,10 +162,10 @@ class RequestStorage {
 
       int e1 = pthread_mutex_unlock(&database_mutex);
       if (e1 != 0) {
-        HelperRoutines::warning(unlock, e1);
+        HelperRoutines::warning(unlock, strerror(e1));
       }
     } else {
-      HelperRoutines::warning(lock, e0);
+      HelperRoutines::warning(lock, strerror(e0));
     }
 
     return available;
