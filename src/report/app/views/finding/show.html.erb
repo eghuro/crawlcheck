@@ -1,0 +1,51 @@
+<h1>Discoveries</h1>
+
+<h2>Transaction information</h2>
+<table border="1">
+  <tr>
+    <th>Request method</th>
+    <th>URI</th>
+    <th>Response status</th>
+    <th>Content type</th>
+  </tr>
+  <tr>
+    <td><%=@transaction.method %></td>
+    <td><%=@transaction.uri %></td>
+    <td><%=@transaction.responseStatus %></td>
+    <td><%=@transaction.contentType %></td>
+  </tr>
+</table>
+
+<% if not @empty %>
+<h2>Defects</h2>
+<table border="1">
+  <tr>
+    <th>Defect type</th>
+    <th>Line</th>
+    <th>Evidence</th>
+  </tr>
+
+  <% @defects.each do |defect| %>
+    <tr>
+      <td><%= defect.type%></td>
+      <td><%= defect.location%></td>
+      <td><%= defect.evidence%></td>
+    <tr>
+  <% end %>
+</table>
+
+<h2>Links</h2>
+<table border="1">
+  <tr>
+    <th>To uri</th>
+    <th>Processed</th>
+  </tr>
+
+  <% @links.each do |link| %>
+    <tr>
+      <td><%= link.toUri %></td>
+      <td><%= link.processed %></td>
+    </tr>
+  <% end %>
+</table>
+<%end%>

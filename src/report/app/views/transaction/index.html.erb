@@ -13,7 +13,7 @@
     <tr>
       <td><%= record.method %></td>
       <td><%= record.uri %></td>
-      <td><%= @status.find(record.verificationStatusId).status %></td>
+      <td><a href="/finding/<%= record.id %>"><%= @status.find(record.verificationStatusId).status %></a></td>
       <td><a href="transaction/<%= record.id %>"><%= record.contentType %></a></td>
     </tr>
   <% end %>
