@@ -90,8 +90,6 @@ class Database{
     oss << request.getRaw();
     oss << "\")";
 
-    std::cout << oss.str() << std::endl;
-
     con->setAutoCommit(0);
     auto *stmt = con->createStatement();
     int count = stmt->executeUpdate(oss.str());
@@ -199,8 +197,6 @@ class Database{
     oss <<  "content = \"" << escapedContent << "\", ";
     oss << "verificationStatusId = 3, rawResponse = \"";
     oss << response.getRaw() <<"\" WHERE id = " << tid;
-
-    std::cout << oss.str() << std::endl;
 
     auto *stmt = con->createStatement();
     stmt->executeUpdate(oss.str());
