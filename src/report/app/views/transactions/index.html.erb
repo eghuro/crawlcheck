@@ -1,0 +1,20 @@
+<h1>Crawlcheck</h1>
+<h2>Recorded transactions</h2>
+
+<table border="1">
+  <tr>
+    <th>Method</th>
+    <th>URI</th>
+    <th>Status</th>
+    <th>Content type</th>
+  </tr>
+
+  <% @transactions.each do |record| %>
+    <tr>
+      <td><%= record.method %></td>
+      <td><%= record.uri %></td>
+      <td><%= @status.find(record.verificationStatusId).status %></td>
+      <td><%= record.contentType %></td>
+    </tr>
+  <% end %>
+</table>
