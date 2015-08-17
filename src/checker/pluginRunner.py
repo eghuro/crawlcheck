@@ -1,9 +1,12 @@
 from pluginDBAPI import DBAPI
+from acceptor import Acceptor
 
 class PluginRunner:
     def __init__(self, dbconf):
         self.dbconf = dbconf
         self.pluginsById = {}
+        self.uriAcceptor = Acceptor(true)
+        self.typeAcceptor = Acceptor(true)
 
     def runTransaction(self, plugins, info):
         for plugin in plugins:
@@ -21,4 +24,4 @@ class PluginRunner:
             info = api.getTransaction()
 
     def accept(self, pluginId, transaction):
-        return self.pluginsById[pluginId].handleContent(transaction)
+        return self.uriAcceptor.accept(pluginId, transaction.getUri()) && self.typeAcceptor.accept(pluginId, transaction.getContentType())
