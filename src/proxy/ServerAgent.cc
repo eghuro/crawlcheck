@@ -10,7 +10,7 @@
 #include <cassert>
 #include "./RequestStorage.h"
 
-const int ServerThread::buffer_size = 1000;
+std::size_t ServerThread::buffer_size = 1000;
 
 void * ServerThread::serverThreadRoutine (void * arg) {
   ServerWorkerParameters * parameters = reinterpret_cast<ServerWorkerParameters *>(arg);

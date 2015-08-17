@@ -127,15 +127,14 @@ class ProxyConfiguration {
 
 class ConfigurationParser : public xmlpp::SaxParser {
  public:
-  ConfigurationParser() : xmlpp::SaxParser(),
-  versionMatches(false) {}
+  ConfigurationParser(): versionMatches(false) {}
   virtual ~ConfigurationParser() {}
 
-  ProxyConfiguration & getProxyConfiguration() const {
+  const ProxyConfiguration & getProxyConfiguration() const {
     return pconf;
   }
 
-  DatabaseConfiguration & getDatabaseConfiguration() const {
+  const DatabaseConfiguration & getDatabaseConfiguration() const {
     return dconf;
   }
 
@@ -154,7 +153,7 @@ class ConfigurationParser : public xmlpp::SaxParser {
       for (auto it = properties.begin(); it != properties.end(); ++it) {
         try {
           if (it->name == "version") {
-            version = (it->value == ConfigurationParser::version);
+            versionMatches = (it->value == ConfigurationParser::version);
           }
         } catch (const Glib::ConvertError& ex) {
           std::ostringstream oss;
@@ -202,7 +201,7 @@ class ConfigurationParser : public xmlpp::SaxParser {
   }
 
   virtual void on_end_document() {}
-  virtual void on_end_element(const Glib::ustring& name);
+  virtual void on_end_element(const Glib::ustring& name) {}
   virtual void on_characters(const Glib::ustring& characters) {}
   virtual void on_comment(const Glib::ustring& text) {}
   virtual void on_warning(const Glib::ustring& text) {}

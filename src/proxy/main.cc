@@ -4,6 +4,10 @@
 #include <memory>
 #include <libxml++/libxml++.h>
 #include "./ProxyConfiguration.h"
+#include "./db.h"
+#include "./RequestStorage.h"
+#include "./ServerAgent.h"
+#include "./ClientAgent.h"
 
 int main(int argc, char ** argv) {
   if (argc == 2) {  // jmeno konfigurak
@@ -29,7 +33,7 @@ int main(int argc, char ** argv) {
         // v destruktorech ClientThread a ServerThread, ktere se spusti z
         // destruktoru ClientAgent resp. ServerAgent se vola pthread_join
 
-        return EXIT_SUCCESS:
+        return EXIT_SUCCESS;
       } else {
         return EXIT_FAILURE;
       }

@@ -28,7 +28,7 @@
 class ClientWorkerParameters {
  public:
   explicit ClientWorkerParameters(std::shared_ptr<RequestStorage> stor):
-    socket(-1), storage(stor), work(true)
+    socket(-1), storage(stor), work(true),
     connectionAvailabilityMutex(PTHREAD_MUTEX_INITIALIZER),
     responseAvailabilityMutex(PTHREAD_MUTEX_INITIALIZER)  {
     pthread_cond_init(&connectionAvailabilityCondition, NULL);
@@ -39,7 +39,7 @@ class ClientWorkerParameters {
     pthread_cond_destroy(&connectionAvailabilityCondition);
   }
 
-  pthread_mutex_t * getConnectionAvailabilityMutex() const {
+  pthread_mutex_t * getConnectionAvailabilityMutex() {
     return &connectionAvailabilityMutex;
   }
 
@@ -47,7 +47,7 @@ class ClientWorkerParameters {
     return socket >= 0;
   }
 
-  pthread_cond_t * getConnectionAvailabilityCondition() const {
+  pthread_cond_t * getConnectionAvailabilityCondition() {
     return &connectionAvailabilityCondition;
   }
 
@@ -55,15 +55,15 @@ class ClientWorkerParameters {
     return socket;
   }
 
-  void setConnection(const int fd) const {
+  void setConnection(const int fd) {
     socket = fd;
   }
 
-  pthread_mutex_t * getResponseAvailabilityMutex() const {
+  pthread_mutex_t * getResponseAvailabilityMutex() {
     return &responseAvailabilityMutex;
   }
 
-  pthread_cond_t * getResponseAvailabilityCondition() const {
+  pthread_cond_t * getResponseAvailabilityCondition() {
     return &responseAvailabilityCondition;
   }
 
@@ -75,7 +75,7 @@ class ClientWorkerParameters {
     work = value;
   }
 
-  bool getWork() const {
+  bool doWork() const {
     return work;
   }
 
@@ -123,33 +123,32 @@ class ClientThread {
   ClientThread(const ClientThread&) = delete;
   ClientThread& operator=(const ClientThread&) = delete;
 
-  static int establishConnection(const ClientWorkerParameters * parameters);
-  static auto request(const ClientWorkerParameters *,
-      const std::shared_ptr<RequestStorage>, const int);
-  static void response(const std::vector<std::size_t> &, const std::size_t);
+  static int establishConnection(ClientWorkerParameters * parameters);
+  static std::vector<std::size_t> request(const ClientWorkerParameters *, int);
+  static void response(const std::vector<std::size_t> &, const int, ClientWorkerParameters *);
 };
 
 class ClientAgent {
  public:
   ClientAgent(const std::shared_ptr<ProxyConfiguration> conf,
       std::shared_ptr<RequestStorage> store) :
-    configuration(conf), storage(store), socket(-1),
+    configuration(conf), storage(store), socketFd(-1),
     threads(conf->getInPoolCount()) {}
 
   virtual ~ClientAgent() {
-    close(socket);
+    close(socketFd);
   }
 
   void start() {
     createPool();
-    listen();
+    doListen();
   }
  private:
   const std::shared_ptr<ProxyConfiguration> configuration;
   const std::shared_ptr<RequestStorage> storage;
-  const std::vector<std::unique_ptr<ClientThread>> threads;
+  std::vector<std::unique_ptr<ClientThread>> threads;
 
-  int socket;
+  int socketFd;
 
   // prevent copy
   ClientAgent(const ClientAgent&) = delete;
@@ -177,14 +176,14 @@ class ClientAgent {
 
   inline void listenSocket(const int socket) const {
     fprintf(stdout, "LISTEN\n");
-    if (listen(socket, configuration->getInBacklog()) == -1) {
+    if (listen(socketFd, configuration->getInBacklog()) == -1) {
       HelperRoutines::error("listen ERROR");
     }
   }
 
   inline int bindSocket(struct addrinfo *r) const {
-    int socket_fd;
-   const struct addrinfo *rorig;
+   int socket_fd;
+   struct addrinfo *rorig;
 
     for (rorig = r; r != NULL; r = r->ai_next) {
       if (r->ai_family != AF_INET && r->ai_family != AF_INET6) continue;
@@ -213,14 +212,14 @@ class ClientAgent {
     }
   }
 
-  void listen() const {
+  void doListen() {
     auto r = getAddrInfo();
-    socket = bindSocket(r);
-    listenSocket(socket);
+    socketFd = bindSocket(r);
+    listenSocket(socketFd);
 
     // deliver socket to threads
-    for (std::unique_ptr<ClientThread> thread : threads) {
-      thread->setSocket(socket);
+    for (auto it = threads.begin(); it != threads.end(); ++it) {
+      (*it)->setSocket(socketFd);
     }
   }
 };

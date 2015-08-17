@@ -8,19 +8,21 @@
 #include "./RequestStorage.h"
 #include "./HttpParser.h"
 
+std::size_t ClientThread::buffer_size = 1000;
+
 void * ClientThread::clientThreadRoutine(void * arg) {
-  const ClientWorkerParameters * parameters = reinterpret_cast<ClientWorkerParameters *>(*arg);
+  ClientWorkerParameters * parameters = reinterpret_cast<ClientWorkerParameters *>(arg);
   std::shared_ptr<RequestStorage> storage = parameters->getStorage();
 
-  while (parameters->work()) {
+  while (parameters->doWork()) {
     // establish connection
     int connection = ClientThread::establishConnection(parameters);
 
     // handle request
-    auto transactionIds = ClientThread::request(parameters, storage, connection);
+    auto transactionIds = ClientThread::request(parameters, connection);
 
     // handle response
-    ClientThread::response(transactionIds, connection);
+    ClientThread::response(transactionIds, connection, parameters);
 
     //close connection
     close(connection);
@@ -28,7 +30,7 @@ void * ClientThread::clientThreadRoutine(void * arg) {
   }
 }
 
-int ClientThread::establishConnection(const ClientWorkerParameters * parameters) {
+int ClientThread::establishConnection(ClientWorkerParameters * parameters) {
     // wait for socket (for accept) to become available
     pthread_mutex_t * mutex = parameters->getConnectionAvailabilityMutex();
     pthread_cond_t * condition = parameters->getConnectionAvailabilityCondition();
@@ -49,9 +51,8 @@ int ClientThread::establishConnection(const ClientWorkerParameters * parameters)
     return new_fd;
   }
 
-auto ClientThread::request(const ClientWorkerParameters * parameters,
-    const std::shared_ptr<RequestStorage> storage, const int connection) {
-
+std::vector<std::size_t> ClientThread::request(const ClientWorkerParameters * parameters, int connection) {
+  auto storage = parameters->getStorage();
     std::vector<std::size_t> transactionIds(1);
     //read request
     HttpParser parser;
@@ -73,7 +74,8 @@ auto ClientThread::request(const ClientWorkerParameters * parameters,
     return transactionIds;
   }
 
-void ClientThread::response(const std::vector<std::size_t> & transactionIds, const std::size_t connection) {
+void ClientThread::response(const std::vector<std::size_t> & transactionIds, int connection, ClientWorkerParameters * parameters) {
+  auto storage = parameters->getStorage();
   //wait for response
   pthread_mutex_t * response_mutex = parameters->getResponseAvailabilityMutex();
   pthread_cond_t * response_available = parameters->getResponseAvailabilityCondition();
