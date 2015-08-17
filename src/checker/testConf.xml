@@ -1,0 +1,4 @@
+<?xml version="1.0" ?>
+<crawlcheck version="0.00">
+  <db user="test" pass="" uri="localhost" dbname="crawlcheck"/>
+</crawlcheck>
