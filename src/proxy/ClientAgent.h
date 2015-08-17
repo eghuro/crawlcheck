@@ -99,7 +99,6 @@ class ClientThread {
   }
 
   virtual ~ClientThread() {
-    parameters->setWork(false);
     pthread_join(thread, NULL);
     delete parameters;
   }

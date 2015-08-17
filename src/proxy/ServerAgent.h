@@ -61,7 +61,6 @@ class ServerThread {
   }
 
   virtual ~ServerThread() {
-    parameters->setWork(false);
     pthread_join(thread, NULL);
     delete parameters;
   }
