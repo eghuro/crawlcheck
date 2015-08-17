@@ -7,7 +7,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
+#include <sstream>
+#include <libxml++/libxml++.h>
+#include <glibmm/convert.h>
 #include "./HelperRoutines.h"
+#include "./db.h"
 
 /**
  * ProxyConfiguration holds configuration for a Proxy object.
@@ -119,6 +123,98 @@ class ProxyConfiguration {
   inline bool acceptablePort(int port) {
     return (port >= minPort) && (port <= maxPort);
   }
+};
+
+class ConfigurationParser : public xmlpp::SaxParser {
+ public:
+  ConfigurationParser() : xmlpp::SaxParser(),
+  versionMatches(false) {}
+  virtual ~ConfigurationParser() {}
+
+  ProxyConfiguration & getProxyConfiguration() const {
+    return pconf;
+  }
+
+  DatabaseConfiguration & getDatabaseConfiguration() const {
+    return dconf;
+  }
+
+  bool versionMatch() const {
+    return versionMatches;
+  }
+
+ protected:
+  virtual void on_start_document() {
+    versionMatches = false;
+  }
+
+  virtual void on_start_element(const Glib::ustring& name,
+                                const AttributeList& properties) {
+    if (name == "crawlcheck") {
+      for (auto it = properties.begin(); it != properties.end(); ++it) {
+        try {
+          if (it->name == "version") {
+            version = (it->value == ConfigurationParser::version);
+          }
+        } catch (const Glib::ConvertError& ex) {
+          std::ostringstream oss;
+          oss << "Parsing configuration version: " << ex.what();
+          HelperRoutines::error(oss.str());
+        }
+      }
+    } else if (name == "db") {
+      for (auto it = properties.begin(); it != properties.end(); ++it) {
+        try {
+          if (it->name == "user") {
+            dconf.setUser(it->value);
+          } else if (it->name == "pass") {
+             dconf.setPass(it->value);
+          } else if (it->name == "uri") {
+            dconf.setUri(it->value);
+          } else if (it->name == "dbname") {
+            dconf.setDb(it->value);
+          }
+        } catch (const Glib::ConvertError& ex) {
+          std::ostringstream oss;
+          oss << "Parsing DB configuration: " << ex.what();
+          HelperRoutines::error(oss.str());
+        }
+      }
+    } else if (name == "proxy") {
+      for (auto it = properties.begin(); it != properties.end(); ++it) {
+        try {
+          if (it->name =="inPool") {
+            pconf.setInPoolCount(static_cast<std::size_t>(HelperRoutines::toInt(it->value)));
+          } else if (it->name == "outPool") {
+            pconf.setOutPoolCount(static_cast<std::size_t>(HelperRoutines::toInt(it->value)));
+          } else if (it->name == "inPort") {
+            pconf.setInPoolPort(HelperRoutines::toInt(it->value));
+          } else if (it->name == "inBacklog") {
+            pconf.setInBacklog(HelperRoutines::toInt(it->value));
+          }
+        } catch (const Glib::ConvertError& ex) {
+          std::ostringstream oss;
+          oss << "Parsing DB configuration: " << ex.what();
+          HelperRoutines::error(oss.str());
+        }
+      }
+    }
+  }
+
+  virtual void on_end_document() {}
+  virtual void on_end_element(const Glib::ustring& name);
+  virtual void on_characters(const Glib::ustring& characters) {}
+  virtual void on_comment(const Glib::ustring& text) {}
+  virtual void on_warning(const Glib::ustring& text) {}
+  virtual void on_error(const Glib::ustring& text) {}
+  virtual void on_fatal_error(const Glib::ustring& text) {}
+
+ private:
+  bool versionMatches;
+  ProxyConfiguration pconf;
+  DatabaseConfiguration dconf;
+
+  static const std::string version;
 };
 
 #endif  // SRC_PROXY_PROXYCONFIGURATION_H_
