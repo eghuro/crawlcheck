@@ -11,7 +11,6 @@ class PyW3C_HTML_Validator(IPlugin):
 
     def check(self, transactionId, content):
         self.validator.validate_fragment(content)
-        # print _self.validator.errors
         for error in self.validator.errors:
             self.database.setDefect(transactionId,
                                     self.transformMessageId(error['messageid']),
@@ -20,8 +19,8 @@ class PyW3C_HTML_Validator(IPlugin):
             print self.validator.warnings
         return
 
-    def handleContent(self, contentType):
-        if contentType == "text/html":
+    def handleContent(self, info):
+        if info.getContentType() == "text/html":
             return True
         return False
 

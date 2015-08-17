@@ -6,7 +6,7 @@ class PluginRunner:
 
     def runTransaction(self, plugins, info):
         for plugin in plugins:
-            if plugin.handleContent(info.getContentType):
+            if plugin.handleContent(info):
                 plugin.check(info.getId(), info.getContent())
 
     def run(self, plugins):

@@ -1,8 +1,8 @@
 import unittest
 
-from DBAPIconfiguration import DBAPIconfiguration
+from pluginDBAPI import DBAPIconfiguration
 from pluginDBAPI import DBAPI
-from py_w3c_html_validator_plugin import PyW3C_HTML_Validator
+from plugin.py_w3c_html_validator_plugin import PyW3C_HTML_Validator
 
 class PyW3cPluginTest(unittest.TestCase):
   def testSimpleFragment(_self):
@@ -13,7 +13,8 @@ class PyW3cPluginTest(unittest.TestCase):
     dbconf.setDbname('crawlcheck')
     
     api = DBAPI(dbconf)
-    checker = PyW3C_HTML_Validator(api)
+    checker = PyW3C_HTML_Validator()
+    checker.setDb(api)
     id = 0
     checker.check(id, "<html></html>")
 
