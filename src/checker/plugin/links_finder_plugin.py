@@ -20,3 +20,6 @@ class LinksFinder(IPlugin):
 
     def handleContent(self, info):
         return info.getContentType() == "text/html" 
+
+    def getId(self):
+        return "linksFinder"

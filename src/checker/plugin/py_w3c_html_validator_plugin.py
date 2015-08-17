@@ -24,5 +24,8 @@ class PyW3C_HTML_Validator(IPlugin):
             return True
         return False
 
+    def getId(self):
+        return "htmlValidator"
+
     def transformMessageId(self, mid):
         return mid
