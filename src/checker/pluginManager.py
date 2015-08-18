@@ -23,18 +23,10 @@ def main():
             print pluginInfo.name
             plugins.append(pluginInfo.plugin_object)
 
-        runner = PluginRunner(cl.getDbconf())
+        runner = PluginRunner(cl.getDbconf(), cl.getUriAcceptor(), cl.getTypeAcceptor())
         runner.run(plugins)
     else:
         print "Usage: "+sys.argv[0]+" <configuration XML file>"
-
-def getDbconf():
-    dbconf = DBAPIconfiguration()
-    dbconf.setUri('localhost')
-    dbconf.setUser('test')
-    dbconf.setPassword('')
-    dbconf.setDbname('crawlcheck')
-    return dbconf
 
 if __name__ == "__main__":
     main()

@@ -2,11 +2,11 @@ from pluginDBAPI import DBAPI
 from acceptor import Acceptor
 
 class PluginRunner:
-    def __init__(self, dbconf):
+    def __init__(self, dbconf, uriAcceptor, typeAcceptor):
         self.dbconf = dbconf
         self.pluginsById = {}
-        self.uriAcceptor = Acceptor(true)
-        self.typeAcceptor = Acceptor(true)
+        self.uriAcceptor = uriAcceptor
+        self.typeAcceptor = typeAcceptor
 
     def runTransaction(self, plugins, info):
         for plugin in plugins:
