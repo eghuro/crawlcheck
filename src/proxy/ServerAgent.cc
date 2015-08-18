@@ -15,20 +15,44 @@ std::size_t ServerThread::buffer_size = 1000;
 void * ServerThread::serverThreadRoutine (void * arg) {
   std::cout << "Server thread routine" << std::endl;
   ServerWorkerParameters * parameters = reinterpret_cast<ServerWorkerParameters *>(arg);
+  assert(parameters != nullptr);
+
+  std::cout << "Get storage lock" << std::endl;
+  pthread_mutex_t * storageLock = parameters->getStorageLock();
+  assert (storageLock != nullptr);
+
+  std::cout << "Trying to get storage" << std::endl;
+  int e = pthread_mutex_lock(storageLock);
+  if (e != 0) {
+    std::cout << strerror(e)  <<std::endl;
+  }
   RequestStorage * storage = parameters->getStorage();
+  pthread_mutex_unlock(storageLock);
+
+  assert(storage != nullptr);
   std::cout << "Got storage" << std::endl;
 
-  while (true) {
+  pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
+  while (parameters->doWork()) {
     //wait for request
     pthread_mutex_t * mutex = parameters->getRequestAvailabilityMutex();
     pthread_cond_t * condition = parameters->getRequestAvailabilityCondition();
 
+    assert (storage != nullptr);
+    assert (storage != NULL);
+
+    pthread_mutex_lock(storageLock);
     storage->subscribeWait4Request(mutex, condition);
+    pthread_mutex_unlock(storageLock);
     pthread_mutex_lock(mutex);
+    std::cout << "Waiting for request" <<std::endl;
     while(!storage->requestAvailable()) {
       pthread_cond_wait(condition, mutex);
     }
+    std::cout << "Retrieving request" <<std::endl;
+    pthread_mutex_lock(storageLock);
     auto request = storage->retrieveRequest();
+    pthread_mutex_unlock(storageLock);
     pthread_mutex_unlock(mutex);
 
     assert(std::get<0>(request).isRequest());
@@ -39,14 +63,15 @@ void * ServerThread::serverThreadRoutine (void * arg) {
     int fd = ServerThread::connection(host, port);
 
     //write request
-    ServerThread::writeRequest(request, fd, storage);
+    ServerThread::writeRequest(request, fd, storage, storageLock);
 
     close(fd);
   }
+  delete parameters;
 }
 
 void ServerThread::writeRequest(const RequestStorage::queue_type & request, const int fd,
-    RequestStorage* storage) {
+    RequestStorage* storage, pthread_mutex_t * storageLock) {
   std::string raw_request = std::get<0>(request).getRaw();
   auto id = std::get<1>(request);
   if (write(fd, raw_request.c_str(), raw_request.size()) != -1) {
@@ -61,7 +86,9 @@ void ServerThread::writeRequest(const RequestStorage::queue_type & request, cons
         HttpParserResult result = parser.parse(std::string(buf, n));
         if (result.isResponse()) {
   // push DB
+          pthread_mutex_lock(storageLock);
           (*storage).insertResponse(result, id);
+          pthread_mutex_unlock(storageLock);
         }
       }
     }
