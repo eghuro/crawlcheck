@@ -19,14 +19,22 @@ int main(int argc, char ** argv) {
       parser.parse_file(config);
 
       if (parser.versionMatch()) {
+        std::cout << "Parsed configuration, creating ProxyConfiguration sharedptr" << std::endl;
+
         std::shared_ptr<ProxyConfiguration> pconf(std::make_shared<ProxyConfiguration>(parser.getProxyConfiguration()));
+        std::cout << "Parsed configuration, creating Database sharedptr" << std::endl;
         std::shared_ptr<Database> db(new Database(parser.getDatabaseConfiguration()));
+        std::cout << "Created db, creating RequestStorage sharedptr" << std::endl;
         std::shared_ptr<RequestStorage> rs(new RequestStorage(db));
 
+        std::cout << "Created RequestStorage, creating server agent" << std::endl;
         ServerAgent server(pconf, rs);
+        std::cout << "Created ServerAgent, creating client agent" << std::endl;
         ClientAgent client(pconf, rs);
 
+        std::cout << "Starting server"<<std::endl;
         server.start();
+        std::cout << "Starting client"<<std::endl;
         client.start();
 
         // bezi sada vlaken, ktere konaji nejakou cinnost
@@ -41,5 +49,8 @@ int main(int argc, char ** argv) {
       std::cerr << "libxml++ exception: " << ex.what() << std::endl;
       return EXIT_FAILURE;
     }
+  } else {
+    std::cout << "Usage: "<< argv[0] << " <configuration.xml>" << std::endl;
+    return EXIT_FAILURE;
   }
 }

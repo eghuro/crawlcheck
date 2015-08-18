@@ -68,13 +68,13 @@ class RequestStorage {
         for (auto it = requestSubscribers.begin();
             it != requestSubscribers.end();
             it++) {
-          int e2 = pthread_mutex_lock(it->first);
+          int e2 = pthread_mutex_lock(it->mutex);
           if (e2 == 0) {
-            int e3 = pthread_cond_broadcast(it->second);
+            int e3 = pthread_cond_broadcast(it->cond);
             if (e3 != 0) {
               HelperRoutines::warning("Cannot notify workers", strerror(e3));
             }
-            int e4 = pthread_mutex_unlock(it->first);
+            int e4 = pthread_mutex_unlock(it->mutex);
             if (e4 != 0) {
               HelperRoutines::warning("Cannot unlock mutex for notify on request insertion", strerror(e4));
             }
@@ -203,13 +203,24 @@ class RequestStorage {
   }
 
   void subscribeWait4Request(pthread_mutex_t * mutex, pthread_cond_t * cond) {
-    requestSubscribers.push_back(std::pair<pthread_mutex_t *, pthread_cond_t *>(mutex, cond));
+    std::cout << "Subscribe: wait for request" << std::endl;
+
+    my_pair pair;
+    pair.mutex = mutex;
+    pair.cond = cond;
+
+    requestSubscribers.push_back(std::move(pair));
+    std::cout << "Subscribed" << std::endl;
   }
  private:
+  struct my_pair {
+    pthread_mutex_t * mutex;
+    pthread_cond_t * cond;
+  };
   pthread_mutex_t database_mutex;
   std::shared_ptr<Database> database;
   std::multimap<int, const std::pair<pthread_mutex_t *, pthread_cond_t *>> responseSubscribers;
-  std::deque<std::pair<pthread_mutex_t *, pthread_cond_t *>> requestSubscribers;
+  std::deque<my_pair> requestSubscribers;
 
   static const std::string lock;
   static const std::string unlock;

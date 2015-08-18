@@ -27,11 +27,13 @@ TEST_DIR = .
 CPPFLAGS += -isystem $(GTEST_DIR)/include
 
 # Flags passed to the C++ compiler.
-CXXFLAGS += -g -Wall -Wextra -pthread -std=c++11
+CXXFLAGS += -g -w -pthread -std=c++11
+
+XMLFLAGS = -I/usr/include/libxml++-2.6 -I/usr/lib/libxml++-2.6/include -I/usr/include/libxml2 -I/usr/include/glibmm-2.4 -I/usr/lib/glibmm-2.4/include -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -I/usr/include/sigc++-2.0 -I/usr/lib/sigc++-2.0/include -lxml++-2.6 -lxml2 -lglibmm-2.4 -lgobject-2.0 -lglib-2.0 -lsigc-2.0
 
 # All tests produced by this Makefile.  Remember to add new tests you
 # created to the list.
-TESTS = ProxyConfigurationTest HttpParserTest RequestStorageTest DBAPITest
+TESTS = ProxyConfigurationTest HttpParserTest RequestStorageTest DBAPITest MainTest
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
@@ -84,10 +86,10 @@ gtest_main.a : gtest-all.o gtest_main.o
 #	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
 
 ProxyConfiguration.o : $(SRC_DIR)/proxy/ProxyConfiguration.cc
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(SRC_DIR)/proxy/ProxyConfiguration.cc
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(XMLFLAGS) -l mysqlcppconn -c $(SRC_DIR)/proxy/ProxyConfiguration.cc
 
 ProxyConfigurationTest.o : $(TEST_DIR)/ProxyConfigurationTest.cc $(SRC_DIR)/proxy/ProxyConfiguration.h $(GTEST_HEADERS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(TEST_DIR)/ProxyConfigurationTest.cc
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(XMLFLAGS) -c $(TEST_DIR)/ProxyConfigurationTest.cc
 
 ProxyConfigurationTest : ProxyConfiguration.o ProxyConfigurationTest.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
@@ -102,7 +104,7 @@ HttpParserTest : HttpParser.o HttpParserTest.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
 	
 RequestStorage.o : $(SRC_DIR)/proxy/RequestStorage.cc
-		$(CXX) $(CPPFLAGS) $(CXXFLAGS) -l mysqlcppconn -c $(SRC_DIR)/proxy/RequestStorage.cc
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -l mysqlcppconn -c $(SRC_DIR)/proxy/RequestStorage.cc
 		
 RequestStorageTest.o : $(TEST_DIR)/HttpParserTest.cc $(SRC_DIR)/proxy/RequestStorage.h $(SRC_DIR)/proxy/HttpParser.h $(GTEST_HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -l mysqlcppconn -c $(TEST_DIR)/RequestStorageTest.cc
@@ -114,4 +116,19 @@ DBAPITest.o : $(TEST_DIR)/DBAPITest.cc $(SRC_DIR)/proxy/db.h $(SRC_DIR)/proxy/Ht
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -l mysqlcppconn -c $(TEST_DIR)/DBAPITest.cc
 	
 DBAPITest : DBAPITest.o gtest_main.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -l mysqlcppconn $^ -o $@
+	
+Database.o : $(SRC_DIR)/proxy/db.cc
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -l mysqlcppconn -o Database.o -c $(SRC_DIR)/proxy/db.cc
+	
+ServerAgent.o : $(SRC_DIR)/proxy/ServerAgent.cc
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(XMLFLAGS) -l mysqlcppconn -o ServerAgent.o -c $(SRC_DIR)/proxy/ServerAgent.cc
+	
+ClientAgent.o : $(SRC_DIR)/proxy/ClientAgent.cc
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(XMLFLAGS) -l mysqlcppconn -o ClientAgent.o -c $(SRC_DIR)/proxy/ClientAgent.cc
+
+MainTest.o : $(TEST_DIR)/MainTest.cc $(SRC_DIR)/proxy/db.h $(SRC_DIR)/proxy/ProxyConfiguration.h $(SRC_DIR)/proxy/RequestStorage.h $(SRC_DIR)/proxy/ServerAgent.h $(SRC_DIR)/proxy/ClientAgent.h $(GTEST_HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(XMLFLAGS) -l mysqlcppconn -o MainTest.o -c $(TEST_DIR)/MainTest.cc
+
+MainTest : MainTest.o ProxyConfiguration.o RequestStorage.o Database.o ServerAgent.o ClientAgent.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -l mysqlcppconn $^ -o $@

@@ -14,15 +14,18 @@ class ServerWorkerParameters {
   explicit ServerWorkerParameters(std::shared_ptr<RequestStorage> store):
       storage(store), requestAvailabilityMutex(PTHREAD_MUTEX_INITIALIZER),
       work(true), requestAvailabilityCondition() {
+    std::cout << "Create ServerWorkerParameters" << std::endl;
     pthread_cond_init(&requestAvailabilityCondition, NULL);
   }
 
   virtual ~ServerWorkerParameters() {
+    std::cout << "Destroy Server Worker Parameters" << std::endl;
     pthread_cond_destroy(&requestAvailabilityCondition);
   }
 
-  std::shared_ptr<RequestStorage> getStorage() const {
-    return storage;
+  RequestStorage* getStorage() const {
+    std::cout << "Get request storage" << std::endl;
+    return storage.get();
   }
 
   pthread_mutex_t * getRequestAvailabilityMutex() {
@@ -55,25 +58,47 @@ class ServerWorkerParameters {
 class ServerThread {
  public:
   explicit ServerThread(std::shared_ptr<RequestStorage> store):
-      storage(store) {
+      storage(store.get()) {
+    std::cout << "ServerThread ctor" << std::endl;
     parameters = new ServerWorkerParameters(store);
-    pthread_create(&thread, NULL, ServerThread::serverThreadRoutine, &parameters);
+    int e = pthread_create(&thread, NULL, ServerThread::serverThreadRoutine, &parameters);
+    if (e != 0) {
+      threadFailed = true;
+      HelperRoutines::error(strerror(e));
+    } else {
+      threadFailed = false;
+      std::cout << "new thread created" << std::endl;
+    }
   }
 
   virtual ~ServerThread() {
-    pthread_join(thread, NULL);
+    std::cout << "Destroying server thread"<<std::endl;
+    if (!threadFailed) {
+      std::cout << "Join" << std::endl;
+      int e = pthread_join(thread, NULL);
+      if (e != 0) {
+        HelperRoutines::warning("Pthread_join", strerror(e));
+      } else {
+        std::cout << "Join successful" << std::endl;
+      }
+      std::cout << "Joined, deleting parameters" <<std::endl;
+    } else {
+      std::cout << "Thread was not created, just deleting parameters" << std::endl;
+    }
     delete parameters;
+    std::cout << "Deleted, leaving" << std::endl;
   }
 
   static void * serverThreadRoutine (void *);
 
  private:
-  std::shared_ptr<RequestStorage> storage;
+  RequestStorage * storage;
   ServerWorkerParameters * parameters;
   pthread_t thread;
+  bool threadFailed;
   static std::size_t buffer_size;
 
-  static void writeRequest(const RequestStorage::queue_type &, const int, std::shared_ptr<RequestStorage>);
+  static void writeRequest(const RequestStorage::queue_type &, const int, RequestStorage *);
   static int connection (const std::string &, const int);
 
   // prevent copy
@@ -86,15 +111,22 @@ class ServerAgent {
   ServerAgent(std::shared_ptr<ProxyConfiguration> conf,
       std::shared_ptr<RequestStorage> store):
         threads(conf->getOutPoolCount()), configuration(conf),
-        storage(store) {}
+        storage(store) {
+    std::cout << "Creating ServerAgent" << std::endl;
+    std::cout << "Threads: "<<conf->getOutPoolCount() << std::endl;
+  }
 
-  virtual ~ServerAgent() {}
+  virtual ~ServerAgent() {
+    std::cout << "Destroying ServerAgent" << std::endl;
+  }
 
   void start() {
+    std::cout << "Creating pool" << std::endl;
     // create pool
     for (int i = 0; i < configuration->getOutPoolCount(); i++) {
        std::unique_ptr<ServerThread> p(new ServerThread(storage));
        threads.push_back(std::move(p));
+       std::cout << "Created a thread" << std::endl;
      }
   }
 

@@ -1,0 +1,13 @@
+<?xml version="1.0" ?>
+<crawlcheck version="0.00">
+  <db user="test" pass="" uri="localhost" dbname="crawlcheck"/>
+
+  <plugins>
+    <resolutions>
+      <uris default="True" />
+      <contentTypes default="False">
+        <contentType key="text/html" accept="True"/>
+      </contentTypes>
+    </resolutions>
+  </plugins>
+</crawlcheck>

@@ -28,7 +28,7 @@ class ProxyConfiguration {
    * Constructor sets values to "safely invalid". Everything must be set
    * manually using setters.
    */
-  ProxyConfiguration():in_pool_count(0), in_pool_port(-1), in_backlog(-1) {}
+  ProxyConfiguration():in_pool_count(0), out_pool_count(0), in_pool_port(-1), in_backlog(-1) {}
   virtual ~ProxyConfiguration() {}
 
   void setInPoolCount(std::size_t count) {
@@ -39,8 +39,13 @@ class ProxyConfiguration {
     return in_pool_count;
   }
 
-  void setOutPoolCount(std::size_t count) {
-    out_pool_count = static_cast<int>(count);
+  bool setOutPoolCount(int count) {
+    if (count >= 0) {
+      out_pool_count = count;
+      return true;
+    } else {
+      return false;
+    }
   }
 
   int getOutPoolCount() const {

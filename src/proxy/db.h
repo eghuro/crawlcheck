@@ -55,9 +55,16 @@ class Database{
   typedef std::size_t TransactionIdentifier;
 
   Database(const DatabaseConfiguration& dbc):config(dbc) {
-    driver = get_driver_instance();
-    con = driver->connect(dbc.getUri(), dbc.getUser(), dbc.getPass());
-    con -> setSchema(dbc.getDb());
+    try {
+      driver = get_driver_instance();
+      con = driver->connect(dbc.getUri(), dbc.getUser(), dbc.getPass());
+      con -> setSchema(dbc.getDb());
+    } catch (const sql::SQLException& ex) {
+      std::ostringstream oss;
+      oss << "Database connector: " << ex.what() << " (MySQL error code: " << ex.getErrorCode();
+      oss << ", SQLState: " << ex.getSQLState() << " )";
+      HelperRoutines::error(oss.str());
+    }
   }
 
   virtual ~Database() {

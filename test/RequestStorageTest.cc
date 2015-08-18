@@ -13,22 +13,22 @@ TEST(RequestStorage, Request) {
   dbc.setDb("crawlcheck");
   std::shared_ptr<Database> db = std::make_shared<Database>(dbc);
   RequestStorage rs(db);
-  ASSERT_FALSE(rs.requestAvailable());
+  EXPECT_FALSE(rs.requestAvailable());
 
   HttpParserResult request(HttpParserResultState::REQUEST);
   request.setMethod(RequestMethod::GET);
   request.setRequestUri(HttpUriFactory::createUri("http://google.com/"));
   auto id = rs.insertRequest(request);
-  ASSERT_TRUE(rs.requestAvailable());
-  ASSERT_FALSE(rs.responseAvailable(id));
+  EXPECT_TRUE(rs.requestAvailable());
+  EXPECT_FALSE(rs.responseAvailable(id));
 
   auto retrieved = rs.retrieveRequest();
-  ASSERT_FALSE(rs.requestAvailable());
-  ASSERT_FALSE(rs.responseAvailable(id));
-  ASSERT_TRUE(std::get<0>(retrieved).isRequest());
-  ASSERT_TRUE(std::get<0>(retrieved).getMethod() == RequestMethod::GET);
-  ASSERT_TRUE(std::get<0>(retrieved) == request);
-  ASSERT_TRUE(id == std::get<1>(retrieved));
+  EXPECT_FALSE(rs.requestAvailable());
+  EXPECT_FALSE(rs.responseAvailable(id));
+  EXPECT_TRUE(std::get<0>(retrieved).isRequest());
+  EXPECT_TRUE(std::get<0>(retrieved).getMethod() == RequestMethod::GET);
+  EXPECT_TRUE(std::get<0>(retrieved) == request);
+  EXPECT_TRUE(id == std::get<1>(retrieved));
 }
 
 TEST(RequestStorage, Response) {
@@ -38,7 +38,7 @@ TEST(RequestStorage, Response) {
   dbc.setDb("crawlcheck");
   std::shared_ptr<Database> db = std::make_shared<Database>(dbc);
   RequestStorage rs(db);
-  ASSERT_FALSE(rs.requestAvailable());
+  EXPECT_FALSE(rs.requestAvailable());
 
   HttpParserResult request(HttpParserResultState::REQUEST);
   request.setMethod(RequestMethod::GET);
@@ -50,11 +50,11 @@ TEST(RequestStorage, Response) {
 
   HttpParserResult response(HttpParserResultState::RESPONSE);
   rs.insertResponse(response, id);
-  ASSERT_TRUE(rs.responseAvailable(id));
-  ASSERT_FALSE(rs.requestAvailable());
+  EXPECT_TRUE(rs.responseAvailable(id));
+  EXPECT_FALSE(rs.requestAvailable());
 
   auto retrieved = rs.retrieveResponse(0);
-  ASSERT_FALSE(rs.requestAvailable());
-  ASSERT_FALSE(rs.responseAvailable(0));
-  ASSERT_TRUE(response.getRaw() == retrieved);
+  EXPECT_FALSE(rs.requestAvailable());
+  EXPECT_FALSE(rs.responseAvailable(0));
+  EXPECT_TRUE(response.getRaw() == retrieved);
 }

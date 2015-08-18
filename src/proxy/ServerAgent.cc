@@ -13,8 +13,10 @@
 std::size_t ServerThread::buffer_size = 1000;
 
 void * ServerThread::serverThreadRoutine (void * arg) {
+  std::cout << "Server thread routine" << std::endl;
   ServerWorkerParameters * parameters = reinterpret_cast<ServerWorkerParameters *>(arg);
-  std::shared_ptr<RequestStorage> storage = parameters->getStorage();
+  RequestStorage * storage = parameters->getStorage();
+  std::cout << "Got storage" << std::endl;
 
   while (true) {
     //wait for request
@@ -44,7 +46,7 @@ void * ServerThread::serverThreadRoutine (void * arg) {
 }
 
 void ServerThread::writeRequest(const RequestStorage::queue_type & request, const int fd,
-    std::shared_ptr<RequestStorage> storage) {
+    RequestStorage* storage) {
   std::string raw_request = std::get<0>(request).getRaw();
   auto id = std::get<1>(request);
   if (write(fd, raw_request.c_str(), raw_request.size()) != -1) {
