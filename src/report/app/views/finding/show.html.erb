@@ -7,16 +7,19 @@
     <th>URI</th>
     <th>Response status</th>
     <th>Content type</th>
+    <th>Origin</th>
   </tr>
   <tr>
     <td><%=@transaction.method %></td>
     <td><%=@transaction.uri %></td>
     <td><%=@transaction.responseStatus %></td>
     <td><%=@transaction.contentType %></td>
+    <td><%=@transaction.origin %></td>
   </tr>
 </table>
 
-<% if not @empty %>
+<p><a href="/transaction/">Back to list of transactions</a></p>
+
 <h2>Defects</h2>
 <table border="1">
   <tr>
@@ -25,6 +28,7 @@
     <th>Evidence</th>
   </tr>
 
+<% if not @empty %>
   <% @defects.each do |defect| %>
     <tr>
       <td><%= defect.type%></td>
@@ -32,6 +36,10 @@
       <td><%= defect.evidence%></td>
     <tr>
   <% end %>
+</table>
+<% else %>
+  <tr><td colspan="3">None found</td></tr>
+<%end%>
 </table>
 
 <h2>Links</h2>
@@ -41,11 +49,14 @@
     <th>Processed</th>
   </tr>
 
+<%if not @empty%>
   <% @links.each do |link| %>
     <tr>
       <td><%= link.toUri %></td>
-      <td><%= link.processed %></td>
+      <td> <% if link.processed then %><a href="/finding/<%= link.requestId %>"><%end%><%= link.processed %><% if link.processed then %></a><%end%></td>
     </tr>
   <% end %>
+<% else %>
+  <tr><td colspan="2">None found</td></tr>
+<%end>%>
 </table>
-<%end%>
