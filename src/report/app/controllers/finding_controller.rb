@@ -4,11 +4,11 @@ class FindingController < ApplicationController
     @empty = true
     begin
       @transaction = Transaction.find(params[:id])
-      @finding = Finding.find(:first, :conditions => ["responseId = ?", params[:id]])
+      @finding = Finding.find_by responseId: params[:id]
       @findingId = @finding.id
-      @defects = Defect.find(:all, @findingId)
-      @links = Link.find(:all, @findingId)
-      @empty = false
+      Rails.logger.debug("#{@finding.id}")
+      @defects = Defect.where(findingId = @findingId).all
+      @links = Link.where(findingId = @findingId).all
     rescue ActiveRecord::RecordNotFound
     end
   end
