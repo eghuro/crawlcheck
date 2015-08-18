@@ -10,7 +10,7 @@ class PluginRunner:
 
     def runTransaction(self, plugins, info):
         for plugin in plugins:
-            if accept(self, plugin.getId(), info):
+            if self.accept(plugin.getId(), info):
                 plugin.check(info.getId(), info.getContent())
 
     def run(self, plugins):
@@ -20,8 +20,9 @@ class PluginRunner:
             self.pluginsById[plugin.getId()] = plugin
         info = api.getTransaction()
         while info.getId() != -1:
-            runTransaction(self, plugins, info)
+            self.runTransaction(plugins, info)
+            api.setFinished(info.getId())
             info = api.getTransaction()
 
     def accept(self, pluginId, transaction):
-        return self.uriAcceptor.accept(pluginId, transaction.getUri()) && self.typeAcceptor.accept(pluginId, transaction.getContentType())
+        return self.uriAcceptor.accept(pluginId, transaction.getUri()) & self.typeAcceptor.accept(pluginId, transaction.getContentType())

@@ -1,5 +1,6 @@
 import xml.etree.ElementTree as etree
 from pluginDBAPI import DBAPIconfiguration
+from acceptor import Acceptor
 
 class ConfigLoader:
     def __init__(self):
@@ -22,12 +23,12 @@ class ConfigLoader:
 
             plugins = root.find('plugins')
 
-            getResolutions(plugins, self.uriAcceptor, self.typeAcceptor)
+            self.getResolutions(plugins, self.uriAcceptor, self.typeAcceptor)
 
-            pluginSet = plugins.find('plugin')
+            pluginSet = plugins.findall('plugin')
             for plugin in pluginSet:
                 pluginId = plugin.attrib['id']
-                getPluginResolutions(pluginId, plugin, self.uriAcceptor, self.typeAcceptor)
+                self.getPluginResolutions(pluginId, plugin, self.uriAcceptor, self.typeAcceptor)
         else:
             print "Configuration version doesn't match"
 
@@ -44,24 +45,24 @@ class ConfigLoader:
         defaultSet = root.find(setKeyword)
         acceptor = Acceptor(defaultSet.attrib['default'] == 'True')
 
-        defaultElements = defaultSet.findAll(keyword)
+        defaultElements = defaultSet.findall(keyword)
         for element in defaultElements:
             acceptor.setDefaultAcceptValue(element.attrib['key'], element.attrib['accept'])
 
     def getResolutions(self, root, uriAcceptor, typeAcceptor):
         defaults = root.find('resolutions') 
-        getDefaults(defaults, 'uris', 'uri', uriAcceptor)
-        getDefaults(defaults, 'contentTypes', 'contentType', typeAcceptor)
+        self.getDefaults(defaults, 'uris', 'uri', uriAcceptor)
+        self.getDefaults(defaults, 'contentTypes', 'contentType', typeAcceptor)
 
     def getPluginDefaults(self, pluginId, root, setKeyword, keyword, acceptor):
         defaultSet = root.find(setKeyword)
         acceptor.setPluginAcceptValueDefault(pluginId, defaultSet.attrib['default'] == 'True')
 
-        defaultElements = defaultSet.findAll(keyword)
+        defaultElements = defaultSet.findall(keyword)
         for element in defaultElements:
             acceptor.setPluginAcceptValue(pluginId, element.attrib['key'], element.attrib['accept'])
 
     def getPluginResolutions(self, pluginId, root, uriAcceptor, typeAcceptor):
         defaults = root.find('resolutions')
-        getPluginDefaults(pluginId, defaults, 'uris', 'uri', uriAcceptor)
-        getPluginDefaults(pluginId, defaults, 'contentTypes', 'contentType', typeAcceptor)
+        self.getPluginDefaults(pluginId, defaults, 'uris', 'uri', uriAcceptor)
+        self.getPluginDefaults(pluginId, defaults, 'contentTypes', 'contentType', typeAcceptor)

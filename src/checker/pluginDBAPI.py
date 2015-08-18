@@ -153,13 +153,13 @@ class DBAPI:
                 if row[0] is not None:
                     defectTypeId = self.cursor.fetchone()[0]
                 else:
-                    defectTypeId = putNewDefectType(defectType);
+                    defectTypeId = self.putNewDefectType(defectType);
             else:
-                defectTypeId = putNewDefectType(defectType);
+                defectTypeId = self.putNewDefectType(defectType);
 
             query = ('INSERT INTO defect (findingId, type, location, evidence) '
                      'VALUES (' + str(findingId) + ', ' + str(defectTypeId) + ', '
-                     '' + str(line) + ', "' + self.con.escape_string(evidence) + '" )')
+                     '' + str(line) + ', "' + self.con.escape_string(evidence.encode('utf-8')) + '" )')
             self.cursor.execute(query)
             self.con.commit()
             return True
@@ -174,22 +174,22 @@ class DBAPI:
 
     def putNewDefectType(self, defectType):
         self.cursor.execute("INSERT INTO defectType (type) VALUES (\""+defectType+"\")")
-        return self.cursor.lastrowId
+        return self.cursor.lastrowid
 
     def setLink(self, transactionId, toUri):
         try:
             query = ('INSERT INTO transaction (method, uri, origin, verificationStatusId, rawRequest) VALUES (\'GET\', "'
-                     '' + self.con.escape_string(toUri) + '", \'CHECKER\', '+self.getRequestedStatusId()+', "'
-                     '' + self.con.escape_string(self.getRequest(toUri))+'")')
+                     '' + self.con.escape_string(toUri) + '", \'CHECKER\', '+str(self.getRequestedStatusId())+', "'
+                     '' + self.con.escape_string(self.getRequest(toUri)) + '")')
             self.cursor.execute(query)
-            transactionId = self.cursor.lastrowid
+            reqId = self.cursor.lastrowid
 
             query = ('INSERT INTO finding (responseId) VALUES (' + str(transactionId) + ')')
             self.cursor.execute(query)
             findingId = self.cursor.lastrowid
 
             query = ('INSERT INTO link (findingId, toUri, requestId) VALUES (' + str(findingId) + ', '
-                     '"' + self.con.escape_string(toUri) + '", '+transactionId+')')
+                     '"' + self.con.escape_string(toUri) + '", '+str(reqId)+')')
             self.cursor.execute(query)
             self.con.commit()
             return True

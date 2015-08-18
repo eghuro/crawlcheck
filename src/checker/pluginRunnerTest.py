@@ -13,26 +13,28 @@ class PluginRunnerTest(unittest.TestCase):
         cl = ConfigLoader()
         cl.load('testConf.xml')
         self.dbconf = cl.getDbconf()
+        self.typeacceptor = cl.getTypeAcceptor()
+        self.uriacceptor = cl.getUriAcceptor()
 
         self.api = DBAPI(self.dbconf)
 
     def testRunW3C(self):
         w3c = PyW3C_HTML_Validator()
 
-        runner = PluginRunner(self.dbconf)
+        runner = PluginRunner(self.dbconf, self.typeacceptor, self.uriacceptor)
         runner.run([w3c])
 
     def testRunLinks(self):
         finder = LinksFinder()
 
-        runner = PluginRunner(self.dbconf)
+        runner = PluginRunner(self.dbconf, self.typeacceptor, self.uriacceptor)
         runner.run([finder])
 
     def testRunMultiple(self):
         w3c = PyW3C_HTML_Validator()
         finder = LinksFinder()
 
-        runner = PluginRunner(self.dbconf)
+        runner = PluginRunner(self.dbconf, self.typeacceptor, self.uriacceptor)
         runner.run([w3c, finder])
 
 if __name__ == '__main__':

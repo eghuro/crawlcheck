@@ -16,7 +16,7 @@ class PyW3C_HTML_Validator(IPlugin):
                                     self.transformMessageId(error['messageid'], "err"),
                                     error['line'], error['source'])
 
-         for warning in self.validator warnings:
+        for warning in self.validator.warnings:
              self.database.setDefect(transactionId,
                                      self.transformMessageId(warning['messageid'], "warn").
                                      warning['line'], warning['source'])
@@ -26,4 +26,4 @@ class PyW3C_HTML_Validator(IPlugin):
         return "htmlValidator"
 
     def transformMessageId(self, mid, mtype):
-        return getId()+":"+mtype+":"+mid
+        return self.getId()+":"+mtype+":"+mid
