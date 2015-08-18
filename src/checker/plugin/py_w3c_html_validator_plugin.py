@@ -13,19 +13,17 @@ class PyW3C_HTML_Validator(IPlugin):
         self.validator.validate_fragment(content)
         for error in self.validator.errors:
             self.database.setDefect(transactionId,
-                                    self.transformMessageId(error['messageid']),
+                                    self.transformMessageId(error['messageid'], "err"),
                                     error['line'], error['source'])
 
-            print self.validator.warnings
+         for warning in self.validator warnings:
+             self.database.setDefect(transactionId,
+                                     self.transformMessageId(warning['messageid'], "warn").
+                                     warning['line'], warning['source'])
         return
-
-    def handleContent(self, info):
-        if info.getContentType() == "text/html":
-            return True
-        return False
 
     def getId(self):
         return "htmlValidator"
 
-    def transformMessageId(self, mid):
-        return mid
+    def transformMessageId(self, mid, mtype):
+        return getId()+":"+mtype+":"+mid

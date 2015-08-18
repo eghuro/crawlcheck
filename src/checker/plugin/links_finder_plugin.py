@@ -18,8 +18,5 @@ class LinksFinder(IPlugin):
             self.database.setLink(transactionId, url)
         return
 
-    def handleContent(self, info):
-        return info.getContentType() == "text/html" 
-
     def getId(self):
         return "linksFinder"
