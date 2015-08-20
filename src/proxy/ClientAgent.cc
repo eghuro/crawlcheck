@@ -11,10 +11,13 @@
 std::size_t ClientThread::buffer_size = 1000;
 
 void * ClientThread::clientThreadRoutine(void * arg) {
-  ClientWorkerParameters * parameters = reinterpret_cast<ClientWorkerParameters *>(arg);
+  std::cout << "Client thread started" << std::endl;
+  ClientThreadParameters * parameters = reinterpret_cast<ClientThreadParameters *>(arg);
   std::shared_ptr<RequestStorage> storage = parameters->getStorage();
 
+  std::cout << "Do work?" << parameters->doWork() << std::endl;
   while (parameters->doWork()) {
+    std::cout << "Working." << std::endl;
     // establish connection
     int connection = ClientThread::establishConnection(parameters);
 
@@ -30,28 +33,34 @@ void * ClientThread::clientThreadRoutine(void * arg) {
   }
 }
 
-int ClientThread::establishConnection(ClientWorkerParameters * parameters) {
-    // wait for socket (for accept) to become available
-    pthread_mutex_t * mutex = parameters->getConnectionAvailabilityMutex();
-    pthread_cond_t * condition = parameters->getConnectionAvailabilityCondition();
-    pthread_mutex_lock(mutex);
-    while(!parameters->connectionAvailable()) {
-      pthread_cond_wait(condition, mutex);
-    }
-
-    //accept
-    int new_fd = accept(parameters->getConnection(), NULL, NULL);
-    pthread_mutex_unlock(mutex);
-
-    if (new_fd == -1) {
-      HelperRoutines::error("accept ERROR");
-    }
-
-    fprintf(stderr, ".. connection accepted ..\n");
-    return new_fd;
+int ClientThread::establishConnection(ClientThreadParameters * parameters) {
+  std::cout << "Establish connection" << std::endl;
+  // wait for socket (for accept) to become available
+  pthread_mutex_t * mutex = parameters->getConnectionAvailabilityMutex();
+  pthread_cond_t * condition = parameters->getConnectionAvailabilityCondition();
+  pthread_mutex_lock(mutex);
+  while(!parameters->connectionAvailable()) {
+    pthread_cond_wait(condition, mutex);
   }
 
-std::vector<std::size_t> ClientThread::request(const ClientWorkerParameters * parameters, int connection) {
+  std::cout << "Connection is available" << std::endl;
+
+  //accept
+  pthread_mutex_lock(parameters->getConnectionMutex());
+  std::cout << parameters->getConnection() << std::endl;
+  int new_fd = accept(parameters->getConnection(), NULL, NULL);
+  pthread_mutex_unlock(parameters->getConnectionMutex());
+  pthread_mutex_unlock(mutex);
+
+  if (new_fd == -1) {
+    HelperRoutines::error("accept ERROR");
+  }
+
+  fprintf(stderr, ".. connection accepted ..\n");
+  return new_fd;
+  }
+
+std::vector<std::size_t> ClientThread::request(const ClientThreadParameters * parameters, int connection) {
   auto storage = parameters->getStorage();
     std::vector<std::size_t> transactionIds(1);
     //read request
@@ -74,7 +83,7 @@ std::vector<std::size_t> ClientThread::request(const ClientWorkerParameters * pa
     return transactionIds;
   }
 
-void ClientThread::response(const std::vector<std::size_t> & transactionIds, int connection, ClientWorkerParameters * parameters) {
+void ClientThread::response(const std::vector<std::size_t> & transactionIds, int connection, ClientThreadParameters * parameters) {
   auto storage = parameters->getStorage();
   //wait for response
   pthread_mutex_t * response_mutex = parameters->getResponseAvailabilityMutex();

@@ -7,6 +7,12 @@
 #include "../src/proxy/ServerAgent.h"
 #include "../src/proxy/ClientAgent.h"
 #include "gtest/gtest.h"
+#include "./exhibit.h"
+
+TEST(Exhibit, exhibit) {
+  a mya;
+  mya.start();
+}
 
 TEST(Main, Creation) {
   ProxyConfiguration pc;
@@ -77,6 +83,33 @@ TEST(ServerAgent, CreateServerAgentNegativeThreads) {
   ServerAgent sa(pconf, rs, &rslock);
 
   delete rs;
+}
+
+TEST(ClientWorkerParameters, create) {
+  DatabaseConfiguration dc;
+  dc.setUri("localhost");
+  dc.setUser("test");
+  dc.setDb("crawlcheck");
+  std::shared_ptr<Database> db(new Database(dc));
+  std::shared_ptr<RequestStorage> rs(new RequestStorage(db));
+
+  ClientThreadParameters cwp(rs);
+  EXPECT_FALSE(cwp.connectionAvailable());
+  EXPECT_EQ(cwp.getStorage(), rs);
+  EXPECT_EQ(-1, cwp.getConnection());
+}
+
+TEST(ClientWorkerParameters, connection) {
+  DatabaseConfiguration dc;
+  dc.setUri("localhost");
+  dc.setUser("test");
+  dc.setDb("crawlcheck");
+  std::shared_ptr<Database> db(new Database(dc));
+  std::shared_ptr<RequestStorage> rs(new RequestStorage(db));
+
+  ClientThreadParameters cwp(rs);
+  cwp.setConnection(10);
+  ASSERT_EQ(10, cwp.getConnection());
 }
 
 /*TEST(ServerAgent, Start) {
@@ -162,9 +195,13 @@ TEST(ClientAgent, Start) {
   dc.setDb("crawlcheck");
 
   std::shared_ptr<ProxyConfiguration> pconf(std::make_shared<ProxyConfiguration>(pc));
-  std::shared_ptr<Database> db(new Database(dc));
+  std::shared_ptr<Database> db(std::make_shared<Database>(dc));
   std::shared_ptr<RequestStorage> rs(new RequestStorage(db));
 
-  ClientAgent sa(pconf, rs);
-  sa.start();
+  std::cout << "Create Client Agent" << std::endl;
+  ClientAgent ca(pconf, rs);
+  std::cout << "Start Client Agent" << std::endl;
+  ca.start();
 }
+
+

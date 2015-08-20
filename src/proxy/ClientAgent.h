@@ -18,25 +18,34 @@
 #include "HelperRoutines.h"
 #include "ProxyConfiguration.h"
 
-/**
- * ClientWorkerParameters is a container for data needed inside a thread.
- *
- * It's not intended to be shared among threads (not thread-safe), instead
- * each ClientThread instance is supposed to create their own instance and
- * pass it to the underlying thread.
- */
-class ClientWorkerParameters {
+class ClientThreadParameters {
  public:
-  explicit ClientWorkerParameters(std::shared_ptr<RequestStorage> stor):
-    socket(-1), storage(stor), work(true),
-    connectionAvailabilityMutex(PTHREAD_MUTEX_INITIALIZER),
-    responseAvailabilityMutex(PTHREAD_MUTEX_INITIALIZER)  {
-    pthread_cond_init(&connectionAvailabilityCondition, NULL);
-    pthread_cond_init(&responseAvailabilityCondition, NULL);
+  explicit ClientThreadParameters(std::shared_ptr<RequestStorage> stor) : sock(-1),
+  storage(stor), work(true),
+  connectionAvailabilityMutex(PTHREAD_MUTEX_INITIALIZER),
+  responseAvailabilityMutex(PTHREAD_MUTEX_INITIALIZER),
+  connectionMutex(PTHREAD_MUTEX_INITIALIZER) {
+    std::cout << "New CTP" << std::endl;
   }
-  virtual ~ClientWorkerParameters() {
-    pthread_cond_destroy(&responseAvailabilityCondition);
-    pthread_cond_destroy(&connectionAvailabilityCondition);
+
+  virtual ~ClientThreadParameters() {
+    std::cout << "Delete CTP" << std::endl;
+  }
+
+  void setConnection(int fd) {
+    std::cout << "Set connection" << std::endl;
+    std::cout << "Old socket:"<<sock<<" New socket:"<<fd << std::endl;
+    sock = fd;
+  }
+
+  int getConnection() {
+    return sock;
+  }
+
+  bool connectionAvailable() {}
+
+  std::shared_ptr<RequestStorage> getStorage() {
+    return storage;
   }
 
   pthread_mutex_t * getConnectionAvailabilityMutex() {
@@ -51,12 +60,8 @@ class ClientWorkerParameters {
     return &connectionAvailabilityCondition;
   }
 
-  int getConnection() const {
-    return socket;
-  }
-
-  void setConnection(const int fd) {
-    socket = fd;
+  pthread_mutex_t * getConnectionMutex() {
+    return &connectionMutex;
   }
 
   pthread_mutex_t * getResponseAvailabilityMutex() {
@@ -80,77 +85,99 @@ class ClientWorkerParameters {
   }
 
  private:
-  int socket;
+  int sock;
   bool work;
-  pthread_mutex_t connectionAvailabilityMutex, responseAvailabilityMutex, workMutex;
+  pthread_mutex_t connectionAvailabilityMutex, responseAvailabilityMutex, workMutex, connectionMutex;
   pthread_cond_t connectionAvailabilityCondition, responseAvailabilityCondition;
   std::shared_ptr<RequestStorage> storage;
 
-  // prevent copy
-  ClientWorkerParameters(const ClientWorkerParameters&) = delete;
-  ClientWorkerParameters& operator=(const ClientWorkerParameters&) = delete;
+  ClientThreadParameters(const ClientThreadParameters&) = delete;
+  ClientThreadParameters& operator=(const ClientThreadParameters&) = delete;
 };
 
 class ClientThread {
  public:
   explicit ClientThread(std::shared_ptr<RequestStorage> storage) {
-    parameters = new ClientWorkerParameters(storage);
-    pthread_create(&thread, NULL, ClientThread::clientThreadRoutine, &parameters);
+    std::cout << "New CT" << std::endl;
+    parameters = new ClientThreadParameters(storage);
+    pthread_create(&thread, NULL, ClientThread::clientThreadRoutine, parameters);
   }
 
   virtual ~ClientThread() {
+    std::cout << "Delete CT" << std::endl;
     pthread_join(thread, NULL);
     delete parameters;
   }
 
-  void setSocket(const int socket) {
-    //called from ClientAgent (main thread)
-    //therefore lock needed
-    pthread_mutex_lock(parameters->getConnectionAvailabilityMutex());
-    parameters->setConnection(socket);
+  void setSocket(int fd) {
+    std::cout << "Set socket" << std::endl;
+    std::cout << "Old: " << parameters->getConnection() << " New: " << fd << std::endl;
+
+    pthread_mutex_t * cam = parameters->getConnectionAvailabilityMutex();
+    pthread_mutex_t * cm = parameters->getConnectionMutex();
+
+    pthread_mutex_lock(cam);
+    pthread_mutex_lock(cm);
+    parameters->setConnection(fd);
+    pthread_mutex_unlock(cm);
     pthread_cond_broadcast(parameters->getConnectionAvailabilityCondition());
-    pthread_mutex_unlock(parameters->getConnectionAvailabilityMutex());
+    pthread_mutex_unlock(cam);
+    std::cout << "Done set socket" << std::endl;
+
   }
-
-  static void * clientThreadRoutine(void * arg);
-
  private:
   pthread_t thread;
-  ClientWorkerParameters * parameters;
   static std::size_t buffer_size;
 
-  // prevent copy
   ClientThread(const ClientThread&) = delete;
   ClientThread& operator=(const ClientThread&) = delete;
 
-  static int establishConnection(ClientWorkerParameters * parameters);
-  static std::vector<std::size_t> request(const ClientWorkerParameters *, int);
-  static void response(const std::vector<std::size_t> &, const int, ClientWorkerParameters *);
+  ClientThreadParameters * parameters;
+  static void * clientThreadRoutine(void * arg);
+  static int establishConnection(ClientThreadParameters * parameters);
+  static std::vector<std::size_t> request(const ClientThreadParameters *, int);
+  static void response(const std::vector<std::size_t> &, const int, ClientThreadParameters *);
 };
 
-class ClientAgent {
- public:
-  ClientAgent(const std::shared_ptr<ProxyConfiguration> conf,
-      std::shared_ptr<RequestStorage> store) :
-    configuration(conf), storage(store), socketFd(-1),
-    threads(conf->getInPoolCount()) {}
+class ClientAgent{
+public:
+
+  ClientAgent(const std::shared_ptr<ProxyConfiguration> conf, std::shared_ptr<RequestStorage> store):
+    threadCount(1), configuration(conf), storage(store) {
+    threads = new ClientThread * [conf->getInPoolCount()];
+  }
 
   virtual ~ClientAgent() {
+    delete [] threads;
     close(socketFd);
   }
 
   void start() {
-    createPool();
-    doListen();
+    for (int i = 0; i < threadCount; i++) {
+      threads[i] = new ClientThread(storage);
+    }
+
+    auto r = getAddrInfo();
+    socketFd = bindSocket(r);
+    std::cout << socketFd << std::endl;
+
+    fprintf(stdout, "LISTEN\n");
+    if (listen(socketFd, configuration->getInBacklog()) == -1) {
+      HelperRoutines::error("listen ERROR");
+    }
+
+    for (int i = 0; i < threadCount; i++) {
+      threads[i]->setSocket(socketFd);
+    }
   }
- private:
+
+private:
+  const int threadCount;
+  int socketFd;
+  ClientThread ** threads;
   const std::shared_ptr<ProxyConfiguration> configuration;
   const std::shared_ptr<RequestStorage> storage;
-  std::vector<std::unique_ptr<ClientThread>> threads;
 
-  int socketFd;
-
-  // prevent copy
   ClientAgent(const ClientAgent&) = delete;
   ClientAgent& operator=(const ClientAgent&) = delete;
 
@@ -167,23 +194,20 @@ class ClientAgent {
     struct addrinfo hi = getAddrInfoConfiguration();
     struct addrinfo *r;
 
-    const char * port = configuration->getInPortString().c_str();
+    std::string p(configuration->getInPortString());
+    const char * port = p.c_str();
     if (0 != getaddrinfo(NULL, port, &hi, &r)) {
+      freeaddrinfo(r);
       HelperRoutines::error("ERROR getaddrinfo");
     }
     return r;
   }
 
-  inline void listenSocket(const int socket) const {
-    fprintf(stdout, "LISTEN\n");
-    if (listen(socketFd, configuration->getInBacklog()) == -1) {
-      HelperRoutines::error("listen ERROR");
-    }
-  }
-
   inline int bindSocket(struct addrinfo *r) const {
-   int socket_fd;
-   struct addrinfo *rorig;
+    int socket_fd;
+    struct addrinfo *rorig;
+
+    std::cout << "BIND" << std::endl;
 
     for (rorig = r; r != NULL; r = r->ai_next) {
       if (r->ai_family != AF_INET && r->ai_family != AF_INET6) continue;
@@ -204,25 +228,8 @@ class ClientAgent {
     freeaddrinfo(rorig);
     return -1;
   }
-
-  inline void createPool() {
-    for (int i = 0; i < configuration->getInPoolCount(); i++) {
-      std::unique_ptr<ClientThread> p(new ClientThread(storage));
-      threads.push_back(std::move(p));
-    }
-  }
-
-  void doListen() {
-    auto r = getAddrInfo();
-    socketFd = bindSocket(r);
-    listenSocket(socketFd);
-
-    // deliver socket to threads
-    for (auto it = threads.begin(); it != threads.end(); ++it) {
-      (*it)->setSocket(socketFd);
-    }
-  }
 };
+
 
 
 #endif  // SRC_PROXY_CLIENTAGENT_H_
