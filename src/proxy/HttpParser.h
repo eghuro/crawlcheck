@@ -335,6 +335,7 @@ class HttpParser {
   virtual ~HttpParser() {}
 
   HttpParserResult parse(const std::string & chunk) {
+    std::cout << "Parser: "<<chunk << std::endl;
     std::ostringstream oss_req;
     oss_req << "(GET|HEAD|POST|PUT|DELETE|TRACE|CONNECT) ";
     oss_req << "http://([a-zA-Z0-9]([./:])?)+ ";

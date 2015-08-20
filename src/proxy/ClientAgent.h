@@ -26,23 +26,29 @@ class ClientThreadParameters {
   responseAvailabilityMutex(PTHREAD_MUTEX_INITIALIZER),
   connectionMutex(PTHREAD_MUTEX_INITIALIZER) {
     std::cout << "New CTP" << std::endl;
+    pthread_cond_init(&connectionAvailabilityCondition, NULL);
+    pthread_cond_init(&responseAvailabilityCondition, NULL);
   }
 
   virtual ~ClientThreadParameters() {
+    pthread_cond_destroy(&connectionAvailabilityCondition);
+    pthread_cond_destroy(&responseAvailabilityCondition);
     std::cout << "Delete CTP" << std::endl;
   }
 
   void setConnection(int fd) {
     std::cout << "Set connection" << std::endl;
-    std::cout << "Old socket:"<<sock<<" New socket:"<<fd << std::endl;
     sock = fd;
+    std::cout << "Old socket:"<<sock<<" New socket:"<<fd << std::endl;
   }
 
   int getConnection() {
     return sock;
   }
 
-  bool connectionAvailable() {}
+  bool connectionAvailable() {
+    return sock != -1;
+  }
 
   std::shared_ptr<RequestStorage> getStorage() {
     return storage;
@@ -100,13 +106,29 @@ class ClientThread {
   explicit ClientThread(std::shared_ptr<RequestStorage> storage) {
     std::cout << "New CT" << std::endl;
     parameters = new ClientThreadParameters(storage);
-    pthread_create(&thread, NULL, ClientThread::clientThreadRoutine, parameters);
+    int e = pthread_create(&thread, NULL, ClientThread::clientThreadRoutine, parameters);
+    if (e != 0) {
+      threadFailed = true;
+      HelperRoutines::error(strerror(e));
+    } else {
+      threadFailed = false;
+      std::cout << "new thread created" << std::endl;
+    }
   }
 
   virtual ~ClientThread() {
     std::cout << "Delete CT" << std::endl;
-    pthread_join(thread, NULL);
-    delete parameters;
+    if (!threadFailed) {
+      std::cout << "Join" << std::endl;
+      int e = pthread_join(thread, NULL);
+      if (e != 0) {
+        HelperRoutines::warning("Pthread_join", strerror(e));
+      } else {
+        std::cout << "Join successful" << std::endl;
+      }
+    } else {
+      std::cout << "Thread was not created" << std::endl;
+    }
   }
 
   void setSocket(int fd) {
@@ -116,17 +138,19 @@ class ClientThread {
     pthread_mutex_t * cam = parameters->getConnectionAvailabilityMutex();
     pthread_mutex_t * cm = parameters->getConnectionMutex();
 
-    pthread_mutex_lock(cam);
-    pthread_mutex_lock(cm);
+    int e;
+    if ((e = pthread_mutex_lock(cam)) != 0) HelperRoutines::warning("Lock CAM", strerror(e));
+    if ((e = pthread_mutex_lock(cm)) != 0) HelperRoutines::warning("Lock CM", strerror(e));
     parameters->setConnection(fd);
-    pthread_mutex_unlock(cm);
-    pthread_cond_broadcast(parameters->getConnectionAvailabilityCondition());
-    pthread_mutex_unlock(cam);
+    if ((e = pthread_mutex_unlock(cm)) != 0) HelperRoutines::warning("Unlock CM", strerror(e));
+    if ((e = pthread_cond_broadcast(parameters->getConnectionAvailabilityCondition())) != 0) HelperRoutines::warning("notify", strerror(e));
+    if ((e = pthread_mutex_unlock(cam)) != 0) HelperRoutines::warning("Unlock CAM", strerror(e));
     std::cout << "Done set socket" << std::endl;
 
   }
  private:
   pthread_t thread;
+  bool threadFailed;
   static std::size_t buffer_size;
 
   ClientThread(const ClientThread&) = delete;
@@ -143,13 +167,23 @@ class ClientAgent{
 public:
 
   ClientAgent(const std::shared_ptr<ProxyConfiguration> conf, std::shared_ptr<RequestStorage> store):
-    threadCount(1), configuration(conf), storage(store) {
+    threadCount(conf->getInPoolCount()), configuration(conf), storage(store), socketFd(-1), threads(nullptr) {
     threads = new ClientThread * [conf->getInPoolCount()];
+    for (int i = 0; i < conf->getInPoolCount(); i++) {
+      threads[i] = nullptr;
+    }
   }
 
   virtual ~ClientAgent() {
-    delete [] threads;
-    close(socketFd);
+    std::cout << "CA dtor" << std::endl;
+    if (threads != nullptr) {
+      for (int i = 0; i < threadCount; i++) {
+        if (threads[i] != nullptr) delete threads[i];
+      }
+    }
+    //delete [] threads;
+    if (socketFd>=0) close(socketFd);
+
   }
 
   void start() {
@@ -161,13 +195,13 @@ public:
     socketFd = bindSocket(r);
     std::cout << socketFd << std::endl;
 
+    for (int i = 0; i < threadCount; i++) {
+      threads[i]->setSocket(socketFd);
+    }
+
     fprintf(stdout, "LISTEN\n");
     if (listen(socketFd, configuration->getInBacklog()) == -1) {
       HelperRoutines::error("listen ERROR");
-    }
-
-    for (int i = 0; i < threadCount; i++) {
-      threads[i]->setSocket(socketFd);
     }
   }
 

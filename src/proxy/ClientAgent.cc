@@ -16,6 +16,7 @@ void * ClientThread::clientThreadRoutine(void * arg) {
   std::shared_ptr<RequestStorage> storage = parameters->getStorage();
 
   std::cout << "Do work?" << parameters->doWork() << std::endl;
+  pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
   while (parameters->doWork()) {
     std::cout << "Working." << std::endl;
     // establish connection
@@ -31,6 +32,7 @@ void * ClientThread::clientThreadRoutine(void * arg) {
     close(connection);
     fprintf(stderr, ".. connection closed ..\n");
   }
+  delete parameters;
 }
 
 int ClientThread::establishConnection(ClientThreadParameters * parameters) {
@@ -38,7 +40,11 @@ int ClientThread::establishConnection(ClientThreadParameters * parameters) {
   // wait for socket (for accept) to become available
   pthread_mutex_t * mutex = parameters->getConnectionAvailabilityMutex();
   pthread_cond_t * condition = parameters->getConnectionAvailabilityCondition();
+  assert (mutex != nullptr);
+  assert (condition != nullptr);
+
   pthread_mutex_lock(mutex);
+  std::cout << "Waiting" << std::endl;
   while(!parameters->connectionAvailable()) {
     pthread_cond_wait(condition, mutex);
   }
@@ -51,6 +57,7 @@ int ClientThread::establishConnection(ClientThreadParameters * parameters) {
   int new_fd = accept(parameters->getConnection(), NULL, NULL);
   pthread_mutex_unlock(parameters->getConnectionMutex());
   pthread_mutex_unlock(mutex);
+  std::cout << "Accpeted, unlocked" << std::endl;
 
   if (new_fd == -1) {
     HelperRoutines::error("accept ERROR");
