@@ -1,6 +1,7 @@
 <?xml version="1.0" ?>
 <crawlcheck version="0.00">
-  <db user="test" pass="" uri="localhost" dbname="crawlcheck"/>
+  <db user="test" pass="" uri="localhost" dbname="crawlcheck" />
+  <proxy inPool="1" outPool="1" inPort="8080" inBacklog="10" />
 
   <plugins>
     <resolutions>

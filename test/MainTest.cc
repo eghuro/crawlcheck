@@ -91,12 +91,14 @@ TEST(ClientWorkerParameters, create) {
   dc.setUser("test");
   dc.setDb("crawlcheck");
   std::shared_ptr<Database> db(new Database(dc));
-  std::shared_ptr<RequestStorage> rs(new RequestStorage(db));
+  RequestStorage * rs(new RequestStorage(db));
+  pthread_mutex_t rslock(PTHREAD_MUTEX_INITIALIZER);
 
-  ClientThreadParameters cwp(rs);
+  ClientThreadParameters cwp(rs, &rslock);
   EXPECT_FALSE(cwp.connectionAvailable());
   EXPECT_EQ(cwp.getStorage(), rs);
   EXPECT_EQ(-1, cwp.getConnection());
+  delete rs;
 }
 
 TEST(ClientWorkerParameters, connection) {
@@ -105,11 +107,13 @@ TEST(ClientWorkerParameters, connection) {
   dc.setUser("test");
   dc.setDb("crawlcheck");
   std::shared_ptr<Database> db(new Database(dc));
-  std::shared_ptr<RequestStorage> rs(new RequestStorage(db));
+  RequestStorage* rs(new RequestStorage(db));
+  pthread_mutex_t rslock(PTHREAD_MUTEX_INITIALIZER);
 
-  ClientThreadParameters cwp(rs);
+  ClientThreadParameters cwp(rs, &rslock);
   cwp.setConnection(10);
   ASSERT_EQ(10, cwp.getConnection());
+  delete rs;
 }
 
 /*TEST(ServerAgent, Start) {
@@ -145,9 +149,11 @@ TEST(ClientAgent, CreateClientAgent) {
 
   std::shared_ptr<ProxyConfiguration> pconf(std::make_shared<ProxyConfiguration>(pc));
   std::shared_ptr<Database> db(new Database(dc));
-  std::shared_ptr<RequestStorage> rs(new RequestStorage(db));
+  RequestStorage * rs(new RequestStorage(db));
+  pthread_mutex_t rs_lock(PTHREAD_MUTEX_INITIALIZER);
 
-  ClientAgent client(pconf, rs);
+  ClientAgent client(pconf, rs, &rs_lock);
+  delete rs;
 }
 
 TEST(ClientAgent, CreateClientAgentNoThreads) {
@@ -161,9 +167,11 @@ TEST(ClientAgent, CreateClientAgentNoThreads) {
 
   std::shared_ptr<ProxyConfiguration> pconf(std::make_shared<ProxyConfiguration>(pc));
   std::shared_ptr<Database> db(new Database(dc));
-  std::shared_ptr<RequestStorage> rs(new RequestStorage(db));
+  RequestStorage * rs(new RequestStorage(db));
+  pthread_mutex_t rs_lock(PTHREAD_MUTEX_INITIALIZER);
 
-  ClientAgent sa(pconf, rs);
+  ClientAgent sa(pconf, rs, &rs_lock);
+  delete rs;
 }
 
 TEST(ClientAgent, CreateClientAgentNegativeThreads) {
@@ -178,12 +186,14 @@ TEST(ClientAgent, CreateClientAgentNegativeThreads) {
 
   std::shared_ptr<ProxyConfiguration> pconf(std::make_shared<ProxyConfiguration>(pc));
   std::shared_ptr<Database> db(new Database(dc));
-  std::shared_ptr<RequestStorage> rs(new RequestStorage(db));
+  RequestStorage * rs(new RequestStorage(db));
+  pthread_mutex_t rs_lock(PTHREAD_MUTEX_INITIALIZER);
 
-  ClientAgent sa(pconf, rs);
+  ClientAgent sa(pconf, rs, &rs_lock);
+  delete rs;
 }
 
-TEST(ClientAgent, Start) {
+/*TEST(ClientAgent, Start) {
   ProxyConfiguration pc;
   pc.setInPoolCount(1);
   pc.setInPoolPort(8080);
@@ -196,12 +206,49 @@ TEST(ClientAgent, Start) {
 
   std::shared_ptr<ProxyConfiguration> pconf(std::make_shared<ProxyConfiguration>(pc));
   std::shared_ptr<Database> db(std::make_shared<Database>(dc));
-  std::shared_ptr<RequestStorage> rs(new RequestStorage(db));
+  RequestStorage * rs(new RequestStorage(db));
+  pthread_mutex_t rs_lock(PTHREAD_MUTEX_INITIALIZER);
 
   std::cout << "Create Client Agent" << std::endl;
-  ClientAgent ca(pconf, rs);
+  ClientAgent ca(pconf, rs, &rs_lock);
   std::cout << "Start Client Agent" << std::endl;
   ca.start();
+  delete rs;
+}*/
+
+TEST(Proxy, SetUp) {
+  ProxyConfiguration pc;
+  pc.setInPoolCount(1);
+  pc.setInPoolPort(8080);
+  pc.setInBacklog(10);
+  pc.setOutPoolCount(1);
+
+  DatabaseConfiguration dc;
+  dc.setUri("localhost");
+  dc.setUser("test");
+  dc.setDb("crawlcheck");
+
+  std::shared_ptr<ProxyConfiguration> pconf(std::make_shared<ProxyConfiguration>(pc));
+  std::shared_ptr<Database> db(std::make_shared<Database>(dc));
+  RequestStorage * rs(new RequestStorage(db));
+  pthread_mutex_t rs_lock(PTHREAD_MUTEX_INITIALIZER);
+
+  ClientAgent * ca = new ClientAgent(pconf, rs, &rs_lock);
+  ServerAgent * sa = new ServerAgent(pconf, rs, &rs_lock);
+
+  int pid;
+  switch (pid = fork()) {
+  case -1: HelperRoutines::error("Fork client & server"); break;
+  case 0:
+    std::cout << "ClientAgent PID:"<<getpid()<<std::endl;
+    ca->start();
+
+    break;
+  default:
+    std::cout << "ServerAgent PID:"<<getpid()<<std::endl;
+    sa->start();
+    break;
+  }
 }
 
 

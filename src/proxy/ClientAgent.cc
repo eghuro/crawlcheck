@@ -13,10 +13,10 @@ std::size_t ClientThread::buffer_size = 1000;
 void * ClientThread::clientThreadRoutine(void * arg) {
   std::cout << "Client thread started" << std::endl;
   ClientThreadParameters * parameters = reinterpret_cast<ClientThreadParameters *>(arg);
-  std::shared_ptr<RequestStorage> storage = parameters->getStorage();
+  RequestStorage* storage = parameters->getStorage();
 
   std::cout << "Do work?" << parameters->doWork() << std::endl;
-  pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
+  // pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
   while (parameters->doWork()) {
     std::cout << "Working." << std::endl;
     // establish connection
@@ -29,8 +29,8 @@ void * ClientThread::clientThreadRoutine(void * arg) {
     ClientThread::response(transactionIds, connection, parameters);
 
     //close connection
-    close(connection);
-    fprintf(stderr, ".. connection closed ..\n");
+    if (close(connection) != 0) HelperRoutines::warning("Close connection in client thread");
+    else std::cout << ".. connection closed .. " << std::endl;
   }
   delete parameters;
 }
@@ -43,7 +43,7 @@ int ClientThread::establishConnection(ClientThreadParameters * parameters) {
   assert (mutex != nullptr);
   assert (condition != nullptr);
 
-  pthread_mutex_lock(mutex);
+  ThreadedHelperRoutines::lock(mutex, "CAM");
   std::cout << "Waiting" << std::endl;
   while(!parameters->connectionAvailable()) {
     pthread_cond_wait(condition, mutex);
@@ -52,22 +52,22 @@ int ClientThread::establishConnection(ClientThreadParameters * parameters) {
   std::cout << "Connection is available" << std::endl;
 
   //accept
-  pthread_mutex_lock(parameters->getConnectionMutex());
+  ThreadedHelperRoutines::lock(parameters->getConnectionMutex(), "CM");
   std::cout << parameters->getConnection() << std::endl;
-  int new_fd = accept(parameters->getConnection(), NULL, NULL);
-  pthread_mutex_unlock(parameters->getConnectionMutex());
-  pthread_mutex_unlock(mutex);
+  int new_fd = accept(parameters->getConnection(), NULL, NULL); // checked after unlocks
+  ThreadedHelperRoutines::unlock(parameters->getConnectionMutex(), "CM");
+  ThreadedHelperRoutines::unlock(mutex, "CAM");
   std::cout << "Accpeted, unlocked" << std::endl;
 
   if (new_fd == -1) {
-    HelperRoutines::error("accept ERROR");
+    HelperRoutines::warning("accept ERROR in client thread");
   }
 
   fprintf(stderr, ".. connection accepted ..\n");
   return new_fd;
   }
 
-std::vector<std::size_t> ClientThread::request(const ClientThreadParameters * parameters, int connection) {
+std::vector<std::size_t> ClientThread::request(ClientThreadParameters * parameters, int connection) {
   auto storage = parameters->getStorage();
     std::vector<std::size_t> transactionIds(1);
     //read request
@@ -77,12 +77,14 @@ std::vector<std::size_t> ClientThread::request(const ClientThreadParameters * pa
 
     while ((n = read(connection, buf, ClientThread::buffer_size)) != 0) {
       if (n == -1) {
-        perror("READ request");
+        HelperRoutines::warning("Read request in client thread");
       } else {
         HttpParserResult result = parser.parse(std::string(buf, n));
         if (result.isRequest()) {
     //push DB
+          ThreadedHelperRoutines::lock(parameters->getStorageLock(), "Storage lock");
           transactionIds.push_back((*storage).insertRequest(result));
+          ThreadedHelperRoutines::unlock(parameters->getStorageLock(), "Storage lock");
         }
       }
     }
@@ -95,14 +97,23 @@ void ClientThread::response(const std::vector<std::size_t> & transactionIds, int
   //wait for response
   pthread_mutex_t * response_mutex = parameters->getResponseAvailabilityMutex();
   pthread_cond_t * response_available = parameters->getResponseAvailabilityCondition();
+  ThreadedHelperRoutines::lock(parameters->getStorageLock(), "Storage lock");
   storage->subscribeWait4Response(transactionIds[0], response_mutex, response_available);
-  pthread_mutex_lock(response_mutex);
+  ThreadedHelperRoutines::unlock(parameters->getStorageLock(), "Storage lock");
+  ThreadedHelperRoutines::lock(response_mutex, "Response mutex");
   while (!storage->responseAvailable(transactionIds[0])) {
     pthread_cond_wait(response_available, response_mutex);
   }
+  ThreadedHelperRoutines::lock(parameters->getStorageLock(), "Storage lock");
   std::string response = storage->retrieveResponse(transactionIds[0]);
-  pthread_mutex_unlock(response_mutex);
+  ThreadedHelperRoutines::unlock(parameters->getStorageLock(), "Storage lock");
+  ThreadedHelperRoutines::unlock(response_mutex, "Response mutex");
 
   //write response
-  write(static_cast<int>(connection), response.c_str(), response.size());
+  int n = write(static_cast<int>(connection), response.c_str(), response.size());
+  if (n == -1) {
+    HelperRoutines::warning("Write response in client thread");
+  } else if (n != response.size()) {
+    HelperRoutines::warning("Write response", "Bytes of response actually written in client thread don't match size of retrieved response");
+  }
 }

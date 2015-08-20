@@ -8,6 +8,7 @@
 #include <vector>
 #include "RequestStorage.h"
 #include "ProxyConfiguration.h"
+#include "HelperRoutines.h"
 
 class ServerWorkerParameters {
  public:
@@ -17,23 +18,27 @@ class ServerWorkerParameters {
       work(true), requestAvailabilityCondition(), storageLock(storeLock) {
     assert(store!=nullptr);
     assert(storage != nullptr);
-    std::cout << "Create ServerWorkerParameters" << std::endl;
-    pthread_cond_init(&requestAvailabilityCondition, NULL);
+    HelperRoutines::info("Create ServerWorkerParameters");
+    int e = pthread_cond_init(&requestAvailabilityCondition, NULL);
+    if (e != 0) HelperRoutines::warning("Initialize condition variable (request availability)", strerror(e));
   }
 
   virtual ~ServerWorkerParameters() {
-    std::cout << "Destroy Server Worker Parameters" << std::endl;
-    pthread_cond_destroy(&requestAvailabilityCondition);
+    HelperRoutines::info("Destroy Server Worker Parameters");
+    int e = pthread_cond_destroy(&requestAvailabilityCondition);
+    if (e != 0) {
+      HelperRoutines::warning("Destroy conditional variable (request availability)", strerror(e));
+    }
   }
 
   RequestStorage* getStorage() {
-    std::cout << "Get request storage" << std::endl;
-    if (storage == nullptr) std::cout << "Returning nullptr";
+    HelperRoutines::info("Get request storage");
+    if (storage == nullptr) HelperRoutines::warning("Returning nullptr");
     return storage;
   }
 
   pthread_mutex_t* getStorageLock() {
-    if (storageLock == nullptr) std::cout << "Returning nullptr";
+    if (storageLock == nullptr) HelperRoutines::warning("Returning nullptr");
     return storageLock;
   }
 
@@ -70,7 +75,7 @@ class ServerThread {
   //RequestStorage will not be deleted here
   explicit ServerThread(RequestStorage * store, pthread_mutex_t * storeLock):
       storage(store), storageLock(storeLock) {
-    std::cout << "ServerThread ctor" << std::endl;
+    HelperRoutines::info("ServerThread ctor");
 
     ServerWorkerParameters * parameters = new ServerWorkerParameters(store, storeLock);
     int e = pthread_create(&thread, NULL, ServerThread::serverThreadRoutine, parameters );
@@ -79,25 +84,25 @@ class ServerThread {
       HelperRoutines::error(strerror(e));
     } else {
       threadFailed = false;
-      std::cout << "new thread created" << std::endl;
+      HelperRoutines::info("New server thread created");
     }
   }
 
   virtual ~ServerThread() {
-    std::cout << "Destroying server thread"<<std::endl;
+    HelperRoutines::info("Destroying server thread");
     if (!threadFailed) {
       std::cout << "Join" << std::endl;
       int e = pthread_join(thread, NULL);
       if (e != 0) {
         HelperRoutines::warning("Pthread_join", strerror(e));
       } else {
-        std::cout << "Join successful" << std::endl;
+        HelperRoutines::info("Join successful");
       }
     } else {
-      std::cout << "Thread was not created" << std::endl;
+      HelperRoutines::info("Thread was not created");
     }
 
-    std::cout << "Leaving" << std::endl;
+    HelperRoutines::info("Leaving");
   }
 
   static void * serverThreadRoutine (void *);
@@ -127,21 +132,23 @@ class ServerAgent {
       RequestStorage * store, pthread_mutex_t * storeLock):
         threads(conf->getOutPoolCount()), configuration(conf),
         storage(store), storageLock(storeLock) {
-    std::cout << "Creating ServerAgent" << std::endl;
-    std::cout << "Threads: "<<conf->getOutPoolCount() << std::endl;
+    HelperRoutines::info("Creating ServerAgent");
+    std::ostringstream oss;
+    oss << "Threads: "<<conf->getOutPoolCount();
+    HelperRoutines::info(oss.str());
   }
 
   virtual ~ServerAgent() {
-    std::cout << "Destroying ServerAgent" << std::endl;
+    HelperRoutines::info("Destroying ServerAgent");
   }
 
   void start() {
-    std::cout << "Creating pool" << std::endl;
+    HelperRoutines::info("Creating pool");
     // create pool
     for (int i = 0; i < configuration->getOutPoolCount(); i++) {
        std::unique_ptr<ServerThread> p(new ServerThread(storage, storageLock));
        threads.push_back(std::move(p));
-       std::cout << "Created a thread" << std::endl;
+       HelperRoutines::info("Created a thread");
      }
   }
 

@@ -336,7 +336,28 @@ class HttpParser {
 
   HttpParserResult parse(const std::string & chunk) {
     std::cout << "Parser: "<<chunk << std::endl;
-    std::ostringstream oss_req;
+    bool guessRequest = false, guessResponse = false;
+    switch (chunk[0]){
+    case 'G':if (chunk.substr(0,3) == "GET") guessRequest = true; break;
+    case 'H':
+      if (chunk[1] == 'E') {
+        if (chunk.substr(0,4) == "HEAD") guessRequest = true;
+      } else if (chunk[1] == 'T') {
+        if (chunk.substr(0,4) == "HTTP") guessResponse = true;
+      }
+      break;
+    case 'D': if (chunk.substr(0,6) == "DELETE") guessRequest = true; break;
+    case 'C': if (chunk.substr(0,7) == "CONNECT") guessRequest = true; break;
+    case 'T': if (chunk.substr(0,5) == "TRACE") guessRequest = true; break;
+    case 'P':
+      if(chunk[1] == 'U') {
+        if (chunk[2] == 'T') guessRequest = true;
+      } else if (chunk[1] == 'O') {
+        if (chunk.substr(0,4) == "POST") guessRequest = true;
+      }
+      break;
+    }
+   /* std::ostringstream oss_req;
     oss_req << "(GET|HEAD|POST|PUT|DELETE|TRACE|CONNECT) ";
     oss_req << "http://([a-zA-Z0-9]([./:])?)+ ";
     oss_req << "HTTP/1.1\r\n([a-zA-Z0-9: -]+\r\n)*\r\n";
@@ -346,9 +367,9 @@ class HttpParser {
     oss_res << "([a-zA-Z0-9: -/;=]+\r\n)*\r\n.*";
 
     const std::regex req(oss_req.str());
-    const std::regex res(oss_res.str());
+    const std::regex res(oss_res.str());*/
 
-    if (std::regex_match(chunk, req)) {
+    if (guessRequest) {
       HttpParserResult result(HttpParserResultState::REQUEST);
 
       auto begin = findSpace(chunk, 0);
@@ -368,7 +389,7 @@ class HttpParser {
           return result;
         }
       }
-    } else if (std::regex_match(chunk, res)) {
+    } else if (guessResponse) {
       HttpParserResult result(HttpParserResultState::RESPONSE);
 
       // status
