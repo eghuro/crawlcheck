@@ -10,14 +10,16 @@
 
 std::size_t ClientThread::buffer_size = 1000;
 
+pthread_mutex_t Bundle::stop_lock = PTHREAD_MUTEX_INITIALIZER;
+bool Bundle::stop = false;
+
 void * ClientThread::clientThreadRoutine(void * arg) {
   std::cout << "Client thread started" << std::endl;
   ClientThreadParameters * parameters = reinterpret_cast<ClientThreadParameters *>(arg);
   RequestStorage* storage = parameters->getStorage();
 
-  std::cout << "Do work?" << parameters->doWork() << std::endl;
   // pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
-  while (parameters->doWork()) {
+  while (!Bundle::stop) {
     std::cout << "Working." << std::endl;
     // establish connection
     int connection = ClientThread::establishConnection(parameters);

@@ -11,8 +11,10 @@ TEST(RequestStorage, Request) {
   dbc.setUri("localhost");
   dbc.setUser("test");
   dbc.setDb("crawlcheck");
-  std::shared_ptr<Database> db = std::make_shared<Database>(dbc);
-  RequestStorage rs(db);
+  Database db(dbc);
+  db.cleanup();
+
+  RequestStorage rs(dbc);
   EXPECT_FALSE(rs.requestAvailable());
 
   HttpParserResult request(HttpParserResultState::REQUEST);
@@ -36,8 +38,7 @@ TEST(RequestStorage, Response) {
   dbc.setUri("localhost");
   dbc.setUser("test");
   dbc.setDb("crawlcheck");
-  std::shared_ptr<Database> db = std::make_shared<Database>(dbc);
-  RequestStorage rs(db);
+  RequestStorage rs(dbc);
   EXPECT_FALSE(rs.requestAvailable());
 
   HttpParserResult request(HttpParserResultState::REQUEST);

@@ -17,13 +17,10 @@ void * ServerThread::serverThreadRoutine (void * arg) {
   HelperRoutines::info("Server thread routine");
   ServerWorkerParameters * parameters = reinterpret_cast<ServerWorkerParameters *>(arg);
   assert(parameters != nullptr);
-
+  HelperRoutines::info("Trying to get storage");
   HelperRoutines::info("Get storage lock");
   pthread_mutex_t * storageLock = parameters->getStorageLock();
   assert (storageLock != nullptr);
-
-  HelperRoutines::info("Trying to get storage");
-
   ThreadedHelperRoutines::lock(storageLock, "Storage lock");
   RequestStorage * storage = parameters->getStorage();
   ThreadedHelperRoutines::unlock(storageLock, "Storage lock");

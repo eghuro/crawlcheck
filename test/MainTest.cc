@@ -23,8 +23,7 @@ TEST(Main, Creation) {
   dc.setDb("crawlcheck");
 
   std::shared_ptr<ProxyConfiguration> pconf(std::make_shared<ProxyConfiguration>(pc));
-  std::shared_ptr<Database> db(new Database(dc));
-  std::shared_ptr<RequestStorage> rs(new RequestStorage(db));
+  std::shared_ptr<RequestStorage> rs(new RequestStorage(dc));
 }
 
 TEST(ServerAgent, CreateServerAgent) {
@@ -37,8 +36,7 @@ TEST(ServerAgent, CreateServerAgent) {
   dc.setDb("crawlcheck");
 
   std::shared_ptr<ProxyConfiguration> pconf(std::make_shared<ProxyConfiguration>(pc));
-  std::shared_ptr<Database> db(new Database(dc));
-  RequestStorage * rs = new RequestStorage(db);
+  RequestStorage * rs = new RequestStorage(dc);
   pthread_mutex_t rslock(PTHREAD_MUTEX_INITIALIZER);
 
   ServerAgent sa(pconf, rs, &rslock);
@@ -56,8 +54,7 @@ TEST(ServerAgent, CreateServerAgentNoThreads) {
   dc.setDb("crawlcheck");
 
   std::shared_ptr<ProxyConfiguration> pconf(std::make_shared<ProxyConfiguration>(pc));
-  std::shared_ptr<Database> db(new Database(dc));
-  RequestStorage * rs = new RequestStorage(db);
+  RequestStorage * rs = new RequestStorage(dc);
   pthread_mutex_t rslock(PTHREAD_MUTEX_INITIALIZER);
 
   ServerAgent sa(pconf, rs, &rslock);
@@ -76,8 +73,7 @@ TEST(ServerAgent, CreateServerAgentNegativeThreads) {
   dc.setDb("crawlcheck");
 
   std::shared_ptr<ProxyConfiguration> pconf(std::make_shared<ProxyConfiguration>(pc));
-  std::shared_ptr<Database> db(new Database(dc));
-  RequestStorage * rs = new RequestStorage(db);
+  RequestStorage * rs = new RequestStorage(dc);
   pthread_mutex_t rslock(PTHREAD_MUTEX_INITIALIZER);
 
   ServerAgent sa(pconf, rs, &rslock);
@@ -90,8 +86,7 @@ TEST(ClientWorkerParameters, create) {
   dc.setUri("localhost");
   dc.setUser("test");
   dc.setDb("crawlcheck");
-  std::shared_ptr<Database> db(new Database(dc));
-  RequestStorage * rs(new RequestStorage(db));
+  RequestStorage * rs(new RequestStorage(dc));
   pthread_mutex_t rslock(PTHREAD_MUTEX_INITIALIZER);
 
   ClientThreadParameters cwp(rs, &rslock);
@@ -106,8 +101,7 @@ TEST(ClientWorkerParameters, connection) {
   dc.setUri("localhost");
   dc.setUser("test");
   dc.setDb("crawlcheck");
-  std::shared_ptr<Database> db(new Database(dc));
-  RequestStorage* rs(new RequestStorage(db));
+  RequestStorage* rs(new RequestStorage(dc));
   pthread_mutex_t rslock(PTHREAD_MUTEX_INITIALIZER);
 
   ClientThreadParameters cwp(rs, &rslock);
@@ -126,8 +120,7 @@ TEST(ClientWorkerParameters, connection) {
   dc.setDb("crawlcheck");
 
   std::shared_ptr<ProxyConfiguration> pconf(std::make_shared<ProxyConfiguration>(pc));
-  std::shared_ptr<Database> db(new Database(dc));
-  RequestStorage * rs = new RequestStorage(db, pconf->getOutPoolCount());
+  RequestStorage * rs = new RequestStorage(dc, pc.getOutPoolCount());
   ASSERT_TRUE(rs != nullptr);
   ASSERT_TRUE(rs != NULL);
   pthread_mutex_t rs_lock(PTHREAD_MUTEX_INITIALIZER);
@@ -148,8 +141,7 @@ TEST(ClientAgent, CreateClientAgent) {
   dc.setDb("crawlcheck");
 
   std::shared_ptr<ProxyConfiguration> pconf(std::make_shared<ProxyConfiguration>(pc));
-  std::shared_ptr<Database> db(new Database(dc));
-  RequestStorage * rs(new RequestStorage(db));
+  RequestStorage * rs(new RequestStorage(dc));
   pthread_mutex_t rs_lock(PTHREAD_MUTEX_INITIALIZER);
 
   ClientAgent client(pconf, rs, &rs_lock);
@@ -165,9 +157,8 @@ TEST(ClientAgent, CreateClientAgentNoThreads) {
   dc.setUser("test");
   dc.setDb("crawlcheck");
 
-  std::shared_ptr<ProxyConfiguration> pconf(std::make_shared<ProxyConfiguration>(pc));
-  std::shared_ptr<Database> db(new Database(dc));
-  RequestStorage * rs(new RequestStorage(db));
+  std::shared_ptr<ProxyConfiguration> pconf(std::make_shared<ProxyConfiguration>(pc))
+  RequestStorage * rs(new RequestStorage(dc));
   pthread_mutex_t rs_lock(PTHREAD_MUTEX_INITIALIZER);
 
   ClientAgent sa(pconf, rs, &rs_lock);
@@ -185,8 +176,7 @@ TEST(ClientAgent, CreateClientAgentNegativeThreads) {
   dc.setDb("crawlcheck");
 
   std::shared_ptr<ProxyConfiguration> pconf(std::make_shared<ProxyConfiguration>(pc));
-  std::shared_ptr<Database> db(new Database(dc));
-  RequestStorage * rs(new RequestStorage(db));
+  RequestStorage * rs(new RequestStorage(dc));
   pthread_mutex_t rs_lock(PTHREAD_MUTEX_INITIALIZER);
 
   ClientAgent sa(pconf, rs, &rs_lock);
@@ -205,8 +195,7 @@ TEST(ClientAgent, CreateClientAgentNegativeThreads) {
   dc.setDb("crawlcheck");
 
   std::shared_ptr<ProxyConfiguration> pconf(std::make_shared<ProxyConfiguration>(pc));
-  std::shared_ptr<Database> db(std::make_shared<Database>(dc));
-  RequestStorage * rs(new RequestStorage(db));
+  RequestStorage * rs(new RequestStorage(dc));
   pthread_mutex_t rs_lock(PTHREAD_MUTEX_INITIALIZER);
 
   std::cout << "Create Client Agent" << std::endl;
@@ -216,7 +205,7 @@ TEST(ClientAgent, CreateClientAgentNegativeThreads) {
   delete rs;
 }*/
 
-TEST(Proxy, SetUp) {
+/*TEST(Proxy, SetUp) {
   ProxyConfiguration pc;
   pc.setInPoolCount(1);
   pc.setInPoolPort(8080);
@@ -229,12 +218,15 @@ TEST(Proxy, SetUp) {
   dc.setDb("crawlcheck");
 
   std::shared_ptr<ProxyConfiguration> pconf(std::make_shared<ProxyConfiguration>(pc));
-  std::shared_ptr<Database> db(std::make_shared<Database>(dc));
-  RequestStorage * rs(new RequestStorage(db));
-  pthread_mutex_t rs_lock(PTHREAD_MUTEX_INITIALIZER);
+  RequestStorage * rs(new RequestStorage(dc, pc.getOutPoolCount()));
+  pthread_mutex_t * rs_lock ((pthread_mutex_t *)malloc(sizeof(pthread_mutex_t)));
+  int e = pthread_mutex_init(rs_lock, NULL);
+  if (e != 0) {
+    HelperRoutines::error("Create request storage mutex");
+  }
 
-  ClientAgent * ca = new ClientAgent(pconf, rs, &rs_lock);
-  ServerAgent * sa = new ServerAgent(pconf, rs, &rs_lock);
+  ClientAgent * ca = new ClientAgent(pconf, rs, rs_lock);
+  ServerAgent * sa = new ServerAgent(pconf, rs, rs_lock);
 
   int pid;
   switch (pid = fork()) {
@@ -242,13 +234,12 @@ TEST(Proxy, SetUp) {
   case 0:
     std::cout << "ClientAgent PID:"<<getpid()<<std::endl;
     ca->start();
-
     break;
   default:
     std::cout << "ServerAgent PID:"<<getpid()<<std::endl;
     sa->start();
     break;
   }
-}
+}*/
 
 

@@ -259,10 +259,22 @@ class Database{
     return getClientRequestCount() > 0;
   }
 
+  void cleanup() {
+    HelperRoutines::warning("Know what you do", "Deleting all transactions from database!");
+
+    auto *stmt = con->createStatement();
+    stmt->executeUpdate("DELETE FROM transaction");
+    delete stmt;
+  }
+
  private:
   const DatabaseConfiguration & config;
   sql::Driver *driver;
   sql::Connection *con;
+
+  // prevent copy
+  Database(const Database&) = delete;
+  Database& operator=(const Database&) = delete;
 };
 
 #endif  // SRC_DB_DB_H_

@@ -1,5 +1,8 @@
 // Copyright 2015 Alexandr Mansurov
 
+#include <string.h>
+#include <signal.h>
+#include <sys/wait.h>
 #include <cstdlib>
 #include <memory>
 #include <libxml++/libxml++.h>
@@ -22,10 +25,9 @@ int main(int argc, char ** argv) {
         HelperRoutines::info("Parsed configuration, creating ProxyConfiguration sharedptr");
 
         std::shared_ptr<ProxyConfiguration> pconf(std::make_shared<ProxyConfiguration>(parser.getProxyConfiguration()));
-        HelperRoutines::info("Parsed configuration, creating Database sharedptr");
-        std::shared_ptr<Database> db(new Database(parser.getDatabaseConfiguration()));
+        HelperRoutines::info("Parsed configuration");
         HelperRoutines::info("Created db, creating RequestStorage sharedptr");
-        RequestStorage* rs = new RequestStorage(db);
+        RequestStorage* rs = new RequestStorage(parser.getDatabaseConfiguration(), static_cast<std::size_t>(pconf->getOutPoolCount()));
 
         HelperRoutines::info("Created RequestStorage, creating RS lock");
         pthread_mutex_t * rs_lock ((pthread_mutex_t *)malloc(sizeof(pthread_mutex_t)));
@@ -44,35 +46,49 @@ int main(int argc, char ** argv) {
         HelperRoutines::info("Created ServerAgent, creating client agent");
         ClientAgent * ca = new ClientAgent(pconf, rs, rs_lock);
 
-        int pid;
-        switch (pid = fork()) {
-        case -1: HelperRoutines::error("Fork client & server"); break;
-        case 0:
-          HelperRoutines::info("ClientAgent");
-          HelperRoutines::info("Start CA");
-          ca->start();
-          HelperRoutines::info("Stop CA");
-          ca->stop();
-          HelperRoutines::info("Stopped, delete CA!");
-          delete ca;
-          HelperRoutines::info("Leaving CA process, bye");
-
-          break;
-         default:
+        //zablokovat signaly: SIGHUP, SIGINT, <SIGTERM>, mozna SIGQUIT, SIGABRT
+        //forky
+        int pid0, pid1;
+        switch (pid0 = fork()) {
+        case -1: HelperRoutines::error("Fork server"); break;
+        case 0: // child
           HelperRoutines::info("ServerAgent");
           HelperRoutines::info("Start SA");
           sa->start();
-          HelperRoutines::info("Leaving SA process, bye");
+          break;
+        default:
+          switch (pid1 = fork()) {
+          case -1: HelperRoutines::error("Fork client"); break;
+          case 0: //child
+            HelperRoutines::info("ClientAgent");
+
+            e = pthread_cond_init(Bundle::stop_cond, NULL);
+            if (e != 0) HelperRoutines::warning("Initialize condition variable (stop condition)", strerror(e));
+
+            struct sigaction act_ca;
+            bzero(&act_ca, sizeof(act_ca));
+            act_ca.sa_handler = ClientAgent::handler;
+            sigaction(SIGTERM, &act_ca, NULL);
+
+            HelperRoutines::info("Start CA");
+            ca->start();
+            break;
+          default: //parent
+            HelperRoutines::info("Service process");
+
+            //odblokovat signaly
+            //zachytit signaly (viz vyse)
+
+            wait(NULL); // wait for all children processes to finish
+            HelperRoutines::info("Child processes finished, cleaning up");
+            delete ca;
+            delete sa;
+            pthread_mutex_destroy(rs_lock);
+            delete rs;
+            return EXIT_SUCCESS;
+            }
           break;
         }
-
-        // bezi sada vlaken, ktere konaji nejakou cinnost
-        // v destruktorech ClientThread a ServerThread, ktere se spusti z
-        // destruktoru ClientAgent resp. ServerAgent se vola pthread_join
-
-        delete rs;
-
-        return EXIT_SUCCESS;
       } else {
         return EXIT_FAILURE;
       }

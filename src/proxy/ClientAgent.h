@@ -19,10 +19,27 @@
 #include "ThreadedHelperRoutines.h"
 #include "ProxyConfiguration.h"
 
+class Bundle {
+ public:
+  static pthread_mutex_t stop_lock;
+  static bool stop;
+  static pthread_cond_t * stop_cond;
+  static pthread_t * stop_thread;
+
+  static void* stopThreadRoutine(void *) {
+    HelperRoutines::info("Client process caught a signal and started a stop thread");
+    ThreadedHelperRoutines::lock(&Bundle::stop_lock, "Lock stop");
+    Bundle::stop = true;
+    pthread_cond_broadcast(Bundle::stop_cond);
+    ThreadedHelperRoutines::unlock(&Bundle::stop_lock, "Unlock stop");
+    HelperRoutines::info("Leaving stop thread");
+  }
+};
+
 class ClientThreadParameters {
  public:
   explicit ClientThreadParameters(RequestStorage * stor, pthread_mutex_t * storeLock) : sock(-1),
-  storage(stor), work(true), storageMutex(storeLock),
+  storage(stor), storageMutex(storeLock),
   connectionAvailabilityMutex(PTHREAD_MUTEX_INITIALIZER),
   responseAvailabilityMutex(PTHREAD_MUTEX_INITIALIZER),
   connectionMutex(PTHREAD_MUTEX_INITIALIZER) {
@@ -85,14 +102,6 @@ class ClientThreadParameters {
     return storage;
   }
 
-  void setWork(bool value) {
-    work = value;
-  }
-
-  bool doWork() const {
-    return work;
-  }
-
   pthread_mutex_t * getStorageLock() {
     return storageMutex;
   }
@@ -100,7 +109,7 @@ class ClientThreadParameters {
  private:
   int sock;
   bool work;
-  pthread_mutex_t connectionAvailabilityMutex, responseAvailabilityMutex, workMutex, connectionMutex;
+  pthread_mutex_t connectionAvailabilityMutex, responseAvailabilityMutex, connectionMutex;
   pthread_cond_t connectionAvailabilityCondition, responseAvailabilityCondition;
   RequestStorage * storage;
   pthread_mutex_t * storageMutex;
@@ -111,6 +120,7 @@ class ClientThreadParameters {
 
 class ClientThread {
  public:
+
   explicit ClientThread(RequestStorage* storage, pthread_mutex_t * storageLock) : stopped(false) {
     HelperRoutines::info("New CT");
     parameters = new ClientThreadParameters(storage, storageLock);
@@ -132,19 +142,21 @@ class ClientThread {
   }
 
   void stop() {
-    if (!threadFailed) {
-      HelperRoutines::info("Join");
-      int e = pthread_join(thread, NULL);
-      if (e != 0) {
-        HelperRoutines::warning("Pthread_join", strerror(e));
-      } else {
-        HelperRoutines::info("Join successful");
-        stopped = true;
-      }
+    HelperRoutines::info("CT stop");
+
+    ThreadedHelperRoutines::lock(&Bundle::stop_lock, "Lock stop lock");
+    while(!&Bundle::stop) {
+      pthread_cond_wait(Bundle::stop_cond, &Bundle::stop_lock);
+    }
+    HelperRoutines::info("Join");
+    int e = pthread_join(thread, NULL);
+    if (e != 0) {
+      HelperRoutines::warning("Pthread_join", strerror(e));
     } else {
-      HelperRoutines::warning("Thread was not created");
+      HelperRoutines::info("Join successful");
       stopped = true;
     }
+    ThreadedHelperRoutines::unlock(&Bundle::stop_lock, "Unlock stop lock");
   }
 
   void setSocket(int fd) {
@@ -156,7 +168,6 @@ class ClientThread {
     pthread_mutex_t * cam = parameters->getConnectionAvailabilityMutex();
     pthread_mutex_t * cm = parameters->getConnectionMutex();
 
-    int e;
     ThreadedHelperRoutines::lock(cam, "CAM");
     ThreadedHelperRoutines::lock(cm, "CM");
     parameters->setConnection(fd);
@@ -183,6 +194,11 @@ class ClientThread {
 
 class ClientAgent{
 public:
+
+  static void handler(int sig) {
+    pthread_create(Bundle::stop_thread, NULL, &Bundle::stopThreadRoutine, NULL);
+
+  }
 
   ClientAgent(const std::shared_ptr<ProxyConfiguration> conf, RequestStorage* store, pthread_mutex_t * storeLock):
     threadCount(conf->getInPoolCount()), configuration(conf), storage(store),storageLock(storeLock), socketFd(-1),
@@ -212,19 +228,12 @@ public:
     HelperRoutines::info(HelperRoutines::to_string(socketFd));
 
     for (int i = 0; i < threadCount; i++) {
-      threads[i]->setSocket(socketFd);
+      // TODO threads[i]->setSocket(socketFd);
     }
 
     HelperRoutines::info("LISTEN");
     if (listen(socketFd, configuration->getInBacklog()) == -1) {
       HelperRoutines::error("listen ERROR");
-    }
-  }
-
-  void stop() {
-    HelperRoutines::info("CA stop");
-    for(int i = 0; i < threadCount; i++) {
-      threads[i]->stop();
     }
   }
 
