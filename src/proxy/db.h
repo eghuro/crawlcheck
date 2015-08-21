@@ -193,7 +193,7 @@ class Database{
   std::size_t getServerResponseCount() {
     sql::Statement *stmt = con->createStatement();
 
-    sql::ResultSet *res = stmt->executeQuery("SELECT count(id) AS id FROM transaction WHERE verificationStatusId = 3");
+    sql::ResultSet *res = stmt->executeQuery("SELECT count(id) AS id FROM transaction WHERE verificationStatusId = 3 AND origin='CLIENT'");
 
     unsigned int count = 0;
     if (res->next()) {

@@ -171,7 +171,7 @@ class ClientThread {
     HelperRoutines::info("Set socket");
     HelperRoutines::info(HelperRoutines::to_string(fd));
 
-    std::cout << parameters->getConnection() << std::endl;
+    HelperRoutines::info(HelperRoutines::to_string(parameters->getConnection()));
 
     pthread_mutex_t * cam = parameters->getConnectionAvailabilityMutex();
     pthread_mutex_t * cm = parameters->getConnectionMutex();
@@ -197,7 +197,8 @@ class ClientThread {
   ClientThread(const ClientThread&) = delete;
   ClientThread& operator=(const ClientThread&) = delete;
 
-  static std::size_t buffer_size;
+  static std::size_t in_buffer_size;
+  static std::size_t out_buffer_size;
   static void * clientThreadRoutine(void * arg);
   static int establishConnection(ClientThreadParameters * parameters);
   static std::vector<std::size_t> request(ClientThreadParameters *, int);
@@ -234,8 +235,10 @@ public:
     socketFd = bindSocket(r);
     HelperRoutines::info(HelperRoutines::to_string(socketFd));
 
+    std::ostringstream oss;
     for (int i = 0; i < threadCount; i++) {
-      std::cout << "Set socket for thread "<< i <<std::endl;
+      oss << "Set socket for thread "<< i;
+      HelperRoutines::info(oss.str());
       threads[i]->setSocket(socketFd);
     }
 

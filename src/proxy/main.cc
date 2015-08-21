@@ -56,7 +56,6 @@ int main(int argc, char ** argv) {
           HelperRoutines::info("Start SA");
           sa->start();
           sa->stop();
-          delete sa;
           break;
         default:
           switch (pid1 = fork()) {
@@ -67,7 +66,6 @@ int main(int argc, char ** argv) {
             HelperRoutines::info("Start CA");
             ca->start();
             ca->stop();
-            delete ca;
             break;
           default: //parent
             HelperRoutines::info("Service process");

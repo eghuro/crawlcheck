@@ -8,7 +8,8 @@
 #include "./RequestStorage.h"
 #include "./HttpParser.h"
 
-std::size_t ClientThread::buffer_size = 1000;
+std::size_t ClientThread::in_buffer_size = 1000;
+std::size_t ClientThread::out_buffer_size = 1000;
 
 pthread_mutex_t Bundle::stop_lock = PTHREAD_MUTEX_INITIALIZER;
 bool Bundle::stop = false;
@@ -21,9 +22,9 @@ void * ClientThread::clientThreadRoutine(void * arg) {
 
   // pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
   while (true) {
-    std::cout << "Working." << std::endl;
     // establish connection
     int connection = ClientThread::establishConnection(parameters);
+    if (connection < 0) continue;
 
     // handle request
     auto transactionIds = ClientThread::request(parameters, connection);
@@ -39,7 +40,7 @@ void * ClientThread::clientThreadRoutine(void * arg) {
 }
 
 int ClientThread::establishConnection(ClientThreadParameters * parameters) {
-  std::cout << "Establish connection" << std::endl;
+  HelperRoutines::info("Establish connection");
   // wait for socket (for accept) to become available
   pthread_mutex_t * mutex = parameters->getConnectionAvailabilityMutex();
   pthread_cond_t * condition = parameters->getConnectionAvailabilityCondition();
@@ -47,12 +48,14 @@ int ClientThread::establishConnection(ClientThreadParameters * parameters) {
   assert (condition != nullptr);
 
   ThreadedHelperRoutines::lock(mutex, "CAM");
-  std::cout << "Waiting" << std::endl;
+  HelperRoutines::info("Waiting");
   while(!parameters->connectionAvailable()) {
     pthread_cond_wait(condition, mutex);
   }
 
-  std::cout << "Connection is available" << std::endl;
+  HelperRoutines::info("Connection is available");
+
+  HelperRoutines::info(HelperRoutines::to_string(parameters->getConnection()));
 
   //accept
   ThreadedHelperRoutines::lock(parameters->getConnectionMutex(), "CM");
@@ -60,7 +63,7 @@ int ClientThread::establishConnection(ClientThreadParameters * parameters) {
   int new_fd = accept(parameters->getConnection(), NULL, NULL); // checked after unlocks
   ThreadedHelperRoutines::unlock(parameters->getConnectionMutex(), "CM");
   ThreadedHelperRoutines::unlock(mutex, "CAM");
-  std::cout << "Accpeted, unlocked" << std::endl;
+  HelperRoutines::info("Accepted");
 
   if (new_fd == -1) {
     HelperRoutines::warning("accept ERROR in client thread");
@@ -71,15 +74,19 @@ int ClientThread::establishConnection(ClientThreadParameters * parameters) {
   }
 
 std::vector<std::size_t> ClientThread::request(ClientThreadParameters * parameters, int connection) {
+  HelperRoutines::info("Read request");
+  HelperRoutines::info(HelperRoutines::to_string(connection));
   auto storage = parameters->getStorage();
     std::vector<std::size_t> transactionIds(1);
     //read request
     HttpParser parser;
-    char buf[ClientThread::buffer_size];
+    char buf[ClientThread::in_buffer_size];
     int n;
+    bool readFailed = false;
 
-    while ((n = read(connection, buf, ClientThread::buffer_size)) != 0) {
+    while ((n = read(connection, buf, ClientThread::in_buffer_size)) != 0 && !readFailed) {
       if (n == -1) {
+        readFailed = true;
         HelperRoutines::warning("Read request in client thread");
       } else {
         HttpParserResult result = parser.parse(std::string(buf, n));
@@ -96,6 +103,7 @@ std::vector<std::size_t> ClientThread::request(ClientThreadParameters * paramete
   }
 
 void ClientThread::response(const std::vector<std::size_t> & transactionIds, int connection, ClientThreadParameters * parameters) {
+  HelperRoutines::info("Write response");
   auto storage = parameters->getStorage();
   //wait for response
   pthread_mutex_t * response_mutex = parameters->getResponseAvailabilityMutex();
@@ -113,10 +121,18 @@ void ClientThread::response(const std::vector<std::size_t> & transactionIds, int
   ThreadedHelperRoutines::unlock(response_mutex, "Response mutex");
 
   //write response
-  int n = write(static_cast<int>(connection), response.c_str(), response.size());
-  if (n == -1) {
-    HelperRoutines::warning("Write response in client thread");
-  } else if (n != response.size()) {
-    HelperRoutines::warning("Write response", "Bytes of response actually written in client thread don't match size of retrieved response");
+  const char * data = response.c_str();
+  const std::size_t size = strlen(data);
+  const char * buf_ptr = data;
+  int n, sum = 0;
+  bool writeFailed = false;
+
+  // write request
+  while ((sum < size) && !writeFailed) {
+    n = write(connection, buf_ptr+sum, ClientThread::out_buffer_size);
+    if (n == -1) { HelperRoutines::warning("Write response"); writeFailed = true; }
+    else if (n > 0) {
+      sum += n;
+    }
   }
 }
