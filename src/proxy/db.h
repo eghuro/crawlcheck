@@ -55,15 +55,19 @@ class Database{
   typedef std::size_t TransactionIdentifier;
 
   Database(const DatabaseConfiguration& dbc):config(dbc) {
+    HelperRoutines::info("New DB");
     try {
+      HelperRoutines::info("Get driver");
       driver = get_driver_instance();
+      HelperRoutines::info("Connect");
       con = driver->connect(dbc.getUri(), dbc.getUser(), dbc.getPass());
       con -> setSchema(dbc.getDb());
+      std::cout << "Connected" << std::endl;
     } catch (const sql::SQLException& ex) {
       std::ostringstream oss;
       oss << "Database connector: " << ex.what() << " (MySQL error code: " << ex.getErrorCode();
       oss << ", SQLState: " << ex.getSQLState() << " )";
-      HelperRoutines::error(oss.str());
+      HelperRoutines::warning(oss.str());
     }
   }
 
@@ -79,6 +83,7 @@ class Database{
     unsigned int count = 0;
     if (res->next()) {
       count = res->getUInt("id");
+      HelperRoutines::info(HelperRoutines::to_string(count));
     }
     delete stmt;
     delete res;
@@ -111,8 +116,8 @@ class Database{
         id = res->getUInt("id");
       }
       delete res;
-      delete stmt;
     }
+    delete stmt;
     con->setAutoCommit(1);
 
     return id;
@@ -145,6 +150,8 @@ class Database{
 
   std::pair<HttpParserResult, std::size_t> getClientRequest() {
     const std::string query("SELECT id, method, uri, rawRequest as raw FROM transaction WHERE verificationStatusId = 1 LIMIT 1");
+    HelperRoutines::info("Get client request");
+    HelperRoutines::info(query);
 
     con->setAutoCommit(0);
 
@@ -158,6 +165,12 @@ class Database{
       ret.setRaw(res->getString("raw"));
 
       id = res->getUInt("id");
+
+      HelperRoutines::info(res->getString("method"));
+      HelperRoutines::info(res->getString("uri"));
+      HelperRoutines::info(res->getString("raw"));
+      HelperRoutines::info(HelperRoutines::to_string(res->getUInt("id")));
+
       delete stmt;
       delete res;
 
@@ -256,6 +269,7 @@ class Database{
   }
 
   bool isRequestAvailable() {
+    HelperRoutines::info("Is request available?");
     return getClientRequestCount() > 0;
   }
 

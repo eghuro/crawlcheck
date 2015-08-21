@@ -74,47 +74,57 @@ class ServerThread {
  public:
   //RequestStorage will not be deleted here
   explicit ServerThread(RequestStorage * store, pthread_mutex_t * storeLock):
-      storage(store), storageLock(storeLock) {
+      storage(store), storageLock(storeLock), stopped(false) {
     HelperRoutines::info("ServerThread ctor");
 
     ServerWorkerParameters * parameters = new ServerWorkerParameters(store, storeLock);
     int e = pthread_create(&thread, NULL, ServerThread::serverThreadRoutine, parameters );
     if (e != 0) {
-      threadFailed = true;
       HelperRoutines::error(strerror(e));
     } else {
-      threadFailed = false;
       HelperRoutines::info("New server thread created");
     }
   }
 
   virtual ~ServerThread() {
     HelperRoutines::info("Destroying server thread");
-    if (!threadFailed) {
-      std::cout << "Join" << std::endl;
-      int e = pthread_join(thread, NULL);
-      if (e != 0) {
-        HelperRoutines::warning("Pthread_join", strerror(e));
-      } else {
-        HelperRoutines::info("Join successful");
-      }
-    } else {
-      HelperRoutines::info("Thread was not created");
+    if (!stopped) {
+      stop();
     }
 
     HelperRoutines::info("Leaving");
   }
 
+  void stop() {
+    HelperRoutines::info("ST stop");
+
+    // this should be shared
+    bool stop = false;
+    pthread_mutex_t stop_lock(PTHREAD_MUTEX_INITIALIZER);
+    pthread_cond_t stop_cond(PTHREAD_COND_INITIALIZER);
+
+    ThreadedHelperRoutines::lock(&stop_lock, "Lock stop lock");
+    while(!stop) {
+      pthread_cond_wait(&stop_cond, &stop_lock);
+    }
+    HelperRoutines::info("Join");
+    int e = pthread_join(thread, NULL);
+    if (e != 0) {
+      HelperRoutines::warning("Pthread_join", strerror(e));
+    } else {
+      HelperRoutines::info("Join successful");
+      stopped = true;
+    }
+    ThreadedHelperRoutines::unlock(&stop_lock, "Unlock stop lock");
+  }
+
   static void * serverThreadRoutine (void *);
 
-  /*void destroy() {
-    pthread_cancel(thread);
-  }*/
  private:
   RequestStorage * storage;
   pthread_mutex_t * storageLock;
   pthread_t thread;
-  bool threadFailed;
+  bool stopped;
   static std::size_t buffer_size;
 
   static void writeRequest(const RequestStorage::queue_type &, const int, RequestStorage *, pthread_mutex_t *);
@@ -130,39 +140,49 @@ class ServerAgent {
   //RequestStorage will not be deleted here
   ServerAgent(std::shared_ptr<ProxyConfiguration> conf,
       RequestStorage * store, pthread_mutex_t * storeLock):
-        threads(conf->getOutPoolCount()), configuration(conf),
+        threadCount(conf->getOutPoolCount()), configuration(conf),
         storage(store), storageLock(storeLock) {
     HelperRoutines::info("Creating ServerAgent");
     std::ostringstream oss;
     oss << "Threads: "<<conf->getOutPoolCount();
+
+    //threads = new ServerThread * [threadCount];
     HelperRoutines::info(oss.str());
   }
 
   virtual ~ServerAgent() {
+    HelperRoutines::info("Destroy SA");
+    //for (int i = 0; i < threadCount; i++) {
+    //  delete threads[i];
+    //}
+    //delete [] threads;
     HelperRoutines::info("Destroying ServerAgent");
   }
 
   void start() {
     HelperRoutines::info("Creating pool");
     // create pool
-    for (int i = 0; i < configuration->getOutPoolCount(); i++) {
+    for (int i = 0; i < threadCount; i++) {
        std::unique_ptr<ServerThread> p(new ServerThread(storage, storageLock));
        threads.push_back(std::move(p));
-       HelperRoutines::info("Created a thread");
+       //threads[i] = new ServerThread(storage, storageLock);
+       //HelperRoutines::info("Created a thread");
      }
   }
 
-  /*void stop() {
-    for (auto it = threads.begin(); it != threads.end(); ++it) {
-      (*it)->destroy();
+  void stop() {
+    for(int i = 0; i < threadCount; i++) {
+      threads[i]->stop();
     }
-  }*/
+  }
 
  private:
   std::shared_ptr<ProxyConfiguration> configuration;
   RequestStorage * storage;
   pthread_mutex_t * storageLock;
   std::vector<std::unique_ptr<ServerThread>> threads;
+  //ServerThread** threads;
+  std::size_t threadCount;
 
   // prevent copy
   ServerAgent(const ServerAgent&) = delete;

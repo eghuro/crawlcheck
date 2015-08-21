@@ -16,10 +16,11 @@ bool Bundle::stop = false;
 void * ClientThread::clientThreadRoutine(void * arg) {
   std::cout << "Client thread started" << std::endl;
   ClientThreadParameters * parameters = reinterpret_cast<ClientThreadParameters *>(arg);
+  std::cout << parameters << std::endl;
   RequestStorage* storage = parameters->getStorage();
 
   // pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
-  while (!Bundle::stop) {
+  while (true) {
     std::cout << "Working." << std::endl;
     // establish connection
     int connection = ClientThread::establishConnection(parameters);

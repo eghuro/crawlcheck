@@ -29,7 +29,7 @@ void * ServerThread::serverThreadRoutine (void * arg) {
   HelperRoutines::info("Got storage");
 
   // pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
-  while (parameters->doWork()) {
+  while (true){//parameters->doWork()) {
     //wait for request
     pthread_mutex_t * mutex = parameters->getRequestAvailabilityMutex();
     pthread_cond_t * condition = parameters->getRequestAvailabilityCondition();

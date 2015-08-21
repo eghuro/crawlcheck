@@ -29,69 +29,42 @@ class RequestStorage {
   typedef std::pair<std::size_t, HttpParserResult> map_type;
 
   explicit RequestStorage(DatabaseConfiguration conf, std::size_t serverPoolCount = 0) :
-      responseSubscribers(), subscribed(0), maxSubscribers(serverPoolCount), configuration(conf),
-      database_mutex(PTHREAD_MUTEX_INITIALIZER) {
+      responseSubscribers(), subscribed(0), maxSubscribers(serverPoolCount), configuration(conf) {
     HelperRoutines::info("New RequestStorage");
     reqSubscribers = new my_pair[serverPoolCount];
   }
   virtual ~RequestStorage() {
     HelperRoutines::info("Delete RequestStorage");
-    ThreadedHelperRoutines::unlock(&database_mutex, "Unlock database mutex");
     delete [] reqSubscribers;
   }
 
   bool responseAvailable(std::size_t trid) {
     HelperRoutines::info("RS responseAvailable");
-
-    bool available = false;
-    int e0 = pthread_mutex_lock(&database_mutex);
-    if (e0 == 0) {
-      Database database(configuration);
-      available = database.isResponseAvailable(trid);
-
-      int e1 = pthread_mutex_unlock(&database_mutex);
-      if (e1 != 0) {
-        HelperRoutines::warning(unlock, strerror(e1));
-      }
-    } else {
-      HelperRoutines::warning(lock, strerror(e0));
-    }
-    return available;
+    Database database(configuration);
+    return database.isResponseAvailable(trid);
   }
 
   std::size_t insertRequest(const HttpParserResult & result) {
     HelperRoutines::info("RS insert request");
     if (result.isRequest()) {
-      std::size_t id;
-      int e0 = pthread_mutex_lock(&database_mutex);
-      if (e0 == 0) {
-        Database database(configuration);
-        id = database.setClientRequest(result);
+      Database database(configuration);
+      std::size_t id = database.setClientRequest(result);
 
-        int e1 = pthread_mutex_unlock(&database_mutex);
-        if (e1 != 0) {
-          HelperRoutines::warning(unlock, strerror(e1));
-        }
-
-        for(int i = 0; i < subscribed; i++) {
-          int e2 = pthread_mutex_lock(reqSubscribers[i].mutex);
-          if (e2 == 0) {
-            int e3 = pthread_cond_broadcast(reqSubscribers[i].cond);
-            if (e3 != 0) {
-              HelperRoutines::warning("Cannot notify workers", strerror(e3));
-            }
-            int e4 = pthread_mutex_unlock(reqSubscribers[i].mutex);
-            if (e4 != 0) {
-              HelperRoutines::warning("Cannot unlock mutex for notify on request insertion", strerror(e4));
-            }
-          } else {
-            HelperRoutines::warning("Cannot lock mutex for notify on request insertion", strerror(e2));
+      for(int i = 0; i < subscribed; i++) {
+        int e2 = pthread_mutex_lock(reqSubscribers[i].mutex);
+        if (e2 == 0) {
+          int e3 = pthread_cond_broadcast(reqSubscribers[i].cond);
+          if (e3 != 0) {
+            HelperRoutines::warning("Cannot notify workers", strerror(e3));
           }
+          int e4 = pthread_mutex_unlock(reqSubscribers[i].mutex);
+          if (e4 != 0) {
+            HelperRoutines::warning("Cannot unlock mutex for notify on request insertion", strerror(e4));
+          }
+        } else {
+          HelperRoutines::warning("Cannot lock mutex for notify on request insertion", strerror(e2));
         }
-      } else {
-        HelperRoutines::warning(lock, strerror(e0));
       }
-
       return id;
     }
 
@@ -101,37 +74,26 @@ class RequestStorage {
   void insertResponse(const HttpParserResult & result, std::size_t transactionId) {
     HelperRoutines::info("RS insertResponse");
     if (result.isResponse()) {
-      int e0 = pthread_mutex_lock(&database_mutex);
-      if (e0 == 0) {
-        Database database(configuration);
-        database.setServerResponse(transactionId, result);
+      Database database(configuration);
+      database.setServerResponse(transactionId, result);
 
-        int e1 = pthread_mutex_unlock(&database_mutex);
-        if (e1 != 0) {
-          HelperRoutines::warning(unlock, strerror(e1));
-        }
+      for (auto it = responseSubscribers.find(transactionId);
+          it != responseSubscribers.end();
+          ++it) {
 
-        for (auto it = responseSubscribers.find(transactionId);
-            it != responseSubscribers.end();
-            ++it) {
-
-          int e2 = pthread_mutex_lock(it->second.first);
-          if (e2 == 0) {
-            int e3 = pthread_cond_broadcast(it->second.second);
-            if (e3 != 0) {
-              HelperRoutines::warning("Cannot notify workers", strerror(e3));
-            }
-            int e4 = pthread_mutex_unlock(it->second.first);
-            if (e4 != 0) {
-              HelperRoutines::warning("Cannot unlock mutex for notify on request insertion", strerror(e4));
-            }
-          } else {
-            HelperRoutines::warning("Cannot lock mutex for notify on request insertion", strerror(e2));
+        int e2 = pthread_mutex_lock(it->second.first);
+        if (e2 == 0) {
+          int e3 = pthread_cond_broadcast(it->second.second);
+          if (e3 != 0) {
+            HelperRoutines::warning("Cannot notify workers", strerror(e3));
           }
+          int e4 = pthread_mutex_unlock(it->second.first);
+          if (e4 != 0) {
+            HelperRoutines::warning("Cannot unlock mutex for notify on request insertion", strerror(e4));
+          }
+        } else {
+          HelperRoutines::warning("Cannot lock mutex for notify on request insertion", strerror(e2));
         }
-
-      } else {
-        HelperRoutines::warning(lock, strerror(e0));
       }
     }
   }
@@ -143,22 +105,8 @@ class RequestStorage {
   queue_type retrieveRequest() {
     HelperRoutines::info("RS retrieveRequest");
 
-    int e0 = pthread_mutex_lock(&database_mutex);
-    queue_type cr = queue_type(HttpParserResult(), -1);
-    if (e0 == 0) {
-      Database database(configuration);
-      auto cr_ = database.getClientRequest();
-
-      int e1 = pthread_mutex_unlock(&database_mutex);
-      if (e1 != 0) {
-        HelperRoutines::warning(unlock, strerror(e1));
-      }
-
-      return cr_;
-    } else {
-      HelperRoutines::warning(lock, strerror(e0));
-    }
-    return cr;
+    Database database(configuration);
+    return queue_type(); //database.getClientRequest();
   }
 
   /**
@@ -169,22 +117,15 @@ class RequestStorage {
     HelperRoutines::info("RS request available");
 
     bool available = false;
-    int e0 = pthread_mutex_lock(&database_mutex);
-    if (e0 == 0) {
-      try {
-        Database database(configuration);
-        available = database.isRequestAvailable();
-      } catch (const sql::InvalidInstanceException & ex) {
-        HelperRoutines::error("Database exception: ", ex.what());
-      }
 
-      int e1 = pthread_mutex_unlock(&database_mutex);
-      if (e1 != 0) {
-        HelperRoutines::warning(unlock, strerror(e1));
-      }
-    } else {
-      HelperRoutines::warning(lock, strerror(e0));
+    try {
+      Database database(configuration);
+      available = database.isRequestAvailable();
+    } catch (...) {
+      HelperRoutines::error("Database exception");
     }
+
+    HelperRoutines::info(HelperRoutines::to_string(available));
 
     return available;
   }
@@ -198,22 +139,14 @@ class RequestStorage {
   std::string retrieveResponse(std::size_t id) {
     HelperRoutines::info("RS response available");
 
-    int e0 = pthread_mutex_lock(&database_mutex);
-    if (e0 == 0) {
-      Database database(configuration);
-      auto response = database.getServerResponse(id);
+    Database database(configuration);
+    auto response = database.getServerResponse(id);
 
-      int e1 = pthread_mutex_unlock(&database_mutex);
-      if (e1 != 0) {
-        HelperRoutines::warning(unlock, strerror(e1));
-      }
 
-      if (response.isResponse()) {
-        return response.getRaw();
-      }
-    }  else {
-      HelperRoutines::warning(unlock, strerror(e0));
+    if (response.isResponse()) {
+      return response.getRaw();
     }
+
     return "";  // TODO(alex): exception?
   }
 
@@ -243,7 +176,6 @@ class RequestStorage {
   std::size_t subscribed;
   const std::size_t maxSubscribers;
 
-  pthread_mutex_t database_mutex;
   DatabaseConfiguration configuration;
   std::multimap<int, const std::pair<pthread_mutex_t *, pthread_cond_t *>> responseSubscribers;
 

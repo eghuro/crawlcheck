@@ -38,11 +38,9 @@ class Bundle {
 
 class ClientThreadParameters {
  public:
-  explicit ClientThreadParameters(RequestStorage * stor, pthread_mutex_t * storeLock) : sock(-1),
-  storage(stor), storageMutex(storeLock),
-  connectionAvailabilityMutex(PTHREAD_MUTEX_INITIALIZER),
-  responseAvailabilityMutex(PTHREAD_MUTEX_INITIALIZER),
-  connectionMutex(PTHREAD_MUTEX_INITIALIZER) {
+  ClientThreadParameters(RequestStorage * stor, pthread_mutex_t * storeLock) : sock(-1),
+  storage(stor), storageMutex(storeLock), connectionAvailabilityMutex(PTHREAD_MUTEX_INITIALIZER),
+  responseAvailabilityMutex(PTHREAD_MUTEX_INITIALIZER), connectionMutex(PTHREAD_MUTEX_INITIALIZER) {
     HelperRoutines::info("New ClientThreadParameters");
     int e = pthread_cond_init(&connectionAvailabilityCondition, NULL);
     if (e != 0) HelperRoutines::warning("Initialize condition variable (connection availability)", strerror(e));
@@ -108,7 +106,6 @@ class ClientThreadParameters {
 
  private:
   int sock;
-  bool work;
   pthread_mutex_t connectionAvailabilityMutex, responseAvailabilityMutex, connectionMutex;
   pthread_cond_t connectionAvailabilityCondition, responseAvailabilityCondition;
   RequestStorage * storage;
@@ -120,18 +117,12 @@ class ClientThreadParameters {
 
 class ClientThread {
  public:
-
-  explicit ClientThread(RequestStorage* storage, pthread_mutex_t * storageLock) : stopped(false) {
+  ClientThread(RequestStorage* storage, pthread_mutex_t * storageLock) :
+    parameters(nullptr), stopped(false) {
     HelperRoutines::info("New CT");
     parameters = new ClientThreadParameters(storage, storageLock);
-    int e = pthread_create(&thread, NULL, ClientThread::clientThreadRoutine, parameters);
-    if (e != 0) {
-      threadFailed = true;
-      HelperRoutines::error(strerror(e));
-    } else {
-      threadFailed = false;
-      HelperRoutines::info("new client thread created");
-    }
+    assert(parameters != nullptr);
+    start();
   }
 
   virtual ~ClientThread() {
@@ -139,14 +130,31 @@ class ClientThread {
     if (!stopped) {
       stop();
     }
+    delete parameters;
+  }
+
+  void start() {
+    int e = pthread_create(&thread, NULL, ClientThread::clientThreadRoutine, parameters);
+    if (e != 0) {
+      HelperRoutines::error(strerror(e));
+    } else {
+      HelperRoutines::info("new client thread created");
+    }
   }
 
   void stop() {
     HelperRoutines::info("CT stop");
 
-    ThreadedHelperRoutines::lock(&Bundle::stop_lock, "Lock stop lock");
-    while(!&Bundle::stop) {
-      pthread_cond_wait(Bundle::stop_cond, &Bundle::stop_lock);
+    // this should be shared
+    bool stop = false;
+    pthread_mutex_t stop_lock(PTHREAD_MUTEX_INITIALIZER);
+    pthread_cond_t stop_cond(PTHREAD_COND_INITIALIZER);
+    //int er = pthread_cond_init(stop_cond, NULL);
+    //if (er != 0) HelperRoutines::warning("Initialize condition variable (stop condition)", strerror(er));
+
+    ThreadedHelperRoutines::lock(&stop_lock, "Lock stop lock");
+    while(!stop) {
+      pthread_cond_wait(&stop_cond, &stop_lock);
     }
     HelperRoutines::info("Join");
     int e = pthread_join(thread, NULL);
@@ -156,17 +164,20 @@ class ClientThread {
       HelperRoutines::info("Join successful");
       stopped = true;
     }
-    ThreadedHelperRoutines::unlock(&Bundle::stop_lock, "Unlock stop lock");
+    ThreadedHelperRoutines::unlock(&stop_lock, "Unlock stop lock");
   }
 
   void setSocket(int fd) {
     HelperRoutines::info("Set socket");
-    std::ostringstream oss;
-    oss << "New: " << fd << std::endl;
-    HelperRoutines::info(oss.str());
+    HelperRoutines::info(HelperRoutines::to_string(fd));
+
+    std::cout << parameters->getConnection() << std::endl;
 
     pthread_mutex_t * cam = parameters->getConnectionAvailabilityMutex();
     pthread_mutex_t * cm = parameters->getConnectionMutex();
+
+    assert(cam != nullptr);
+    assert(cm != nullptr);
 
     ThreadedHelperRoutines::lock(cam, "CAM");
     ThreadedHelperRoutines::lock(cm, "CM");
@@ -177,15 +188,16 @@ class ClientThread {
     HelperRoutines::info("Done set socket");
 
   }
+
  private:
   pthread_t thread;
-  bool threadFailed, stopped;
-  static std::size_t buffer_size;
+  bool stopped;
+  ClientThreadParameters * parameters;
 
   ClientThread(const ClientThread&) = delete;
   ClientThread& operator=(const ClientThread&) = delete;
 
-  ClientThreadParameters * parameters;
+  static std::size_t buffer_size;
   static void * clientThreadRoutine(void * arg);
   static int establishConnection(ClientThreadParameters * parameters);
   static std::vector<std::size_t> request(ClientThreadParameters *, int);
@@ -194,32 +206,27 @@ class ClientThread {
 
 class ClientAgent{
 public:
-
-  static void handler(int sig) {
-    pthread_create(Bundle::stop_thread, NULL, &Bundle::stopThreadRoutine, NULL);
-
-  }
-
   ClientAgent(const std::shared_ptr<ProxyConfiguration> conf, RequestStorage* store, pthread_mutex_t * storeLock):
-    threadCount(conf->getInPoolCount()), configuration(conf), storage(store),storageLock(storeLock), socketFd(-1),
-    threads(conf->getOutPoolCount()) {
+    threadCount(conf->getInPoolCount()), configuration(conf), storage(store),storageLock(storeLock), socketFd(-1) {
     HelperRoutines::info("Creating ClientAgent");
     std::ostringstream oss;
     oss << "Threads: "<<conf->getInPoolCount();
     HelperRoutines::info(oss.str());
+
+    threads = new ClientThread * [threadCount];
+    for (int i = 0; i < threadCount; i++) {
+      threads[i] = nullptr;
+    }
   }
 
   virtual ~ClientAgent() {
     HelperRoutines::info("CA dtor");
-    threads.clear();
-    if (socketFd>=0) close(socketFd);
-
+    delete [] threads;
   }
 
   void start() {
     for (int i = 0; i < threadCount; i++) {
-       std::unique_ptr<ClientThread> p(new ClientThread(storage, storageLock));
-       threads.push_back(std::move(p));
+      threads[i] = new ClientThread(storage, storageLock);
        HelperRoutines::info("Created a thread");
      }
 
@@ -228,7 +235,8 @@ public:
     HelperRoutines::info(HelperRoutines::to_string(socketFd));
 
     for (int i = 0; i < threadCount; i++) {
-      // TODO threads[i]->setSocket(socketFd);
+      std::cout << "Set socket for thread "<< i <<std::endl;
+      threads[i]->setSocket(socketFd);
     }
 
     HelperRoutines::info("LISTEN");
@@ -237,10 +245,18 @@ public:
     }
   }
 
+  void stop() {
+    for (int i = 0; i < threadCount; i++) {
+      threads[i]->stop();
+    }
+
+    if (socketFd>=0) close(socketFd);
+  }
+
 private:
   const int threadCount;
   int socketFd;
-  std::vector<std::unique_ptr<ClientThread>> threads;
+  ClientThread ** threads;
   pthread_mutex_t * storageLock;
   const std::shared_ptr<ProxyConfiguration> configuration;
   RequestStorage * storage;
@@ -264,7 +280,6 @@ private:
     std::string p(configuration->getInPortString());
     const char * port = p.c_str();
     if (0 != getaddrinfo(NULL, port, &hi, &r)) {
-      freeaddrinfo(r);
       HelperRoutines::error("ERROR getaddrinfo");
     }
     return r;
@@ -296,7 +311,4 @@ private:
     return -1;
   }
 };
-
-
-
 #endif  // SRC_PROXY_CLIENTAGENT_H_

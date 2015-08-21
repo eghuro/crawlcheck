@@ -48,13 +48,15 @@ int main(int argc, char ** argv) {
 
         //zablokovat signaly: SIGHUP, SIGINT, <SIGTERM>, mozna SIGQUIT, SIGABRT
         //forky
-        int pid0, pid1;
+        /*int pid0, pid1;
         switch (pid0 = fork()) {
         case -1: HelperRoutines::error("Fork server"); break;
         case 0: // child
           HelperRoutines::info("ServerAgent");
           HelperRoutines::info("Start SA");
           sa->start();
+          sa->stop();
+          delete sa;
           break;
         default:
           switch (pid1 = fork()) {
@@ -62,16 +64,10 @@ int main(int argc, char ** argv) {
           case 0: //child
             HelperRoutines::info("ClientAgent");
 
-            e = pthread_cond_init(Bundle::stop_cond, NULL);
-            if (e != 0) HelperRoutines::warning("Initialize condition variable (stop condition)", strerror(e));
-
-            struct sigaction act_ca;
-            bzero(&act_ca, sizeof(act_ca));
-            act_ca.sa_handler = ClientAgent::handler;
-            sigaction(SIGTERM, &act_ca, NULL);
-
             HelperRoutines::info("Start CA");
             ca->start();
+            ca->stop();
+            delete ca;
             break;
           default: //parent
             HelperRoutines::info("Service process");
@@ -81,14 +77,18 @@ int main(int argc, char ** argv) {
 
             wait(NULL); // wait for all children processes to finish
             HelperRoutines::info("Child processes finished, cleaning up");
-            delete ca;
-            delete sa;
+            //delete ca;
+            //delete sa;
             pthread_mutex_destroy(rs_lock);
             delete rs;
             return EXIT_SUCCESS;
             }
           break;
-        }
+        }*/
+        ca->start();
+        ca->stop();
+        delete ca;
+        delete sa;
       } else {
         return EXIT_FAILURE;
       }

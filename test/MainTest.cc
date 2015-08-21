@@ -157,7 +157,7 @@ TEST(ClientAgent, CreateClientAgentNoThreads) {
   dc.setUser("test");
   dc.setDb("crawlcheck");
 
-  std::shared_ptr<ProxyConfiguration> pconf(std::make_shared<ProxyConfiguration>(pc))
+  std::shared_ptr<ProxyConfiguration> pconf(std::make_shared<ProxyConfiguration>(pc));
   RequestStorage * rs(new RequestStorage(dc));
   pthread_mutex_t rs_lock(PTHREAD_MUTEX_INITIALIZER);
 
@@ -241,5 +241,18 @@ TEST(ClientAgent, CreateClientAgentNegativeThreads) {
     break;
   }
 }*/
+
+TEST(ClientThread, SetSocket) {
+  DatabaseConfiguration dc;
+  dc.setUri("localhost");
+  dc.setUser("test");
+  dc.setDb("crawlcheck");
+
+  RequestStorage * rs(new RequestStorage(dc));
+  pthread_mutex_t rs_lock(PTHREAD_MUTEX_INITIALIZER);
+  std::unique_ptr<ClientThread> p(new ClientThread(rs, &rs_lock));
+  p->setSocket(3);
+  delete rs;
+}
 
 
