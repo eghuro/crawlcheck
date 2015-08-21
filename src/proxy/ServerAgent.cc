@@ -11,7 +11,8 @@
 #include "./RequestStorage.h"
 #include "ThreadedHelperRoutines.h"
 
-std::size_t ServerThread::buffer_size = 1000;
+const std::size_t ServerThread::in_buffer_size = 1000;
+const std::size_t ServerThread::out_buffer_size = 100;
 
 void * ServerThread::serverThreadRoutine (void * arg) {
   HelperRoutines::info("Server thread routine");
@@ -58,14 +59,19 @@ void * ServerThread::serverThreadRoutine (void * arg) {
     std::string host = std::get<0>(request).getHost();
     int port = std::get<0>(request).getPort();
 
+    HelperRoutines::info(host);
+    HelperRoutines::info(HelperRoutines::to_string(port));
+
     //socket, connect
     int fd = ServerThread::connection(host, port);
+
+    HelperRoutines::info(HelperRoutines::to_string(fd));
 
     //write request
     ServerThread::writeRequest(request, fd, storage, storageLock);
 
     if (close(fd) != 0) HelperRoutines::warning("Close connection in server thread");
-      else HelperRoutines::info(".. connection closed .. ");
+    else HelperRoutines::info(".. connection closed .. ");
   }
   delete parameters;
 }
@@ -74,12 +80,28 @@ void ServerThread::writeRequest(const RequestStorage::queue_type & request, cons
     RequestStorage* storage, pthread_mutex_t * storageLock) {
   std::string raw_request = std::get<0>(request).getRaw();
   auto id = std::get<1>(request);
-  if (write(fd, raw_request.c_str(), raw_request.size()) != -1) {
+  const char * data = raw_request.c_str();
+  const std::size_t size = strlen(data);
+  const char * buf_ptr = data;
+  int n, sum = 0;
+  bool writeFailed = false;
+
+  // write request
+  while ((sum < size) && !writeFailed) {
+    n = write(fd, buf_ptr+sum, ServerThread::out_buffer_size);
+    if (n == -1) { HelperRoutines::warning("Write request"); writeFailed = true; }
+    else if (n > 0) {
+      sum += n;
+    }
+  }
+
+  // read response
+  if (!writeFailed) {
   // read response
     HttpParser parser;
-    char buf[ServerThread::buffer_size];
+    char buf[ServerThread::in_buffer_size];
     int n;
-    while ((n = read(fd, buf, ServerThread::buffer_size)) != 0) {
+    while ((n = read(fd, buf, ServerThread::in_buffer_size)) != 0) {
       if (n == -1) {
         HelperRoutines::warning("READ response");
       } else {
@@ -106,9 +128,11 @@ int ServerThread::connection (const std::string & host, const int port) {
   }
   int fd = -1;
   for (rorig = r; r != NULL; r=r->ai_next) {
+    if (r->ai_family != AF_INET && r->ai_family != AF_INET6)
+          continue;
     fd = socket(r->ai_family, r->ai_socktype, r->ai_protocol);
     if (fd != -1) {
-      if (connect(fd, (struct sockaddr *)r->ai_addr, r->ai_addrlen) == -1) {
+      if (connect(fd, (struct sockaddr *)r->ai_addr, r->ai_addrlen) == 0) {
         return fd;
       }
     } else {

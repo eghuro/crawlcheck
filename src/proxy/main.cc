@@ -48,7 +48,7 @@ int main(int argc, char ** argv) {
 
         //zablokovat signaly: SIGHUP, SIGINT, <SIGTERM>, mozna SIGQUIT, SIGABRT
         //forky
-        /*int pid0, pid1;
+        int pid0, pid1;
         switch (pid0 = fork()) {
         case -1: HelperRoutines::error("Fork server"); break;
         case 0: // child
@@ -77,18 +77,14 @@ int main(int argc, char ** argv) {
 
             wait(NULL); // wait for all children processes to finish
             HelperRoutines::info("Child processes finished, cleaning up");
-            //delete ca;
-            //delete sa;
+            delete ca;
+            delete sa;
             pthread_mutex_destroy(rs_lock);
             delete rs;
             return EXIT_SUCCESS;
             }
           break;
-        }*/
-        ca->start();
-        ca->stop();
-        delete ca;
-        delete sa;
+        }
       } else {
         return EXIT_FAILURE;
       }

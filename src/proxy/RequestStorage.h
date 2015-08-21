@@ -40,15 +40,28 @@ class RequestStorage {
 
   bool responseAvailable(std::size_t trid) {
     HelperRoutines::info("RS responseAvailable");
-    Database database(configuration);
-    return database.isResponseAvailable(trid);
+    try {
+      Database database(configuration);
+      return database.isResponseAvailable(trid);
+    } catch (const sql::SQLException & ex) {
+      HelperRoutines::warning(ex.what());
+    } catch (...) {
+      HelperRoutines::error("Database exception");
+    }
   }
 
   std::size_t insertRequest(const HttpParserResult & result) {
     HelperRoutines::info("RS insert request");
+    std::size_t id;
     if (result.isRequest()) {
-      Database database(configuration);
-      std::size_t id = database.setClientRequest(result);
+      try {
+        Database database(configuration);
+        id = database.setClientRequest(result);
+      } catch (const sql::SQLException & ex) {
+        HelperRoutines::warning(ex.what());
+      } catch (...) {
+        HelperRoutines::error("Database exception");
+      }
 
       for(int i = 0; i < subscribed; i++) {
         int e2 = pthread_mutex_lock(reqSubscribers[i].mutex);
@@ -74,8 +87,14 @@ class RequestStorage {
   void insertResponse(const HttpParserResult & result, std::size_t transactionId) {
     HelperRoutines::info("RS insertResponse");
     if (result.isResponse()) {
-      Database database(configuration);
-      database.setServerResponse(transactionId, result);
+      try {
+        Database database(configuration);
+        database.setServerResponse(transactionId, result);
+      } catch (const sql::SQLException & ex) {
+        HelperRoutines::warning(ex.what());
+      } catch (...) {
+        HelperRoutines::error("Database exception");
+      }
 
       for (auto it = responseSubscribers.find(transactionId);
           it != responseSubscribers.end();
@@ -105,8 +124,14 @@ class RequestStorage {
   queue_type retrieveRequest() {
     HelperRoutines::info("RS retrieveRequest");
 
-    Database database(configuration);
-    return queue_type(); //database.getClientRequest();
+    try {
+      Database database(configuration);
+      return database.getClientRequest();
+    } catch (const sql::SQLException & ex) {
+      HelperRoutines::warning(ex.what());
+    } catch (...) {
+      HelperRoutines::error("Database exception");
+    }
   }
 
   /**
@@ -121,6 +146,8 @@ class RequestStorage {
     try {
       Database database(configuration);
       available = database.isRequestAvailable();
+    } catch (const sql::SQLException & ex) {
+      HelperRoutines::warning(ex.what());
     } catch (...) {
       HelperRoutines::error("Database exception");
     }
@@ -139,12 +166,17 @@ class RequestStorage {
   std::string retrieveResponse(std::size_t id) {
     HelperRoutines::info("RS response available");
 
-    Database database(configuration);
-    auto response = database.getServerResponse(id);
+    try {
+      Database database(configuration);
+      auto response = database.getServerResponse(id);
 
-
-    if (response.isResponse()) {
-      return response.getRaw();
+      if (response.isResponse()) {
+        return response.getRaw();
+      }
+    } catch (const sql::SQLException & ex) {
+      HelperRoutines::warning(ex.what());
+    } catch (...) {
+      HelperRoutines::error("Database exception");
     }
 
     return "";  // TODO(alex): exception?

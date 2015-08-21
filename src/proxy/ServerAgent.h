@@ -125,7 +125,8 @@ class ServerThread {
   pthread_mutex_t * storageLock;
   pthread_t thread;
   bool stopped;
-  static std::size_t buffer_size;
+  static const std::size_t in_buffer_size;
+  static const std::size_t out_buffer_size;
 
   static void writeRequest(const RequestStorage::queue_type &, const int, RequestStorage *, pthread_mutex_t *);
   static int connection (const std::string &, const int);

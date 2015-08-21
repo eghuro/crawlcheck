@@ -209,6 +209,7 @@ class Database{
 
     sql::mysql::MySQL_Connection * mysql_conn = dynamic_cast<sql::mysql::MySQL_Connection*>(con);
     std::string escapedContent = mysql_conn->escapeString( response.getContent() );
+    std::string escapedRaw = mysql_conn->escapeString(response.getRaw());
 
     std::ostringstream oss;
     oss << "UPDATE transaction SET responseStatus = ";
@@ -216,7 +217,9 @@ class Database{
     oss << ", contentType = \"" << response.getContentType() << "\", ";
     oss <<  "content = \"" << escapedContent << "\", ";
     oss << "verificationStatusId = 3, rawResponse = \"";
-    oss << response.getRaw() <<"\" WHERE id = " << tid;
+    oss << escapedRaw <<"\" WHERE id = " << tid;
+
+    std::cout << oss.str() << std::endl;
 
     auto *stmt = con->createStatement();
     stmt->executeUpdate(oss.str());
