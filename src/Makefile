@@ -27,7 +27,7 @@ ProxyConfiguration.o : proxy/ProxyConfiguration.cc
 RequestStorage.o : proxy/RequestStorage.cc
 	$(CC) $(CFLAGS) ${TFLAGS} -l mysqlcppconn -o $@ $<
 proxy.o : proxy/main.cc
-	$(CC) $(CFLAGS) $(XMLFLAGS) -l mysqlcppconn -o $@ $<
+	$(CC) $(CFLAGS) $(XMLFLAGS) ${TFLALGS} -l mysqlcppconn -o $@ $<
 
 proxy/ClientAgent.cc : proxy/ClientAgent.h proxy/RequestStorage.h proxy/HttpParser.h proxy/HelperRoutines.h proxy/ProxyConfiguration.h
 proxy/ServerAgent.cc : proxy/ServerAgent.h proxy/RequestStorage.h proxy/ProxyConfiguration.h

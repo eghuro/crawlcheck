@@ -10,6 +10,7 @@
 #include <netdb.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <poll.h>
 #include <memory>
 #include <vector>
 #include <cassert>
@@ -145,17 +146,7 @@ class ClientThread {
   void stop() {
     HelperRoutines::info("CT stop");
 
-    // this should be shared
-    bool stop = false;
-    pthread_mutex_t stop_lock(PTHREAD_MUTEX_INITIALIZER);
-    pthread_cond_t stop_cond(PTHREAD_COND_INITIALIZER);
-    //int er = pthread_cond_init(stop_cond, NULL);
-    //if (er != 0) HelperRoutines::warning("Initialize condition variable (stop condition)", strerror(er));
-
-    ThreadedHelperRoutines::lock(&stop_lock, "Lock stop lock");
-    while(!stop) {
-      pthread_cond_wait(&stop_cond, &stop_lock);
-    }
+    wait4stop();
     HelperRoutines::info("Join");
     int e = pthread_join(thread, NULL);
     if (e != 0) {
@@ -164,7 +155,6 @@ class ClientThread {
       HelperRoutines::info("Join successful");
       stopped = true;
     }
-    ThreadedHelperRoutines::unlock(&stop_lock, "Unlock stop lock");
   }
 
   void setSocket(int fd) {
@@ -197,12 +187,53 @@ class ClientThread {
   ClientThread(const ClientThread&) = delete;
   ClientThread& operator=(const ClientThread&) = delete;
 
+  void wait4stop() {
+    /*// this should be shared
+    bool stop = false;
+    pthread_mutex_t stop_lock(PTHREAD_MUTEX_INITIALIZER);
+    pthread_cond_t stop_cond(PTHREAD_COND_INITIALIZER);
+
+    ThreadedHelperRoutines::lock(&stop_lock, "Lock stop lock");
+    while(!stop) {
+      pthread_cond_wait(&stop_cond, &stop_lock);
+    }
+    ThreadedHelperRoutines::unlock(&stop_lock, "Unlock stop lock"); // after join ...
+    */
+    while(true) {
+      poll(NULL, 0, 300);
+    }
+  }
+
+  static void wait4connection(ClientThreadParameters * parameters) {
+    //this must be locked before (mutex) and unlocked after
+    /*while(!parameters->connectionAvailable()) {
+        pthread_cond_wait(condition, mutex);
+     }*/
+    //no mutexes needed here
+    while(!parameters->connectionAvailable()) {
+      poll(NULL, 0, 30);
+    }
+  }
+
+  static void wait4response(RequestStorage * storage, std::size_t transactionId){
+    //this must be locked before and unlocked after
+    /*while (!storage->responseAvailable(transactionIds[0])) {
+        pthread_cond_wait(response_available, response_mutex);
+      }*/
+    HelperRoutines::info("Wait for response");
+    HelperRoutines::info(HelperRoutines::to_string(transactionId));
+    while(!storage->responseAvailable(transactionId)) {
+      poll(NULL, 0, 10);
+    }
+    HelperRoutines::info("Got response");
+  }
+
   static std::size_t in_buffer_size;
   static std::size_t out_buffer_size;
   static void * clientThreadRoutine(void * arg);
   static int establishConnection(ClientThreadParameters * parameters);
-  static std::vector<std::size_t> request(ClientThreadParameters *, int);
-  static void response(const std::vector<std::size_t> &, const int, ClientThreadParameters *);
+  static std::size_t request(ClientThreadParameters *, int);
+  static void response(const std::size_t &, const int, ClientThreadParameters *);
 };
 
 class ClientAgent{

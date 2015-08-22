@@ -335,7 +335,7 @@ class HttpParser {
   virtual ~HttpParser() {}
 
   HttpParserResult parse(const std::string & chunk) {
-    std::cout << "Parser: "<<chunk << std::endl;
+    std::cout << "Parser" << std::endl;
     bool guessRequest = false, guessResponse = false;
     switch (chunk[0]){
     case 'G':if (chunk.substr(0,3) == "GET") guessRequest = true; break;

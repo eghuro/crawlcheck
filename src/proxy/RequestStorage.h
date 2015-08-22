@@ -39,7 +39,7 @@ class RequestStorage {
   }
 
   bool responseAvailable(std::size_t trid) {
-    HelperRoutines::info("RS responseAvailable");
+    //HelperRoutines::info("RS responseAvailable");
     try {
       Database database(configuration);
       return database.isResponseAvailable(trid);
@@ -63,21 +63,8 @@ class RequestStorage {
         HelperRoutines::error("Database exception");
       }
 
-      for(int i = 0; i < subscribed; i++) {
-        int e2 = pthread_mutex_lock(reqSubscribers[i].mutex);
-        if (e2 == 0) {
-          int e3 = pthread_cond_broadcast(reqSubscribers[i].cond);
-          if (e3 != 0) {
-            HelperRoutines::warning("Cannot notify workers", strerror(e3));
-          }
-          int e4 = pthread_mutex_unlock(reqSubscribers[i].mutex);
-          if (e4 != 0) {
-            HelperRoutines::warning("Cannot unlock mutex for notify on request insertion", strerror(e4));
-          }
-        } else {
-          HelperRoutines::warning("Cannot lock mutex for notify on request insertion", strerror(e2));
-        }
-      }
+      notifyRequest();
+
       return id;
     }
 
@@ -96,24 +83,7 @@ class RequestStorage {
         HelperRoutines::error("Database exception");
       }
 
-      for (auto it = responseSubscribers.find(transactionId);
-          it != responseSubscribers.end();
-          ++it) {
-
-        int e2 = pthread_mutex_lock(it->second.first);
-        if (e2 == 0) {
-          int e3 = pthread_cond_broadcast(it->second.second);
-          if (e3 != 0) {
-            HelperRoutines::warning("Cannot notify workers", strerror(e3));
-          }
-          int e4 = pthread_mutex_unlock(it->second.first);
-          if (e4 != 0) {
-            HelperRoutines::warning("Cannot unlock mutex for notify on request insertion", strerror(e4));
-          }
-        } else {
-          HelperRoutines::warning("Cannot lock mutex for notify on request insertion", strerror(e2));
-        }
-      }
+      notifyResponse(transactionId);
     }
   }
 
@@ -139,7 +109,7 @@ class RequestStorage {
    * @return the request storage is not empty
    */
   bool requestAvailable() {
-    HelperRoutines::info("RS request available");
+   // HelperRoutines::info("RS request available");
 
     bool available = false;
 
@@ -152,7 +122,7 @@ class RequestStorage {
       HelperRoutines::error("Database exception");
     }
 
-    HelperRoutines::info(HelperRoutines::to_string(available));
+    //HelperRoutines::info(HelperRoutines::to_string(available));
 
     return available;
   }
@@ -196,6 +166,38 @@ class RequestStorage {
       reqSubscribers[subscribed].mutex = mutex;
       reqSubscribers[subscribed].cond = cond;
       subscribed++;
+    }
+  }
+
+  void notifyRequest() {
+    for(int i = 0; i < subscribed; i++) {
+      ThreadedHelperRoutines::lock(reqSubscribers[i].mutex, "Notify on request insertion");
+      int e3 = pthread_cond_broadcast(reqSubscribers[i].cond);
+      if (e3 != 0) {
+        HelperRoutines::warning("Cannot notify workers", strerror(e3));
+      }
+      ThreadedHelperRoutines::unlock(reqSubscribers[i].mutex, "Notify on request insertion");
+    }
+  }
+
+  void notifyResponse(std::size_t transactionId) {
+    for (auto it = responseSubscribers.find(transactionId);
+        it != responseSubscribers.end();
+        ++it) {
+
+      int e2 = pthread_mutex_lock(it->second.first);
+      if (e2 == 0) {
+        int e3 = pthread_cond_broadcast(it->second.second);
+        if (e3 != 0) {
+          HelperRoutines::warning("Cannot notify workers", strerror(e3));
+        }
+        int e4 = pthread_mutex_unlock(it->second.first);
+        if (e4 != 0) {
+          HelperRoutines::warning("Cannot unlock mutex for notify on request insertion", strerror(e4));
+        }
+      } else {
+        HelperRoutines::warning("Cannot lock mutex for notify on request insertion", strerror(e2));
+      }
     }
   }
 

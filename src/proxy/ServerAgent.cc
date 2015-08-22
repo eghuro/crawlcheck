@@ -2,6 +2,7 @@
 #include "ServerAgent.h"
 #include <unistd.h>
 #include <pthread.h>
+#include <poll.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -29,33 +30,26 @@ void * ServerThread::serverThreadRoutine (void * arg) {
   assert(storage != nullptr);
   HelperRoutines::info("Got storage");
 
-  // pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
+  //wait for request
+  //pthread_mutex_t * mutex = parameters->getRequestAvailabilityMutex();
+  //pthread_cond_t * condition = parameters->getRequestAvailabilityCondition();
+  //ThreadedHelperRoutines::lock(storageLock, "Storage lock");
+  //storage->subscribeWait4Request(mutex, condition);
+  //ThreadedHelperRoutines::unlock(storageLock, "Storage lock");
+
   while (true){//parameters->doWork()) {
-    //wait for request
-    pthread_mutex_t * mutex = parameters->getRequestAvailabilityMutex();
-    pthread_cond_t * condition = parameters->getRequestAvailabilityCondition();
-
-    assert (storage != nullptr);
-    assert (storage != NULL);
-
-    ThreadedHelperRoutines::lock(storageLock, "Storage lock");
-    storage->subscribeWait4Request(mutex, condition);
-    ThreadedHelperRoutines::unlock(storageLock, "Storage lock");
-
-    ThreadedHelperRoutines::lock(mutex, "Request availability mutex");
-
+    // wait for request
+    //ThreadedHelperRoutines::lock(mutex, "Request availability mutex");
     HelperRoutines::info("Waiting for request");
-    while(!storage->requestAvailable()) {
-      pthread_cond_wait(condition, mutex);
-    }
+    wait4request(storage); //nezamcena storage
     HelperRoutines::info("Retrieving request");
     ThreadedHelperRoutines::lock(storageLock, "Storage lock");
     auto request = storage->retrieveRequest();
     ThreadedHelperRoutines::unlock(storageLock, "Storage lock");
 
-    ThreadedHelperRoutines::unlock(mutex, "Request availability mutex");
+    //ThreadedHelperRoutines::unlock(mutex, "Request availability mutex");
 
-    assert(std::get<0>(request).isRequest());
+    //assert(std::get<0>(request).isRequest());
     std::string host = std::get<0>(request).getHost();
     int port = std::get<0>(request).getPort();
 
@@ -99,19 +93,27 @@ void ServerThread::writeRequest(const RequestStorage::queue_type & request, cons
   if (!writeFailed) {
   // read response
     HttpParser parser;
+    std::stringstream oss;
     char buf[ServerThread::in_buffer_size];
+    bool readFailed = false;
     int n;
     while ((n = read(fd, buf, ServerThread::in_buffer_size)) != 0) {
       if (n == -1) {
+        readFailed = true;
         HelperRoutines::warning("READ response");
       } else {
-        HttpParserResult result = parser.parse(std::string(buf, n));
-        if (result.isResponse()) {
-  // push DB
-          ThreadedHelperRoutines::lock(storageLock, "Storage lock");
-          (*storage).insertResponse(result, id);
-          ThreadedHelperRoutines::unlock(storageLock, "Storage lock");
-        }
+        oss<<buf;
+      }
+    }
+
+    if (!readFailed) {
+      std::cout << oss.str();
+      HttpParserResult result = parser.parse(oss.str());
+      if (result.isResponse()) {
+// push DB
+        ThreadedHelperRoutines::lock(storageLock, "Storage lock");
+        (*storage).insertResponse(result, id);
+        ThreadedHelperRoutines::unlock(storageLock, "Storage lock");
       }
     }
   }
@@ -123,7 +125,7 @@ int ServerThread::connection (const std::string & host, const int port) {
   hi.ai_family = AF_UNSPEC;
   hi.ai_socktype = SOCK_STREAM;
   if (0 != getaddrinfo(host.c_str(), HelperRoutines::to_string(port).c_str(), &hi, &r)) {
-    freeaddrinfo(r);
+    //freeaddrinfo(r);
     HelperRoutines::error("ERROR getaddrinfo");
   }
   int fd = -1;
@@ -139,7 +141,7 @@ int ServerThread::connection (const std::string & host, const int port) {
       HelperRoutines::warning("Opening socket failed");
     }
   }
-  freeaddrinfo(rorig);
+  //freeaddrinfo(rorig);
   HelperRoutines::error("ERROR connecting");
   return -1;
 }

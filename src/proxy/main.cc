@@ -3,6 +3,8 @@
 #include <string.h>
 #include <signal.h>
 #include <sys/wait.h>
+#include <pthread.h>
+#include <poll.h>
 #include <cstdlib>
 #include <memory>
 #include <libxml++/libxml++.h>
@@ -11,6 +13,17 @@
 #include "./RequestStorage.h"
 #include "./ServerAgent.h"
 #include "./ClientAgent.h"
+
+void * dbpollroutine (void * arg) {
+  RequestStorage * rs = (RequestStorage *)(arg);
+
+  while(true) {
+    if (rs->requestAvailable()) {
+      rs->notifyRequest();
+    }
+    poll(NULL, 0, 120);
+  }
+}
 
 int main(int argc, char ** argv) {
   if (argc == 2) {  // jmeno konfigurak
@@ -26,7 +39,8 @@ int main(int argc, char ** argv) {
 
         std::shared_ptr<ProxyConfiguration> pconf(std::make_shared<ProxyConfiguration>(parser.getProxyConfiguration()));
         HelperRoutines::info("Parsed configuration");
-        HelperRoutines::info("Created db, creating RequestStorage sharedptr");
+        HelperRoutines::info("Creating RequestStorage sharedptr");
+        pthread_t dbPollThread;
         RequestStorage* rs = new RequestStorage(parser.getDatabaseConfiguration(), static_cast<std::size_t>(pconf->getOutPoolCount()));
 
         HelperRoutines::info("Created RequestStorage, creating RS lock");
@@ -70,6 +84,8 @@ int main(int argc, char ** argv) {
           default: //parent
             HelperRoutines::info("Service process");
 
+            pthread_create(&dbPollThread, NULL, dbpollroutine, rs);
+
             //odblokovat signaly
             //zachytit signaly (viz vyse)
 
@@ -77,6 +93,7 @@ int main(int argc, char ** argv) {
             HelperRoutines::info("Child processes finished, cleaning up");
             delete ca;
             delete sa;
+            pthread_cancel(dbPollThread);
             pthread_mutex_destroy(rs_lock);
             delete rs;
             return EXIT_SUCCESS;

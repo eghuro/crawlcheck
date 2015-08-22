@@ -3,6 +3,7 @@
 #define SRC_PROXY_SERVERAGENT_H_
 
 #include <pthread.h>
+#include <poll.h>
 #include <memory>
 #include <string>
 #include <vector>
@@ -130,6 +131,15 @@ class ServerThread {
 
   static void writeRequest(const RequestStorage::queue_type &, const int, RequestStorage *, pthread_mutex_t *);
   static int connection (const std::string &, const int);
+
+  static void wait4request(RequestStorage * storage) {
+    /*while(!storage->requestAvailable()) {
+      pthread_cond_wait(condition, mutex);
+    }*/
+    while(!storage->requestAvailable()) {
+      poll(NULL, 0, 10);
+    }
+  }
 
   // prevent copy
   ServerThread(const ServerThread&) = delete;
