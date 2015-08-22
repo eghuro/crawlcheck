@@ -1,0 +1,23 @@
+<h1>Crawlcheck</h1>
+<h2>Recorded transactions</h2>
+
+<table border="1">
+  <tr>
+    <th>Method</th>
+    <th>URI</th>
+    <th>Status</th>
+    <th>Content type</th>
+    <th>Origin</th>
+  </tr>
+
+  <% @transactions.each do |record| %>
+    <% transactionStatus = @status.find(record.verificationStatusId) %>
+    <tr>
+      <td><%= record.method %></td>
+      <td><%= record.uri %></td>
+      <td><% if transactionStatus.id == 5 %><a href="/finding/<%= record.id %>"><%= transactionStatus.status %></a> <% else %> <%= transactionStatus.status %> <% end %></td>
+      <td><a href="/transaction/<%= record.id %>"><%= record.contentType %></a></td>
+      <td><%= record.origin %></td>
+    </tr>
+  <% end %>
+</table>
