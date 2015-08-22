@@ -13,19 +13,19 @@ class Acceptor:
         self.uriDefault = dict()
 
     def accept(self, pluginId, uri):
-        res = pluginAcceptUri(pluginId, uri)
+        res = self.pluginAcceptUri(pluginId, uri)
         if res == Resolution.yes:
             return True
         elif res == Resolution.no:
             return False
         else:
-	    res = pluginAcceptUriDefault(pluginId)
+	    res = self.pluginAcceptUriDefault(pluginId)
             if res == Resolution.yes:
                 return True
             elif res == Resolution.no:
                 return False
             else:
-                res = defaultAcceptUri(uri)
+                res = self.defaultAcceptUri(uri)
                 if res == Resolution.yes:
                     return True
                 elif res == Resolution.no:
@@ -37,7 +37,7 @@ class Acceptor:
         if pluginId in self.pluginUri:
             uris = self.pluginUri[pluginId]
             if uri in uris:
-                return _getResolution(uris[uri])
+                return self._getResolution(uris[uri])
             else:
                 return Resolution.none
         else:
@@ -45,13 +45,13 @@ class Acceptor:
 
     def pluginAcceptUriDefault(self, pluginId):
         if pluginId in self.pluginUriDefault:
-            return _getResolution(self.pluginUriDefault[pluginId])
+            return self._getResolution(self.pluginUriDefault[pluginId])
         else:
             return Resolution.none
 
     def defaultAcceptUri(self, uri):
         if uri in self.uriDefault:
-            return _getResolution(self.uriDefault[uri])
+            return self._getResolution(self.uriDefault[uri])
         else:
             return Resolution.none
 
