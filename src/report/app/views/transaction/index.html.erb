@@ -11,10 +11,11 @@
   </tr>
 
   <% @transactions.each do |record| %>
+    <% transactionStatus = @status.find(record.verificationStatusId) %>
     <tr>
       <td><%= record.method %></td>
       <td><%= record.uri %></td>
-      <td><a href="/finding/<%= record.id %>"><%= @status.find(record.verificationStatusId).status %></a></td>
+      <td><% if transactionStatus.id == 5 %><a href="/finding/<%= record.id %>"><%= transactionStatus.status %></a> <% else %> <%= transactionStatus.status %> <% end %></td>
       <td><a href="/transaction/<%= record.id %>"><%= record.contentType %></a></td>
       <td><%= record.origin %></td>
     </tr>

@@ -28,7 +28,7 @@
     <th>Evidence</th>
   </tr>
 
-<% if @defects.size > 0 %>
+<% if @defects and @defects.size > 0 %>
   <% @defects.each do |defect| %>
     <tr>
       <td><%= defect.type%></td>
@@ -49,7 +49,7 @@
     <th>Processed</th>
   </tr>
 
-<%if @links.size > 0%>
+<%if @links and @links.size > 0%>
   <% @links.each do |link| %>
     <tr>
       <td><%= link.toUri %></td>
