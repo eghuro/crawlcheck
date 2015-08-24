@@ -192,14 +192,14 @@ class DBAPI:
                      '"' + self.con.escape_string(toUri) + '", '+str(reqId)+')')
             self.cursor.execute(query)
             self.con.commit()
-            return True
+            return reqId
 
         except mdb.Error, e:
             if self.con:
                 self.con.rollback()
             print "Error %d: %s" % (e.args[0], e.args[1])
 
-        return False
+        return None
 
     def getFinishedStatusId(self):
         return 5
@@ -231,3 +231,16 @@ class DBAPI:
 
     def getRequest(self, toUri):
         return "GET "+toUri+" HTTP/1.1\r\n\r\n"
+
+    def setResponse(self, reqId, status, contentType, content, raw):
+        try:
+            query = ('UPDATE transaction SET responseStatus = ' + str(status)+ ', contentType = "'+contentType+'", verificationStatusUd = '+str(self.getUnverifiedStatusId())+', content = "'+content+''
+                     '", raw = "' + raw + '" WHERE id = '+str(reqId)+'')
+            self.cursor.execute(query)
+            self.con.commit()
+            return True
+        except mdb.Error, e:
+            if self.con:
+                self.con.rollback()
+            print "Error %d %s" % (e.args[0], e.args[1])
+            return False

@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 from yapsy.IPlugin import IPlugin
+import requests
 
 class LinksFinder(IPlugin):
 
@@ -15,8 +16,14 @@ class LinksFinder(IPlugin):
         for link in links:
             url = link.get('href')
 
-            self.database.setLink(transactionId, url)
+            reqId = self.database.setLink(transactionId, url)
+            ## refactor after C++ proxy:
+            self.getLink(url, reqId)
         return
 
     def getId(self):
         return "linksFinder"
+
+    def getLink(self, url, reqId):
+        r = requests.get(url)
+        self.database.setResponse(reqId, r.status_code, r.headers['content-type'], r.text(), "")
