@@ -1,66 +1,7 @@
 require 'webrick' 
 require 'webrick/httpproxy'
 require 'mysql'
-
-class ProxyConfiguration
-  def initialize
-    @server = ''
-    @user = ''
-    @pass = ''
-    @dbname = ''
-    @port = -1
-  end
-
-  def setServer(name)
-    @server = name
-  end
-
-  def getServer
-    return @server
-  end
-
-  def setUser(user)
-    @user = user
-  end
-
-  def getUser
-    return @user
-  end
-
-  def setPassword(pass)
-    @pass = pass
-  end
-
-  def getPassword
-    return @pass
-  end
-
-  def setDb(name)
-    @dbname = name
-  end
-
-  def getDb
-    return @dbname
-  end
-
-  def setPort(port)
-    @port = port
-  end
-
-  def getPort
-    return @port
-  end
-
-  def self.create(server, user, pass, dbname, port)
-    conf = ProxyConfiguration.new
-    conf.setServer(server)
-    conf.setUser(user)
-    conf.setPassword(pass)
-    conf.setDb(dbname)
-    conf.setPort(port)
-    return conf
-  end
-end
+require_relative 'configuration'
 
 class Transaction
   def initialize(method, uri, status, ctype, content, configuration)
@@ -105,8 +46,7 @@ class Handler
   end
 end
 
-
-conf = ProxyConfiguration.create('localhost', 'test', '', 'crawlcheck', 8080)
+conf = ProxyConfigurationParser.parse(ARGV[0])
 proxy = Handler.new(conf)
 s = WEBrick::HTTPProxyServer.new(:Port => conf.getPort(), :ProxyContentHandler => proxy.method(:handle_content))
 
