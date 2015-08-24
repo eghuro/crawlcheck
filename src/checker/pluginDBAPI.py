@@ -88,9 +88,11 @@ class DBAPIconfiguration(object):
         self.dbname = dbname
 
 class TransactionInfo:
-    def __init__(self, tid, content):
+    def __init__(self, tid, content, contentType, uri):
         self.tid = tid
         self.content = content
+        self.ctype = contentType
+        self.uri = uri
 
     def getId(self):
         return self.tid
@@ -99,7 +101,13 @@ class TransactionInfo:
         return self.content
 
     def getContentType(self):
-        return "text/html"
+        return self.contentType
+
+    def getUri(self):
+        return self.uri
+
+    def setUri(self, uri):
+        self.uri = uri
 
 class DBAPI:
     def __init__(self, conf):
@@ -113,19 +121,26 @@ class DBAPI:
     def getTransaction(self):
         transactionId = -1
         content = ""
+        contentType = ""
+        uri = ""
 
         try:
             statusId = self.getUnverifiedStatusId()
-            idSelectorQuery = ('SELECT @A:=MAX(id)  FROM transaction WHERE method = \'GET\' AND responseStatus  = 200 AND contentType LIKE "text/html%" AND verificationStatusId = '+str(statusId) +'')
-            contentSelectorQuery = ('SELECT id, content FROM transaction WHERE id = @A')
+            idSelectorQuery = ('SELECT @A:=MAX(id)  FROM transaction WHERE method = \'GET\' AND responseStatus  = 200 AND verificationStatusId = '+str(statusId) +'')
+            contentSelectorQuery = ('SELECT id, content, contentType, uri FROM transaction WHERE id = @A')
             self.cursor.execute(idSelectorQuery)           
             self.cursor.execute(contentSelectorQuery)
             row = self.cursor.fetchone()
             if row is not None:
+               assert len(row) == 4
                if row[0] is not None:
                    assert row[1] is not None
+                   assert row[2] is not None
+                   assert row[3] is not None
                    transactionId = row[0]
                    content = row[1]
+                   contentType = row[2].split(';')[0] # text/html; charset=utf-8 -> text/html
+                   uri = row[3]
 
                    statusId = self.getProcessingStatusId()
                    statusUpdateQuery = ('UPDATE transaction '
@@ -139,7 +154,7 @@ class DBAPI:
                 self.con.rollback()
             print "Error %d: %s" % (e.args[0], e.args[1])
 
-        return TransactionInfo(transactionId, content)
+        return TransactionInfo(transactionId, content, contentType, uri)
 
     def setDefect(self, transactionId, defectType, line, evidence):
         try:

@@ -11,6 +11,7 @@ class Acceptor:
         self.pluginUri = dict()
         self.pluginUriDefault = dict()
         self.uriDefault = dict()
+        self.uris = set()
 
     def accept(self, pluginId, uri):
         res = self.pluginAcceptUri(pluginId, uri)
@@ -61,12 +62,17 @@ class Acceptor:
  
         values = self.pluginUri[pluginId]
         values[value] = accept
+        self.uris.add(value)
 
     def setPluginAcceptValueDefault(self, plugin, accept):
         self.pluginUriDefault[plugin] = accept
 
     def setDefaultAcceptValue(self, uri, value):
         self.uriDefault[uri] = value
+        self.uris.add(uri)
+
+    def getValues(self):
+        return self.uris
 
     def _getResolution(self, yes):
         if yes:
