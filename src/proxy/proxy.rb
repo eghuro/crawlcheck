@@ -1,17 +1,17 @@
 require 'webrick' 
 require 'webrick/httpproxy'
 require 'mysql'
-#require 'iconv'
+require_relative 'configuration'
 
 class Transaction
-  def initialize(method, uri, status, ctype, content)
+  def initialize(method, uri, status, ctype, content, configuration)
     @method = method
     @uri = uri
     @status = status
     @ctype = ctype
     @content = content
 
-    @con = Mysql.new 'localhost', 'test', '', 'crawlcheck'
+    @con = Mysql.new(configuration.getServer(), configuration.getUser(), configuration.getPassword(), configuration.getDb())
   end
 
   def getMySQLquery
@@ -20,8 +20,6 @@ class Transaction
 
   def pushDB
     begin
-      #con = Mysql.new('localhost', 'test', '', 'crawlcheck')
-
       pst = getMySQLquery
       pst.execute @method, @uri, @status, @ctype, @content 
 
@@ -32,24 +30,25 @@ class Transaction
   end
 end
 
-#ic = Iconv.new('UTF-8//IGNORE', 'UTF-8')
-
 def handle_content (req, res)
-  #ic = Iconv.new('UTF-8//IGNORE', 'UTF-8')
-
-  trans = Transaction.new(req.request_method(), req.unparsed_uri(), res.status, res.content_type(), res.body)
-  #puts trans.getMySQLquery()
+  trans = Transaction.new(req.request_method(), req.unparsed_uri(), res.status, res.content_type(), res.body, conf)
   trans.pushDB
-
-  #puts "Method: ", req.request_method()
-  #puts "Uri: ", req.unparsed_uri()
-
-  #puts "Content-type: ", res.content_type()
-  #puts "Response status: ", res.status
-  #puts "Content: ",ic.iconv(res.body)
 end
 
-s = WEBrick::HTTPProxyServer.new(:Port => 8080, :ProxyContentHandler => method(:handle_content))
+class Handler
+  def initialize (conf)
+    @conf = conf
+  end
+
+  def handle_content (req, res)
+     trans = Transaction.new(req.request_method(), req.unparsed_uri(), res.status, res.content_type(), res.body, @conf)
+     trans.pushDB
+  end
+end
+
+conf = ProxyConfigurationParser.parse(ARGV[0])
+proxy = Handler.new(conf)
+s = WEBrick::HTTPProxyServer.new(:Port => conf.getPort(), :ProxyContentHandler => proxy.method(:handle_content))
 
 # Shutdown functionality
 trap("INT"){s.shutdown}
