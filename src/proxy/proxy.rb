@@ -70,7 +70,7 @@ class Transaction
     @ctype = ctype
     @content = content
 
-    @con = Mysql.new(configuration.getDb(), configuration.getUser(), configuration.getPassword(), configuration.getDb())
+    @con = Mysql.new(configuration.getServer(), configuration.getUser(), configuration.getPassword(), configuration.getDb())
   end
 
   def getMySQLquery
@@ -94,9 +94,21 @@ def handle_content (req, res)
   trans.pushDB
 end
 
+class Handler
+  def initialize (conf)
+    @conf = conf
+  end
+
+  def handle_content (req, res)
+     trans = Transaction.new(req.request_method(), req.unparsed_uri(), res.status, res.content_type(), res.body, @conf)
+     trans.pushDB
+  end
+end
+
 
 conf = ProxyConfiguration.create('localhost', 'test', '', 'crawlcheck', 8080)
-s = WEBrick::HTTPProxyServer.new(:Port => conf.getPort(), :ProxyContentHandler => method(:handle_content))
+proxy = Handler.new(conf)
+s = WEBrick::HTTPProxyServer.new(:Port => conf.getPort(), :ProxyContentHandler => proxy.method(:handle_content))
 
 # Shutdown functionality
 trap("INT"){s.shutdown}
