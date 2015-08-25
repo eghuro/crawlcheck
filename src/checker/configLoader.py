@@ -23,7 +23,7 @@ class ConfigLoader:
 
             plugins = root.find('plugins')
 
-            self.getResolutions(plugins, self.uriAcceptor, self.typeAcceptor)
+            self.getResolutions(plugins)
 
             pluginSet = plugins.findall('plugin')
             for plugin in pluginSet:
@@ -41,7 +41,7 @@ class ConfigLoader:
     def getUriAcceptor(self):
         return self.uriAcceptor
 
-    def getDefaults(self, root, setKeyword, keyword, acceptor):
+    def getDefaults(self, root, setKeyword, keyword):
         defaultSet = root.find(setKeyword)
         acceptor = Acceptor(defaultSet.attrib['default'] == 'True')
 
@@ -49,10 +49,12 @@ class ConfigLoader:
         for element in defaultElements:
             acceptor.setDefaultAcceptValue(element.attrib['key'], element.attrib['accept'])
 
-    def getResolutions(self, root, uriAcceptor, typeAcceptor):
+        return acceptor
+
+    def getResolutions(self, root):
         defaults = root.find('resolutions') 
-        self.getDefaults(defaults, 'uris', 'uri', uriAcceptor)
-        self.getDefaults(defaults, 'contentTypes', 'contentType', typeAcceptor)
+        self.uriAcceptor = self.getDefaults(defaults, 'uris', 'uri')
+        self.typeAcceptor = self.getDefaults(defaults, 'contentTypes', 'contentType')
 
     def getPluginDefaults(self, pluginId, root, setKeyword, keyword, acceptor):
         defaultSet = root.find(setKeyword)
