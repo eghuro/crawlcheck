@@ -88,9 +88,11 @@ class DBAPIconfiguration(object):
         self.dbname = dbname
 
 class TransactionInfo:
-    def __init__(self, tid, content):
+    def __init__(self, tid, content, contentType, uri):
         self.tid = tid
         self.content = content
+        self.ctype = contentType
+        self.uri = uri
 
     def getId(self):
         return self.tid
@@ -99,7 +101,13 @@ class TransactionInfo:
         return self.content
 
     def getContentType(self):
-        return "text/html"
+        return self.ctype
+
+    def getUri(self):
+        return self.uri
+
+    def setUri(self, uri):
+        self.uri = uri
 
 class DBAPI:
     def __init__(self, conf):
@@ -113,19 +121,26 @@ class DBAPI:
     def getTransaction(self):
         transactionId = -1
         content = ""
+        contentType = ""
+        uri = ""
 
         try:
             statusId = self.getUnverifiedStatusId()
-            idSelectorQuery = ('SELECT @A:=MAX(id)  FROM transaction WHERE method = \'GET\' AND responseStatus  = 200 AND contentType LIKE "text/html%" AND verificationStatusId = '+str(statusId) +'')
-            contentSelectorQuery = ('SELECT id, content FROM transaction WHERE id = @A')
+            idSelectorQuery = ('SELECT @A:=MAX(id)  FROM transaction WHERE method = \'GET\' AND responseStatus  = 200 AND verificationStatusId = '+str(statusId) +'')
+            contentSelectorQuery = ('SELECT id, content, contentType, uri FROM transaction WHERE id = @A')
             self.cursor.execute(idSelectorQuery)           
             self.cursor.execute(contentSelectorQuery)
             row = self.cursor.fetchone()
             if row is not None:
+               assert len(row) == 4
                if row[0] is not None:
                    assert row[1] is not None
+                   assert row[2] is not None
+                   assert row[3] is not None
                    transactionId = row[0]
                    content = row[1]
+                   contentType = row[2].split(';')[0] # text/html; charset=utf-8 -> text/html
+                   uri = row[3]
 
                    statusId = self.getProcessingStatusId()
                    statusUpdateQuery = ('UPDATE transaction '
@@ -139,31 +154,31 @@ class DBAPI:
                 self.con.rollback()
             print "Error %d: %s" % (e.args[0], e.args[1])
 
-        return TransactionInfo(transactionId, content)
+        return TransactionInfo(transactionId, content, contentType, uri)
 
     def setDefect(self, transactionId, defectType, line, evidence):
         try:
             query = ('INSERT INTO finding (responseId) VALUES (' + str(transactionId) + ')')
             self.cursor.execute(query)
             findingId = self.cursor.lastrowid
-            #self.cursor.execute("SELECT id FROM defectType WHERE type = " + str(defectType))
-            #row = self.cursor.fetchone()
-            #if row is not None:
-                #if row[0] is not None:
-                    #defectTypeId = self.cursor.fetchone()[0]
-            defectTypeId = defectType
+
+            self.cursor.execute("SELECT id FROM defectType WHERE type = \"" + str(defectType)+"\" LIMIT 1")
+            row = self.cursor.fetchone()
+            if row is not None:
+                if row[0] is not None:
+                    defectTypeId = row[0]
+                else:
+                    defectTypeId = self.putNewDefectType(defectType);
+            else:
+                defectTypeId = self.putNewDefectType(defectType);
+
             query = ('INSERT INTO defect (findingId, type, location, evidence) '
                      'VALUES (' + str(findingId) + ', ' + str(defectTypeId) + ', '
-                     '' + str(line) + ', "' + self.con.escape_string(evidence) + '" )')
+                     '' + str(line) + ', "' + self.con.escape_string(evidence.encode('utf-8')) + '" )')
             self.cursor.execute(query)
             self.con.commit()
             return True
-                #else:
-                    #self.con.rollback()
-                    #return False
-            #else:
-                #self.con.rollback()
-                #return False
+
 
         except mdb.Error, e:
             if self.con:
@@ -171,24 +186,35 @@ class DBAPI:
             print "Error %d: %s" % (e.args[0], e.args[1])
 
         return False
+
+    def putNewDefectType(self, defectType):
+        self.cursor.execute("INSERT INTO defectType (type) VALUES (\""+defectType+"\")")
+        return self.cursor.lastrowid
 
     def setLink(self, transactionId, toUri):
         try:
+            query = ('INSERT INTO transaction (method, uri, origin, verificationStatusId, rawRequest) VALUES (\'GET\', "'
+                     '' + self.con.escape_string(toUri) + '", \'CHECKER\', '+str(self.getRequestedStatusId())+', "'
+                     '' + self.con.escape_string(self.getRequest(toUri)) + '")')
+            self.cursor.execute(query)
+            reqId = self.cursor.lastrowid
+
             query = ('INSERT INTO finding (responseId) VALUES (' + str(transactionId) + ')')
             self.cursor.execute(query)
             findingId = self.cursor.lastrowid
-            query = ('INSERT INTO link (findingId, toUri) VALUES (' + str(findingId) + ', '
-                     '"' + self.con.escape_string(toUri) + '")')
+
+            query = ('INSERT INTO link (findingId, toUri, requestId) VALUES (' + str(findingId) + ', '
+                     '"' + self.con.escape_string(toUri) + '", '+str(reqId)+')')
             self.cursor.execute(query)
             self.con.commit()
-            return True
+            return reqId
 
         except mdb.Error, e:
             if self.con:
                 self.con.rollback()
             print "Error %d: %s" % (e.args[0], e.args[1])
 
-        return False
+        return None
 
     def getFinishedStatusId(self):
         return 5
@@ -198,6 +224,9 @@ class DBAPI:
 
     def getUnverifiedStatusId(self):
         return 3
+
+    def getRequestedStatusId(self):
+        return 1
 
     def setFinished(self, transactionId):
         try:
@@ -214,3 +243,19 @@ class DBAPI:
             print "Error %d: %s" % (e.args[0], e.args[1])
 
         return False
+
+    def getRequest(self, toUri):
+        return "GET "+toUri+" HTTP/1.1\r\n\r\n"
+
+    def setResponse(self, reqId, status, contentType, content, raw):
+        try:
+            query = ('UPDATE transaction SET responseStatus = ' + str(status)+ ', contentType = "'+contentType+'", verificationStatusUd = '+str(self.getUnverifiedStatusId())+', content = "'+content+''
+                     '", raw = "' + raw + '" WHERE id = '+str(reqId)+'')
+            self.cursor.execute(query)
+            self.con.commit()
+            return True
+        except mdb.Error, e:
+            if self.con:
+                self.con.rollback()
+            print "Error %d %s" % (e.args[0], e.args[1])
+            return False

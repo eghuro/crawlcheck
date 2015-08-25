@@ -6,14 +6,13 @@ import MySQLdb as mdb
 
 from pluginDBAPI import DBAPI
 from pluginDBAPI import DBAPIconfiguration
+from configLoader import ConfigLoader
 
 class DBAPITest(unittest.TestCase):
     def setUp(self):
-        self.conf = DBAPIconfiguration()
-        self.conf.setUri('localhost')
-        self.conf.setUser('test')
-        self.conf.setPassword('')
-        self.conf.setDbname('crawlcheck')
+        cl = ConfigLoader()
+        cl.load('testConf.xml')
+        self.conf = cl.getDbconf()
 
     def testInstance(self):
         DBAPI(self.conf)
@@ -28,7 +27,7 @@ class DBAPITest(unittest.TestCase):
         tr = api.getTransaction()
         self.assertEqual(tr.getId(), -1)
         self.assertEqual(tr.getContent(), "")
-        self.assertEqual(tr.getContentType(), "text/html")
+        self.assertEqual(tr.getContentType(), "")
 
         con.close()
 

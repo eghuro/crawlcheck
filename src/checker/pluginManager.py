@@ -2,31 +2,31 @@ from yapsy.PluginManager import PluginManager
 
 from pluginRunner import PluginRunner
 from pluginDBAPI import DBAPIconfiguration
+from configLoader import ConfigLoader
 
 import logging
+import sys
 
 def main():
-    logging.getLogger("yapsy").addHandler(logging.StreamHandler())
+    if len(sys.argv) == 2:
+        cl = ConfigLoader()
+        cl.load(sys.argv[1])
 
-    manager = PluginManager()
-    manager.setPluginPlaces(["plugin"])
-    manager.collectPlugins()
+        logging.getLogger("yapsy").addHandler(logging.StreamHandler())
 
-    plugins = []
-    for pluginInfo in manager.getAllPlugins():
-        print pluginInfo.name
-        plugins.append(pluginInfo.plugin_object)
+        manager = PluginManager()
+        manager.setPluginPlaces(["plugin"])
+        manager.collectPlugins()
 
-    runner = PluginRunner(getDbconf())
-    runner.run(plugins)
+        plugins = []
+        for pluginInfo in manager.getAllPlugins():
+            print pluginInfo.name
+            plugins.append(pluginInfo.plugin_object)
 
-def getDbconf():
-    dbconf = DBAPIconfiguration()
-    dbconf.setUri('localhost')
-    dbconf.setUser('test')
-    dbconf.setPassword('')
-    dbconf.setDbname('crawlcheck')
-    return dbconf
+        runner = PluginRunner(cl.getDbconf(), cl.getUriAcceptor(), cl.getTypeAcceptor())
+        runner.run(plugins)
+    else:
+        print "Usage: "+sys.argv[0]+" <configuration XML file>"
 
 if __name__ == "__main__":
     main()
