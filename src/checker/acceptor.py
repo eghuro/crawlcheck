@@ -14,19 +14,19 @@ class Acceptor:
         self.uris = set()
 
     def accept(self, pluginId, uri):
-        res = self.pluginAcceptUri(pluginId, uri)
+        res = self.pluginAcceptValue(pluginId, uri)
         if res == Resolution.yes:
             return True
         elif res == Resolution.no:
             return False
         else:
-	    res = self.pluginAcceptUriDefault(pluginId)
+	    res = self.pluginAcceptValueDefault(pluginId)
             if res == Resolution.yes:
                 return True
             elif res == Resolution.no:
                 return False
             else:
-                res = self.defaultAcceptUri(uri)
+                res = self.defaultAcceptValue(uri)
                 if res == Resolution.yes:
                     return True
                 elif res == Resolution.no:
@@ -34,33 +34,33 @@ class Acceptor:
                 else:
                     return self.defaultUri
 
-    def pluginAcceptUri(self, pluginId, uri):
+    def pluginAcceptValue(self, pluginId, uri):
         if pluginId in self.pluginUri:
             uris = self.pluginUri[pluginId]
             if uri in uris:
-                return self._getResolution(uris[uri])
+                return Acceptor.getResolution(uris[uri])
             else:
                 return Resolution.none
         else:
             return Resolution.none
 
-    def pluginAcceptUriDefault(self, pluginId):
+    def pluginAcceptValueDefault(self, pluginId):
         if pluginId in self.pluginUriDefault:
-            return self._getResolution(self.pluginUriDefault[pluginId])
+            return Acceptor.getResolution(self.pluginUriDefault[pluginId])
         else:
             return Resolution.none
 
-    def defaultAcceptUri(self, uri):
+    def defaultAcceptValue(self, uri):
         if uri in self.uriDefault:
-            return self._getResolution(self.uriDefault[uri])
+            return Acceptor.getResolution(self.uriDefault[uri])
         else:
             return Resolution.none
 
-    def setPluginAccepValue(self, plugin, value, accept):
+    def setPluginAcceptValue(self, plugin, value, accept):
         if plugin not in self.pluginUri:
             self.pluginUri[plugin] = dict()
  
-        values = self.pluginUri[pluginId]
+        values = self.pluginUri[plugin]
         values[value] = accept
         self.uris.add(value)
 
@@ -74,7 +74,8 @@ class Acceptor:
     def getValues(self):
         return self.uris
 
-    def _getResolution(self, yes):
+    @staticmethod
+    def getResolution(yes):
         if yes:
           return Resolution.yes
         else:
