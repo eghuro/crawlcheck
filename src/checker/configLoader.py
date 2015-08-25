@@ -43,28 +43,36 @@ class ConfigLoader:
 
     def getDefaults(self, root, setKeyword, keyword):
         defaultSet = root.find(setKeyword)
-        acceptor = Acceptor(defaultSet.attrib['default'] == 'True')
+        if defaultSet is not None:
+          acceptor = Acceptor(defaultSet.attrib['default'] == 'True')
 
-        defaultElements = defaultSet.findall(keyword)
-        for element in defaultElements:
-            acceptor.setDefaultAcceptValue(element.attrib['key'], element.attrib['accept'])
+          defaultElements = defaultSet.findall(keyword)
+          if defaultElements is not None:
+            for element in defaultElements:
+              acceptor.setDefaultAcceptValue(element.attrib['key'], element.attrib['accept']=='True')
 
-        return acceptor
+          return acceptor
+        else:
+          return None
 
     def getResolutions(self, root):
         defaults = root.find('resolutions') 
-        self.uriAcceptor = self.getDefaults(defaults, 'uris', 'uri')
-        self.typeAcceptor = self.getDefaults(defaults, 'contentTypes', 'contentType')
+        if defaults is not None:
+          self.uriAcceptor = self.getDefaults(defaults, 'uris', 'uri')
+          self.typeAcceptor = self.getDefaults(defaults, 'contentTypes', 'contentType')
 
     def getPluginDefaults(self, pluginId, root, setKeyword, keyword, acceptor):
         defaultSet = root.find(setKeyword)
-        acceptor.setPluginAcceptValueDefault(pluginId, defaultSet.attrib['default'] == 'True')
+        if defaultSet is not None:
+          acceptor.setPluginAcceptValueDefault(pluginId, defaultSet.attrib['default'] == 'True')
 
-        defaultElements = defaultSet.findall(keyword)
-        for element in defaultElements:
-            acceptor.setPluginAcceptValue(pluginId, element.attrib['key'], element.attrib['accept'])
+          defaultElements = defaultSet.findall(keyword)
+          if defaultElements is not None:
+            for element in defaultElements:
+              acceptor.setPluginAcceptValue(pluginId, element.attrib['key'], element.attrib['accept'] == 'True')
 
     def getPluginResolutions(self, pluginId, root, uriAcceptor, typeAcceptor):
         defaults = root.find('resolutions')
-        self.getPluginDefaults(pluginId, defaults, 'uris', 'uri', uriAcceptor)
-        self.getPluginDefaults(pluginId, defaults, 'contentTypes', 'contentType', typeAcceptor)
+        if defaults is not None:
+          self.getPluginDefaults(pluginId, defaults, 'uris', 'uri', uriAcceptor)
+          self.getPluginDefaults(pluginId, defaults, 'contentTypes', 'contentType', typeAcceptor)

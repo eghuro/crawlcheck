@@ -3,6 +3,7 @@
 
 import unittest
 from configLoader import ConfigLoader
+from acceptor import Resolution
 
 class ConfigLoaderTest(unittest.TestCase):
   def setUp(self):
@@ -20,6 +21,17 @@ class ConfigLoaderTest(unittest.TestCase):
     ta = self.cl.getTypeAcceptor()
     self.assertTrue(ta.accept('moo', 'text/html'))
     self.assertFalse(ta.accept('boo', 'text/javascript'))
+
+  def testUriAcceptor(self):
+    ua = self.cl.getUriAcceptor()
+    self.assertTrue(ua.accept('moo',  'http://www.mff.cuni.cz/'))
+
+  def testLFPUriAcceptor(self):
+    ua = self.cl.getUriAcceptor()
+    self.assertTrue('http://olga.majling.eu/Vyuka' in ua.getValues())
+    self.assertEqual(ua.pluginAcceptValue('links_finder_plugin', 'http://olga.majling.eu/Vyuka'), Resolution.no)
+    self.assertFalse(ua.accept('links_finder_plugin', 'http://olga.majling.eu/Vyuka'))
+    self.assertTrue(ua.accept('links_finder_plugin', 'http://olga.majling.eu'))
 
 if __name__ == '__main__':
     unittest.main()

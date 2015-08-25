@@ -76,7 +76,7 @@ class Acceptor:
 
     @staticmethod
     def getResolution(yes):
-        if yes:
+        if yes == True:
           return Resolution.yes
         else:
           return Resolution.no

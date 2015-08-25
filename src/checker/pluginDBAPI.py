@@ -101,7 +101,7 @@ class TransactionInfo:
         return self.content
 
     def getContentType(self):
-        return self.contentType
+        return self.ctype
 
     def getUri(self):
         return self.uri
@@ -166,7 +166,7 @@ class DBAPI:
             row = self.cursor.fetchone()
             if row is not None:
                 if row[0] is not None:
-                    defectTypeId = self.cursor.fetchone()[0]
+                    defectTypeId = row[0]
                 else:
                     defectTypeId = self.putNewDefectType(defectType);
             else:

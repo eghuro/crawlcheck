@@ -27,7 +27,7 @@ class DBAPITest(unittest.TestCase):
         tr = api.getTransaction()
         self.assertEqual(tr.getId(), -1)
         self.assertEqual(tr.getContent(), "")
-        self.assertEqual(tr.getContentType(), "text/html")
+        self.assertEqual(tr.getContentType(), "")
 
         con.close()
 
