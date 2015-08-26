@@ -1,11 +1,28 @@
+# -*- coding: utf-8 -*-
+"""Decision if a transaction is checked by a plugin.
+
+Acceptor module contains budiness rules to decide if a transaction will be
+checked by a plugin.
+"""
 from enum import Enum
 
+
 class Resolution(Enum):
+    """Resolution enum helps apply a three state logic in Acceptor.
+    Posible resolutions are yes, no or none.
+    """
+
     yes = 1
     no = 2
     none = 3
 
-class Acceptor:
+
+class Acceptor(object):
+    """Acceptor handles the business rules.
+    It public API allows to check if a plugin should verify an URI using accept
+    method and setter methods used by ConfigLoader.
+    """
+
     def __init__(self, defaultUri):
         self.defaultUri = defaultUri
         self.pluginUri = dict()
@@ -20,7 +37,7 @@ class Acceptor:
         elif res == Resolution.no:
             return False
         else:
-	    res = self.pluginAcceptValueDefault(pluginId)
+            res = self.pluginAcceptValueDefault(pluginId)
             if res == Resolution.yes:
                 return True
             elif res == Resolution.no:
@@ -59,7 +76,7 @@ class Acceptor:
     def setPluginAcceptValue(self, plugin, value, accept):
         if plugin not in self.pluginUri:
             self.pluginUri[plugin] = dict()
- 
+
         values = self.pluginUri[plugin]
         values[value] = accept
         self.uris.add(value)
@@ -76,7 +93,7 @@ class Acceptor:
 
     @staticmethod
     def getResolution(yes):
-        if yes == True:
-          return Resolution.yes
+        if yes is True:
+            return Resolution.yes
         else:
-          return Resolution.no
+            return Resolution.no
