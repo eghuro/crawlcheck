@@ -10,5 +10,6 @@ class CssValidator(IPlugin):
         return "tinycss"
     def check(self, transactionId, content):
         parser = tinycss.make_parser('page3')
-        stylesheet = parsre.parse_stylesheet(content)
-        print stylesheet.errors
+        stylesheet = parser.parse_stylesheet(content)
+        for error in stylesheet.errors:
+          self.database.setDefect(transactionId, "Stylesheet error", error.line, error.reason)
