@@ -1,6 +1,6 @@
 """ PluginRunner runs all transactions through applicable checkers.
 """
-from checker.pluginDBAPI import DBAPI
+from pluginDBAPI import DBAPI
 import marisa_trie
 
 

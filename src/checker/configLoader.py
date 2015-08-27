@@ -2,8 +2,8 @@
 """Configuration Loader loads configuration from external XML file.
 """
 import xml.etree.ElementTree as etree
-from checker.pluginDBAPI import DBAPIconfiguration
-from checker.acceptor import Acceptor
+from pluginDBAPI import DBAPIconfiguration
+from acceptor import Acceptor
 
 
 class ConfigLoader(object):

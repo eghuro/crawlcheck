@@ -169,7 +169,7 @@ class DBAPI(object):
                     statusId = DBAPI.getProcessingStatusId()
                     statusUpdateQuery = ('UPDATE transaction '
                                          'SET verificationStatusId = '
-                                         ''+(statusId)+' '
+                                         ''+str(statusId)+' '
                                          'WHERE id = @A')
                     self.cursor.execute(statusUpdateQuery)
             self.con.commit()
@@ -256,15 +256,19 @@ class DBAPI(object):
 
         return None
 
+    @staticmethod
     def getFinishedStatusId():
         return 5
 
+    @staticmethod
     def getProcessingStatusId():
         return 4
 
+    @staticmethod
     def getUnverifiedStatusId():
         return 3
 
+    @staticmethod
     def getRequestedStatusId():
         return 1
 
@@ -290,7 +294,8 @@ class DBAPI(object):
 
         return False
 
-    def getRequest(self, toUri):
+    @staticmethod
+    def getRequest(toUri):
         return "GET "+toUri+" HTTP/1.1\r\n\r\n"
 
     def setResponse(self, reqId, status, contentType, content, raw):
