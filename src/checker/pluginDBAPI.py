@@ -148,7 +148,8 @@ class DBAPI(object):
             statusId = DBAPI.getUnverifiedStatusId()
             idSelectorQuery = ('SELECT @A:=MAX(id)  FROM transaction WHERE '
                                'method = \'GET\' AND responseStatus  = 200 AND'
-                               ' verificationStatusId = ' + str(statusId) + '')
+                               ' verificationStatusId = ' 
+                               '' + self.con.escape_string(str(statusId)) + '')
             contentSelectorQuery = ('SELECT id, content, contentType, uri FROM'
                                     ' transaction WHERE id = @A')
             self.cursor.execute(idSelectorQuery)
@@ -169,7 +170,7 @@ class DBAPI(object):
                     statusId = DBAPI.getProcessingStatusId()
                     statusUpdateQuery = ('UPDATE transaction '
                                          'SET verificationStatusId = '
-                                         ''+str(statusId)+' '
+                                         ''+self.con.escape_string(str(statusId))+' '
                                          'WHERE id = @A')
                     self.cursor.execute(statusUpdateQuery)
             self.con.commit()
@@ -191,12 +192,12 @@ class DBAPI(object):
         """
         try:
             query = ('INSERT INTO finding (responseId) VALUES ('
-                     '' + str(transactionId) + ')')
+                     '' + self.con.escape_string(str(transactionId)) + ')')
             self.cursor.execute(query)
             findingId = self.cursor.lastrowid
 
             self.cursor.execute('SELECT id FROM defectType WHERE type = "'
-                                '' + str(defectType)+'" LIMIT 1')
+                                '' + self.con.escape_string(str(defectType))+'" LIMIT 1')
             row = self.cursor.fetchone()
             if row is not None:
                 if row[0] is not None:
@@ -207,8 +208,9 @@ class DBAPI(object):
                 defectTypeId = self.putNewDefectType(defectType)
 
             query = ('INSERT INTO defect (findingId, type, location, evidence) '
-                     'VALUES (' + str(findingId) + ', ' + str(defectTypeId) + ', '
-                     '' + str(line) + ', "'
+                     'VALUES (' + self.con.escape_string(str(findingId)) + ', '
+                     '' + self.con.escape_string(str(defectTypeId)) + ', '
+                     '' + self.con.escape_string(str(line)) + ', "'
                      '' + self.con.escape_string(evidence.encode('utf-8')) + ''
                      '" )')
             self.cursor.execute(query)
@@ -224,7 +226,7 @@ class DBAPI(object):
 
     def putNewDefectType(self, defectType):
         self.cursor.execute('INSERT INTO defectType (type) VALUES ("'
-                            ''+defectType+'")')
+                            ''+self.con.escape_string(defectType)+'")')
         return self.cursor.lastrowid
 
     def setLink(self, transactionId, toUri):
@@ -232,18 +234,18 @@ class DBAPI(object):
             query = ('INSERT INTO transaction (method, uri, origin, '
                      'verificationStatusId, rawRequest) VALUES (\'GET\', "'
                      '' + self.con.escape_string(toUri) + '", \'CHECKER\', '
-                     ''+str(DBAPI.getRequestedStatusId())+', "'
+                     '' + self.con.escape_string(str(DBAPI.getRequestedStatusId()))+', "'
                      '' + self.con.escape_string(self.getRequest(toUri)) + '")')
             self.cursor.execute(query)
             reqId = self.cursor.lastrowid
 
             query = ('INSERT INTO finding (responseId) VALUES ('
-                     '' + str(transactionId) + ')')
+                     '' + self.con.escape_string(str(transactionId)) + ')')
             self.cursor.execute(query)
             findingId = self.cursor.lastrowid
 
             query = ('INSERT INTO link (findingId, toUri, requestId) VALUES ('
-                     '' + str(findingId) + ', '
+                     '' + self.con.escape_string(str(findingId)) + ', '
                      '"' + self.con.escape_string(toUri) + '", '+str(reqId)+')')
             self.cursor.execute(query)
             self.con.commit()
@@ -281,8 +283,8 @@ class DBAPI(object):
         try:
             statusId = DBAPI.getFinishedStatusId()
             query = ('UPDATE transaction SET verificationStatusId = '
-                     '' + str(statusId) + ''
-                     ' WHERE id = ' + str(transactionId) + '')
+                     '' + self.con.escape_string(str(statusId)) + ''
+                     ' WHERE id = ' + self.con.escape_string(str(transactionId)) + '')
             self.cursor.execute(query)
             self.con.commit()
             return True
@@ -305,11 +307,12 @@ class DBAPI(object):
         """
         try:
             query = ('UPDATE transaction SET responseStatus = '
-                     '' + str(status) + ', contentType = "' + contentType + '", '
+                     '' + self.con.escape_string(str(status)) + ''
+                     ', contentType = "' + self.con.escape_string(contentType) + '", '
                      'verificationStatusUd = '
-                     '' + str(DBAPI.getUnverifiedStatusId()) + ', content = "'
-                     '' + content + ''
-                     '", raw = "' + raw + '" WHERE id = ' + str(reqId) + '')
+                     '' + self.con.escape_string(str(DBAPI.getUnverifiedStatusId())) + ', content = "'
+                     '' + self.con.escape_string(content) + ''
+                     '", raw = "' + self.con.escape_string(raw) + '" WHERE id = ' + self.con.escape_string(str(reqId)) + '')
             self.cursor.execute(query)
             self.con.commit()
             return True
