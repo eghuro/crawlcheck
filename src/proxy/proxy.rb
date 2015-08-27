@@ -1,6 +1,7 @@
 require 'webrick' 
 require 'webrick/httpproxy'
 require 'mysql'
+require 'charlock_holmes'
 require_relative 'configuration'
 
 ### Webrick wrapper - content handler creates a transaction and pushes it to DB
@@ -11,7 +12,13 @@ class Transaction
     @uri = uri
     @status = status
     @ctype = ctype
-    @content = content
+    @content = content.dup
+
+    detection = CharlockHolmes::EncodingDetector.detect(content)
+    if (method == 'GET' or method == 'POST') and detection != nil and detection[:type] != :binary 
+      CharlockHolmes::Converter.convert @content, detection[:encoding], 'UTF-8'
+      print @content
+    end
 
     @con = Mysql.new(configuration.getServer(), configuration.getUser(), configuration.getPassword(), configuration.getDb())
   end
@@ -23,7 +30,8 @@ class Transaction
   def pushDB
     begin
       pst = getMySQLquery
-      pst.execute @method, @uri, @status, @ctype, @content 
+      @con.query("SET NAMES UTF8")
+      pst.execute @method, @uri, @status, @ctype, @content
 
     rescue Mysql::Error => e
       puts e.errno

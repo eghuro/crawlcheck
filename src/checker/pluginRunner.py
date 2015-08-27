@@ -20,8 +20,10 @@ class PluginRunner(object):
     def runTransaction(self, plugins, info):
         """ Run a single transaction through all plugins where it's accepted.
         """
+        print "Verifying"
         for plugin in plugins:
             if self.accept(plugin.getId(), info):
+                print plugin.getId()
                 plugin.check(info.getId(), info.getContent())
 
     def run(self, plugins):
@@ -33,7 +35,9 @@ class PluginRunner(object):
             self.pluginsById[plugin.getId()] = plugin
         info = api.getTransaction()
         while info.getId() != -1:
+            print "Processing "+info.getUri()
             info.setUri(self.getMaxPrefix(info.getUri()))
+            print "Uri changed: "+info.getUri()
             # uri se nahradi nejdelsim prefixem dle konfigurace pluginu
             self.runTransaction(plugins, info)
             api.setFinished(info.getId())
@@ -44,6 +48,13 @@ class PluginRunner(object):
 
     def getMaxPrefix(self, uri):
         prefixes = self.uriAcceptor.getValues()
+        #uPrefixes = []
+        #for prefix in prefixes:
+          #uPrefixes.add(unicode(prefix,encoding="utf-8"))
+
         # seznam prefixu, pro nas uri chceme nejdelsi prefix
         trie = marisa_trie.Trie(prefixes)
-        return trie.prefixes(uri)[-1]
+        prefList = trie.prefixes(unicode(uri, encoding="utf-8"))
+        if len(prefList) > 0:
+            return prefList[-1]
+        else: return uri

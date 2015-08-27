@@ -1,6 +1,6 @@
 [Core]
 Name = tinycss CSS validator plugin
-Module = tinycss_validator_plugin
+Module = tinycss_css_validator_plugin
 
 [Documentation]
 Author = Alexandr Mansurov

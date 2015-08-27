@@ -4,8 +4,8 @@
 """
 from yapsy.PluginManager import PluginManager
 
-from checker.pluginRunner import PluginRunner
-from checker.configLoader import ConfigLoader
+from pluginRunner import PluginRunner
+from configLoader import ConfigLoader
 
 import logging
 import sys
@@ -21,7 +21,7 @@ def main():
         logging.getLogger("yapsy").addHandler(logging.StreamHandler())
 
         manager = PluginManager()
-        manager.setPluginPlaces(["plugin"])
+        manager.setPluginPlaces(["checker/plugin"])
         manager.collectPlugins()
 
         plugins = []
@@ -29,6 +29,7 @@ def main():
             print pluginInfo.name
             plugins.append(pluginInfo.plugin_object)
 
+        if len(plugins) == 0: print "No plugins found"
         runner = PluginRunner(cl.getDbconf(), cl.getUriAcceptor(),
                               cl.getTypeAcceptor())
         runner.run(plugins)
