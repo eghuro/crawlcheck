@@ -309,10 +309,10 @@ class DBAPI(object):
             query = ('UPDATE transaction SET responseStatus = '
                      '' + self.con.escape_string(str(status)) + ''
                      ', contentType = "' + self.con.escape_string(contentType) + '", '
-                     'verificationStatusUd = '
+                     'verificationStatusId = '
                      '' + self.con.escape_string(str(DBAPI.getUnverifiedStatusId())) + ', content = "'
-                     '' + self.con.escape_string(content) + ''
-                     '", raw = "' + self.con.escape_string(raw) + '" WHERE id = ' + self.con.escape_string(str(reqId)) + '')
+                     '' + self.con.escape_string(str(content)) + ''
+                     '", rawResponse = "' + self.con.escape_string(str(raw)) + '" WHERE id = ' + self.con.escape_string(str(reqId)) + '')
             self.cursor.execute(query)
             self.con.commit()
             return True
