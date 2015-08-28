@@ -229,6 +229,10 @@ class DBAPI(object):
                             ''+self.con.escape_string(defectType)+'")')
         return self.cursor.lastrowid
 
+    def putNewDefectType(self, defectType, description):
+        self.cursor.execute('INSERT INTO defectType (type, description) VALUES("'
+                            ''+self.con.escape_string(defectType)+'", "'
+                            ''+self.con.escape_string(description)+'")')
     def setLink(self, transactionId, toUri):
         try:
             query = ('INSERT INTO transaction (method, uri, origin, '
@@ -300,7 +304,7 @@ class DBAPI(object):
     def getRequest(toUri):
         return "GET "+toUri+" HTTP/1.1\r\n\r\n"
 
-    def setResponse(self, reqId, status, contentType, content, raw):
+    def setResponse(self, reqId, status, contentType, content):
         """ Set response into database.
 
             Return true, if transaction was updated, false otherwise.
@@ -311,9 +315,8 @@ class DBAPI(object):
                      ', contentType = "' + self.con.escape_string(contentType) + '", '
                      'verificationStatusId = '
                      '' + self.con.escape_string(str(DBAPI.getUnverifiedStatusId())) + ', content = "'
-                     '' + self.con.escape_string(str(content)) + ''
-                     '", rawResponse = "' + self.con.escape_string(str(raw)) + '" WHERE id = ' + self.con.escape_string(str(reqId)) + '')
-            self.cursor.execute(query)
+                     '%s"  WHERE id = ' + self.con.escape_string(str(reqId)) + '')
+            self.cursor.execute(query, [content])
             self.con.commit()
             return True
         except mdb.Error, e:

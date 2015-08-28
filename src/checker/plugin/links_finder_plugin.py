@@ -26,4 +26,4 @@ class LinksFinder(IPlugin):
 
     def getLink(self, url, reqId):
         r = requests.get(url)
-        self.database.setResponse(reqId, r.status_code, r.headers['content-type'], r.text.decode("UTF-8"), "")
+        self.database.setResponse(reqId, r.status_code, r.headers['content-type'], r.text.encode("utf-8").strip()[:65535]

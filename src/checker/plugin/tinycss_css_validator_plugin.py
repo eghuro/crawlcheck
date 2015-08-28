@@ -9,7 +9,11 @@ class CssValidator(IPlugin):
     def getId(self):
         return "tinycss"
     def check(self, transactionId, content):
-        parser = tinycss.make_parser('page3')
-        stylesheet = parser.parse_stylesheet(content)
-        for error in stylesheet.errors:
-          self.database.setDefect(transactionId, "Stylesheet error", error.line, error.reason)
+        try:
+            parser = tinycss.make_parser('page3')
+            stylesheet = parser.parse_stylesheet(content)
+            for error in stylesheet.errors:
+                self.database.setDefect(transactionId, "Stylesheet error", error.line, error.reason)
+        except UnicodeDecodeError:
+            print "Error"
+        return

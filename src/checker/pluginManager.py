@@ -6,6 +6,7 @@ from yapsy.PluginManager import PluginManager
 
 from pluginRunner import PluginRunner
 from configLoader import ConfigLoader
+from down import Scraper
 
 import logging
 import sys
@@ -15,11 +16,17 @@ def main():
     """ Load configuration, find plugins, run plugin runner.
     """
     if len(sys.argv) == 2:
+        # load configuration
         cl = ConfigLoader()
         cl.load(sys.argv[1])
 
+        # download initial transactions
+        s = Scraper(cl.getDbconf())
+        s.scrap(cl.getEntryPoints())
+
         logging.getLogger("yapsy").addHandler(logging.StreamHandler())
 
+        # load plugins
         manager = PluginManager()
         manager.setPluginPlaces(["checker/plugin"])
         manager.collectPlugins()
@@ -32,6 +39,8 @@ def main():
         if len(plugins) == 0: print "No plugins found"
         runner = PluginRunner(cl.getDbconf(), cl.getUriAcceptor(),
                               cl.getTypeAcceptor())
+
+        # verify
         runner.run(plugins)
     else:
         print "Usage: "+sys.argv[0]+" <configuration XML file>"

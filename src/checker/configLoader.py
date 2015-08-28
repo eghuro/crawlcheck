@@ -16,6 +16,7 @@ class ConfigLoader(object):
         self.dbconf = DBAPIconfiguration()
         self.typeAcceptor = None
         self.uriAcceptor = None
+        self.entryPoints = []
 
     def load(self, fname):
         """Loads configuration from XML file.
@@ -30,6 +31,11 @@ class ConfigLoader(object):
             self.dbconf.setPassword(dbAtts['pass'])
             self.dbconf.setDbname(dbAtts['dbname'])
             self.dbconf.setUser(dbAtts['user'])
+
+            eps = root.find('entryPoints')
+            epSet = eps.findall('entryPoint')
+            for ep in epSet:
+                self.entryPoints.append(ep.attrib['uri'])
 
             plugins = root.find('plugins')
 
@@ -57,6 +63,11 @@ class ConfigLoader(object):
         """ Retrieve Acceptor instance for URI.
         """
         return self.uriAcceptor
+
+    def getEntryPoints(self):
+        """ Retrieve list of URIs for initial requests.
+        """
+        return self.entryPoints
 
     def getDefaults(self, root, setKeyword, keyword):
         defaultSet = root.find(setKeyword)

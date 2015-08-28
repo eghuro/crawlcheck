@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS transaction (
   uri VARCHAR(255) NOT NULL,
   responseStatus INT UNSIGNED,
   contentType VARCHAR(255),
-  content TEXT,
+  content TEXT CHARACTER SET utf8 COLLATE utf8_general_ci,
   verificationStatusId INT UNSIGNED,
   origin ENUM( 'CLIENT', 'CHECKER'),
   rawRequest BLOB,
