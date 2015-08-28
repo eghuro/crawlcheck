@@ -12,14 +12,29 @@ class Transaction
     @uri = uri
     @status = status
     @ctype = ctype
-    @content = content.dup
+    @content = content
+    
+    # Get rid of anything non-ASCII, we'll loose something, 
+    # but tags are always ASCII, so only valuable thing (I can think of)
+    # are some special URI's - and if someone uses those, they deserve
+    # error on those ....
 
-    detection = CharlockHolmes::EncodingDetector.detect(content)
-    if (method == 'GET' or method == 'POST') and detection != nil and detection[:type] != :binary 
-      CharlockHolmes::Converter.convert @content, detection[:encoding], 'UTF-8'
-      print @content
-    end
+    # http://stackoverflow.com/questions/1268289/how-to-get-rid-of-non-ascii-characters-in-ruby
+    # See String#encode
+    encoding_options = {
+        :invalid           => :replace,  # Replace invalid byte sequences
+        :undef             => :replace,  # Replace anything not defined in ASCII
+        :replace           => '',        # Use a blank for those replacements
+     #  :universal_newline => true       # Always break lines with \n
+    }
 
+   # @content.encode(Encoding.find('ASCII'), encoding_options)
+
+    #detection = CharlockHolmes::EncodingDetector.detect(content)
+    #if (method == 'GET' or method == 'POST') and detection != nil and detection[:type] != :binary 
+     # CharlockHolmes::Converter.convert @content, detection[:encoding], 'UTF-8'
+    #puts @content
+    #end
     @con = Mysql.new(configuration.getServer(), configuration.getUser(), configuration.getPassword(), configuration.getDb())
   end
 
