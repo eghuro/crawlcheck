@@ -18,22 +18,22 @@ class LinksFinder(IPlugin):
         for link in links:
             url = link.get('href')
 
-            reqId = self.database.setLink(transactionId, url)
-            self.getLink(url, reqId)
+            if not self.database.gotLink(url):
+               reqId = self.database.setLink(transactionId, url)
+               self.getLink(url, reqId)
         return
 
     def getId(self):
         return "linksFinder"
 
     def getLink(self, url, reqId):
-        if not self.database.gotLink(url):
-          print "Downloading "+url
-          r = requests.get(url)
-          if 'content-type' in r.headers.keys():
-             ct = r.headers['content-type']
-          else:
-             ct = ''
-          self.database.setResponse(reqId, r.status_code, ct, r.text.encode("utf-8").strip()[:65535])
+       print "Downloading "+url
+       r = requests.get(url)
+       if 'content-type' in r.headers.keys():
+          ct = r.headers['content-type']
+       else:
+          ct = ''
+       self.database.setResponse(reqId, r.status_code, ct, r.text.encode("utf-8").strip()[:65535])
 
     def make_links_absolute(self, soup, url):
         for tag in soup.findAll('a', href=True):

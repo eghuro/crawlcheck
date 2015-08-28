@@ -29,6 +29,8 @@ class PluginRunner(object):
     def run(self, plugins):
         """ Run all transactions through all plugins where it's accepted.
         """
+
+        print "Running checker"
         api = DBAPI(self.dbconf)
         for plugin in plugins:
             plugin.setDb(api)
@@ -44,9 +46,6 @@ class PluginRunner(object):
             info = api.getTransaction()
 
     def accept(self, pluginId, transaction):
-       print "Plugin: "+pluginId
-       print "URI: "+transaction.getUri()
-       print "CType: "+transaction.getContentType() 
        return self.uriAcceptor.accept(pluginId, transaction.getUri()) and self.typeAcceptor.accept(pluginId, transaction.getContentType())
 
     def getMaxPrefix(self, uri):
