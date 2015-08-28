@@ -26,4 +26,4 @@ class LinksFinder(IPlugin):
     def getLink(self, url, reqId):
         print "Downloading "+url
         r = requests.get(url)
-        self.database.setResponse(reqId, r.status_code, r.headers['content-type'], r.text.encode("utf-8").strip()[:65535]
+        self.database.setResponse(reqId, r.status_code, r.headers['content-type'], r.text.encode("utf-8").strip()[:65535])

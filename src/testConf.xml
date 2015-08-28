@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<crawlcheck version="0.00">
+<crawlcheck version="0.01">
   <db user="test" pass="" uri="localhost" dbname="crawlcheck" />
   <proxy inPool="2" outPool="1" inPort="8088" inBacklog="0" />
 

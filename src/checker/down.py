@@ -21,5 +21,5 @@ class Scraper(object):
         self.con.commit()
 
     def scrap(self, urilist):
-        for uri in urilist
+        for uri in urilist:
            self.scrapOne(uri)

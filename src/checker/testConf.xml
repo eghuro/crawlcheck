@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<crawlcheck version="0.00">
+<crawlcheck version="0.01">
   <db user="test" pass="" uri="localhost" dbname="crawlcheck" />
 
   <plugins>
@@ -12,8 +12,8 @@
 
     <plugin id="links_finder_plugin">
       <resolutions>
-        <uris default="True">
-          <uri key="http://olga.majling.eu/Vyuka" accept="False" />
+        <uris default="False">
+          <uri key="http://olga.majling.eu/" accept="False" />
         </uris>
         <contentTypes default="False">
           <contentType key="text/html" accept="True" />
@@ -27,4 +27,8 @@
       </resolutions>
     </plugin>
   </plugins>
+
+  <entryPoints>
+    <entryPoint uri="http://olga.majling.eu" />
+  </entryPoints>
 </crawlcheck>
