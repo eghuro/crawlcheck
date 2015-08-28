@@ -10,10 +10,10 @@
       </contentTypes>
     </resolutions>
 
-    <plugin id="links_finder_plugin">
+    <plugin id="linksFinder">
       <resolutions>
         <uris default="False">
-          <uri key="http://olga.majling.eu/" accept="True" />
+          <uri key="http://olga.majling.eu" accept="True" />
         </uris>
         <contentTypes default="False">
           <contentType key="text/html" accept="True" />

@@ -203,9 +203,9 @@ class DBAPI(object):
                 if row[0] is not None:
                     defectTypeId = row[0]
                 else:
-                    defectTypeId = self.putNewDefectType(defectType)
+                    defectTypeId = self.putNewDefectTypeShort(defectType)
             else:
-                defectTypeId = self.putNewDefectType(defectType)
+                defectTypeId = self.putNewDefectTypeShort(defectType)
 
             query = ('INSERT INTO defect (findingId, type, location, evidence) '
                      'VALUES (' + self.con.escape_string(str(findingId)) + ', '
@@ -224,7 +224,7 @@ class DBAPI(object):
 
         return False
 
-    def putNewDefectType(self, defectType):
+    def putNewDefectTypeShort(self, defectType):
         self.cursor.execute('INSERT INTO defectType (type) VALUES ("'
                             ''+self.con.escape_string(defectType)+'")')
         return self.cursor.lastrowid
