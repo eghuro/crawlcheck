@@ -324,3 +324,20 @@ class DBAPI(object):
                 self.con.rollback()
             print "Error %d %s" % (e.args[0], e.args[1])
             return False
+
+
+    def getUri(self, trID):
+        try:
+           query = ('SELECT uri FROM transaction WHERE id = '+str(trID))
+           self.cursor.execute(query)
+           row = self.cursor.fetchone()
+           if row is not None:
+              assert row[0] is not None
+              return row[0]
+           else:
+             return -1
+        except mdb.Error, e:
+           if self.con:
+              self.con.rollback()
+           print "Error %d %s" % (e.args[0], e.args[1])
+           return -1

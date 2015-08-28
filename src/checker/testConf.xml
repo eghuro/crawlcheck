@@ -13,7 +13,7 @@
     <plugin id="links_finder_plugin">
       <resolutions>
         <uris default="False">
-          <uri key="http://olga.majling.eu/" accept="False" />
+          <uri key="http://olga.majling.eu/" accept="True" />
         </uris>
         <contentTypes default="False">
           <contentType key="text/html" accept="True" />

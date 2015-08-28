@@ -20,7 +20,7 @@ class PluginRunner(object):
     def runTransaction(self, plugins, info):
         """ Run a single transaction through all plugins where it's accepted.
         """
-        print "Verifying"
+        print "Verifying "+info.getUri()
         for plugin in plugins:
             if self.accept(plugin.getId(), info):
                 print plugin.getId()
