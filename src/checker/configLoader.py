@@ -12,7 +12,7 @@ class ConfigLoader(object):
         Later, DB configuration, URI and Content-Type acceptors can be retrieved through getters.
     """
     def __init__(self):
-        self.version = "0.00"
+        self.version = "0.01"
         self.dbconf = DBAPIconfiguration()
         self.typeAcceptor = None
         self.uriAcceptor = None
