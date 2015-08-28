@@ -1,5 +1,7 @@
 require 'active_record/errors'
 class FindingController < ApplicationController
+  helper_method :getDefectDescription
+
   def show
     @empty = true
     begin
@@ -13,5 +15,10 @@ class FindingController < ApplicationController
       end
     rescue ActiveRecord::RecordNotFound
     end
+  end
+
+  def getDefectDescription(id)
+    @dType = Dtype.find(id)
+    return @dType.description
   end
 end

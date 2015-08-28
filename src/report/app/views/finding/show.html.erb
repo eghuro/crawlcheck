@@ -31,7 +31,7 @@
 <% if @defects and @defects.size > 0 %>
   <% @defects.each do |defect| %>
     <tr>
-      <td><%= defect.type%></td>
+      <td><%= getDefectDescription(defect.type)%></td>
       <td><%= defect.location%></td>
       <td><%= defect.evidence%></td>
     <tr>

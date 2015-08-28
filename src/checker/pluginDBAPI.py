@@ -230,9 +230,11 @@ class DBAPI(object):
         return self.cursor.lastrowid
 
     def putNewDefectType(self, defectType, description):
-        self.cursor.execute('INSERT INTO defectType (type, description) VALUES("'
-                            ''+self.con.escape_string(defectType)+'", "'
-                            ''+self.con.escape_string(description)+'")')
+        self.cursor.execute ('SELECT id FROM defectType WHERE type = "'+defectType+'"')
+        if self.cursor.rowcount == 0:
+           self.cursor.execute('INSERT INTO defectType (type, description) VALUES("'
+                               ''+self.con.escape_string(defectType)+'", "'
+                               ''+self.con.escape_string(description)+'")')
     def setLink(self, transactionId, toUri):
         try:
             if not self.gotLink(toUri) :
