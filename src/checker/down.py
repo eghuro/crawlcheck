@@ -13,8 +13,10 @@ class Scraper(object):
             self.con.close()
 
     def scrapOne(self, uri):
-        if not gotLink(uri):
+        if not self.gotLink(uri):
            r = requests.get(uri)
+
+           print "Adding entry point: "+uri
 
            self.cursor.execute("set names utf8;")
 
@@ -31,7 +33,7 @@ class Scraper(object):
            query = ('SELECT id FROM transaction WHERE method = \'GET\' and '
                     'uri = "'+self.con.escape_string(toUri)+'"')
            self.cursor.execute(query)
-           return self.cursor.rowcount == 0
+           return self.cursor.rowcount != 0
         except mdb.Error, e:
            if self.con:
               self.con.rollback()

@@ -26,8 +26,8 @@ class LinksFinder(IPlugin):
         return "linksFinder"
 
     def getLink(self, url, reqId):
-        print "Downloading "+url
         if not self.database.gotLink(url):
+          print "Downloading "+url
           r = requests.get(url)
           if 'content-type' in r.headers.keys():
              ct = r.headers['content-type']

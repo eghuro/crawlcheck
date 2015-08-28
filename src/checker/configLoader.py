@@ -21,33 +21,36 @@ class ConfigLoader(object):
     def load(self, fname):
         """Loads configuration from XML file.
         """
-        tree = etree.parse(fname)
-        root = tree.getroot()
+        try:
+           tree = etree.parse(fname)
+           root = tree.getroot()
 
-        if root.attrib['version'] == self.version:
-            dbAtts = root.find('db').attrib
+           if root.attrib['version'] == self.version:
+              dbAtts = root.find('db').attrib
 
-            self.dbconf.setUri(dbAtts['uri'])
-            self.dbconf.setPassword(dbAtts['pass'])
-            self.dbconf.setDbname(dbAtts['dbname'])
-            self.dbconf.setUser(dbAtts['user'])
+              self.dbconf.setUri(dbAtts['uri'])
+              self.dbconf.setPassword(dbAtts['pass'])
+              self.dbconf.setDbname(dbAtts['dbname'])
+              self.dbconf.setUser(dbAtts['user'])
 
-            eps = root.find('entryPoints')
-            epSet = eps.findall('entryPoint')
-            for ep in epSet:
-                self.entryPoints.append(ep.attrib['uri'])
+              eps = root.find('entryPoints')
+              epSet = eps.findall('entryPoint')
+              for ep in epSet:
+                 self.entryPoints.append(ep.attrib['uri'])
 
-            plugins = root.find('plugins')
+              plugins = root.find('plugins')
 
-            self.getResolutions(plugins)
+              self.getResolutions(plugins)
 
-            pluginSet = plugins.findall('plugin')
-            for plugin in pluginSet:
-                pluginId = plugin.attrib['id']
-                self.getPluginResolutions(pluginId, plugin, self.uriAcceptor,
-                                          self.typeAcceptor)
-        else:
-            print "Configuration version doesn't match"
+              pluginSet = plugins.findall('plugin')
+              for plugin in pluginSet:
+                  pluginId = plugin.attrib['id']
+                  self.getPluginResolutions(pluginId, plugin, self.uriAcceptor,
+                                            self.typeAcceptor)
+           else:
+              print "Configuration version doesn't match"
+        except xml.etree.ElementTree.ParseError:
+            print "Parsing configuration file failed"
 
     def getDbconf(self):
         """ Retrieve DB configuration.

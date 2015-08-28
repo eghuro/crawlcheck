@@ -21,6 +21,12 @@
       </resolutions>
     </plugin>
 
+   <plugin id="tinycss">
+      <resolutions>
+        <contentTypes default="False" />
+      </resolutions>
+   </plugin>
+
     <plugin id="qwerty">
       <resolutions>
         <uris default="False" />

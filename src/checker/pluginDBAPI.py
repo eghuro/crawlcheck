@@ -269,9 +269,8 @@ class DBAPI(object):
       try:
          query = ('SELECT id FROM transaction WHERE method = \'GET\' and '
                   'uri = "'+self.con.escape_string(toUri)+'"')
-         print query
          self.cursor.execute(query)
-         return self.cursor.rowcount == 0
+         return self.cursor.rowcount != 0
       except mdb.Error, e:
          if self.con:
             self.con.rollback()

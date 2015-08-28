@@ -44,7 +44,10 @@ class PluginRunner(object):
             info = api.getTransaction()
 
     def accept(self, pluginId, transaction):
-        return self.uriAcceptor.accept(pluginId, transaction.getUri()) and self.typeAcceptor.accept(pluginId, transaction.getContentType())
+       print "Plugin: "+pluginId
+       print "URI: "+transaction.getUri()
+       print "CType: "+transaction.getContentType() 
+       return self.uriAcceptor.accept(pluginId, transaction.getUri()) and self.typeAcceptor.accept(pluginId, transaction.getContentType())
 
     def getMaxPrefix(self, uri):
         prefixes = self.uriAcceptor.getValues()
