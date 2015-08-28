@@ -27,8 +27,13 @@ class LinksFinder(IPlugin):
 
     def getLink(self, url, reqId):
         print "Downloading "+url
-        r = requests.get(url)
-        self.database.setResponse(reqId, r.status_code, r.headers['content-type'], r.text.encode("utf-8").strip()[:65535])
+        if not self.database.gotLink(url):
+          r = requests.get(url)
+          if 'content-type' in r.headers.keys():
+             ct = r.headers['content-type']
+          else:
+             ct = ''
+          self.database.setResponse(reqId, r.status_code, ct, r.text.encode("utf-8").strip()[:65535])
 
     def make_links_absolute(self, soup, url):
         for tag in soup.findAll('a', href=True):

@@ -235,32 +235,48 @@ class DBAPI(object):
                             ''+self.con.escape_string(description)+'")')
     def setLink(self, transactionId, toUri):
         try:
-            query = ('INSERT INTO transaction (method, uri, origin, '
-                     'verificationStatusId, rawRequest) VALUES (\'GET\', "'
-                     '' + self.con.escape_string(toUri) + '", \'CHECKER\', '
-                     '' + self.con.escape_string(str(DBAPI.getRequestedStatusId()))+', "'
-                     '' + self.con.escape_string(self.getRequest(toUri)) + '")')
-            self.cursor.execute(query)
-            reqId = self.cursor.lastrowid
+            if not self.gotLink(toUri) :
 
-            query = ('INSERT INTO finding (responseId) VALUES ('
-                     '' + self.con.escape_string(str(transactionId)) + ')')
-            self.cursor.execute(query)
-            findingId = self.cursor.lastrowid
+                query = ('INSERT INTO transaction (method, uri, origin, '
+                         'verificationStatusId, rawRequest) VALUES (\'GET\', "'
+                         '' + self.con.escape_string(toUri) + '", \'CHECKER\', '
+                         '' + self.con.escape_string(str(DBAPI.getRequestedStatusId()))+', "'
+                         '' + self.con.escape_string(self.getRequest(toUri)) + '")')
+                self.cursor.execute(query)
+                reqId = self.cursor.lastrowid
 
-            query = ('INSERT INTO link (findingId, toUri, requestId) VALUES ('
-                     '' + self.con.escape_string(str(findingId)) + ', '
-                     '"' + self.con.escape_string(toUri) + '", '+str(reqId)+')')
-            self.cursor.execute(query)
-            self.con.commit()
-            return reqId
+                query = ('INSERT INTO finding (responseId) VALUES ('
+                         '' + self.con.escape_string(str(transactionId)) + ')')
+                self.cursor.execute(query)
+                findingId = self.cursor.lastrowid
 
+                query = ('INSERT INTO link (findingId, toUri, requestId) VALUES ('
+                         '' + self.con.escape_string(str(findingId)) + ', '
+                         '"' + self.con.escape_string(toUri) + '", '+str(reqId)+')')
+                self.cursor.execute(query)
+                self.con.commit()
+                return reqId
+            else:
+                return -1
         except mdb.Error, e:
             if self.con:
                 self.con.rollback()
             print "Error %d: %s" % (e.args[0], e.args[1])
 
         return None
+
+    def gotLink(self, toUri):
+      try:
+         query = ('SELECT id FROM transaction WHERE method = \'GET\' and '
+                  'uri = "'+self.con.escape_string(toUri)+'"')
+         print query
+         self.cursor.execute(query)
+         return self.cursor.rowcount == 0
+      except mdb.Error, e:
+         if self.con:
+            self.con.rollback()
+         print "Error %d: %s" % (e.args[0], e.args[1])
+         return False
 
     @staticmethod
     def getFinishedStatusId():
