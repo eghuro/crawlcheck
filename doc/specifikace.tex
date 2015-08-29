@@ -28,5 +28,21 @@ Kolo\v{t}uk – program, kter\'y "o\v{t}uk\'av\'a webov\'ym str\'ank\'am kola, n
 \paragraph{~}Podrobn\v{e}ji k v\'ykonn\'emu modulu. Dne\v{s}n\'i web se skl\'ad\'a z r\r{u}zn\'eho druhu obsahu - HTML str\'anky, CSS styly, Javascript atd. Na obsah se d\'a pohl\'i\v{z}et r\r{u}znou optikou - kontrola syntaxe, optimalizace pro cache, vyhled\'ava\v{c}e, mobiln\'i a jin\'a za\v{r}\'izen\'i, hled\'an\'i bezpe\v{c}nostn\'ich slabin atd. Ka\v{z}d\'y z t\v{e}chto p\v{r}\'istup\r{u} bude jin\'ym zp\r{u}sobem zpracov\'avat data, v\v{z}dy v\v{s}ak p\r{u}jde o n\v{e}jakou podmno\v{z}inu z\'iskateln\'ych dat. 
 \paragraph{~}Z v\'y\v{s}e uveden\'ych d\r{u}vod\r{u} se zd\'a vhodn\'e pou\v{z}\'it pro v\'ykonnou \v{c}\'ast modul\'arn\'i archiktkturu. Jednotliv\'e z\'asuvn\'e moduly prov\'ad\v{e}j\'i d\'il\v{c}\'i kontroly, p\v{r}i\v{c}em\v{z} maj\'i k dispozici jednotn\'e rozhran\'i zakr\'yvaj\'ic\'i zbytek aplikace a datab\'azi. Centr\'aln\'i spr\'avce na\v{c}\'it\'a pluginy a d\'av\'a data ke zpracov\'an\'i. S\'am plugin pak \v{r}e\v{s}\'i pouze zpracov\'an\'i jemu dan\'eho po\v{z}adavku a pou\v{z}\'iv\'a spole\v{c}n\'e rozhran\'i k ozn\'amen\'i n\'alez\r{u}.
 \section{N\'avrh datab\'aze}
+... tabulky ...
 
+\subsection{Rela\v{c}n\'i sch\'ema}
+Transaction(\underline{id}, method, uri, responseStatus, content-type, content, verificationStatusId)\\
+DefectType(\underline{typeId}, description)\\
+VerificationStatus(\underline{statusId}, description)\\
+Finding(\underline{transactionId}, findingId)\\
+Link(\underline{findingId}, toUri, processed, requestId)\\
+Defect(\underline{findingId}, type, location, evidence)\\
+Annotation(\underline{id}, findingId, comment)\\
+\subsection{Integritn\'i omezen\'i}
+Transaction.method $\in \{$GET, POST, PUT, CONNECT, HEAD$\}$\\
+Transaction.responseStatus dle RFC\\
+Transaction.verificationStatusId FOREIGN KEY na VerificationStatus.statusId\\
+Finding.transactionId FOREIGN KEY na Transaction.id\\
+Link.findingId, Defect.findingId, Annotation.findingId FOREIGN KEY na Finding.id\\
+Defect.type FOREIGN KEY na DefectType.typeId\\
 \end{document}
