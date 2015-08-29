@@ -29,6 +29,8 @@ class LinksFinder(IPlugin):
     def getLink(self, url, reqId):
        print "Downloading "+url
        r = requests.get(url)
+       if r.status_code != 200:
+          self.database.setDefect(reqId, "badlink", 0, url)
        if 'content-type' in r.headers.keys():
           ct = r.headers['content-type']
        else:
