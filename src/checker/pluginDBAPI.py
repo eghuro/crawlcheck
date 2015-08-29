@@ -240,10 +240,9 @@ class DBAPI(object):
             if not self.gotLink(toUri) :
 
                 query = ('INSERT INTO transaction (method, uri, origin, '
-                         'verificationStatusId, rawRequest) VALUES (\'GET\', "'
+                         'verificationStatusId) VALUES (\'GET\', "'
                          '' + self.con.escape_string(toUri) + '", \'CHECKER\', '
-                         '' + self.con.escape_string(str(DBAPI.getRequestedStatusId()))+', "'
-                         '' + self.con.escape_string(self.getRequest(toUri)) + '")')
+                         '' + self.con.escape_string(str(DBAPI.getRequestedStatusId()))+')')
                 self.cursor.execute(query)
                 reqId = self.cursor.lastrowid
 
@@ -319,10 +318,6 @@ class DBAPI(object):
             print "Error %d: %s" % (e.args[0], e.args[1])
 
         return False
-
-    @staticmethod
-    def getRequest(toUri):
-        return "GET "+toUri+" HTTP/1.1\r\n\r\n"
 
     def setResponse(self, reqId, status, contentType, content):
         """ Set response into database.
