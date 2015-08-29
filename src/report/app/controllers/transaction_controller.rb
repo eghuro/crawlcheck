@@ -1,11 +1,6 @@
 class TransactionController < ApplicationController
   def index
-    @transactions = Transaction.all
+    @transactions = Transaction.all.order('uri ASC')
     @status = Status.all
-  end
-
-  def show
-    @transaction = Transaction.find(params[:id])
-    render layout: false
   end
 end
