@@ -45,4 +45,7 @@ Transaction.verificationStatusId FOREIGN KEY na VerificationStatus.statusId\\
 Finding.transactionId FOREIGN KEY na Transaction.id\\
 Link.findingId, Defect.findingId, Annotation.findingId FOREIGN KEY na Finding.id\\
 Defect.type FOREIGN KEY na DefectType.typeId\\
+\section{Konfigura\v{c}n\'i jazyk s pravidly}
+\paragraph{Pravidla}D\r{u}le\v{z}itou sou\v{c}\'ast\'i konfigurace jsou pravidla p\v{r}id\v{e}lov\'an\'i dat jednotliv\'ym plugin\r{u}m. Pro plugin je mo\v{z}n\'e ur\v{c}it kter\'e adresy m\'a zpracov\'avat a kter\'e adresy naopak zpracov\'avat nem\'a, obdobn\v{e} jak\'y typ obsahu (content-type) m\'a zpracov\'avat a jak\'y ne. Pokud plugin nem\'a pro danou adresu nebo typ obsahu uvedeno jasn\'e pravidlo ANO nebo NE, pak m\r{u}\v{z}e m\'t plugin implicitn\'i nastaven\'i zvl\'a\v{s}\v{t} pro adresy a typy. Pokud by plugin nem\v{e}l ani implicitn\'i nastaven\'i - nap\v{r} z d\r{u}vodu absence konfigurace pro plugin jako takov\'e. Lze zadat glob\'aln\'i nastaven\'i, kter\'e je stejn\'e jako pro plugin - tj. pravidla ANO:NE pro adresy a typy obsahu a implicitn\'i nastaven\'i.
+\paragraph{Algoritmus vyhodnocen\'i}...
 \end{document}
