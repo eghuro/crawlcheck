@@ -307,6 +307,9 @@ class DBAPI(object):
                      '' + self.con.escape_string(str(statusId)) + ''
                      ' WHERE id = ' + self.con.escape_string(str(transactionId)) + '')
             self.cursor.execute(query)
+
+            query = ('UPDATE link SET processed = True WHERE requestId = '+str(transactionId))
+            self.cursor.execute(query)
             self.con.commit()
             return True
 
