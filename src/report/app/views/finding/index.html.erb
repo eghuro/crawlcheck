@@ -3,14 +3,14 @@
 <h2>Links</h2>
 <table border="1">
   <tr>
-    <th>From</th>
     <th>To</th>
+    <th>From</th>
     <th>Processed</th>
   </tr>
   <%  @links.each do |link| %>
     <tr>
-      <td><%= link.uri %></td>
       <td><%= link.toUri %></td>
+      <td><%= link.uri %></td>
       <td><%= link.processed %></td>
     </tr>
   <%end%>
