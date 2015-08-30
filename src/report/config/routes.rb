@@ -56,4 +56,5 @@ Rails.application.routes.draw do
 
   resources :transaction
   resources :finding
+  root 'main#index'
 end
