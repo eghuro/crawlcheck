@@ -15,13 +15,10 @@ class LinksFinder(IPlugin):
         soup = BeautifulSoup(content, 'html.parser')
         self.make_links_absolute(soup, self.database.getUri(transactionId))
         links = soup.find_all('a')
-        for link in links:
-            url = link.get('href')
+        self.check_links(links, "Link to ", transactionId)
 
-            reqId = self.database.setLink(transactionId, url)
-            print "Link to "+str(url)+" (req:"+str(reqId)+")"
-            if reqId != -1:
-                self.getLink(url, reqId, transactionId)
+        links2 = soup.find_all('link')
+        self.check_links(links2, "Linked resource: ", transactionId)
         return
 
     def getId(self):
@@ -41,3 +38,12 @@ class LinksFinder(IPlugin):
     def make_links_absolute(self, soup, url):
         for tag in soup.findAll('a', href=True):
             tag['href'] = urlparse.urljoin(url, tag['href'])
+
+    def check_links(self, links, logMsg, transactionId):
+        for link in links:
+            url = link.get('href')
+
+            reqId = self.database.setLink(transactionId, url)
+            print logMsg+str(url)
+            if reqId != -1:
+                self.getLink(url, reqId, transactionId)
