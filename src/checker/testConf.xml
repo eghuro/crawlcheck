@@ -13,32 +13,24 @@
     <plugin id="linksFinder">
       <resolutions>
         <uris default="False">
-          <uri key="http://olga.majling.eu" accept="False" />
-          <uri key="http://olga.majling.eu/Vyuka/Matematika-1" accept="True" />
-          <uri key="http://olga.majling.eu/Vyuka/Matematika-3" accept="True" />
+          <uri key="http://olga.majling.eu" accept="True" />
         </uris>
-        <contentTypes default="False">
-          <contentType key="text/html" accept="True" />
-        </contentTypes>
       </resolutions>
     </plugin>
 
    <plugin id="tinycss">
       <resolutions>
-        <contentTypes default="False" />
+        <contentTypes default="False">
+          <contentType key="text/css" accept="True" />
+        </contentTypes>
       </resolutions>
    </plugin>
 
    <plugin id="htmlValidator">
      <resolutions>
         <uris default="False">
-          <uri key="http://olga.majling.eu" accept="False" />
-          <uri key="http://olga.majling.eu/Vyuka/Matematika-1" accept="True" />
-          <uri key="http://olga.majling.eu/Vyuka/Matematika-3" accept="True" />
+          <uri key="http://olga.majling.eu" accept="True" />
         </uris>
-        <contentTypes default="False">
-          <contentType key="text/html" accept="True" />
-        </contentTypes>
      </resolutions>
    </plugin>
 
@@ -50,6 +42,6 @@
   </plugins>
 
   <entryPoints>
-    <entryPoint uri="http://olga.majling.eu/Vyuka/Matematika-1" />
+    <entryPoint uri="http://olga.majling.eu/" />
   </entryPoints>
 </crawlcheck>

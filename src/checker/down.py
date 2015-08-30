@@ -22,7 +22,6 @@ class Scraper(object):
 
            query = ('INSERT INTO transaction (uri, method, responseStatus, contentType, origin, verificationStatusId, content) VALUES ("'
                     ''+self.con.escape_string(uri)+'",\'GET\', ' + str(r.status_code) + ', "' + r.headers['Content-Type'] +'", \'CLIENT\', 3, "%s")')
-           print query
            self.cursor.execute(query, [r.text.encode("utf-8").strip()[:65535]])
            self.con.commit()
 

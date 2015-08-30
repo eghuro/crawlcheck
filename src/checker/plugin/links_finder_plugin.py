@@ -13,6 +13,7 @@ class LinksFinder(IPlugin):
 
     def check(self, transactionId, content):
         soup = BeautifulSoup(content, 'html.parser')
+        uri = self.database.getUri(transactionId)
         self.make_links_absolute(soup, self.database.getUri(transactionId))
         links = soup.find_all('a')
         for link in links:
@@ -39,5 +40,8 @@ class LinksFinder(IPlugin):
        self.database.setResponse(reqId, r.status_code, ct, r.text.encode("utf-8").strip()[:65535])
 
     def make_links_absolute(self, soup, url):
+        uri = url.split("?")[0]
+        if uri[-1] != '/':
+          uri+='/'
         for tag in soup.findAll('a', href=True):
-            tag['href'] = urlparse.urljoin(url, tag['href'])
+            tag['href'] = urlparse.urljoin(uri, tag['href'])
