@@ -18,19 +18,20 @@ class LinksFinder(IPlugin):
         for link in links:
             url = link.get('href')
 
-            if not self.database.gotLink(url):
-               reqId = self.database.setLink(transactionId, url)
-               self.getLink(url, reqId)
+            reqId = self.database.setLink(transactionId, url)
+            print "Link to "+str(url)+" (req:"+str(reqId)+")"
+            if reqId != -1:
+                self.getLink(url, reqId, transactionId)
         return
 
     def getId(self):
         return "linksFinder"
 
-    def getLink(self, url, reqId):
+    def getLink(self, url, reqId, srcId):
        print "Downloading "+url
        r = requests.get(url)
        if r.status_code != 200:
-          self.database.setDefect(reqId, "badlink", 0, url)
+          self.database.setDefect(srcId, "badlink", 0, url)
        if 'content-type' in r.headers.keys():
           ct = r.headers['content-type']
        else:

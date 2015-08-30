@@ -24,10 +24,9 @@ class PyW3C_HTML_Validator(IPlugin):
                  self.database.setDefect(transactionId,
                                          self.transformMessageId(warning['messageid'], "warn").
                                          warning['line'], warning['source'])
-        except ValidationFault:
-            print "Validation error"
+        except ValidationFault, e:
+            print "Validation fault"
         return
-
     def getId(self):
         return "htmlValidator"
 

@@ -237,25 +237,29 @@ class DBAPI(object):
                                ''+self.con.escape_string(description)+'")')
     def setLink(self, transactionId, toUri):
         try:
-            if not self.gotLink(toUri) :
-
+            reqId = self.gotLink(toUri)
+            needContent = False
+            if reqId == -1 : #nebyl pozadavek
                 query = ('INSERT INTO transaction (method, uri, origin, '
                          'verificationStatusId) VALUES (\'GET\', "'
                          '' + self.con.escape_string(toUri) + '", \'CHECKER\', '
                          '' + self.con.escape_string(str(DBAPI.getRequestedStatusId()))+')')
                 self.cursor.execute(query)
                 reqId = self.cursor.lastrowid
+                needContent = True
 
-                query = ('INSERT INTO finding (responseId) VALUES ('
-                         '' + self.con.escape_string(str(transactionId)) + ')')
-                self.cursor.execute(query)
-                findingId = self.cursor.lastrowid
+            query = ('INSERT INTO finding (responseId) VALUES ('
+                     '' + self.con.escape_string(str(transactionId)) + ')')
+            self.cursor.execute(query)
+            findingId = self.cursor.lastrowid
 
-                query = ('INSERT INTO link (findingId, toUri, requestId) VALUES ('
-                         '' + self.con.escape_string(str(findingId)) + ', '
-                         '"' + self.con.escape_string(toUri) + '", '+str(reqId)+')')
-                self.cursor.execute(query)
-                self.con.commit()
+            query = ('INSERT INTO link (findingId, toUri, requestId) VALUES ('
+                     '' + self.con.escape_string(str(findingId)) + ', '
+                     '"' + self.con.escape_string(toUri) + '", '+str(reqId)+')')
+            self.cursor.execute(query)
+            self.con.commit()
+
+            if needContent:
                 return reqId
             else:
                 return -1
@@ -271,28 +275,31 @@ class DBAPI(object):
          query = ('SELECT id FROM transaction WHERE method = \'GET\' and '
                   'uri = "'+self.con.escape_string(toUri)+'"')
          self.cursor.execute(query)
-         return self.cursor.rowcount != 0
+         if self.cursor.rowcount != 0:
+            return self.cursor.fetchone()[0]
+         else:
+            return -1
       except mdb.Error, e:
          if self.con:
             self.con.rollback()
          print "Error %d: %s" % (e.args[0], e.args[1])
-         return False
+         return -1
 
     @staticmethod
-    def getFinishedStatusId():
+    def getFinishedStatusId(): # odkaz v reportu
         return 5
 
     @staticmethod
-    def getProcessingStatusId():
-        return 4
-
-    @staticmethod
-    def getUnverifiedStatusId():
+    def getUnverifiedStatusId(): # bere getTransaction
         return 3
 
     @staticmethod
     def getRequestedStatusId():
         return 1
+
+    @staticmethod
+    def getProcessingStatusId():
+        return 4
 
     def setFinished(self, transactionId):
         """ Mark in the database that we are done with verification of a
@@ -338,7 +345,7 @@ class DBAPI(object):
             if self.con:
                 self.con.rollback()
             print "Error %d %s" % (e.args[0], e.args[1])
-            return False
+            return -1
 
 
     def getUri(self, trID):

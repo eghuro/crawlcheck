@@ -20,11 +20,15 @@ class Scraper(object):
 
            self.cursor.execute("set names utf8;")
 
-           query = 'INSERT INTO transaction (uri, method, responseStatus, contentType, origin, verificationStatusId, content) VALUES ("'+uri+'",\'GET\', ' + str(r.status_code) + ', "' + r.headers['Content-Type'] +'", \'CLIENT\', 3, "%s")'
+           query = ('INSERT INTO transaction (uri, method, responseStatus, contentType, origin, verificationStatusId, content) VALUES ("'
+                    ''+self.con.escape_string(uri)+'",\'GET\', ' + str(r.status_code) + ', "' + r.headers['Content-Type'] +'", \'CLIENT\', 3, "%s")')
+           print query
            self.cursor.execute(query, [r.text.encode("utf-8").strip()[:65535]])
            self.con.commit()
 
     def scrap(self, urilist):
+        for uri in urilist:
+           print uri
         for uri in urilist:
            self.scrapOne(uri)
 
