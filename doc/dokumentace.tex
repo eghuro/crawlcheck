@@ -1,0 +1,17 @@
+\documentclass[10pt]{article}
+\begin{document}
+\title{Crawlcheck - dokumentace}
+\author{Alex Mansurov}
+\maketitle
+\newpage
+
+\section{Architektura}
+\paragraph{~}Program se skl\'ad\'a ze dvou nez\'avisl\'ych modu\r{u} - Checker a Report. Checker se star\'a o prov\'ad\v{e}n\'i kontrol. Vstupn\'i body \v{c}te z konfigura\v{c}n\'iho souboru. Checker je implementov\'an v Pythonu. Report zobrazuje v\'ysledky kontrol v podob\v{e} webov\'ych str\'anek. Report je naps\'an nad Ruby on Rails. Moduly pracuj\'i nad sd\'ilenou MySQL datab\'az\'i.
+
+\section{Checker}
+\paragraph{~}Checker m\'a na starosti prov\'ad\v{e}n\'i kontrol. Checker je modul\'arn\'i, j\'adrem je PluginManager. Zde se na\v{c}te konfigurace a z n\'i vstupn\'i body. N\'asledn\v{e} se hledaj\'i pluginy a spust\'i se PluginRunner, kter\'y p\v{r}ed\'av\'a jednotliv\'e transakce z datab\'aze konkr\'etn\'im plugin\r{u}m.
+\paragraph{~}Konfiguraci na\v{c}\'it\'a ConfigLoader, kter\'y generuje instance Acceptoru. Acceptor \v{r}\'id\'i logiku vyhodnocov\'an\'i pravidel. Poskytuje metodu accept(), kter\'a pro identifik\'ator pluginu a adresu vyd\'a rozhodnut\'i ANO nebo NE.
+\paragraph{~}Po na\v{c}ten\'i vstupn\'ich bod\r{u} je vol\'an Scraper, kter\'y st\'ahne po\v{z}adovan\'e str\'anky a vlo\v{z}\'i obsah do datab\'aze. V p\v{r}\'ipad\v{e} budouc\'iho roz\v{s}\'i\v{r}en\'i k pou\v{z}\'iv\'an\'i proxy sta\v{c}\'i, aby proxy server vkl\'adal po\v{z}adavky do datab\'aze a Checker nen\'i t\v{r}eba m\v{e}nit.
+\paragraph{~}Pro vlastn\'i na\v{c}\'it\'an\'i a spr\'avu plugin\r{u} je pou\v{z}it syst\'em Yapsy. Pluginy maj\'i jednoduch\'y interface - metoda setDb() umo\v{z}n\'i pluginu p\v{r}edat referenci na datab\'azovou "knihovnu", plugin um\'i sd\v{e}lit sv\r{u}j identifik\'ator metodou getId() a p\v{r}edev\v{s}\'im m\'a metodu check(), kde dostane identifik\'ator transakce a obsah ke zpracov\'an\'i. Nalezen\'e poznatky oznamuje skrze API datab\'azov\'e knihovny.
+\paragraph{~}Pro zaji\v{s}t\v{e}n\'i z\'akladn\'i funkcionality - kontrola syntaxe HTML, CSS a pr\r{u}zkumu odkaz\r{u} jsou naps\'any t\v{r}i pluginy. Jde o adapt\'ery nad existuj\'ic\'imi knihovnami, kter\'e jejich v\'ystupy p\v{r}izp\r{u}sobuj\'i pot\v{r}eb\'am Crawlchecku. HTML syntax je kontrolov\'ana pomoc\'i knihovny py\_w3c, kter\'a vyu\v{z}\'iv\'a API valid\'atoru od konsorcia W3C. Syntax CSS je kontrolov\'ana pomoc\'i knihovny tinycss. Odkazy kontroluje LinksFinder, kter\'y parsuje odkazy pomoc\'i knihovny BeautifulSoup, stahuje nalezen\'e odkazy a zad\'av\'a je do datab\'aze jako novou transakci a kontroluje HTTP status code na p\v{r}edm\v{e}t vadn\'ych odkaz\r{u}.
+\end{document}

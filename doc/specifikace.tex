@@ -1,0 +1,51 @@
+\documentclass[10pt]{article}
+\begin{document}
+\title{Crawlcheck - specifikace}
+\author{Alex Mansurov}
+\maketitle
+\newpage
+
+\section{Zad\'an\'i}
+Kolo\v{t}uk – program, kter\'y "o\v{t}uk\'av\'a webov\'ym str\'ank\'am kola, ne\v{z} vyjedou na tra\v{t}" - z\'akladem by mohla b\'yt kontrola syntaxe HTML, CSS a prov\'azanosti odkaz\r{u}. K tomu u\v{z} p\'ar program\r{u} existuje, ale m\'alokterý respektuje aktu\'aln\'i webov\'e standardy a je dost efektivn\'i na kontrolu rozs\'ahl\'eho webu. 
+
+\section{Vstup}
+\paragraph{~}Vstupem jsou internetov\'e adresy, kter\'e podl\'ehaj\'i kontrole a konfigura\v{c}n\'i soubor. Adresy mohou b\'yt i neexistuj\'ic\'i - nap\v{r}. nefunk\v{c}n\'i odkaz. Adresy poch\'azej\'i od u\v{z}ivatele, ale i z aplikace samotn\'e - nap\v{r}. kontrola odkaz\r{u}. Konfigurace zahrnuje pravidla prov\'ad\v{e}n\'i kontrol. Pravidla ur\v{c}uj\'i jak\'e kontroly se prov\'ad\v{e}j\'i v z\'avislosti na adrese, pop\v{r}. jin\'ych parametrech jako typ obsahu (content type)
+
+\paragraph{~}Zva\v{z}uje se n\v{e}kolik mo\v{z}nost\'i \v{c}ten\'i vstupu. Jedna z mo\v{z}nost\'i je u\v{z}ivatelem zadan\'y seznam "vstupn\'ich bod\r{u}", ze kter\'ych se prov\'ad\'i dal\v{s}\'i pr\r{u}zkum po odkazech dle konfigurace. Druh\'a mo\v{z}nost je pou\v{z}\'it pro vstup prohl\'i\v{z}e\v{c} testera - aplikace by fungovala jako proxy server, kter\'y na pozad\'i prov\'ad\'i kontroly. U\v{z}ivatel by mohl prov\'ad\v{e}t d\'il\v{c}\'i kontroly ve sv\'em prohl\'i\v{z}e\v{c}i a kontrolovat takov\'e aspekty, kter\'e se automaticky testuj\'i velice slo\v{z}it\v{e} - spr\'avnost obsahu, design, atd. Zde se nab\'iz\'i mo\v{z}nost vyu\v{z}\'it ji\v{z} hotov\'e komponenty jako nap\v{r}. Webrick.
+
+\section{V\'ystup}
+\paragraph{~}V\'ystupem je p\v{r}ehled testovan\'ych str\'anek a informace o proveden\'ych kontrol\'ach a jejich v\'ysledc\'ich. V\'ystup m\r{u}\v{z}e m\'it podobu textov\'eho dokumentu nebo webov\'e str\'anky / aplikace. V\'yhodou webov\'eho v\'ystupu je mo\v{z}nost jeho dopln\v{e}n\'i o p\v{r}\'ipadn\'e anotace.
+
+\section{Architektura}
+\paragraph{~}Program se skl\'ad\'a z n\v{e}kolika navz\'ajem nez\'avisl\'ych komponent - z\'isk\'av\'an\'i dat z internetu, prov\'ad\v{e}n\'i kontrol z\'iskan\'ych dat a zobrazov\'an\'i v\'ysledk\r{u} kontrol. Tyto moduly maj\'i jedin\'e spole\v{c}n\'e - data.
+\paragraph{~}Aplikaci lze pojmout jako mno\v{z}inu modul\r{u} pracuj\'ic\'ich se spole\v{c}nou datab\'az\'i. V\'yhodou tohoto p\v{r}\'istupu bude mj. snadn\'a podpora mo\v{z}n\'ych variant p\v{r}ij\'im\'an\'i vstupu a v\'ystupu zva\v{z}ovan\'ych v\'y\v{s}e, nev\'yhodou naopak vy\v{s}\v{s}\'i n\'aro\v{c}nost zaji\v{s}t\v{e}n\'i korektn\'i spolupr\'ace jednotliv\'ych modul\r{u}.
+\paragraph{~}Aplikace se bude skl\'adat z n\'asleduj\'ic\'ich modul\r{u}:
+\begin{itemize}
+	\item Vstupn\'i modul - proxy server nebo na\v{c}\'ita\v{c} vstupn\'ich bod\r{u} z konfigurace. Ukl\'ad\'a do datab\'aze po\v{z}adavky, pop\v{r}. doru\v{c}uje vstup u\v{z}ivateli (proxy)
+	\item V\'ystupn\'i modul - webov\'a \v{c}i jin\'a aplikace, kter\'a zobrazuje z\'iskan\'e poznatky z datab\'aze, pop\v{r}. generuje "zpr\'avu" o proveden\'ych kontrol\'ach
+	\item V\'ykonn\'y modul - vlastn\'i prov\'ad\v{e}n\'i kontrol. Na\v{c}\'it\'a z datab\'aze po\v{z}adavky a na jejich z\'aklad\v{e} prov\'ad\'i kontroly a ukl\'ad\'a do datab\'aze v\'ystup.
+\end{itemize}
+\paragraph{~}Podrobn\v{e}ji k v\'ykonn\'emu modulu. Dne\v{s}n\'i web se skl\'ad\'a z r\r{u}zn\'eho druhu obsahu - HTML str\'anky, CSS styly, Javascript atd. Na obsah se d\'a pohl\'i\v{z}et r\r{u}znou optikou - kontrola syntaxe, optimalizace pro cache, vyhled\'ava\v{c}e, mobiln\'i a jin\'a za\v{r}\'izen\'i, hled\'an\'i bezpe\v{c}nostn\'ich slabin atd. Ka\v{z}d\'y z t\v{e}chto p\v{r}\'istup\r{u} bude jin\'ym zp\r{u}sobem zpracov\'avat data, v\v{z}dy v\v{s}ak p\r{u}jde o n\v{e}jakou podmno\v{z}inu z\'iskateln\'ych dat. 
+\paragraph{~}Z v\'y\v{s}e uveden\'ych d\r{u}vod\r{u} se zd\'a vhodn\'e pou\v{z}\'it pro v\'ykonnou \v{c}\'ast modul\'arn\'i archiktkturu. Jednotliv\'e z\'asuvn\'e moduly prov\'ad\v{e}j\'i d\'il\v{c}\'i kontroly, p\v{r}i\v{c}em\v{z} maj\'i k dispozici jednotn\'e rozhran\'i zakr\'yvaj\'ic\'i zbytek aplikace a datab\'azi. Centr\'aln\'i spr\'avce na\v{c}\'it\'a pluginy a d\'av\'a data ke zpracov\'an\'i. S\'am plugin pak \v{r}e\v{s}\'i pouze zpracov\'an\'i jemu dan\'eho po\v{z}adavku a pou\v{z}\'iv\'a spole\v{c}n\'e rozhran\'i k ozn\'amen\'i n\'alez\r{u}.
+\section{N\'avrh datab\'aze}
+... tabulky ...
+
+\subsection{Rela\v{c}n\'i sch\'ema}
+Transaction(\underline{id}, method, uri, responseStatus, content-type, content, verificationStatusId)\\
+DefectType(\underline{typeId}, description)\\
+VerificationStatus(\underline{statusId}, description)\\
+Finding(\underline{transactionId}, findingId)\\
+Link(\underline{findingId}, toUri, processed, requestId)\\
+Defect(\underline{findingId}, type, location, evidence)\\
+Annotation(\underline{id}, findingId, comment)\\
+\subsection{Integritn\'i omezen\'i}
+Transaction.method $\in \{$GET, POST, PUT, CONNECT, HEAD$\}$\\
+Transaction.responseStatus dle RFC\\
+Transaction.verificationStatusId FOREIGN KEY na VerificationStatus.statusId\\
+Finding.transactionId FOREIGN KEY na Transaction.id\\
+Link.findingId, Defect.findingId, Annotation.findingId FOREIGN KEY na Finding.id\\
+Defect.type FOREIGN KEY na DefectType.typeId\\
+\section{Konfigura\v{c}n\'i jazyk s pravidly}
+\paragraph{Pravidla}D\r{u}le\v{z}itou sou\v{c}\'ast\'i konfigurace jsou pravidla p\v{r}id\v{e}lov\'an\'i dat jednotliv\'ym plugin\r{u}m. Pro plugin je mo\v{z}n\'e ur\v{c}it kter\'e adresy m\'a zpracov\'avat a kter\'e adresy naopak zpracov\'avat nem\'a, obdobn\v{e} jak\'y typ obsahu (content-type) m\'a zpracov\'avat a jak\'y ne. Pokud plugin nem\'a pro danou adresu nebo typ obsahu uvedeno jasn\'e pravidlo ANO nebo NE, pak m\r{u}\v{z}e m\'t plugin implicitn\'i nastaven\'i zvl\'a\v{s}\v{t} pro adresy a typy. Pokud by plugin nem\v{e}l ani implicitn\'i nastaven\'i - nap\v{r} z d\r{u}vodu absence konfigurace pro plugin jako takov\'e. Lze zadat glob\'aln\'i nastaven\'i, kter\'e je stejn\'e jako pro plugin - tj. pravidla ANO:NE pro adresy a typy obsahu a implicitn\'i nastaven\'i.
+\paragraph{Algoritmus vyhodnocen\'i}...
+\end{document}
