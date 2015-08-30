@@ -1,0 +1,34 @@
+Get new transaction for processing and mark it as being processed
+
+START TRANSACTION;
+
+SELECT @A:=MAX(id), content, 
+FROM transaction
+INNER JOIN verificationStatus ON verificationStatus.id = transaction.id
+WHERE transaction.responseStatus = 200 
+AND transaction.contentType = "text/html"
+AND transaction.method = "GET"
+AND verificationStatus.status = "UNVERIFIED";
+
+UPDATE transaction
+SET verificationStatusId = (SELECT id FROM verificationStatus WHERE status = "PROCESSING")
+WHERE id = @A
+
+COMMIT;
+
+Insert a discovered link
+INSERT INTO finding(responseId) VALUES ($responseId)
+// get finding ID
+INSERT INTO link(findingId, toURI) VALUES ($findingId, $uri)
+
+Insert a discovered defect
+INSERT INTO finding(responseId) VALUES ($transactionId);
+// get finding ID
+SELECT id FROM defectType WHERE type = $type; //get defect type id
+INSERT INTO defect(findingId, type, location, evidence) 
+  VALUES ($findingId, $defectTypeId, $location, $evidence)
+
+Finish processing a transaction
+UPDATE transaction
+SET verificationStatusId = $statusId
+WHERE id = $transactionId
