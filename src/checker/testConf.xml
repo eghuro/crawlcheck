@@ -51,7 +51,7 @@
   </plugins>
 
   <entryPoints>
-    <entryPoint uri="http://olga.majling.eu/Vyuka/Matematika-1" />
+    <entryPoint uri="http://olga.majling.eu/" />
   </entryPoints>
 </crawlcheck>
  

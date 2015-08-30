@@ -17,12 +17,14 @@ class PluginRunner(object):
         self.uriAcceptor = uriAcceptor
         self.typeAcceptor = typeAcceptor
 
-    def runTransaction(self, plugins, info):
+    def runTransaction(self, plugins, info, prefix):
         """ Run a single transaction through all plugins where it's accepted.
         """
         print "Verifying "+info.getUri()
         for plugin in plugins:
-            if self.accept(plugin.getId(), info):
+            fakeTransaction = info
+            fakeTransaction.setUri(prefix)
+            if self.accept(plugin.getId(), fakeTransaction):
                 print plugin.getId()
                 plugin.check(info.getId(), info.getContent())
 
@@ -38,10 +40,10 @@ class PluginRunner(object):
         info = api.getTransaction()
         while info.getId() != -1:
             print "Processing "+info.getUri()
-            info.setUri(self.getMaxPrefix(info.getUri()))
+            prefix = self.getMaxPrefix(info.getUri())
             print "Uri changed: "+info.getUri()
             # uri se nahradi nejdelsim prefixem dle konfigurace pluginu
-            self.runTransaction(plugins, info)
+            self.runTransaction(plugins, info, prefix)
             api.setFinished(info.getId())
             info = api.getTransaction()
 
