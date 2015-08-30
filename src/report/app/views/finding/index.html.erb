@@ -1,0 +1,35 @@
+<h1>Findings</h1>
+
+<h2>Links</h2>
+<table border="1">
+  <tr>
+    <th>From</th>
+    <th>To</th>
+    <th>Processed</th>
+  </tr>
+  <%  @links.each do |link| %>
+    <tr>
+      <td><%= link.uri %></td>
+      <td><%= link.toUri %></td>
+      <td><%= link.processed %></td>
+    </tr>
+  <%end%>
+</table>
+
+<h2>Defects</h2>
+<table border="1">
+  <tr>
+    <th>URI</th>
+    <th>Description</th>
+    <th>Location</th>
+    <th>Evidence</th>
+  </tr>
+  <% @defects.each do |defect| %>
+    <tr>
+      <td><%= defect.uri %></td>
+      <td><%= defect.description %></td>
+      <td><%= defect.location %></td>
+      <td><%= defect.evidence %></td>
+    </tr>
+  <%end%>
+</table>
