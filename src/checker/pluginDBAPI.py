@@ -374,7 +374,7 @@ class DBAPI(object):
            row = self.cursor.fetchone()
            if row is not None:
               assert row[0] is not None
-              return row[0]
+              return urllib.unquote(row[0]).decode('utf-8')
            else:
              return -1
         except mdb.Error, e:
