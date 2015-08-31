@@ -58,7 +58,7 @@ class PluginRunner(object):
 
         # seznam prefixu, pro nas uri chceme nejdelsi prefix
         trie = marisa_trie.Trie(prefixes)
-        prefList = trie.prefixes(unicode(uri, encoding="utf-8"))
+        prefList = trie.prefixes(unicode(str(uri), encoding="utf-8"))
         if len(prefList) > 0:
             return prefList[-1]
         else: return uri
