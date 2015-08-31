@@ -11,9 +11,9 @@ class CssValidator(IPlugin):
     def check(self, transactionId, content):
         try:
             parser = tinycss.make_parser('page3')
-            stylesheet = parser.parse_stylesheet(content)
+            stylesheet = parser.parse_stylesheet(content.decode("utf-8"))
             for error in stylesheet.errors:
-                self.database.setDefect(transactionId, "Stylesheet error", error.line, error.reason)
+                self.database.setDefect(transactionId, "stylesheet", error.line, error.reason)
         except UnicodeDecodeError:
             print "Error"
         return
