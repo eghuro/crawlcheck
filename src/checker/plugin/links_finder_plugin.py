@@ -12,6 +12,9 @@ class LinksFinder(IPlugin):
         self.database = DB
 
     def check(self, transactionId, content):
+        """ Najde tagy <a>, <link>, vybere atribut href, ulozi jako odkazy,
+            stahne obsah jako dalsi transakci.
+        """
         soup = BeautifulSoup(content, 'html.parser')
         uri = self.database.getUri(transactionId)
         self.make_links_absolute(soup, self.database.getUri(transactionId))

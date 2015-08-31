@@ -225,17 +225,29 @@ class DBAPI(object):
         return False
 
     def putNewDefectTypeShort(self, defectType):
+        """ Insert a generic new type into DB. 
+            The type won't have a description. Returns id.
+        """
         self.cursor.execute('INSERT INTO defectType (type) VALUES ("'
                             ''+self.con.escape_string(defectType)+'")')
         return self.cursor.lastrowid
 
     def putNewDefectType(self, defectType, description):
+        """ Insert a new type with description unless already in database.
+            Supposed to be used by plugins prior entering defects, so that
+            proper description is available in report.
+            Returns nothing.
+        """
         self.cursor.execute ('SELECT id FROM defectType WHERE type = "'+defectType+'"')
         if self.cursor.rowcount == 0:
            self.cursor.execute('INSERT INTO defectType (type, description) VALUES("'
                                ''+self.con.escape_string(defectType)+'", "'
                                ''+self.con.escape_string(description)+'")')
     def setLink(self, transactionId, toUri):
+        """ Set new link into transaction, finding and link tables.
+            Return requestId if content needs to be downloaded.
+            Return -1 is content is present.
+        """
         try:
             reqId = self.gotLink(toUri)
             needContent = False
@@ -271,6 +283,10 @@ class DBAPI(object):
         return None
 
     def gotLink(self, toUri):
+      """ Check if transaction with GET method and uri specified is in the
+          database.
+          Return transaction id or -1 if not present
+      """
       try:
          query = ('SELECT id FROM transaction WHERE method = \'GET\' and '
                   'uri = "'+self.con.escape_string(toUri)+'"')
@@ -349,6 +365,8 @@ class DBAPI(object):
 
 
     def getUri(self, trID):
+        """ Get URI for transaction ID.
+        """
         try:
            query = ('SELECT uri FROM transaction WHERE id = '+str(trID))
            self.cursor.execute(query)

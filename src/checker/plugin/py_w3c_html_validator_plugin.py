@@ -11,6 +11,8 @@ class PyW3C_HTML_Validator(IPlugin):
         self.database = DB
 
     def check(self, transactionId, content):
+        """ Pusti validator, ulozi chyby a varovani.
+        """
         try:
             self.validator.validate_fragment(content)
             for error in self.validator.errors:

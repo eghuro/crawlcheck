@@ -13,6 +13,8 @@ class Scraper(object):
             self.con.close()
 
     def scrapOne(self, uri):
+        """ Download one page and insert it into transaction.
+        """
         if not self.gotLink(uri):
            r = requests.get(uri)
 
@@ -26,6 +28,8 @@ class Scraper(object):
            self.con.commit()
 
     def scrap(self, urilist):
+        """ Download a list of pages and insert them into database.
+        """
         for uri in urilist:
            print uri
         for uri in urilist:

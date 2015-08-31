@@ -9,6 +9,8 @@ class CssValidator(IPlugin):
     def getId(self):
         return "tinycss"
     def check(self, transactionId, content):
+        """Pusti validator, ulozi chyby.
+        """
         try:
             parser = tinycss.make_parser('page3')
             stylesheet = parser.parse_stylesheet(content.decode("utf-8"))

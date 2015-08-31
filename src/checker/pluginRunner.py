@@ -52,9 +52,6 @@ class PluginRunner(object):
 
     def getMaxPrefix(self, uri):
         prefixes = self.uriAcceptor.getValues()
-        #uPrefixes = []
-        #for prefix in prefixes:
-          #uPrefixes.add(unicode(prefix,encoding="utf-8"))
 
         # seznam prefixu, pro nas uri chceme nejdelsi prefix
         trie = marisa_trie.Trie(prefixes)
