@@ -84,7 +84,7 @@ class LinksFinder(IPlugin):
             if url is not None:
                 urlNoAnchor = url.split('#')[0]
 
-                reqId = self.database.setLink(transactionId, urllib.quote(urlNoAnchor.encode('utf-8'())
+                reqId = self.database.setLink(transactionId, urllib.quote(urlNoAnchor.encode('utf-8')))
                 print logMsg+str(url)
                 if reqId != -1:
                     self.getLink(url, reqId, transactionId)
