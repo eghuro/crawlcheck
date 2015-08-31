@@ -37,6 +37,9 @@ class PluginRunner(object):
         for plugin in plugins:
             plugin.setDb(api)
             self.pluginsById[plugin.getId()] = plugin
+            if plugin.getId() == "linksFinder":
+              plugin.setTypes(self.typeAcceptor.getValues())
+
         info = api.getTransaction()
         while info.getId() != -1:
             print "Processing "+info.getUri()

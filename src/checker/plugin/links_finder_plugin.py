@@ -6,14 +6,21 @@ from requests.exceptions import MissingSchema
 import requests
 import urlparse
 import urllib
+import marisa_trie
 
 class LinksFinder(IPlugin):
 
     def __init__(self):
         self.database = None
+        self.types = None
+        self.trie = None
 
     def setDb(self, DB):
         self.database = DB
+
+    def setTypes(self, types):
+        self.types = types
+        self.trie = marisa_trie.Trie(types)
 
     def check(self, transactionId, content):
         """ Najde tagy <a>, <link>, vybere atribut href, ulozi jako odkazy,
@@ -41,15 +48,19 @@ class LinksFinder(IPlugin):
 
     def getLink(self, url, reqId, srcId):
        try:
-          print "Downloading "+url
-          r = requests.get(url)
+          print "Inspecting "+url
+          r = requests.head(url)
           if r.status_code != 200:
              self.database.setDefect(srcId, "badlink", 0, url)
           if 'content-type' in r.headers.keys():
              ct = r.headers['content-type']
           else:
              ct = ''
-          self.database.setResponse(reqId, r.status_code, ct, r.text.encode("utf-8").strip()[:65535])
+          if self.getMaxPrefix(ct) in self.types:
+            print "Downloading "+url
+            r = requests.get(url)
+            self.database.setResponse(reqId, r.status_code, ct, r.text.encode("utf-8").strip()[:65535])
+          else: print "Content type not accepted: "+ct
        except InvalidSchema:
           print "Invalid schema"
        except ConnectionError:
@@ -70,9 +81,16 @@ class LinksFinder(IPlugin):
     def check_links(self, links, logMsg, transactionId, tag):
         for link in links:
             url = link.get(tag)
-            urlNoAnchor = url.split('#')[0]
+            if url is not None:
+                urlNoAnchor = url.split('#')[0]
 
-            reqId = self.database.setLink(transactionId, urllib.quote(urlNoAnchor))
-            print logMsg+str(url)
-            if reqId != -1:
-                self.getLink(url, reqId, transactionId)
+                reqId = self.database.setLink(transactionId, urllib.quote(urlNoAnchor))
+                print logMsg+str(url)
+                if reqId != -1:
+                    self.getLink(url, reqId, transactionId)
+
+    def getMaxPrefix(self, ctype):
+        prefList = self.trie.prefixes(unicode(ctype, encoding="utf-8"))
+        if len(prefList) > 0:
+            return prefList[-1]
+        else: return ctype
