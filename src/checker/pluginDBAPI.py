@@ -5,6 +5,7 @@ Parameters of connection to the database are set in DBAPIConfiguration
 """
 
 import MySQLdb as mdb
+import urllib
 
 
 class DBAPIconfiguration(object):
@@ -180,7 +181,7 @@ class DBAPI(object):
                 self.con.rollback()
             print "Error %d: %s" % (e.args[0], e.args[1])
 
-        return TransactionInfo(transactionId, content, contentType, uri)
+        return TransactionInfo(transactionId, content, contentType, urllib.unquote(uri).decode('utf-8'))
 
     def setDefect(self, transactionId, defectType, line, evidence):
         """ Insert new defect discovered by a plugin into database.
