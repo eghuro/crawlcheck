@@ -13,7 +13,9 @@
     <plugin id="linksFinder">
       <resolutions>
         <uris default="False">
-          <uri key="http://olga.majling.eu" accept="True" />
+          <uri key="http://ksp.mff.cuni.cz" accept="True" />
+          <uri key="http://ksp.mff.cuni.cz/mwforum/" accept="False" />
+          <uri key="http://ksp.mff.cuni.cz/about/ksp-spot-hq.ogv" accept="False" />
         </uris>
         <contentTypes default="False">
           <contentType key="text/html" accept="True" />
@@ -24,7 +26,7 @@
    <plugin id="tinycss">
       <resolutions>
         <uris default="False">
-          <uri key="http://olga.majling.eu" accept="True" />
+          <uri key="http://ksp.mff.cuni.cz" accept="True" />
         </uris>
         <contentTypes default="False">
           <contentType key="text/css" accept="True" />
@@ -35,7 +37,7 @@
    <plugin id="htmlValidator">
      <resolutions>
         <uris default="False">
-          <uri key="http://olga.majling.eu" accept="True" />
+          <uri key="http://ksp.mff.cuni.cz" accept="True" />
         </uris>
         <contentTypes default="False">
           <contentType key="text/html" accept="True" />
@@ -51,7 +53,7 @@
   </plugins>
 
   <entryPoints>
-    <entryPoint uri="http://olga.majling.eu/" />
+    <entryPoint uri="http://ksp.mff.cuni.cz/" />
   </entryPoints>
 </crawlcheck>
  

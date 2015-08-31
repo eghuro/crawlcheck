@@ -1,7 +1,11 @@
 from bs4 import BeautifulSoup
 from yapsy.IPlugin import IPlugin
+from requests.exceptions import InvalidSchema
+from requests.exceptions import ConnectionError
+from requests.exceptions import MissingSchema
 import requests
 import urlparse
+import urllib
 
 class LinksFinder(IPlugin):
 
@@ -17,40 +21,58 @@ class LinksFinder(IPlugin):
         """
         soup = BeautifulSoup(content, 'html.parser')
         uri = self.database.getUri(transactionId)
-        self.make_links_absolute(soup, self.database.getUri(transactionId))
+        
+        self.make_links_absolute(soup, uri,'a')
         links = soup.find_all('a')
-        self.check_links(links, "Link to ", transactionId)
+        self.check_links(links, "Link to ", transactionId, 'href')
 
+        self.make_links_absolute(soup, uri, 'link')
         links2 = soup.find_all('link')
-        self.check_links(links2, "Linked resource: ", transactionId)
+        self.check_links(links2, "Linked resource: ", transactionId, 'href')
+
+        self.make_sources_absolute(soup, uri, 'img')
+        images = soup.find_all('img')
+        self.check_links(images, "Image: ", transactionId, 'src')
+
         return
 
     def getId(self):
         return "linksFinder"
 
     def getLink(self, url, reqId, srcId):
-       print "Downloading "+url
-       r = requests.get(url)
-       if r.status_code != 200:
-          self.database.setDefect(srcId, "badlink", 0, url)
-       if 'content-type' in r.headers.keys():
-          ct = r.headers['content-type']
-       else:
-          ct = ''
-       self.database.setResponse(reqId, r.status_code, ct, r.text.encode("utf-8").strip()[:65535])
+       try:
+          print "Downloading "+url
+          r = requests.get(url)
+          if r.status_code != 200:
+             self.database.setDefect(srcId, "badlink", 0, url)
+          if 'content-type' in r.headers.keys():
+             ct = r.headers['content-type']
+          else:
+             ct = ''
+          self.database.setResponse(reqId, r.status_code, ct, r.text.encode("utf-8").strip()[:65535])
+       except InvalidSchema:
+          print "Invalid schema"
+       except ConnectionError:
+          print "Connection error"
+       except MissingSchema:
+          print "Missing schema"
 
-    def make_links_absolute(self, soup, url):
-        uri = url.split("?")[0]
-        if uri[-1] != '/':
-          uri+='/'
-        for tag in soup.findAll('a', href=True):
-            tag['href'] = urlparse.urljoin(url, tag['href'])
+    def make_links_absolute(self, soup, url, tag):
+        print "Make links absolute: "+url
+        for tag in soup.findAll(tag, href=True):
+           if 'href' in tag.attrs:
+              tag['href'] = urlparse.urljoin(url, tag['href'])
 
-    def check_links(self, links, logMsg, transactionId):
+    def make_sources_absolute(self, soup, url, tag):
+        for tag in soup.findAll(tag):
+            tag['src'] = urlparse.urljoin(url, tag['src'])
+
+    def check_links(self, links, logMsg, transactionId, tag):
         for link in links:
-            url = link.get('href')
+            url = link.get(tag)
+            urlNoAnchor = url.split('#')[0]
 
-            reqId = self.database.setLink(transactionId, url)
+            reqId = self.database.setLink(transactionId, urllib.quote(urlNoAnchor))
             print logMsg+str(url)
             if reqId != -1:
                 self.getLink(url, reqId, transactionId)
