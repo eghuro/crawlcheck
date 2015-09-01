@@ -139,12 +139,46 @@ For output file ``.pdf`` is added automatically.
 
 ### Plugins
 
-Crawlcheck is currently extended with the following plugins
+Crawlcheck is currently extended with the following plugins:
 
 * linksFinder
 * py_w3c_htmlValidator
 * tinycss_cssValidator
-`
+
+### How to write a plugin
+
+Go to ``crawlcheck/src/checker/plugin/``, create ``my_new_plugin.py`` and ``my_new_plugin.yapsy-plugin`` files there.
+Fill out .yapsy-plugin file:
+```sh
+[Core]
+Name = Human readable plugin name
+Module = my_new_plugin
+
+[Documentation]
+Author = Your Name
+Version = 0.0
+Description = My New Plugin
+```
+
+For plugin itself you need to implement following:
+```sh
+from yapsy.IPlugin import IPlugin
+class MyPlugin(IPlugin):
+
+    def setDb(self, DB):
+        # record DB somewhere
+
+    def getId(self):
+        """ The id is used in configuration - in this case <plugin id = "myPlugin"/>
+        """
+
+        return "myPlugin"
+
+    def check(self, transactionId, content):
+        # implement the logic here
+```
+
+See http://yapsy.sourceforge.net/IPlugin.html and http://yapsy.sourceforge.net/PluginManager.html#plugin-info-file-format for more details.
 
 ### Todos
 
