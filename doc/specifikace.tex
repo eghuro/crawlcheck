@@ -28,7 +28,6 @@ Kolo\v{t}uk – program, kter\'y "o\v{t}uk\'av\'a webov\'ym str\'ank\'am kola, n
 \paragraph{~}Podrobn\v{e}ji k v\'ykonn\'emu modulu. Dne\v{s}n\'i web se skl\'ad\'a z r\r{u}zn\'eho druhu obsahu - HTML str\'anky, CSS styly, Javascript atd. Na obsah se d\'a pohl\'i\v{z}et r\r{u}znou optikou - kontrola syntaxe, optimalizace pro cache, vyhled\'ava\v{c}e, mobiln\'i a jin\'a za\v{r}\'izen\'i, hled\'an\'i bezpe\v{c}nostn\'ich slabin atd. Ka\v{z}d\'y z t\v{e}chto p\v{r}\'istup\r{u} bude jin\'ym zp\r{u}sobem zpracov\'avat data, v\v{z}dy v\v{s}ak p\r{u}jde o n\v{e}jakou podmno\v{z}inu z\'iskateln\'ych dat. 
 \paragraph{~}Z v\'y\v{s}e uveden\'ych d\r{u}vod\r{u} se zd\'a vhodn\'e pou\v{z}\'it pro v\'ykonnou \v{c}\'ast modul\'arn\'i archiktkturu. Jednotliv\'e z\'asuvn\'e moduly prov\'ad\v{e}j\'i d\'il\v{c}\'i kontroly, p\v{r}i\v{c}em\v{z} maj\'i k dispozici jednotn\'e rozhran\'i zakr\'yvaj\'ic\'i zbytek aplikace a datab\'azi. Centr\'aln\'i spr\'avce na\v{c}\'it\'a pluginy a d\'av\'a data ke zpracov\'an\'i. S\'am plugin pak \v{r}e\v{s}\'i pouze zpracov\'an\'i jemu dan\'eho po\v{z}adavku a pou\v{z}\'iv\'a spole\v{c}n\'e rozhran\'i k ozn\'amen\'i n\'alez\r{u}.
 \section{N\'avrh datab\'aze}
-... tabulky ...
 
 \subsection{Rela\v{c}n\'i sch\'ema}
 Transaction(\underline{id}, method, uri, responseStatus, content-type, content, verificationStatusId)\\
@@ -47,5 +46,4 @@ Link.findingId, Defect.findingId, Annotation.findingId FOREIGN KEY na Finding.id
 Defect.type FOREIGN KEY na DefectType.typeId\\
 \section{Konfigura\v{c}n\'i jazyk s pravidly}
 \paragraph{Pravidla}D\r{u}le\v{z}itou sou\v{c}\'ast\'i konfigurace jsou pravidla p\v{r}id\v{e}lov\'an\'i dat jednotliv\'ym plugin\r{u}m. Pro plugin je mo\v{z}n\'e ur\v{c}it kter\'e adresy m\'a zpracov\'avat a kter\'e adresy naopak zpracov\'avat nem\'a, obdobn\v{e} jak\'y typ obsahu (content-type) m\'a zpracov\'avat a jak\'y ne. Pokud plugin nem\'a pro danou adresu nebo typ obsahu uvedeno jasn\'e pravidlo ANO nebo NE, pak m\r{u}\v{z}e m\'t plugin implicitn\'i nastaven\'i zvl\'a\v{s}\v{t} pro adresy a typy. Pokud by plugin nem\v{e}l ani implicitn\'i nastaven\'i - nap\v{r} z d\r{u}vodu absence konfigurace pro plugin jako takov\'e. Lze zadat glob\'aln\'i nastaven\'i, kter\'e je stejn\'e jako pro plugin - tj. pravidla ANO:NE pro adresy a typy obsahu a implicitn\'i nastaven\'i.
-\paragraph{Algoritmus vyhodnocen\'i}...
 \end{document}

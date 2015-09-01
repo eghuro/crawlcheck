@@ -4,6 +4,9 @@ import pylatex.utils
 import sys
 
 class TexReporter(object):
+    """ Generate PDF report via LaTex.
+        Generates LaTex document based on contents of the database and creates PDF out of it.
+    """
 
     def __init__(self, uri, user, password, dbname):
         self.con = mdb.connect(uri, user, password, dbname)
@@ -15,6 +18,11 @@ class TexReporter(object):
 
 
     def printReport(self, out):
+        """ All logic is in this method. 
+            Links and other defects are separated. Tables with relevant contents are created. Paging is implemented.
+
+            out : name of output document, .pdf is added automatically
+        """
         doc = Document()
         doc.packages.append(Package('geometry', options = ['top=1in', 'bottom=1.25in', 'left=0.25in', 'right=1.25in']))
         with doc.create(Section('Invalid links')):
@@ -72,6 +80,8 @@ class TexReporter(object):
         doc.generate_pdf(out)
 
 def run():
+    """ Entry point - load command line arguments and call printReport or show usage.
+    """
     if len(sys.argv) == 6:
         reporter = TexReporter(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
         reporter.printReport(sys.argv[5])
