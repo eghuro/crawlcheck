@@ -28,6 +28,9 @@ class PyW3C_HTML_Validator(IPlugin):
                                          warning['line'], warning['source'])
         except ValidationFault, e:
             print "Validation fault"
+        except urllib2.HTTPError, e:
+            self.database.putNewDefectType("HTTPerror"+e.code, e.reason)
+            self.database.setDefect(transactionId, "HTTPerror"+e.code, 0, '')
         return
     def getId(self):
         return "htmlValidator"
