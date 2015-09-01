@@ -1,6 +1,7 @@
 import MySQLdb as mdb
 from pylatex import Document, Section, Tabular, Package
 import pylatex.utils
+import sys
 
 class TexReporter(object):
 
@@ -13,7 +14,7 @@ class TexReporter(object):
             self.con.close()
 
 
-    def printReport(self):
+    def printReport(self, out):
         doc = Document()
         doc.packages.append(Package('geometry', options = ['top=1in', 'bottom=1.25in', 'left=0.25in', 'right=1.25in']))
         with doc.create(Section('Invalid links')):
@@ -68,11 +69,14 @@ class TexReporter(object):
                        if count == max_on_line: break;
                doc.append('\\newpage')
 
-        doc.generate_pdf('report')
+        doc.generate_pdf(out)
 
 def run():
-    reporter = TexReporter("localhost", "test", "", "crawlcheck")
-    reporter.printReport()
+    if len(sys.argv) == 6:
+        reporter = TexReporter(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+        reporter.printReport(sys.argv[5])
+    else:
+        print "Usage: "+sys.argv[0]+" <dbUri> <dbUser> <dbPassword> <dbname> <outputfile>\nFor output file - .pdf is added automatically"
 
 if __name__ == "__main__":
     run()

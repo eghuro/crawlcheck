@@ -1,7 +1,7 @@
 from yapsy.IPlugin import IPlugin
 from py_w3c.validators.html.validator import HTMLValidator
 from py_w3c.exceptions import ValidationFault
-import urllib2.HTTPError
+from urllib2 import HTTPError
 
 class PyW3C_HTML_Validator(IPlugin):
     def __init__(self):
@@ -29,7 +29,7 @@ class PyW3C_HTML_Validator(IPlugin):
                                          warning['line'], warning['source'])
         except ValidationFault, e:
             print "Validation fault"
-        except urllib2.HTTPError, e:
+        except HTTPError, e:
             self.database.putNewDefectType("HTTPerror"+e.code, e.reason)
             self.database.setDefect(transactionId, "HTTPerror"+e.code, 0, '')
         return
