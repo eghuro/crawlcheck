@@ -150,6 +150,7 @@ Crawlcheck is currently extended with the following plugins
  - Improve Tests and Documentation
  - Report - manual annotations of findings
  - Filters and search in report
+ - Paging in report
  - Scrap inline css
  - Regular expressions in configuration for plugins (URLs)
 

@@ -10,7 +10,7 @@
   </tr>
   <% @defects.each do |defect| %>
     <tr>
-      <td><%= defect.uri %></td>
+      <td><%= format(defect.uri) %></td>
       <td><%= defect.description %></td>
       <td><%= defect.location %></td>
       <td><%= defect.evidence %></td>
@@ -27,8 +27,8 @@
   </tr>
   <%  @links.each do |link| %>
     <tr>
-      <td><%= link.toUri %></td>
-      <td><%= link.uri %></td>
+      <td><%= format(link.toUri) %></td>
+      <td><%= format(link.uri) %></td>
       <td><%= link.processed %></td>
     </tr>
   <%end%>

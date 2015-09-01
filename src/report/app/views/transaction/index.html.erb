@@ -14,7 +14,7 @@
     <% transactionStatus = @status.find(record.verificationStatusId) %>
     <tr>
       <td><%= record.method %></td>
-      <td><%= record.uri %></td>
+      <td><%= format(record.uri) %></td>
       <td><% if transactionStatus.id == 5 %><a href="/finding/<%= record.id %>"><%= transactionStatus.status %></a> <% else %> <%= transactionStatus.status %> <% end %></td>
       <td><%= record.contentType %></td>
       <td><%= record.origin %></td>

@@ -1,4 +1,6 @@
 require 'active_record/errors'
+require 'uri'
+
 class FindingController < ApplicationController
   helper_method :getDefectDescription
 
@@ -19,5 +21,9 @@ class FindingController < ApplicationController
   def getDefectDescription(id)
     @dType = Dtype.find(id)
     return @dType.description
+  end
+
+  def format(uri)
+    return URI.unescape(uri)
   end
 end
