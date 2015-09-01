@@ -1,6 +1,7 @@
 from yapsy.IPlugin import IPlugin
 from py_w3c.validators.html.validator import HTMLValidator
 from py_w3c.exceptions import ValidationFault
+import urllib2.HTTPError
 
 class PyW3C_HTML_Validator(IPlugin):
     def __init__(self):
