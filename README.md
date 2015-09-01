@@ -16,16 +16,17 @@ Crawlcheck uses a number of open source projects to work properly:
 * [beautifulsoup4] - for links finder plugin
 * [requests], [urllib3] - fpr networking
 * [enum] - duh
+
 Following gems are needed for report
-* [rails]
-* [mysql2]
-* [sass-rails]
-* [uglifier]
-* [coffee-rails]
-* [jquery-rails]
-* [turbolinks]
-* [jbuilder]
-* [sdoc]
+* rails
+* mysql2
+* sass-rails
+* uglifier
+* coffee-rails
+* jquery-rails
+* turbolinks
+* jbuilder
+* sdoc
 
 And of course Crawlcheck itself is open source with a [public repository](https://github.com/eghuro/crawlcheck) on GitHub.
 
