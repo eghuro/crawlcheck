@@ -60,7 +60,7 @@ class LinksFinder(IPlugin):
             #print "Downloading "+url
             r = requests.get(url)
             self.database.setResponse(reqId, r.status_code, ct, r.text.encode("utf-8").strip()[:65535])
-          else: print "Content type not accepted: "+ct
+          else: print "Content type not accepted: "+ct+" ("+url+")"
        except InvalidSchema:
           print "Invalid schema"
        except ConnectionError:
