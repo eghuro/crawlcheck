@@ -34,7 +34,7 @@ class PyW3C_HTML_Validator(IPlugin):
             self.database.setDefect(transactionId, "HTTPerror"+str(e.code), 0, '')
         except URLError, e:
             self.database.putNewDefectType("URLerror", "Connection problem")
-            self.database.setDefect(transactionId, "URLerror", 0, e.reason)
+            self.database.setDefect(transactionId, "URLerror", 0, str(e.reason))
         return
     def getId(self):
         return "htmlValidator"
