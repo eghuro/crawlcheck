@@ -55,15 +55,14 @@ $ bin/bundle install
 ```
 Edit ```config/database.yml``` to set up database credentials
 Install database
+Install database, make sure to set username in mysql command, the mysql script assumes ```crawlcheck``` as dbname
+First MySQL command will create tables, rake command will do initialization needed for ruby, second mysql call will set up initial values in certain tables and ensures integrity constraints remains unchanged.
 ```sh
+$ mysql < ../checker/mysql_tables.sql
 $ bin/rake db:drop db:create db:schema:load
+$ mysql < ../checker/mysql_tables.sql
 ```
 
-Set up MySQL tables - make sure to specify user, the script assumes "crawlcheck" as db name
-```sh
-$ cd ..
-$ mysql < checker/mysql_tables.sql
-```
 ### Configuration
 
 Configuration file is a simple XML file.
