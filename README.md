@@ -35,35 +35,35 @@ And of course Crawlcheck itself is open source with a [public repository](https:
 1) Install dependencies
 * You need mysql-server, python-2.7, python-mysql and ruby installed.
 * Following packages needs also to be installed. It can be done through pip (you need python-pip and python-dev):
-  ```sh
-  $ pip install marisa_trie yapsy py_w3c enum urllib3 requests tinycss beautifulsoup4
-  ```
+```sh
+$ pip install marisa_trie yapsy py_w3c enum urllib3 requests tinycss beautifulsoup4
+```
 * For report, rails also needs to be installed
-  ```sh
-  $ gem install rails
-  ```
+```sh
+$ gem install rails
+```
 2) Install crawlcheck
 * Clone and install Crawlcheck as follows: (make sure to prepare configuration file and setup mysql database beforehand)
-  ```sh
-  $ git clone [git-repo-url] crawlcheck
-  $ cd crawlcheck/src
-  ```
+```sh
+$ git clone [git-repo-url] crawlcheck
+$ cd crawlcheck/src
+```
 * Install report
-  ```sh
-  $ cd report
-  $ bin/bundle install
-  ```
+```sh
+$ cd report
+$ bin/bundle install
+```
 * Edit ```config/database.yml``` to set up database credentials
 * Install database
 
   Make sure to set username in mysql command, the mysql script assumes ```crawlcheck``` as dbname
 
   First MySQL command will create tables, rake command will do initialization needed for ruby, second mysql call will set up initial values in certain tables and ensures integrity constraints remains unchanged.
-  ```sh
-  $ mysql < ../checker/mysql_tables.sql
-  $ bin/rake db:drop db:create db:schema:load
-  $ mysql < ../checker/mysql_tables.sql
-  ```
+```sh
+$ mysql < ../checker/mysql_tables.sql
+$ bin/rake db:drop db:create db:schema:load
+$ mysql < ../checker/mysql_tables.sql
+```
 
 ### Configuration
 Configuration file is a simple XML file.
