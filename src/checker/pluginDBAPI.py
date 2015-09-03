@@ -343,15 +343,16 @@ class DBAPI(object):
 
         return False
 
-    def setResponse(self, reqId, status, contentType, content):
+    def setResponse(self, reqId, uri, status, contentType, content):
         """ Set response into database.
 
             Return true, if transaction was updated, false otherwise.
         """
         try:
             query = ('UPDATE transaction SET responseStatus = '
-                     '' + self.con.escape_string(str(status)) + ''
-                     ', contentType = "' + self.con.escape_string(contentType) + '", '
+                     '' + self.con.escape_string(str(status)) + ', '
+                     #'uri = "' + self.con.escape_string(uri) + '", '
+                     'contentType = "' + self.con.escape_string(contentType) + '", '
                      'verificationStatusId = '
                      '' + self.con.escape_string(str(DBAPI.getUnverifiedStatusId())) + ', content = "'
                      '%s"  WHERE id = ' + self.con.escape_string(str(reqId)) + '')
