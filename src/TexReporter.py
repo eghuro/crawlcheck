@@ -2,6 +2,7 @@ import MySQLdb as mdb
 from pylatex import Document, Section, Tabular, Package
 import pylatex.utils
 import sys
+import urllib
 
 class TexReporter(object):
     """ Generate PDF report via LaTex.
@@ -43,7 +44,7 @@ class TexReporter(object):
                     count = 0
                     max_on_line = 47
                     while row is not None:
-                        table.add_row((pylatex.utils.escape_latex(row[0].decode('utf-8')), pylatex.utils.escape_latex(row[1].decode('utf-8')), pylatex.utils.escape_latex(row[3].decode('utf-8'))))
+                        table.add_row((pylatex.utils.escape_latex(row[0].decode('utf-8')), pylatex.utils.escape_latex(urllib.unquote(row[1]).decode('utf-8')), pylatex.utils.escape_latex(urllib.unquote(row[3]).decode('utf-8'))))
                         table.add_hline()
                         count+=1
                         row = self.cursor.fetchone()
@@ -70,7 +71,7 @@ class TexReporter(object):
                    max_on_line = 23
                    while row is not None:
                        table.add_row((pylatex.utils.escape_latex(str(row[2])), pylatex.utils.escape_latex(row[0].decode('utf-8')) ))
-                       table.add_row(('', pylatex.utils.escape_latex(row[1].decode('utf-8')) ))
+                       table.add_row(('', pylatex.utils.escape_latex(urllib.unquote(row[1]).decode('utf-8')) ))
                        table.add_hline()
                        count+=1
                        row = self.cursor.fetchone()
