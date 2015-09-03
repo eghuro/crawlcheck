@@ -3,6 +3,7 @@ require 'uri'
 
 class FindingController < ApplicationController
   helper_method :getDefectDescription
+  helper_method :format
 
   def index
     @defects = Defect.find_by_sql("select transaction.uri, location, evidence, defectType.description from defect inner join finding on finding.id = defect.findingId inner join defectType on defect.type = defectType.id inner join transaction on transaction.id = finding.responseId order by defectType.type")

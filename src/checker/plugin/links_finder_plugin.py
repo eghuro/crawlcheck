@@ -50,7 +50,7 @@ class LinksFinder(IPlugin):
        try:
           #print "Inspecting "+url
           r = requests.head(url)
-          if r.status_code != 200:
+          if r.status_code >= 400:
              self.database.setDefect(srcId, "badlink", 0, url)
           if 'content-type' in r.headers.keys():
              ct = r.headers['content-type']

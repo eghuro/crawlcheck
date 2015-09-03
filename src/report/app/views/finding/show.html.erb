@@ -11,7 +11,7 @@
   </tr>
   <tr>
     <td><%=@transaction.method %></td>
-    <td><%=@transaction.uri %></td>
+    <td><%=format(@transaction.uri) %></td>
     <td><%=@transaction.responseStatus %></td>
     <td><%=@transaction.contentType %></td>
     <td><%=@transaction.origin %></td>
@@ -52,7 +52,7 @@
 <%if @links and @links.size > 0%>
   <% @links.each do |link| %>
     <tr>
-      <td><%= link.toUri %></td>
+      <td><%= format(link.toUri) %></td>
       <td> <% if link.processed then %><a href="/finding/<%= link.requestId %>"><%end%><%= link.processed %><% if link.processed then %></a><%end%></td>
     </tr>
   <% end %>
