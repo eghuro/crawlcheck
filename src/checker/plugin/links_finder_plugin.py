@@ -52,10 +52,16 @@ class LinksFinder(IPlugin):
           r = requests.head(url)
           if r.status_code >= 400:
              self.database.setDefect(srcId, "badlink", 0, url)
+          
           if 'content-type' in r.headers.keys():
              ct = r.headers['content-type']
+          else if 'Content-Type' in r.headers.keys():
+             ct = r.headers['Content-Type']
           else:
              ct = ''
+          if not ct.strip():
+             self.database.setDefect(srcId, "badtype", 0, url)
+          
           if self.getMaxPrefix(ct) in self.types:
             #print "Downloading "+url
             r = requests.get(url)

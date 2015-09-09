@@ -86,3 +86,4 @@ INSERT INTO verificationStatus(id, status) VALUES (5, "FINISHED");
 
 INSERT INTO defectType(type, description) VALUES ("badlink", "Invalid link");
 INSERT INTO defectType(type, description) VALUES ("stylesheet", "Stylesheet error");
+INSERT INTO defectType(type, description) VALUES ("badtype", "Content-type empty");
