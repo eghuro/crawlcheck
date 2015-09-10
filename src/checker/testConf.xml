@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <crawlcheck version="0.01">
-  <db user="test" pass="" uri="localhost" dbname="crawlcheck" />
+  <db user="test" pass="" uri="localhost" dbname="test.sqlite" />
 
   <plugins>
     <resolutions>

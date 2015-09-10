@@ -15,7 +15,7 @@ class ConfigLoaderTest(unittest.TestCase):
     self.assertEqual(dbconf.getUri(), 'localhost')
     self.assertEqual(dbconf.getUser(), 'test')
     self.assertEqual(dbconf.getPassword(), '')
-    self.assertEqual(dbconf.getDbname(), 'crawlcheck')
+    self.assertEqual(dbconf.getDbname(), 'test.sqlite')
 
   def testTypeAcceptor(self):
     ta = self.cl.getTypeAcceptor()
@@ -28,6 +28,8 @@ class ConfigLoaderTest(unittest.TestCase):
 
   def testLFPUriAcceptor(self):
     ua = self.cl.getUriAcceptor()
+    for val in ua.getValues():
+        print val
     self.assertTrue('http://olga.majling.eu/Vyuka' in ua.getValues())
     self.assertEqual(ua.pluginAcceptValue('links_finder_plugin', 'http://olga.majling.eu/Vyuka'), Resolution.no)
     self.assertFalse(ua.accept('links_finder_plugin', 'http://olga.majling.eu/Vyuka'))

@@ -55,7 +55,7 @@ class LinksFinder(IPlugin):
           
           if 'content-type' in r.headers.keys():
              ct = r.headers['content-type']
-          else if 'Content-Type' in r.headers.keys():
+          elif 'Content-Type' in r.headers.keys():
              ct = r.headers['Content-Type']
           else:
              ct = ''

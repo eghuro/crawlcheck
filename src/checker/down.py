@@ -1,11 +1,10 @@
 import requests
-import MySQLdb as mdb
+import sqlite3 as mdb
 
 
 class Scraper(object):
     def __init__(self, conf):
-        self.con = mdb.connect(conf.getUri(), conf.getUser(),
-                               conf.getPassword(), conf.getDbname())
+        self.con = mdb.connect(conf.getDbname())
         self.cursor = self.con.cursor()
 
     def __del__(self):
@@ -22,9 +21,9 @@ class Scraper(object):
 
            self.cursor.execute("set names utf8;")
 
-           query = ('INSERT INTO transaction (uri, method, responseStatus, contentType, origin, verificationStatusId, content) VALUES ("'
-                    ''+self.con.escape_string(uri)+'",\'GET\', ' + str(r.status_code) + ', "' + r.headers['Content-Type'] +'", \'CLIENT\', 3, "%s")')
-           self.cursor.execute(query, [r.text.encode("utf-8").strip()[:65535]])
+           query = ('INSERT INTO transactions (uri, method, responseStatus, contentType, origin, verificationStatusId, content) VALUES ('
+                    '?,\'GET\', ' + str(r.status_code) + ', "' + r.headers['Content-Type'] +'", \'CLIENT\', 3, "%s")')
+           self.cursor.execute(query, [uri, r.text.encode("utf-8").strip()[:65535]])
            self.con.commit()
 
     def scrap(self, urilist):
@@ -37,12 +36,12 @@ class Scraper(object):
 
     def gotLink(self, toUri):
         try:
-           query = ('SELECT id FROM transaction WHERE method = \'GET\' and '
-                    'uri = "'+self.con.escape_string(toUri)+'"')
-           self.cursor.execute(query)
+           query = ('SELECT id FROM transactions WHERE method = \'GET\' and '
+                    'uri = ?')
+           self.cursor.execute(query, [toUri])
            return self.cursor.rowcount != 0
         except mdb.Error, e:
            if self.con:
               self.con.rollback()
-           print "Error %d: %s" % (e.args[0], e.args[1])
+           print "Error %s" % (e.args[0])
            return False

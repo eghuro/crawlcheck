@@ -5,10 +5,7 @@ from pluginDBAPI import DBAPIconfiguration
 class ScraperTest(unittest.TestCase):
     def setUp(self):
         c = DBAPIconfiguration()
-        c.setDbname('crawlcheck')
-        c.setUri('localhost')
-        c.setUser('test')
-        c.setPassword('')
+        c.setDbname('test.sqlite')
         self.s = Scraper(c)
     def testScrapOneRP(self):
         self.s.scrapOne('http://ulita.ms.mff.cuni.cz/mff/sylaby/rp.html')
