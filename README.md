@@ -7,7 +7,7 @@ Crawlcheck is a web crawler invoking plugins on received content. It's intended 
 
 ### Tech
 
-Crawlcheck's engine currently runs on Python 2.7 and uses SQLite3 as a database backend. Report website is using Ruby on Rails.
+Crawlcheck's engine currently runs on Python 2.7 and uses SQLite3 as a database backend. Report website is using Ruby on Rails and Bootstrap.
 Crawlcheck uses a number of open source projects to work properly:
 * [Yapsy] - plugin framework
 * [sqlite3] - data storage

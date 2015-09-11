@@ -1,8 +1,8 @@
 <h1>Findings</h1>
 
 <ul class="nav nav-tabs" role="tablist">
-  <li><a href="transaction">Transactions</a></li>
-  <li class="active"><a href="finding">Findings</a></li>
+  <li><a href="/transaction">Transactions</a></li>
+  <li class="active"><a href="/finding">Findings</a></li>
 </ul>
 
 
@@ -14,6 +14,7 @@
       <th>Description</th>
       <th>Location</th>
       <th>Evidence</th>
+      <th>Go to transaction</th>
     </tr>
   </thead>
   <% if @defects.count > 0 %>
@@ -24,6 +25,7 @@
         <td><%= defect.description %></td>
         <td><%= defect.location %></td>
         <td><%= defect.evidence %></td>
+        <td><a href="/finding/<%= defect.responseId %>">-></a></td>
       </tr>
     <%end%>
   </tbody>
