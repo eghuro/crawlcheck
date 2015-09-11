@@ -217,7 +217,7 @@ class DBAPI(object):
                    #  '' + self.con.escape_string(str(line)) + ', "'
                    #  '' + self.con.escape_string(evidence.encode('utf-8')) + ''
                    #  '" )')
-            self.cursor.execute(query, [str(findingId), str(defectTypeId), str(line), evidence.encode('utf-8')])
+            self.cursor.execute(query, [str(findingId), str(defectTypeId), str(line), evidence])
             self.con.commit()
             return True
 
@@ -240,9 +240,12 @@ class DBAPI(object):
             proper description is available in report.
             Returns nothing.
         """
-        self.cursor.execute ('SELECT id FROM defectType WHERE type = "'+defectType+'"')
-        if self.cursor.rowcount == 0:
-           self.cursor.execute('INSERT INTO defectType (type, description) VALUES(?,?)', [defectType, description])
+        self.cursor.execute ('SELECT count(id) FROM defectType WHERE type = "'+defectType+'"')
+        row = self.cursor.fetchone()
+        if row is not None:
+            if row[0] is not None:
+                if row[0] == 0:
+                    self.cursor.execute('INSERT INTO defectType (type, description) VALUES(?,?)', [defectType, description])
                              #  ''+self.con.escape_string(defectType)+'", "'
                              #  ''+self.con.escape_string(description)+'")')
     def setLink(self, transactionId, toUri):
@@ -289,13 +292,12 @@ class DBAPI(object):
       """
       try:
          query = ('SELECT id FROM transactions WHERE method = \'GET\' and '
-                  'uri = ?')
+                  'uri = ? LIMIT 1')
          # print query, toUri
          self.cursor.execute(query, [toUri])
-         if self.cursor.rowcount != 0:
-            row = self.cursor.fetchone()
-            if row is not None:
-              if row[0] is not None:
+         row = self.cursor.fetchone()
+         if row is not None:
+             if row[0] is not None:
                 return row[0]
          return -1
       except mdb.Error, e:

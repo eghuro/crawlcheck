@@ -21,12 +21,12 @@ class Scraper(object):
 
            #self.cursor.execute("set names utf8;")
 
-           print type(r.text)
+           #print type(r.text)
 
 
            query = ('INSERT INTO transactions (uri, method, responseStatus, contentType, origin, verificationStatusId, content) VALUES ('
                     '?,\'GET\', ' + str(r.status_code) + ', "' + r.headers['Content-Type'] +'", \'CLIENT\', 3, ?)')
-           print query, uri
+           #print query, uri
            self.cursor.execute(query, [uri, r.text])
            self.con.commit()
 

@@ -13,7 +13,7 @@ class CssValidator(IPlugin):
         """
         try:
             parser = tinycss.make_parser('page3')
-            stylesheet = parser.parse_stylesheet(content.decode("utf-8"))
+            stylesheet = parser.parse_stylesheet(content)
             for error in stylesheet.errors:
                 self.database.setDefect(transactionId, "stylesheet", error.line, error.reason)
         except UnicodeDecodeError:
