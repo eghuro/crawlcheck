@@ -19,11 +19,15 @@ class Scraper(object):
 
            print "Adding entry point: "+uri
 
-           self.cursor.execute("set names utf8;")
+           #self.cursor.execute("set names utf8;")
+
+           print type(r.text)
+
 
            query = ('INSERT INTO transactions (uri, method, responseStatus, contentType, origin, verificationStatusId, content) VALUES ('
-                    '?,\'GET\', ' + str(r.status_code) + ', "' + r.headers['Content-Type'] +'", \'CLIENT\', 3, "%s")')
-           self.cursor.execute(query, [uri, r.text.encode("utf-8").strip()[:65535]])
+                    '?,\'GET\', ' + str(r.status_code) + ', "' + r.headers['Content-Type'] +'", \'CLIENT\', 3, ?)')
+           print query, uri
+           self.cursor.execute(query, [uri, r.text])
            self.con.commit()
 
     def scrap(self, urilist):
@@ -36,10 +40,14 @@ class Scraper(object):
 
     def gotLink(self, toUri):
         try:
-           query = ('SELECT id FROM transactions WHERE method = \'GET\' and '
+           query = ('SELECT count(id) FROM transactions WHERE method = \'GET\' and '
                     'uri = ?')
            self.cursor.execute(query, [toUri])
-           return self.cursor.rowcount != 0
+           row = self.cursor.fetchone()
+           if row is not None:
+              if row[0] is not None:
+                 return row[0] != 0
+           return False
         except mdb.Error, e:
            if self.con:
               self.con.rollback()

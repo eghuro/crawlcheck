@@ -20,13 +20,13 @@ class PluginRunner(object):
     def runTransaction(self, plugins, info, prefix):
         """ Run a single transaction through all plugins where it's accepted.
         """
-        #print "Verifying "+info.getUri()
+        print "Verifying "+info.getUri()
         for plugin in plugins:
             fakeTransaction = info
             fakeTransaction.setUri(prefix)
             if self.accept(plugin.getId(), fakeTransaction):
                 print plugin.getId()
-                plugin.check(info.getId(), info.getContent())
+                plugin.check(info.getId(), info.getContent().encode('utf-8'))
 
     def run(self, plugins):
         """ Run all transactions through all plugins where it's accepted.

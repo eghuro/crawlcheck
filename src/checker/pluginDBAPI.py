@@ -197,7 +197,7 @@ class DBAPI(object):
         try:
             query = ('INSERT INTO finding (responseId) VALUES (?)')
 #                     '' + self.con.escape_string(str(transactionId)) + ')')
-            self.cursor.execute(query, (str(transactionId)))
+            self.cursor.execute(query, [str(transactionId)])
             findingId = self.cursor.lastrowid
 
             self.cursor.execute('SELECT id FROM defectType WHERE type = ? LIMIT 1', [str(defectType)])
@@ -264,7 +264,7 @@ class DBAPI(object):
 
             query = ('INSERT INTO finding (responseId) VALUES (?)')
                      #'' + self.con.escape_string(str(transactionId)) + ')')
-            self.cursor.execute(query, (str(transactionId)))
+            self.cursor.execute(query, [str(transactionId)])
             findingId = self.cursor.lastrowid
 
             query = ('INSERT INTO link (findingId, toUri, requestId) VALUES (?, ?, ?)')
@@ -349,14 +349,13 @@ class DBAPI(object):
             Return true, if transaction was updated, false otherwise.
         """
         try:
-            query = ('UPDATE transactions SET responseStatus = '
-                     '' + self.con.escape_string(str(status)) + ', '
+            query = ('UPDATE transactions SET responseStatus = ?, '
                      #'uri = "' + self.con.escape_string(uri) + '", '
                      'contentType = ?, ' #+ self.con.escape_string(contentType) + '", '
                      'verificationStatusId = ?, content = ? WHERE id = ?')
 #                     '' + self.con.escape_string(str(DBAPI.getUnverifiedStatusId())) + ', content = "'
  #                    '%s"  WHERE id = ' + self.con.escape_string(str(reqId)) + '')
-            self.cursor.execute(query, [contentType, str(DBAPI.getUnverifiedStatusId(), content, str(reqId))])
+            self.cursor.execute(query, [str(status), contentType, str(DBAPI.getUnverifiedStatusId()), content, str(reqId)])
             self.con.commit()
             return True
         except mdb.Error, e:

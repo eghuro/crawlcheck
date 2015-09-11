@@ -10,16 +10,12 @@
 #   http://dev.mysql.com/doc/refman/5.0/en/old-client.html
 #
 default: &default
-  adapter: mysql2
+  adapter: sqlite3
   encoding: utf8
-  pool: 5
-  username: test
-  password:
-  host: localhost
 
 development:
   <<: *default
-  database: crawlcheck
+  database: ../crawlcheck
 
 # Warning: The database defined as "test" will be erased and
 # re-generated from your development database when you run "rake".
@@ -50,5 +46,3 @@ test:
 production:
   <<: *default
   database: report_production
-  username: report
-  password: <%= ENV['REPORT_DATABASE_PASSWORD'] %>

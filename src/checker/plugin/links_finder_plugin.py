@@ -67,7 +67,7 @@ class LinksFinder(IPlugin):
             r = requests.get(url)
             # poznamenat si mozne presmerovani
             #print r.url
-            self.database.setResponse(reqId, r.url.encode('utf-8'), r.status_code, ct, r.text.encode("utf-8").strip()[:65535])
+            self.database.setResponse(reqId, r.url.encode('utf-8'), r.status_code, ct, r.text)
           else: print "Content type not accepted: "+ct+" ("+url+")"
        except InvalidSchema:
           print "Invalid schema"

@@ -7,9 +7,9 @@ class FindingController < ApplicationController
   helper_method :format
 
   def index
-    defect_query = "select transaction.uri, location, evidence, defectType.description from defect inner join finding on finding.id = defect.findingId inner join defectType on defect.type = defectType.id inner join transaction on transaction.id = finding.responseId order by defectType.type"
+    defect_query = "select transactions.uri, location, evidence, defectType.description from defect inner join finding on finding.id = defect.findingId inner join defectType on defect.type = defectType.id inner join transactions on transactions.id = finding.responseId order by defectType.type"
     @defects = Defect.paginate_by_sql(defect_query, :page => params[:page], :per_page => 30)
-    @links = Link.find_by_sql("select distinct uri, toUri, processed from link inner join finding on finding.id = link.findingId inner join transaction on finding.responseId = transaction.id order by toUri")
+    @links = Link.find_by_sql("select distinct uri, toUri, processed from link inner join finding on finding.id = link.findingId inner join transactions on finding.responseId = transactions.id order by toUri")
   end
 
   def show
