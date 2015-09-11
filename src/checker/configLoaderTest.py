@@ -12,7 +12,7 @@ class ConfigLoaderTest(unittest.TestCase):
 
   def testLoadDbConf(self):
     dbconf = self.cl.getDbconf()
-    self.assertEqual(dbconf.getDbname(), 'crawlcheck')
+    self.assertEqual(dbconf.getDbname(), '../crawlcheck')
 
   def testTypeAcceptor(self):
     ta = self.cl.getTypeAcceptor()

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Configuration Loader loads configuration from external XML file.
+"""Configuration Loader loads configuration from external YAML file.
 """
 import yaml
 from pluginDBAPI import DBAPIconfiguration
@@ -19,7 +19,7 @@ class ConfigLoader(object):
         self.entryPoints = []
 
     def load(self, fname):
-        """Loads configuration from XML file.
+        """Loads configuration from YAML file.
         """
         cfile = open(fname)
         root = yaml.safe_load(cfile)

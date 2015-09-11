@@ -11,7 +11,7 @@ class PluginRunnerTest(unittest.TestCase):
 
     def setUp(self):
         cl = ConfigLoader()
-        cl.load('testConf.xml')
+        cl.load('testConf.yml')
         self.dbconf = cl.getDbconf()
         self.typeacceptor = cl.getTypeAcceptor()
         self.uriacceptor = cl.getUriAcceptor()

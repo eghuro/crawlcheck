@@ -11,7 +11,7 @@ from configLoader import ConfigLoader
 class DBAPITest(unittest.TestCase):
     def setUp(self):
         cl = ConfigLoader()
-        cl.load('testConf.xml')
+        cl.load('testConf.yml')
         self.conf = cl.getDbconf()
         self.maxDiff = None
 
