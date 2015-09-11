@@ -1,37 +1,49 @@
 <h1>Findings</h1>
 
 <h2>Defects</h2>
-<table border="1">
-  <tr>
-    <th>URI</th>
-    <th>Description</th>
-    <th>Location</th>
-    <th>Evidence</th>
-  </tr>
-  <% @defects.each do |defect| %>
+<table border="1" class="table table-striped table-bordered">
+  <thead>
     <tr>
-      <td><%= format(defect.uri) %></td>
-      <td><%= defect.description %></td>
-      <td><%= defect.location %></td>
-      <td><%= defect.evidence %></td>
+      <th>URI</th>
+      <th>Description</th>
+      <th>Location</th>
+      <th>Evidence</th>
     </tr>
+  </thead>
+  <% if @defects.count > 0 %>
+  <tbody>
+    <% @defects.each do |defect| %>
+      <tr>
+        <td><%= format(defect.uri) %></td>
+        <td><%= defect.description %></td>
+        <td><%= defect.location %></td>
+        <td><%= defect.evidence %></td>
+      </tr>
+    <%end%>
+  </tbody>
   <%end%>
 </table>
-<%= will_paginate @defects, :param_name => 'defect' %>
+<%= will_paginate @defects, :param_name => 'defect', renderer: BootstrapPagination::Rails %>
 
 <h2>Links</h2>
-<table border="1">
-  <tr>
-    <th>To</th>
-    <th>From</th>
-    <th>Processed</th>
-  </tr>
-  <%  @links.each do |link| %>
+<table border="1" class="table table-striped table-bordered">
+  <thead>
     <tr>
-      <td><%= format(link.toUri) %></td>
-      <td><%= format(link.uri) %></td>
-      <td><%= link.processed %></td>
+      <th>To</th>
+      <th>From</th>
+      <th>Processed</th>
     </tr>
+  </thead>
+  <% if @links.count > 0 %>
+  <tbody>
+    <%  @links.each do |link| %>
+      <tr>
+        <td><%= format(link.toUri) %></td>
+        <td><%= format(link.uri) %></td>
+        <td><%= link.processed %></td>
+      </tr>
+    <%end%>
+  </tbody>
   <%end%>
 </table>
-<%= will_paginate @links, :param_name => 'link' %>
+<%= will_paginate @links, :param_name => 'link', renderer: BootstrapPagination::Rails %>

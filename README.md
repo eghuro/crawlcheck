@@ -29,7 +29,10 @@ Following gems are needed for report
 * turbolinks
 * jbuilder
 * sdoc
-* will_paginate
+* will_paginate-bootstrap
+* bootstrap-sass
+* autoprefixer-rails
+
 
 And of course Crawlcheck itself is open source with a [public repository](https://github.com/eghuro/crawlcheck) on GitHub.
 

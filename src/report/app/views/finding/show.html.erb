@@ -1,62 +1,72 @@
 <h1>Discoveries</h1>
 
 <h2>Transaction information</h2>
-<table border="1">
-  <tr>
-    <th>Request method</th>
-    <th>URI</th>
-    <th>Response status</th>
-    <th>Content type</th>
-    <th>Origin</th>
-  </tr>
-  <tr>
-    <td><%=@transaction.method %></td>
-    <td><%=format(@transaction.uri) %></td>
-    <td><%=@transaction.responseStatus %></td>
-    <td><%=@transaction.contentType %></td>
-    <td><%=@transaction.origin %></td>
-  </tr>
+<table border="1" class="table table-striped table-bordered">
+  <thead>
+    <tr>
+      <th>Request method</th>
+      <th>URI</th>
+      <th>Response status</th>
+      <th>Content type</th>
+      <th>Origin</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><%=@transaction.method %></td>
+      <td><%=format(@transaction.uri) %></td>
+      <td><%=@transaction.responseStatus %></td>
+      <td><%=@transaction.contentType %></td>
+      <td><%=@transaction.origin %></td>
+    </tr>
+  </tbody>
 </table>
 
 <p><a href="/transaction/">Back to list of transactions</a></p>
 
 <h2>Defects</h2>
-<table border="1">
-  <tr>
-    <th>Defect</th>
-    <th>Line</th>
-    <th>Evidence</th>
-  </tr>
-
-<% if @defects and @defects.size > 0 %>
-  <% @defects.each do |defect| %>
+<table border="1" class="table table-striped table-bordered">
+  <thead>
     <tr>
-      <td><%= getDefectDescription(defect.type)%></td>
-      <td><%= defect.location%></td>
-      <td><%= defect.evidence%></td>
-    <tr>
-  <% end %>
-</table>
-<% else %>
-  <tr><td colspan="3">None found</td></tr>
-<%end%>
+      <th>Defect</th>
+      <th>Line</th>
+      <th>Evidence</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% if @defects and @defects.size > 0 %>
+      <% @defects.each do |defect| %>
+        <tr>
+          <td><%= getDefectDescription(defect.type)%></td>
+          <td><%= defect.location%></td>
+          <td><%= defect.evidence%></td>
+        <tr>
+      <% end %>
+    <% else %>
+      <tr><td colspan="3">None found</td></tr>
+    <%end%>
+  </tbody>
 </table>
 
 <h2>Links</h2>
-<table border="1">
-  <tr>
-    <th>To uri</th>
-    <th>Processed</th>
-  </tr>
-
-<%if @links and @links.size > 0%>
-  <% @links.each do |link| %>
+<table border="1" class="table table-striped table-bordered">
+  <thead>
     <tr>
-      <td><%= format(link.toUri) %></td>
-      <td> <% if link.processed then %><a href="/finding/<%= link.requestId %>"><%end%><%= link.processed %><% if link.processed then %></a><%end%></td>
+      <th>To uri</th>
+      <th>Processed</th>
     </tr>
-  <% end %>
-<% else %>
-  <tr><td colspan="2">None found</td></tr>
-<%end%>
+  </thead>
+
+  <tbody>
+    <%if @links and @links.size > 0%>
+      <% @links.each do |link| %>
+        <tr>
+          <td><%= format(link.toUri) %></td>
+          <td> <% if link.processed then %><a href="/finding/<%= link.requestId %>"><%end%><%= link.processed %><% if link.processed then %></a><%end%></td>
+        </tr>
+      <% end %>
+    <% else %>
+      <tr><td colspan="2">None found</td></tr>
+    <%end%>
+  </tbody>
 </table>
