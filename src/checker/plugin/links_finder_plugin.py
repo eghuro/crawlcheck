@@ -48,7 +48,6 @@ class LinksFinder(IPlugin):
 
     def getLink(self, url, reqId, srcId):
        try:
-          #print "Inspecting "+url
           r = requests.head(url)
           if r.status_code >= 400:
              self.database.setDefect(srcId, "badlink", 0, url)
@@ -63,10 +62,8 @@ class LinksFinder(IPlugin):
              self.database.setDefect(srcId, "badtype", 0, url)
           
           if self.getMaxPrefix(ct) in self.types:
-            #print "Downloading "+url
             r = requests.get(url)
             # poznamenat si mozne presmerovani
-            #print r.url
             self.database.setResponse(reqId, r.url.encode('utf-8'), r.status_code, ct, r.text)
           else: print "Content type not accepted: "+ct+" ("+url+")"
        except InvalidSchema:
@@ -77,7 +74,6 @@ class LinksFinder(IPlugin):
           print "Missing schema"
 
     def make_links_absolute(self, soup, url, tag):
-        #print "Make links absolute: "+url
         for tag in soup.findAll(tag, href=True):
            if 'href' in tag.attrs:
               tag['href'] = urlparse.urljoin(url, tag['href'])
@@ -93,7 +89,6 @@ class LinksFinder(IPlugin):
                 urlNoAnchor = url.split('#')[0]
 
                 reqId = self.database.setLink(transactionId, urllib.quote(urlNoAnchor.encode('utf-8')))
-                #print logMsg+str(url.encode('utf-8'))
                 if reqId != -1:
                     self.getLink(url, reqId, transactionId)
 

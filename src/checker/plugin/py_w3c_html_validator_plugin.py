@@ -17,7 +17,6 @@ class PyW3C_HTML_Validator(IPlugin):
         try:
             self.validator.validate_fragment(content)
             for error in self.validator.errors:
-                print str(transactionId)+" "+error['message']
                 self.database.putNewDefectType(self.transformMessageId(error['messageid'], "err"), error['message'])
                 self.database.setDefect(transactionId,
                                         self.transformMessageId(error['messageid'], "err"),

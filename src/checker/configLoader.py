@@ -21,10 +21,8 @@ class ConfigLoader(object):
     def load(self, fname):
         """Loads configuration from XML file.
         """
-        #try:
         cfile = open(fname)
         root = yaml.safe_load(cfile)
-        #print root
 
         if root['version'] == self.version:
            self.dbconf.setDbname(root['database'])
@@ -33,22 +31,10 @@ class ConfigLoader(object):
            for ep in epSet:
               self.entryPoints.append(ep)
 
-           #plugins = root.find('plugins')
-
-           #self.getResolutions(plugins)
-
-           #pluginSet = plugins.findall('plugin')
-           #for plugin in pluginSet:
-           #    pluginId = plugin.attrib['id']
-           #    self.getPluginResolutions(pluginId, plugin, self.uriAcceptor,
-           #                              self.typeAcceptor)
-
            ctypes = root['content-types']
            self.typeAcceptor = Acceptor(False)
            for ctype in ctypes:
-             print ctype['content-type']
              for plugin in ctype['plugins']:
-               print plugin
                self.typeAcceptor.setPluginAcceptValue(plugin, ctype['content-type'], True)
 
            urls = root['urls']
@@ -59,14 +45,6 @@ class ConfigLoader(object):
         else:
            print "Configuration version doesn't match"
         cfile.close()
-
-        print "VALUES"
-        ua = self.uriAcceptor
-        for val in ua.getValues():
-           print val
-        print "***"
-        #except xml.etree.ElementTree.ParseError:
-        #    print "Parsing configuration file failed"
 
     def getDbconf(self):
         """ Retrieve DB configuration.

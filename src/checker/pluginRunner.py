@@ -20,7 +20,6 @@ class PluginRunner(object):
     def runTransaction(self, plugins, info, prefix):
         """ Run a single transaction through all plugins where it's accepted.
         """
-        print "Verifying "+info.getUri()
         for plugin in plugins:
             fakeTransaction = info
             fakeTransaction.setUri(prefix)
@@ -44,7 +43,6 @@ class PluginRunner(object):
         while info.getId() != -1:
             print "Processing "+info.getUri()
             prefix = self.getMaxPrefix(info.getUri())
-            #print "Uri changed: "+info.getUri()
             # uri se nahradi nejdelsim prefixem dle konfigurace pluginu
             self.runTransaction(plugins, info, prefix)
             api.setFinished(info.getId())

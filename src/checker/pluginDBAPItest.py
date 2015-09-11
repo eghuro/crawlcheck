@@ -137,7 +137,6 @@ class DBAPITest(unittest.TestCase):
         self.assertEqual(u'false', row[1])
 
 if __name__ == '__main__':
-    #testGetTransactionNonEmptyDb()
     unittest.main()
 
 
