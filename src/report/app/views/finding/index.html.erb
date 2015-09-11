@@ -37,7 +37,9 @@
         <td><%= defect.description %></td>
         <td><%= defect.location %></td>
         <td><%= defect.evidence %></td>
-        <td><a href="/finding/<%= defect.responseId %>">-></a></td>
+        <td>
+          <a href="/finding/<%= defect.responseId %>"><%= image_tag "glyphicons-224-chevron-right.png" %></a>
+        </td>
       </tr>
     <%end%>
   </tbody>
