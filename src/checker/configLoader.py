@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Configuration Loader loads configuration from external XML file.
 """
-import xml.etree.ElementTree as etree
+import yaml
 from pluginDBAPI import DBAPIconfiguration
 from acceptor import Acceptor
 
@@ -12,7 +12,7 @@ class ConfigLoader(object):
         Later, DB configuration, URI and Content-Type acceptors can be retrieved through getters.
     """
     def __init__(self):
-        self.version = "0.01"
+        self.version = 1.01
         self.dbconf = DBAPIconfiguration()
         self.typeAcceptor = None
         self.uriAcceptor = None
@@ -21,36 +21,52 @@ class ConfigLoader(object):
     def load(self, fname):
         """Loads configuration from XML file.
         """
-        try:
-           tree = etree.parse(fname)
-           root = tree.getroot()
+        #try:
+        cfile = open(fname)
+        root = yaml.safe_load(cfile)
+        #print root
 
-           if root.attrib['version'] == self.version:
-              dbAtts = root.find('db').attrib
+        if root['version'] == self.version:
+           self.dbconf.setDbname(root['database'])
 
-              self.dbconf.setUri(dbAtts['uri'])
-              self.dbconf.setPassword(dbAtts['pass'])
-              self.dbconf.setDbname(dbAtts['dbname'])
-              self.dbconf.setUser(dbAtts['user'])
+           epSet = root['entryPoints']
+           for ep in epSet:
+              self.entryPoints.append(ep)
 
-              eps = root.find('entryPoints')
-              epSet = eps.findall('entryPoint')
-              for ep in epSet:
-                 self.entryPoints.append(ep.attrib['uri'])
+           #plugins = root.find('plugins')
 
-              plugins = root.find('plugins')
+           #self.getResolutions(plugins)
 
-              self.getResolutions(plugins)
+           #pluginSet = plugins.findall('plugin')
+           #for plugin in pluginSet:
+           #    pluginId = plugin.attrib['id']
+           #    self.getPluginResolutions(pluginId, plugin, self.uriAcceptor,
+           #                              self.typeAcceptor)
 
-              pluginSet = plugins.findall('plugin')
-              for plugin in pluginSet:
-                  pluginId = plugin.attrib['id']
-                  self.getPluginResolutions(pluginId, plugin, self.uriAcceptor,
-                                            self.typeAcceptor)
-           else:
-              print "Configuration version doesn't match"
-        except xml.etree.ElementTree.ParseError:
-            print "Parsing configuration file failed"
+           ctypes = root['content-types']
+           self.typeAcceptor = Acceptor(False)
+           for ctype in ctypes:
+             print ctype['content-type']
+             for plugin in ctype['plugins']:
+               print plugin
+               self.typeAcceptor.setPluginAcceptValue(plugin, ctype['content-type'], True)
+
+           urls = root['urls']
+           self.uriAcceptor = Acceptor(False)
+           for url in urls:
+             for plugin in url['plugins']:
+               self.uriAcceptor.setPluginAcceptValue(plugin, url['url'], True)
+        else:
+           print "Configuration version doesn't match"
+        cfile.close()
+
+        print "VALUES"
+        ua = self.uriAcceptor
+        for val in ua.getValues():
+           print val
+        print "***"
+        #except xml.etree.ElementTree.ParseError:
+        #    print "Parsing configuration file failed"
 
     def getDbconf(self):
         """ Retrieve DB configuration.

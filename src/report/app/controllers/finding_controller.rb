@@ -8,7 +8,7 @@ class FindingController < ApplicationController
 
   def index
     defect_query = "select transactions.uri, location, evidence, defectType.description from defect inner join finding on finding.id = defect.findingId inner join defectType on defect.type = defectType.id inner join transactions on transactions.id = finding.responseId order by defectType.type"
-    @defects = Defect.paginate_by_sql(defect_query, :page => params[:page], :per_page => 30)
+    @defects = Defect.find_by_sql(defect_query)
     @links = Link.find_by_sql("select distinct uri, toUri, processed from link inner join finding on finding.id = link.findingId inner join transactions on finding.responseId = transactions.id order by toUri")
   end
 
