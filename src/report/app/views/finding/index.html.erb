@@ -17,6 +17,7 @@
     </tr>
   <%end%>
 </table>
+<%= will_paginate @defects, :param_name => 'defect' %>
 
 <h2>Links</h2>
 <table border="1">
@@ -33,3 +34,4 @@
     </tr>
   <%end%>
 </table>
+<%= will_paginate @links, :param_name => 'link' %>
