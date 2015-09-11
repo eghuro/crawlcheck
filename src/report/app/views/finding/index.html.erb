@@ -5,13 +5,25 @@
   <li class="active"><a href="/finding">Findings</a></li>
 </ul>
 
-
 <h2>Defects</h2>
 <table border="1" class="table table-striped table-bordered">
   <thead>
     <tr>
       <th>URI</th>
-      <th>Description</th>
+      <th class="dropdown">
+        <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Type
+          <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="dropdownMenu2" id="dtype">
+          <% if @filtered %>
+            <li><a href="/finding"">No filter</a></li>
+          <%end%>
+          <% getTypes.each do |type| %>
+            <li><a href="?d=<%=type.id%>"><%= type.description %></a></li>
+          <%end%>
+        </ul>
+      </th>
       <th>Location</th>
       <th>Evidence</th>
       <th>Go to transaction</th>
