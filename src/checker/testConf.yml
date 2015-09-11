@@ -1,0 +1,25 @@
+---
+version:  1.01
+database: crawlcheck
+    
+content-types:
+ - 
+   "content-type": "text/html"
+   plugins:
+     - linksFinder
+     - htmlValidator
+ -
+   "content-type": "text/css"
+   plugins:
+     - tinycss
+
+urls:
+ -
+    url: "http://mj.ucw.cz/vyuka/"
+    plugins:
+       - linksFinder
+       - htmlValidator
+       - tinycss
+
+entryPoints:
+ - "http://mj.ucw.cz/vyuka/"
