@@ -14,15 +14,28 @@
           <span class="caret"></span>
         </button>
         <ul class="dropdown-menu" aria-labelledby="dropdownMenu2" id="dtype">
-          <% if @filtered %>
+          <% if @filtered1 %>
             <li><a href="/transaction"">No filter</a></li>
           <%end%>
           <% getStatuses.each do |status| %>
-            <li><a href="?s=<%=status.id%>"><%= status.status %></a></li>
+            <li><a href="<%=addToUri("s", status.id)%>"><%= status.status %></a></li>
           <%end%>
         </ul>
       </th>
-      <th>Content type</th>
+      <th class="dropdown">
+        <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Content type
+          <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="dropdownMenu2" id="dtype">
+          <% if @filtered2 %>
+            <li><a href="/transaction"">No filter</a></li>
+          <%end%>
+          <% getTypes.each do |type| %>
+            <li><a href="<%=addToUri("t", escape(type.contentType))%>"><%= type.contentType %></a></li>
+          <%end%>
+        </ul>
+      </th>
     </tr>
   </thead>
 
