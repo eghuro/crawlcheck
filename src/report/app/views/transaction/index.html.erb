@@ -7,11 +7,22 @@
 <table border="1" class="table table-striped table-bordered">
   <thead>
     <tr>
-      <th>Method</th>
       <th>URI</th>
-      <th>Status</th>
+      <th class="dropdown">
+        <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Status
+          <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="dropdownMenu2" id="dtype">
+          <% if @filtered %>
+            <li><a href="/transaction"">No filter</a></li>
+          <%end%>
+          <% getStatuses.each do |status| %>
+            <li><a href="?s=<%=status.id%>"><%= status.status %></a></li>
+          <%end%>
+        </ul>
+      </th>
       <th>Content type</th>
-      <th>Origin</th>
     </tr>
   </thead>
 
@@ -20,11 +31,9 @@
     <% @transactions.each do |record| %>
       <% transactionStatus = @status.find(record.verificationStatusId) %>
       <tr>
-        <td><%= record.method %></td>
         <td><%= format(record.uri) %></td>
         <td><% if transactionStatus.id == 5 %><a href="/finding/<%= record.id %>"><%= transactionStatus.status %></a> <% else %> <%= transactionStatus.status %> <% end %></td>
         <td><%= record.contentType %></td>
-        <td><%= record.origin %></td>
       </tr>
     <% end %>
   </tbody>

@@ -4,20 +4,16 @@
 <table border="1" class="table table-striped table-bordered">
   <thead>
     <tr>
-      <th>Request method</th>
       <th>URI</th>
       <th>Response status</th>
       <th>Content type</th>
-      <th>Origin</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td><%=@transaction.method %></td>
       <td><%=format(@transaction.uri) %></td>
       <td><%=@transaction.responseStatus %></td>
       <td><%=@transaction.contentType %></td>
-      <td><%=@transaction.origin %></td>
     </tr>
   </tbody>
 </table>
