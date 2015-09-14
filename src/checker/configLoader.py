@@ -24,24 +24,47 @@ class ConfigLoader(object):
         cfile = open(fname)
         root = yaml.safe_load(cfile)
 
-        if root['version'] == self.version:
+        if 'version' not in root:
+           print "Version not specified"
+        elif 'database' not in root:
+           print "Database not specified"
+        elif root['version'] == self.version:
            self.dbconf.setDbname(root['database'])
 
-           epSet = root['entryPoints']
-           for ep in epSet:
-              self.entryPoints.append(ep)
+           if 'entryPoints' not in root:
+             print "Entry points should be specified"
+           elif not root['entryPoints']:
+             print "At least one entry point should be specified"
+           else:
+             epSet = root['entryPoints']
+             for ep in epSet:
+               self.entryPoints.append(ep)
 
-           ctypes = root['content-types']
-           self.typeAcceptor = Acceptor(False)
-           for ctype in ctypes:
-             for plugin in ctype['plugins']:
-               self.typeAcceptor.setPluginAcceptValue(plugin, ctype['content-type'], True)
 
-           urls = root['urls']
-           self.uriAcceptor = Acceptor(False)
-           for url in urls:
-             for plugin in url['plugins']:
-               self.uriAcceptor.setPluginAcceptValue(plugin, url['url'], True)
+             self.typeAcceptor = Acceptor(False)
+             if 'content-types' in root:
+               ctypes = root['content-types']
+               if ctypes:
+                 for ctype in ctypes:
+                   if 'content-type' not in ctype:
+                     print "Content type not specified"
+                     break
+                   if 'plugins' in ctype:
+                     if ctype['plugins']:
+                       for plugin in ctype['plugins']:
+                         self.typeAcceptor.setPluginAcceptValue(plugin, ctype['content-type'], True)
+
+             self.uriAcceptor = Acceptor(False)
+             if 'urls' in root:
+               urls = root['urls']
+               if urls:
+                 for url in urls:
+                   if 'url' not in url:
+                     print "URL not specified"
+                   if 'plugins' in url:
+                     if url['plugins']:
+                       for plugin in url['plugins']:
+                         self.uriAcceptor.setPluginAcceptValue(plugin, url['url'], True)
         else:
            print "Configuration version doesn't match"
         cfile.close()

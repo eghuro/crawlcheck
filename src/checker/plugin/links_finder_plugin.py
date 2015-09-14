@@ -14,6 +14,8 @@ class LinksFinder(IPlugin):
         self.database = None
         self.types = None
         self.trie = None
+        self.uris = None
+        self.uriTrie = None
 
     def setDb(self, DB):
         self.database = DB
@@ -21,6 +23,10 @@ class LinksFinder(IPlugin):
     def setTypes(self, types):
         self.types = types
         self.trie = marisa_trie.Trie(types)
+
+    def setUris(self, uris):
+        self.uris = uris
+        self.uriTrie = marisa_trie.Trie(uris)
 
     def check(self, transactionId, content):
         """ Najde tagy <a>, <link>, vybere atribut href, ulozi jako odkazy,
@@ -51,7 +57,8 @@ class LinksFinder(IPlugin):
           r = requests.head(url)
           if r.status_code >= 400:
              self.database.setDefect(srcId, "badlink", 0, url)
-          
+             self.database.setFinished(reqId)
+             return
           if 'content-type' in r.headers.keys():
              ct = r.headers['content-type']
           elif 'Content-Type' in r.headers.keys():
@@ -62,16 +69,25 @@ class LinksFinder(IPlugin):
              self.database.setDefect(srcId, "badtype", 0, url)
           
           if self.getMaxPrefix(ct) in self.types:
-            r = requests.get(url)
-            # poznamenat si mozne presmerovani
-            self.database.setResponse(reqId, r.url.encode('utf-8'), r.status_code, ct, r.text)
-          else: print "Content type not accepted: "+ct+" ("+url+")"
+             if self.getMaxPrefixUri(url) in self.uris:
+                r = requests.get(url)
+                # poznamenat si mozne presmerovani
+                self.database.setResponse(reqId, r.url.encode('utf-8'), r.status_code, ct, r.text)
+             else:
+                print "Uri not accepted: "+url
+                self.database.setFinished(reqId)
+          else: 
+            print "Content type not accepted: "+ct+" ("+url+")"
+            self.database.setFinished(reqId)
        except InvalidSchema:
           print "Invalid schema"
+          self.database.setFinished(reqId)
        except ConnectionError:
           print "Connection error"
+          self.database.setFinished(reqId)
        except MissingSchema:
           print "Missing schema"
+          self.database.setFinished(reqId)
 
     def make_links_absolute(self, soup, url, tag):
         for tag in soup.findAll(tag, href=True):
@@ -97,3 +113,9 @@ class LinksFinder(IPlugin):
         if len(prefList) > 0:
             return prefList[-1]
         else: return ctype
+
+    def getMaxPrefixUri(self, uri):
+        prefList = self.uriTrie.prefixes(uri)
+        if len(prefList) > 0:
+            return prefList[-1]
+        else: return uri

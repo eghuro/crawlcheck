@@ -2,6 +2,7 @@ from yapsy.IPlugin import IPlugin
 from py_w3c.validators.html.validator import HTMLValidator
 from py_w3c.exceptions import ValidationFault
 from urllib2 import HTTPError, URLError
+import time
 
 class PyW3C_HTML_Validator(IPlugin):
     def __init__(self):
@@ -27,14 +28,15 @@ class PyW3C_HTML_Validator(IPlugin):
                  self.database.setDefect(transactionId,
                                          self.transformMessageId(warning['messageid'], "warn").
                                          warning['line'], warning['source'])
+            time.sleep(3)
         except ValidationFault, e:
             print "Validation fault"
         except HTTPError, e:
-            self.database.putNewDefectType("HTTPerror"+str(e.code), str(e.reason))
-            self.database.setDefect(transactionId, "HTTPerror"+str(e.code), 0, '')
+            print "HTTP Error "+str(e.code)+": "+str(e.reason)
         except URLError, e:
-            self.database.putNewDefectType("URLerror", "Connection problem")
-            self.database.setDefect(transactionId, "URLerror", 0, str(e.reason))
+            print "Connection problem: "+str(e.reason) 
+        except Exception as e:
+            print "Unexpected problem"
         return
     def getId(self):
         return "htmlValidator"
