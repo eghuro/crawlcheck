@@ -35,6 +35,8 @@
 
 <p>Crawlcheck is a web crawler invoking plugins on received content. It's intended for verification of websites prior to deployment. The process of verification is customisable by configuration script that allows complex specification which plugins should check particular URIs and content-types. Main engine and plugins are written in Python, there's also possibility to show report in form of website written in Ruby on Rails or generate report in PDF. The report contains discoveries plugins made during the verification.</p>
 
+<p>| <a href="#install">Install</a> | <a href="#config">Configure</a> | <a href="#run">Run</a> | <a href="#plugin">Extend</a> |</p>
+
 <h3>
 <a id="version" class="anchor" href="#version" aria-hidden="true"><span class="octicon octicon-link"></span></a>Version</h3>
 
@@ -47,15 +49,24 @@
 Crawlcheck uses a number of open source projects to work properly:</p>
 
 <ul>
-<li>[Yapsy] - plugin framework</li>
-<li>[sqlite3] - data storage</li>
-<li>[pyyaml] - configuration </li>
-<li>[marisa_trie] - Trie implementation</li>
-<li>[py_w3c] - for html validation plugin</li>
-<li>[tinycss] - for css validation plugin</li>
-<li>[beautifulsoup4] - for links finder plugin</li>
-<li>[requests], [urllib3] - for networking</li>
-<li>[enum] - duh</li>
+<li>
+<strong>Yapsy</strong> - plugin framework</li>
+<li>
+<strong>sqlite3</strong> - data storage</li>
+<li>
+<strong>pyyaml</strong> - configuration </li>
+<li>
+<strong>marisa_trie</strong> - Trie implementation</li>
+<li>
+<strong>py_w3c</strong> - for html validation plugin</li>
+<li>
+<strong>tinycss</strong> - for css validation plugin</li>
+<li>
+<strong>beautifulsoup4</strong> - for links finder plugin</li>
+<li>
+<strong>requests</strong>, <strong>urllib3</strong> - for networking</li>
+<li>
+<strong>enum</strong> - ...</li>
 </ul>
 
 <p>Following gems are needed for report</p>
@@ -80,7 +91,8 @@ Crawlcheck uses a number of open source projects to work properly:</p>
 <h3>
 <a id="installation" class="anchor" href="#installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installation</h3>
 
-<p>1) Install dependencies</p>
+<p><code>&lt;a name="install" /&gt;</code>
+1) Install dependencies</p>
 
 <ul>
 <li>You need mysql-server, python-2.7, sqlite3 (dev) and ruby installed.</li>
@@ -126,7 +138,8 @@ $ sqlite3 <span class="pl-k">&lt;</span>dbfile<span class="pl-k">&gt;</span> <sp
 <h3>
 <a id="configuration" class="anchor" href="#configuration" aria-hidden="true"><span class="octicon octicon-link"></span></a>Configuration</h3>
 
-<p>Configuration file is a simple YAML file.</p>
+<p><code>&lt;a name="config" /&gt;</code>
+Configuration file is a simple YAML file.</p>
 
 <div class="highlight highlight-sh"><pre>---
 version: 1.01        <span class="pl-c"># configuration format version</span>
@@ -161,7 +174,8 @@ entryPoints: <span class="pl-c"># where to start</span>
 <h3>
 <a id="running-crawlcheck" class="anchor" href="#running-crawlcheck" aria-hidden="true"><span class="octicon octicon-link"></span></a>Running crawlcheck</h3>
 
-<p>Assuming you have gone through set-up and configuration, now run checker:</p>
+<p><code>&lt;a name="run" /&gt;</code>
+Assuming you have gone through set-up and configuration, now run checker:</p>
 
 <div class="highlight highlight-sh"><pre>$ <span class="pl-c1">cd</span> [root]/crawlcheck/src/
 $ python checker/ [config.yml]</pre></div>
@@ -199,7 +213,8 @@ $ python TexReporter.py <span class="pl-k">&lt;</span>dbfile<span class="pl-k">&
 <h3>
 <a id="plugins" class="anchor" href="#plugins" aria-hidden="true"><span class="octicon octicon-link"></span></a>Plugins</h3>
 
-<p>Crawlcheck is currently extended with the following plugins:</p>
+<p><code>&lt;a name="plugin" /&gt;</code>
+Crawlcheck is currently extended with the following plugins:</p>
 
 <ul>
 <li>linksFinder</li>
