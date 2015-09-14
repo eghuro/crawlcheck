@@ -45,52 +45,6 @@
 <p>0.02</p>
 
 <h3>
-<a id="tech" class="anchor" href="#tech" aria-hidden="true"><span class="octicon octicon-link"></span></a>Tech</h3>
-
-<p>Crawlcheck's engine currently runs on Python 2.7 and uses SQLite3 as a database backend. Report website is using Ruby on Rails and Bootstrap.
-Crawlcheck uses a number of open source projects to work properly:</p>
-
-<ul>
-<li>
-<strong>Yapsy</strong> - plugin framework</li>
-<li>
-<strong>sqlite3</strong> - data storage</li>
-<li>
-<strong>pyyaml</strong> - configuration </li>
-<li>
-<strong>marisa_trie</strong> - Trie implementation</li>
-<li>
-<strong>py_w3c</strong> - for html validation plugin</li>
-<li>
-<strong>tinycss</strong> - for css validation plugin</li>
-<li>
-<strong>beautifulsoup4</strong> - for links finder plugin</li>
-<li>
-<strong>requests</strong>, <strong>urllib3</strong> - for networking</li>
-<li>
-<strong>enum</strong> - ...</li>
-</ul>
-
-<p>Following gems are needed for report</p>
-
-<ul>
-<li>rails</li>
-<li>sqlite3</li>
-<li>sass-rails</li>
-<li>uglifier</li>
-<li>coffee-rails</li>
-<li>jquery-rails</li>
-<li>turbolinks</li>
-<li>jbuilder</li>
-<li>sdoc</li>
-<li>will_paginate-bootstrap</li>
-<li>bootstrap-sass</li>
-<li>autoprefixer-rails</li>
-</ul>
-
-<p>And of course Crawlcheck itself is open source with a <a href="https://github.com/eghuro/crawlcheck">public repository</a> on GitHub.</p>
-
-<h3>
 <a id="installation" class="anchor" href="#installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installation</h3>
 
 <p>
@@ -264,10 +218,12 @@ class MyPlugin(IPlugin):
 <ul>
 <li>Improve Tests and Documentation</li>
 <li>Report - manual annotations of findings</li>
-<li>Filters and search in report</li>
+<li>Search in report</li>
 <li>Scrap inline css</li>
 <li>Regular expressions in configuration for plugins (URLs)</li>
 </ul>
+
+<p>Feel free to submit a pull request.</p>
 
 <h2>
 <a id="license" class="anchor" href="#license" aria-hidden="true"><span class="octicon octicon-link"></span></a>License</h2>
