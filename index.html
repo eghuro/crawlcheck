@@ -1,0 +1,277 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Crawlcheck by eghuro</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <script src="javascripts/scale.fix.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1 class="header">Crawlcheck</h1>
+        <p class="header">Extendable web checker</p>
+
+        <ul>
+          <li class="download"><a class="buttons" href="https://github.com/eghuro/crawlcheck/zipball/master">Download ZIP</a></li>
+          <li class="download"><a class="buttons" href="https://github.com/eghuro/crawlcheck/tarball/master">Download TAR</a></li>
+          <li><a class="buttons github" href="https://github.com/eghuro/crawlcheck">View On GitHub</a></li>
+        </ul>
+
+        <p class="header">This project is maintained by <a class="header name" href="https://github.com/eghuro">eghuro</a></p>
+
+
+      </header>
+      <section>
+        <h1>
+<a id="crawlcheck" class="anchor" href="#crawlcheck" aria-hidden="true"><span class="octicon octicon-link"></span></a>Crawlcheck</h1>
+
+<p>Crawlcheck is a web crawler invoking plugins on received content. It's intended for verification of websites prior to deployment. The process of verification is customisable by configuration script that allows complex specification which plugins should check particular URIs and content-types. Main engine and plugins are written in Python, there's also possibility to show report in form of website written in Ruby on Rails or generate report in PDF. The report contains discoveries plugins made during the verification.</p>
+
+<h3>
+<a id="version" class="anchor" href="#version" aria-hidden="true"><span class="octicon octicon-link"></span></a>Version</h3>
+
+<p>0.02</p>
+
+<h3>
+<a id="tech" class="anchor" href="#tech" aria-hidden="true"><span class="octicon octicon-link"></span></a>Tech</h3>
+
+<p>Crawlcheck's engine currently runs on Python 2.7 and uses SQLite3 as a database backend. Report website is using Ruby on Rails and Bootstrap.
+Crawlcheck uses a number of open source projects to work properly:</p>
+
+<ul>
+<li>[Yapsy] - plugin framework</li>
+<li>[sqlite3] - data storage</li>
+<li>[pyyaml] - configuration </li>
+<li>[marisa_trie] - Trie implementation</li>
+<li>[py_w3c] - for html validation plugin</li>
+<li>[tinycss] - for css validation plugin</li>
+<li>[beautifulsoup4] - for links finder plugin</li>
+<li>[requests], [urllib3] - for networking</li>
+<li>[enum] - duh</li>
+</ul>
+
+<p>Following gems are needed for report</p>
+
+<ul>
+<li>rails</li>
+<li>sqlite3</li>
+<li>sass-rails</li>
+<li>uglifier</li>
+<li>coffee-rails</li>
+<li>jquery-rails</li>
+<li>turbolinks</li>
+<li>jbuilder</li>
+<li>sdoc</li>
+<li>will_paginate-bootstrap</li>
+<li>bootstrap-sass</li>
+<li>autoprefixer-rails</li>
+</ul>
+
+<p>And of course Crawlcheck itself is open source with a <a href="https://github.com/eghuro/crawlcheck">public repository</a> on GitHub.</p>
+
+<h3>
+<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installation</h3>
+
+<p>1) Install dependencies</p>
+
+<ul>
+<li>You need mysql-server, python-2.7, sqlite3 (dev) and ruby installed.</li>
+<li>Following packages needs also to be installed. It can be done through pip (you need python-pip and python-dev):</li>
+</ul>
+
+<div class="highlight highlight-sh"><pre>$ pip install marisa_trie yapsy py_w3c enum urllib3 requests tinycss beautifulsoup4 pyyaml</pre></div>
+
+<ul>
+<li>For report, rails also needs to be installed</li>
+</ul>
+
+<div class="highlight highlight-sh"><pre>$ gem install rails</pre></div>
+
+<p>2) Install crawlcheck</p>
+
+<ul>
+<li>Clone and install Crawlcheck as follows: (make sure to prepare configuration file beforehand)</li>
+</ul>
+
+<div class="highlight highlight-sh"><pre>$ git clone [git-repo-url] crawlcheck
+$ <span class="pl-c1">cd</span> crawlcheck/src</pre></div>
+
+<ul>
+<li>Install report</li>
+</ul>
+
+<div class="highlight highlight-sh"><pre>$ <span class="pl-c1">cd</span> report
+$ bin/bundle install</pre></div>
+
+<ul>
+<li>
+<p>Install database</p>
+
+<p>First sqlite command will create tables, rake command will do initialization needed for ruby, second sqlite call will set up initial values in certain tables and ensures integrity constraints remains unchanged.</p>
+</li>
+</ul>
+
+<div class="highlight highlight-sh"><pre>$ sqlite3 <span class="pl-k">&lt;</span>dbfile<span class="pl-k">&gt;</span> <span class="pl-k">&lt;</span> ../checker/mysql_tables.sql
+$ DATABASE_URL=<span class="pl-s"><span class="pl-pds">"</span>sqlite3://&lt;dbfile&gt;<span class="pl-pds">"</span></span> bin/rake db:drop db:create db:schema:load
+$ sqlite3 <span class="pl-k">&lt;</span>dbfile<span class="pl-k">&gt;</span> <span class="pl-k">&lt;</span> ../checker/mysql_tables.sql</pre></div>
+
+<h3>
+<a id="configuration" class="anchor" href="#configuration" aria-hidden="true"><span class="octicon octicon-link"></span></a>Configuration</h3>
+
+<p>Configuration file is a simple YAML file.</p>
+
+<div class="highlight highlight-sh"><pre>---
+version: 1.01        <span class="pl-c"># configuration format version</span>
+database: crawlcheck <span class="pl-c"># sqlite database file</span>
+
+content-types:
+ -
+   <span class="pl-s"><span class="pl-pds">"</span>content-type<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>text/html<span class="pl-pds">"</span></span>
+   plugins: <span class="pl-c"># plugins to use for given content-type</span>
+     - linksFinder
+     - htmlValidator
+
+ -
+   <span class="pl-s"><span class="pl-pds">"</span>content-type<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>text/css<span class="pl-pds">"</span></span>
+   plugins:
+     - tinycss
+
+urls:
+-
+  url: <span class="pl-s"><span class="pl-pds">"</span>http://mj.ucw.cz/vyuka/<span class="pl-pds">"</span></span>
+  plugins: <span class="pl-c"># which plugins are allowed for given URL</span>
+       - linksFinder
+       - htmlValidator
+       - tinycss
+
+entryPoints: <span class="pl-c"># where to start</span>
+<span class="pl-c"># Note, that once URI get's to the database it's no longer being requested </span>
+<span class="pl-c"># (beware of repeated starts, if entry point remains in the database execution won't </span>
+<span class="pl-c"># start from this entry point)</span>
+ - <span class="pl-s"><span class="pl-pds">"</span>http://mj.ucw.cz/vyuka/<span class="pl-pds">"</span></span></pre></div>
+
+<h3>
+<a id="running-crawlcheck" class="anchor" href="#running-crawlcheck" aria-hidden="true"><span class="octicon octicon-link"></span></a>Running crawlcheck</h3>
+
+<p>Assuming you have gone through set-up and configuration, now run checker:</p>
+
+<div class="highlight highlight-sh"><pre>$ <span class="pl-c1">cd</span> [root]/crawlcheck/src/
+$ python checker/ [config.yml]</pre></div>
+
+<p>Note: <code>[root]/crawlcheck</code> is where repository was cloned to, <code>[config.xml]</code> stands for the configuration file path</p>
+
+<h3>
+<a id="running-report-website" class="anchor" href="#running-report-website" aria-hidden="true"><span class="octicon octicon-link"></span></a>Running report website</h3>
+
+<p>Assuming you have gone through set-up and configuration and checker either finished or is still running (otherwise there are just no data to display), now run report app:</p>
+
+<div class="highlight highlight-sh"><pre>$ <span class="pl-c1">cd</span> [root]/crawlcheck/src/report/
+$ DATABASE_URL=<span class="pl-s"><span class="pl-pds">"</span>sqlite3://&lt;dbfile&gt;<span class="pl-pds">"</span></span> bin/rails server</pre></div>
+
+<p>Note: you can specify port by adding <code>-p [number]</code> and interface by specifying <code>-b [ip address]</code></p>
+
+<h3>
+<a id="generating-report-to-pdf" class="anchor" href="#generating-report-to-pdf" aria-hidden="true"><span class="octicon octicon-link"></span></a>Generating report to PDF</h3>
+
+<p>There is also a very simple Python script to generate a PDF containing all invalid links and other defects.
+To run the script you need MySQL connector (you already have, since you ran checker) and <code>pylatex</code>.
+You can install pylatex using PIP:</p>
+
+<div class="highlight highlight-sh"><pre>$ pip install pylatex</pre></div>
+
+<p>You should also have <code>pdflatex</code> on your system.</p>
+
+<p>Now run the script as follows:</p>
+
+<div class="highlight highlight-sh"><pre>$ <span class="pl-c1">cd</span> [root]/crawlcheck/src
+$ python TexReporter.py <span class="pl-k">&lt;</span>dbfile<span class="pl-k">&gt;</span> <span class="pl-k">&lt;</span>outputfile<span class="pl-k">&gt;</span></pre></div>
+
+<p>For output file <code>.pdf</code> is added automatically.</p>
+
+<h3>
+<a id="plugins" class="anchor" href="#plugins" aria-hidden="true"><span class="octicon octicon-link"></span></a>Plugins</h3>
+
+<p>Crawlcheck is currently extended with the following plugins:</p>
+
+<ul>
+<li>linksFinder</li>
+<li>py_w3c_htmlValidator</li>
+<li>tinycss_cssValidator</li>
+</ul>
+
+<h3>
+<a id="how-to-write-a-plugin" class="anchor" href="#how-to-write-a-plugin" aria-hidden="true"><span class="octicon octicon-link"></span></a>How to write a plugin</h3>
+
+<p>Go to <code>crawlcheck/src/checker/plugin/</code>, create <code>my_new_plugin.py</code> and <code>my_new_plugin.yapsy-plugin</code> files there.
+Fill out .yapsy-plugin file:</p>
+
+<div class="highlight highlight-sh"><pre>[Core]
+Name = Human readable plugin name
+Module = my_new_plugin
+
+[Documentation]
+Author = Your Name
+Version = 0.0
+Description = My New Plugin</pre></div>
+
+<p>For plugin itself you need to implement following:</p>
+
+<div class="highlight highlight-sh"><pre>from yapsy.IPlugin import IPlugin
+class MyPlugin(IPlugin):
+
+    def setDb(self, DB):
+        <span class="pl-c"># record DB somewhere</span>
+
+    def getId(self):
+        <span class="pl-s"><span class="pl-pds">"</span><span class="pl-pds">"</span><span class="pl-pds">"</span> The id is used in configuration - in this case &lt;plugin id = <span class="pl-pds">"</span></span>myPlugin<span class="pl-s"><span class="pl-pds">"</span>/&gt;</span>
+<span class="pl-s">        <span class="pl-pds">"</span><span class="pl-pds">"</span><span class="pl-pds">"</span></span>
+
+        <span class="pl-k">return</span> <span class="pl-s"><span class="pl-pds">"</span>myPlugin<span class="pl-pds">"</span></span>
+
+    def check(self, transactionId, content):
+        <span class="pl-c"># implement the logic here</span></pre></div>
+
+<p>See <a href="http://yapsy.sourceforge.net/IPlugin.html">http://yapsy.sourceforge.net/IPlugin.html</a> and <a href="http://yapsy.sourceforge.net/PluginManager.html#plugin-info-file-format">http://yapsy.sourceforge.net/PluginManager.html#plugin-info-file-format</a> for more details.</p>
+
+<h3>
+<a id="todos" class="anchor" href="#todos" aria-hidden="true"><span class="octicon octicon-link"></span></a>TODOs</h3>
+
+<ul>
+<li>Improve Tests and Documentation</li>
+<li>Report - manual annotations of findings</li>
+<li>Filters and search in report</li>
+<li>Scrap inline css</li>
+<li>Regular expressions in configuration for plugins (URLs)</li>
+</ul>
+
+<h2>
+<a id="license" class="anchor" href="#license" aria-hidden="true"><span class="octicon octicon-link"></span></a>License</h2>
+
+<p>MIT</p>
+      </section>
+      <footer>
+        <p><small>Hosted on <a href="https://pages.github.com">GitHub Pages</a> using the Dinky theme</small></p>
+      </footer>
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+		          <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-3539093-8");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
+  </body>
+</html>
