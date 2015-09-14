@@ -29,24 +29,28 @@ class LinksFinder(IPlugin):
         self.uriTrie = marisa_trie.Trie(uris)
 
     def check(self, transactionId, content):
-        """ Najde tagy <a>, <link>, vybere atribut href, ulozi jako odkazy,
-            stahne obsah jako dalsi transakci.
+        """ Najde tagy <a>, <link>, <img>, <iframe>, <frame>,
+            vybere atribut href, resp. src, ulozi jako odkazy,
+            stahne obsah jako dalsi transakci - pritom kontroluje,
+            zda se stahovani vyplati - tj. ze obsah bude kontrolovan.
         """
         soup = BeautifulSoup(content, 'html.parser')
         uri = self.database.getUri(transactionId)
-        
-        self.make_links_absolute(soup, uri,'a')
-        links = soup.find_all('a')
-        self.check_links(links, "Link to ", transactionId, 'href')
 
-        self.make_links_absolute(soup, uri, 'link')
-        links2 = soup.find_all('link')
-        self.check_links(links2, "Linked resource: ", transactionId, 'href')
+        self.checkType(soup, uri, ['a', 'link'], 'href', transactionId)
+        self.checkType(soup, uri, ['img', 'iframe', 'frame'], 'src', transactionId)
 
-        self.make_sources_absolute(soup, uri, 'img')
-        images = soup.find_all('img')
-        self.check_links(images, "Image: ", transactionId, 'src')
+        return
 
+    def checkType(self, soup, uri, tagL, attr, transactionId):
+        if attr == 'href':
+          self.make_links_absolute(soup, uri, tagL)
+        else:
+          self.make_sources_absolute(soup, uri, tagL)
+
+        images = soup.find_all(tagL)
+
+        self.check_links(images, transactionId, attr)
         return
 
     def getId(self):
@@ -71,9 +75,6 @@ class LinksFinder(IPlugin):
           if self.getMaxPrefix(ct) in self.types:
              if self.getMaxPrefixUri(url) in self.uris:
                 r = requests.get(url, allow_redirects=False)
-                # poznamenat si mozne presmerovani
-                #if url != r.url:
-                #  if not self.database.gotLink(r.url):
                 self.database.setResponse(reqId, r.url.encode('utf-8'), r.status_code, ct, r.text)
              else:
                 print "Uri not accepted: "+url
@@ -91,20 +92,21 @@ class LinksFinder(IPlugin):
           print "Missing schema"
           self.database.setFinished(reqId)
 
-    def make_links_absolute(self, soup, url, tag):
-        for tag in soup.findAll(tag, href=True):
+    def make_links_absolute(self, soup, url, tagL):
+        for tag in soup.findAll(tagL, href=True):
            if 'href' in tag.attrs:
               tag['href'] = urlparse.urljoin(url, tag['href'])
 
-    def make_sources_absolute(self, soup, url, tag):
-        for tag in soup.findAll(tag):
+    def make_sources_absolute(self, soup, url, tagL):
+        for tag in soup.findAll(tagL):
             tag['src'] = urlparse.urljoin(url, tag['src'])
 
-    def check_links(self, links, logMsg, transactionId, tag):
+    def check_links(self, links, transactionId, tag):
         for link in links:
             url = link.get(tag)
             if url is not None:
                 urlNoAnchor = url.split('#')[0]
+                # urlNoQuery = urlNoAnchor.split('?')[0]
 
                 reqId = self.database.setLink(transactionId, urllib.quote(urlNoAnchor.encode('utf-8')))
                 if reqId != -1:
