@@ -70,8 +70,10 @@ class LinksFinder(IPlugin):
           
           if self.getMaxPrefix(ct) in self.types:
              if self.getMaxPrefixUri(url) in self.uris:
-                r = requests.get(url)
+                r = requests.get(url, allow_redirects=False)
                 # poznamenat si mozne presmerovani
+                #if url != r.url:
+                #  if not self.database.gotLink(r.url):
                 self.database.setResponse(reqId, r.url.encode('utf-8'), r.status_code, ct, r.text)
              else:
                 print "Uri not accepted: "+url

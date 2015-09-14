@@ -53,6 +53,9 @@ class ConfigLoader(object):
                      if ctype['plugins']:
                        for plugin in ctype['plugins']:
                          self.typeAcceptor.setPluginAcceptValue(plugin, ctype['content-type'], True)
+                   else:
+                     print "Forbid "+ctype['content-type']
+                     self.typeAcceptor.setDefaultAcceptValue(ctype['content-type'], False)
 
              self.uriAcceptor = Acceptor(False)
              if 'urls' in root:
@@ -65,6 +68,9 @@ class ConfigLoader(object):
                      if url['plugins']:
                        for plugin in url['plugins']:
                          self.uriAcceptor.setPluginAcceptValue(plugin, url['url'], True)
+                   else:
+                     print "Forbid "+url['url']
+                     self.uriAcceptor.setDefaultAcceptValue(url['url'], False)
         else:
            print "Configuration version doesn't match"
         cfile.close()
