@@ -37,7 +37,7 @@ class DBAPITest(unittest.TestCase):
         cursor = con.cursor()
         cursor.execute("DELETE FROM transactions")
         response = ('<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">\n<html><head>\n<title>408 Request Timeout</title>\n</head><body>\n<h1>Request Timeout</h1>\n<p>Server timeout waiting for the HTTP request from the client.</p>\n<hr>\n<address>Apache/2.4.10 (Debian) Server at olga.majling.eu Port 80</address>\n</body></html>')
-        cursor.execute("INSERT INTO transactions (id, method, uri, responseStatus, contentType, content, verificationStatusId) VALUES (1, 'GET', \"http://olga.majling.eu/Vyuka\", 200, \"text/html; charset=iso-8859-1\",?, 3)", [response])
+        cursor.execute("INSERT INTO transactions (id, method, uri, responseStatus, contentType, content, verificationStatusId, depth) VALUES (1, 'GET', \"http://olga.majling.eu/Vyuka\", 200, \"text/html; charset=iso-8859-1\",?, 3, 1)", [response])
         
         con.commit()
 
@@ -55,7 +55,7 @@ class DBAPITest(unittest.TestCase):
         cursor = con.cursor()
         cursor.execute("DELETE FROM transactions")
         response = ('<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">\n<html><head>\n<title>408 Request Timeout</title>\n</head><body>\n<h1>Request Timeout</h1>\n<p>Server timeout waiting for the HTTP request from the client.</p>\n<hr>\n<address>Apache/2.4.10 (Debian) Server at olga.majling.eu Port 80</address>\n</body></html>')
-        cursor.execute("INSERT INTO transactions (id, method, uri, responseStatus, contentType, content, verificationStatusId) VALUES (1, 'GET', \"http://olga.majling.eu/Vyuka\", 200, \"text/html; charset=iso-8859-1\",?, 3)", [response])
+        cursor.execute("INSERT INTO transactions (id, method, uri, responseStatus, contentType, content, verificationStatusId, depth) VALUES (1, 'GET', \"http://olga.majling.eu/Vyuka\", 200, \"text/html; charset=iso-8859-1\",?, 3, 1)", [response])
         con.commit()
 
 
@@ -79,7 +79,7 @@ class DBAPITest(unittest.TestCase):
                      ' uvedené termíny – cílem je\n</td></tr>\n<tr><td> udržet v kanceláři rozumné pracovní prostředí \n</td></tr>\n<tr><td>\na agendu související se zápisem známek \n</td></tr>\n<tr><td>\nomezit na konkrétní den a čas.\n'
                      '</td></tr></table>\n</p> \n</div>\n</td>\n<td>\n</td>\n</tr><tr>\n<td class="upR" rowspan="1" width="15%">\n</td>\n</tr>\n<tr><td colspan="3" class="lowtab">\n<a href="http://www.toplist.cz/stat/1075666"><script\n'
                      ' language="JavaScript" type="text/javascript">\n</a>\n</td></tr>\n</table>\n</body>\n</html>\n')
-        cursor.execute("INSERT INTO transactions (id, method, uri, responseStatus, contentType, content, verificationStatusId) VALUES (2, 'GET', \"http://olga.majling.eu/\", 200, \"text/html; charset=UTF-8\",?, 3)", [response])
+        cursor.execute("INSERT INTO transactions (id, method, uri, responseStatus, contentType, content, verificationStatusId, depth) VALUES (2, 'GET', \"http://olga.majling.eu/\", 200, \"text/html; charset=UTF-8\",?, 3, 1)", [response])
         con.commit()
 
         api = DBAPI(self.conf)        
@@ -99,7 +99,7 @@ class DBAPITest(unittest.TestCase):
         cursor = con.cursor()
         cursor.execute("DELETE FROM transactions")
         response = ('<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">\n<html><head>\n<title>408 Request Timeout</title>\n</head><body>\n<h1>Request Timeout</h1>\n<p>Server timeout waiting for the HTTP request from the client.</p>\n<hr>\n<address>Apache/2.4.10 (Debian) Server at olga.majling.eu Port 80</address>\n</body></html>')
-        cursor.execute("INSERT INTO transactions (id, method, uri, responseStatus, contentType, content, verificationStatusId) VALUES (1, 'GET', \"http://olga.majling.eu/Vyuka\", 200, \"text/html; charset=iso-8859-1\",?, 3)", [response])
+        cursor.execute("INSERT INTO transactions (id, method, uri, responseStatus, contentType, content, verificationStatusId, depth) VALUES (1, 'GET', \"http://olga.majling.eu/Vyuka\", 200, \"text/html; charset=iso-8859-1\",?, 3, 1)", [response])
         con.commit()
 
         api = DBAPI(self.conf)        
@@ -120,7 +120,7 @@ class DBAPITest(unittest.TestCase):
         cursor.execute("DELETE FROM link")
         cursor.execute("DELETE FROM finding")
         response = ('<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">\n<html><head>\n<title>408 Request Timeout</title>\n</head><body>\n<h1>Request Timeout</h1>\n<p>Server timeout waiting for the HTTP request from the client.</p>\n<hr>\n<address>Apache/2.4.10 (Debian) Server at olga.majling.eu Port 80</address>\n</body></html>')
-        cursor.execute("INSERT INTO transactions (id, method, uri, responseStatus, contentType, content, verificationStatusId) VALUES (1, 'GET', \"http://olga.majling.eu/Vyuka\", 200, \"text/html; charset=iso-8859-1\",?, 3)", [response])
+        cursor.execute("INSERT INTO transactions (id, method, uri, responseStatus, contentType, content, verificationStatusId, depth) VALUES (1, 'GET', \"http://olga.majling.eu/Vyuka\", 200, \"text/html; charset=iso-8859-1\",?, 3, 1)", [response])
         con.commit()
 
         api = DBAPI(self.conf)        

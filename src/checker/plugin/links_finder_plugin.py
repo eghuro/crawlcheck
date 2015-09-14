@@ -16,6 +16,7 @@ class LinksFinder(IPlugin):
         self.trie = None
         self.uris = None
         self.uriTrie = None
+        self.maxDepth = 0 #unlimited
 
     def setDb(self, DB):
         self.database = DB
@@ -27,6 +28,12 @@ class LinksFinder(IPlugin):
     def setUris(self, uris):
         self.uris = uris
         self.uriTrie = marisa_trie.Trie(uris)
+
+    def setDepth(self, depth):
+        self.depth = depth
+
+    def setMaxDepth(self, maxDepth):
+        self.maxDepth = maxDepth
 
     def check(self, transactionId, content):
         """ Najde tagy <a>, <link>, <img>, <iframe>, <frame>,
@@ -108,8 +115,9 @@ class LinksFinder(IPlugin):
                 urlNoAnchor = url.split('#')[0]
                 # urlNoQuery = urlNoAnchor.split('?')[0]
 
-                reqId = self.database.setLink(transactionId, urllib.quote(urlNoAnchor.encode('utf-8')))
+                reqId = self.database.setLink(transactionId, urllib.quote(urlNoAnchor.encode('utf-8')), self.depth+1)
                 if reqId != -1:
+                  if self.maxDepth == 0 or self.depth < self.maxDepth:
                     self.getLink(url, reqId, transactionId)
 
     def getMaxPrefix(self, ctype):

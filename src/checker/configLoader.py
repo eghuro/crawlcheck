@@ -17,6 +17,7 @@ class ConfigLoader(object):
         self.typeAcceptor = None
         self.uriAcceptor = None
         self.entryPoints = []
+        self.maxDepth = 0
 
     def load(self, fname):
         """Loads configuration from YAML file.
@@ -30,6 +31,9 @@ class ConfigLoader(object):
            print "Database not specified"
         elif root['version'] == self.version:
            self.dbconf.setDbname(root['database'])
+
+           if 'maxDepth' in root:
+             self.maxDepth = root['maxDepth']
 
            if 'entryPoints' not in root:
              print "Entry points should be specified"
@@ -94,6 +98,11 @@ class ConfigLoader(object):
         """ Retrieve list of URIs for initial requests.
         """
         return self.entryPoints
+
+    def getMaxDepth(self):
+         """ Get maximum depth for crawling (0 for no limit)
+         """
+         return self.maxDepth
 
     def getDefaults(self, root, setKeyword, keyword):
         defaultSet = root.find(setKeyword)

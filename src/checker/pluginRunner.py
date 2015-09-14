@@ -11,11 +11,12 @@ class PluginRunner(object):
         For acceptors, uri is changed to the longest prefix based on
         plugin's configuration using trie.
     """
-    def __init__(self, dbconf, uriAcceptor, typeAcceptor):
+    def __init__(self, dbconf, uriAcceptor, typeAcceptor, maxDepth):
         self.dbconf = dbconf
         self.pluginsById = {}
         self.uriAcceptor = uriAcceptor
         self.typeAcceptor = typeAcceptor
+        self.maxDepth = maxDepth
 
     def runTransaction(self, plugins, info, prefix):
         """ Run a single transaction through all plugins where it's accepted.
@@ -25,6 +26,9 @@ class PluginRunner(object):
             fakeTransaction.setUri(prefix)
             if self.accept(plugin.getId(), fakeTransaction):
                 print plugin.getId()
+                if plugin.getId() == "linksFinder":
+                  plugin.setDepth(info.getDepth())
+                  plugin.setMaxDepth(self.maxDepth)
                 plugin.check(info.getId(), info.getContent().encode('utf-8'))
 
     def run(self, plugins):

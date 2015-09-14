@@ -25,6 +25,7 @@ CREATE TABLE transactions (
   content TEXT,
   verificationStatusId INTEGER,
   origin VARCHAR(255),
+  depth INTEGER NOT NULL,
   FOREIGN KEY (verificationStatusId) 
     REFERENCES verificationStatus(id)
     ON DELETE CASCADE,

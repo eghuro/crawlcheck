@@ -94,11 +94,12 @@ class TransactionInfo(object):
     """Container with necessary information about a transaction.
     """
 
-    def __init__(self, tid, content, contentType, uri):
+    def __init__(self, tid, content, contentType, uri, depth):
         self.tid = tid
         self.content = content
         self.ctype = contentType
         self.uri = uri
+        self.depth = depth
 
     def getId(self):
         return self.tid
@@ -114,6 +115,9 @@ class TransactionInfo(object):
 
     def setUri(self, uri):
         self.uri = uri
+
+    def getDepth(self, depth):
+        return self.depth
 
 
 class DBAPI(object):
@@ -143,13 +147,14 @@ class DBAPI(object):
         content = ""
         contentType = ""
         uri = ""
+        depth = -1
 
         try:
             statusId = DBAPI.getUnverifiedStatusId()
             idSelectorQuery = ('SELECT MAX(id)  FROM transactions WHERE '
                                'method = \'GET\' AND responseStatus  = 200 AND'
                                ' verificationStatusId = ?') 
-            contentSelectorQuery = ('SELECT id, content, contentType, uri FROM'
+            contentSelectorQuery = ('SELECT id, content, contentType, uri, depth FROM'
                                     ' transactions WHERE id = ?')
             self.cursor.execute(idSelectorQuery, [str(statusId)])
             row = self.cursor.fetchone()
@@ -159,16 +164,18 @@ class DBAPI(object):
                 row = self.cursor.fetchone()
                 if row is not None: 
                   if row[0] is not None:
-                    assert len(row) == 4
+                    assert len(row) == 5
                     if row[0] is not None:
                         assert row[1] is not None
                         assert row[2] is not None
                         assert row[3] is not None
+                        assert row[4] is not None
                         transactionId = row[0]
                         content = row[1]
                         contentType = row[2].split(';')[0]
                         # text/html; charset=utf-8 -> text/html
                         uri = row[3]
+                        depth = row[4]
 
                         statusId = DBAPI.getProcessingStatusId()
                         statusUpdateQuery = ('UPDATE transactions '
@@ -179,7 +186,7 @@ class DBAPI(object):
         except mdb.Error, e:
             self.error(e)
 
-        return TransactionInfo(transactionId, content, contentType, urllib.unquote(uri).decode('utf-8'))
+        return TransactionInfo(transactionId, content, contentType, urllib.unquote(uri).decode('utf-8'), depth)
 
     def setDefect(self, transactionId, defectType, line, evidence):
         """ Insert new defect discovered by a plugin into database.
@@ -234,7 +241,7 @@ class DBAPI(object):
             if row[0] is not None:
                 if row[0] == 0:
                     self.cursor.execute('INSERT INTO defectType (type, description) VALUES(?,?)', [defectType, description])
-    def setLink(self, transactionId, toUri):
+    def setLink(self, transactionId, toUri, depth=0):
         """ Set new link into transaction, finding and link tables.
             Return requestId if content needs to be downloaded.
             Return -1 is content is present.
@@ -244,8 +251,8 @@ class DBAPI(object):
             needContent = False
             if reqId == -1 : #nebyl pozadavek
                 query = ('INSERT INTO transactions (method, uri, origin, '
-                         'verificationStatusId) VALUES (\'GET\', ?, \'CHECKER\', ?)')
-                self.cursor.execute(query, [toUri, str(DBAPI.getRequestedStatusId())])
+                         'verificationStatusId, depth) VALUES (\'GET\', ?, \'CHECKER\', ?, ?)')
+                self.cursor.execute(query, [toUri, str(DBAPI.getRequestedStatusId()), str(depth)])
                 reqId = self.cursor.lastrowid
                 needContent = True
 
@@ -278,7 +285,7 @@ class DBAPI(object):
          row = self.cursor.fetchone()
          if row is not None:
              if row[0] is not None:
-                return row[0]
+                return (row[0])
          return -1
       except mdb.Error, e:
          self.error(e)

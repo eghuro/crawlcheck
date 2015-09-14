@@ -21,20 +21,20 @@ class PluginRunnerTest(unittest.TestCase):
     def testRunW3C(self):
         w3c = PyW3C_HTML_Validator()
 
-        runner = PluginRunner(self.dbconf, self.typeacceptor, self.uriacceptor)
+        runner = PluginRunner(self.dbconf, self.typeacceptor, self.uriacceptor, 1)
         runner.run([w3c])
 
     def testRunLinks(self):
         finder = LinksFinder()
 
-        runner = PluginRunner(self.dbconf, self.typeacceptor, self.uriacceptor)
+        runner = PluginRunner(self.dbconf, self.typeacceptor, self.uriacceptor, 1)
         runner.run([finder])
 
     def testRunMultiple(self):
         w3c = PyW3C_HTML_Validator()
         finder = LinksFinder()
 
-        runner = PluginRunner(self.dbconf, self.typeacceptor, self.uriacceptor)
+        runner = PluginRunner(self.dbconf, self.typeacceptor, self.uriacceptor, 1)
         runner.run([w3c, finder])
 
 if __name__ == '__main__':

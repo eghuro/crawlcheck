@@ -19,8 +19,8 @@ class Scraper(object):
 
            print "Adding entry point: "+uri
 
-           query = ('INSERT INTO transactions (uri, method, responseStatus, contentType, origin, verificationStatusId, content) VALUES ('
-                    '?,\'GET\', ' + str(r.status_code) + ', "' + r.headers['Content-Type'] +'", \'CLIENT\', 3, ?)')
+           query = ('INSERT INTO transactions (uri, method, responseStatus, contentType, origin, verificationStatusId, depth, content) VALUES ('
+                    '?,\'GET\', ' + str(r.status_code) + ', "' + r.headers['Content-Type'] +'", \'CLIENT\', 3, 1, ?)')
 
            self.cursor.execute(query, [uri, r.text])
            self.con.commit()
