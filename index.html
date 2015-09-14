@@ -23,6 +23,10 @@
           <li class="download"><a class="buttons" href="https://github.com/eghuro/crawlcheck/zipball/master">Download ZIP</a></li>
           <li class="download"><a class="buttons" href="https://github.com/eghuro/crawlcheck/tarball/master">Download TAR</a></li>
           <li><a class="buttons github" href="https://github.com/eghuro/crawlcheck">View On GitHub</a></li>
+          <li><a class="buttons" href="#installation">Install</a></li>
+          <li><a class="buttons" href="#configuration">Configure</a></li>
+          <li><a class="buttons" href="#running-crawlcheck">Run</a></li>
+          <li><a class="buttons" href="#plugins">Extend</a></li>
         </ul>
 
         <p class="header">This project is maintained by <a class="header name" href="https://github.com/eghuro">eghuro</a></p>
@@ -34,8 +38,6 @@
 <a id="crawlcheck" class="anchor" href="#crawlcheck" aria-hidden="true"><span class="octicon octicon-link"></span></a>Crawlcheck</h1>
 
 <p>Crawlcheck is a web crawler invoking plugins on received content. It's intended for verification of websites prior to deployment. The process of verification is customisable by configuration script that allows complex specification which plugins should check particular URIs and content-types. Main engine and plugins are written in Python, there's also possibility to show report in form of website written in Ruby on Rails or generate report in PDF. The report contains discoveries plugins made during the verification.</p>
-
-<p>| <a href="#install">Install</a> | <a href="#config">Configure</a> | <a href="#run">Run</a> | <a href="#plugin">Extend</a> |</p>
 
 <h3>
 <a id="version" class="anchor" href="#version" aria-hidden="true"><span class="octicon octicon-link"></span></a>Version</h3>
@@ -91,7 +93,7 @@ Crawlcheck uses a number of open source projects to work properly:</p>
 <h3>
 <a id="installation" class="anchor" href="#installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installation</h3>
 
-<p><code>&lt;a name="install" /&gt;</code>
+<p>
 1) Install dependencies</p>
 
 <ul>
@@ -138,7 +140,7 @@ $ sqlite3 <span class="pl-k">&lt;</span>dbfile<span class="pl-k">&gt;</span> <sp
 <h3>
 <a id="configuration" class="anchor" href="#configuration" aria-hidden="true"><span class="octicon octicon-link"></span></a>Configuration</h3>
 
-<p><code>&lt;a name="config" /&gt;</code>
+<p>
 Configuration file is a simple YAML file.</p>
 
 <div class="highlight highlight-sh"><pre>---
@@ -174,7 +176,7 @@ entryPoints: <span class="pl-c"># where to start</span>
 <h3>
 <a id="running-crawlcheck" class="anchor" href="#running-crawlcheck" aria-hidden="true"><span class="octicon octicon-link"></span></a>Running crawlcheck</h3>
 
-<p><code>&lt;a name="run" /&gt;</code>
+<p>
 Assuming you have gone through set-up and configuration, now run checker:</p>
 
 <div class="highlight highlight-sh"><pre>$ <span class="pl-c1">cd</span> [root]/crawlcheck/src/
@@ -213,7 +215,7 @@ $ python TexReporter.py <span class="pl-k">&lt;</span>dbfile<span class="pl-k">&
 <h3>
 <a id="plugins" class="anchor" href="#plugins" aria-hidden="true"><span class="octicon octicon-link"></span></a>Plugins</h3>
 
-<p><code>&lt;a name="plugin" /&gt;</code>
+<p>
 Crawlcheck is currently extended with the following plugins:</p>
 
 <ul>
