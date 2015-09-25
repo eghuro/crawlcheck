@@ -134,7 +134,7 @@ class DBAPITest(unittest.TestCase):
         cursor.execute("SELECT toUri, processed FROM link where findingId = "+str(findingId))
         row = cursor.fetchone()
         self.assertEqual("http://olga.majling.eu/", row[0])
-        self.assertEqual(u'false', row[1])
+        self.assertEqual(u'f', row[1])
 
 if __name__ == '__main__':
     unittest.main()
