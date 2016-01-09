@@ -1,0 +1,8 @@
+[Core]
+Name = CSS scraper
+Module = css_scraper
+
+[Documentation]
+Author = Alexandr Mansurov
+Version = 0.0
+Description = Scraps internal and inline CSS for validation
