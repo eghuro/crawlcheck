@@ -2,6 +2,7 @@
 """
 from pluginDBAPI import DBAPI
 import marisa_trie
+from multiprocessing import Process
 
 
 class PluginRunner(object):
@@ -18,9 +19,15 @@ class PluginRunner(object):
         self.typeAcceptor = typeAcceptor
         self.maxDepth = maxDepth
 
+    def runPlugin(plugin, info):
+        plugin.check(info.getId(), info.getContent().encode('utf-8'))
+
     def runTransaction(self, plugins, info, prefix):
         """ Run a single transaction through all plugins where it's accepted.
         """
+        # get list of plugins to use
+        # create processes to run each plugin
+        processes = []
         for plugin in plugins:
             fakeTransaction = info
             fakeTransaction.setUri(prefix)
@@ -29,7 +36,11 @@ class PluginRunner(object):
                 if plugin.getId() == "linksFinder":
                   plugin.setDepth(info.getDepth())
                   plugin.setMaxDepth(self.maxDepth)
-                plugin.check(info.getId(), info.getContent().encode('utf-8'))
+                processes.append(Process(target=runPlugin, args=(plugin,info)))
+        for process in processes:
+            process.start()
+        for process in processes:
+            process.join()
 
     def run(self, plugins):
         """ Run all transactions through all plugins where it's accepted.
