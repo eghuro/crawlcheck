@@ -43,8 +43,27 @@ class CssScraper(IPlugin):
                 pass
         return inlines
 
+    def push_db(self, transactionId, style, comment):
+        uri = self.database.getUri(transactionId)
+        reqId = self.database.setLink(transactionId, urllib.quote(uri.encode('utf-8')), 0)
+        if reqId != -1:
+            self.database.setResponse(reqId, urllib.quote(uri.encode('utf-8')), 200, 'text/css', style)
+        else:
+            print "Error inserting " + comment +" CSS for transaction "+transactionId
+
     def process_internal(self, transactionId, style):
-        pass
+        push_db(transactionId, style , "internal")
+
+        # zkontroluje velikost vlozeneho CSS, pokud presahuje vybranou mez, oznacime jako chybu
+        size = len(style.encode('utf-8'))
+        LIMIT = 1024
+        if size > LIMIT:
+            self.database.setDefect(transactionId, 'seo:huge_internal', 0, size)
+        return reqId
 
     def process_inline(self, transactionId, style):
-        pass
+        push_db(transactionId, style, "inline")
+        # TODO: pokud zaznamenat existujici inliny do pole, pokud se tam jiz vyskytuje podretezec, 
+        # oznacit duplikaci jako defekt
+
+        # TODO: zkoumat id/classy, zda tam neni podretezec inline css
