@@ -24,61 +24,13 @@ class DBAPIconfiguration(object):
         """Default constructor.
         """
 
-        self.uri = ""
-        self.user = ""
-        self.password = ""
         self.dbname = ""
-
-    def getUri(self):
-        """Database server's URI getter.
-        """
-
-        return self.uri
-
-    def getUser(self):
-        """ Username getter.
-        """
-
-        return self.user
-
-    def getPassword(self):
-        """ Password getter.
-        """
-
-        return self.password
 
     def getDbname(self):
         """ Database name getter.
         """
 
         return self.dbname
-
-    def setUri(self, uri):
-        """Database server's URI setter.
-
-        Args:
-            uri: full uri of the database server
-        """
-
-        self.uri = uri
-
-    def setUser(self, user):
-        """Username setter.
-
-        Args:
-            user: username for connection to the database
-        """
-
-        self.user = user
-
-    def setPassword(self, pwd):
-        """Password setter.
-
-        Args:
-            pwd: password for the user used for connection to the database
-        """
-
-        self.password = pwd
 
     def setDbname(self, dbname):
         """Database name setter.
