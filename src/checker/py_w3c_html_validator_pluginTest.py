@@ -8,9 +8,6 @@ from plugin.py_w3c_html_validator_plugin import PyW3C_HTML_Validator
 class PyW3cPluginTest(unittest.TestCase):
   def testSimpleFragment(_self):
     dbconf = DBAPIconfiguration()
-    dbconf.setUri('localhost')
-    dbconf.setUser('test')
-    dbconf.setPassword('')
     dbconf.setDbname('test.sqlite')
     
     api = DBAPI(dbconf)

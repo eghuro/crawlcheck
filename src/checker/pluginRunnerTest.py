@@ -37,5 +37,10 @@ class PluginRunnerTest(unittest.TestCase):
         runner = PluginRunner(self.dbconf, self.typeacceptor, self.uriacceptor, 1)
         runner.run([w3c, finder])
 
+    def testTransaction(self):
+        #vlozit cosi do DB
+
+        self.testRunMultiple()
+
 if __name__ == '__main__':
     unittest.main()
