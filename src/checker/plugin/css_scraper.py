@@ -30,7 +30,7 @@ class CssScraper(IPlugin):
         style = soup.find('style')
         if style is not None:
             return style
-        else
+        else:
             return None
 
     def scan_inline(self, soup):

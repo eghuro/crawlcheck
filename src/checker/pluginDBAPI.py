@@ -116,7 +116,7 @@ class TransactionInfo(object):
     def setUri(self, uri):
         self.uri = uri
 
-    def getDepth(self, depth):
+    def getDepth(self):
         return self.depth
 
 
