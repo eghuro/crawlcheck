@@ -17,6 +17,7 @@ class LinksFinder(IPlugin):
         self.uris = None
         self.uriTrie = None
         self.maxDepth = 0 #unlimited
+        self.depth = -1
 
     def setDb(self, DB):
         self.database = DB
