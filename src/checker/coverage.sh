@@ -1,5 +1,6 @@
 #!/bin/sh
-
+rm test.sqlite
+sqlite3 test.sqlite < mysql_tables.sql
 coverage erase
 coverage run acceptorTest.py
 coverage run -a configLoaderTest.py
