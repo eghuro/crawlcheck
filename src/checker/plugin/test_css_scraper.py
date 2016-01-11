@@ -1,6 +1,6 @@
 import unittest
 from bs4 import BeautifulSoup
-import css_scraper
+from css_scraper import CssScraper
 
 class CssScraperTest(unittest.TestCase):
     def test_id(self):
@@ -23,10 +23,10 @@ class CssScraperTest(unittest.TestCase):
         sample = '<html><head><title>foobar</title><style>TODO</style></head><body><p style="BOOM">Lorem ipsum.</p></body></head>'
         scrap = CssScraper()
         soup = BeautifulSoup(sample, 'html.parser')
-        self.assertEquals(scrap.scan_internal(soup), ['BOOM'])
+        self.assertEquals(scrap.scan_inline(soup), ['BOOM'])
 
     def test_inline_detection_many(self):
-        sample = '<html><body><p style="TODO>Lorem.</p><span style="BOOM"><img src="http://foobar.org/foo.bar" /></span></body></html>'
+        sample = '<html><body><p style="TODO">Lorem.</p><span style="BOOM"><img src="http://foobar.org/foo.bar" /></span></body></html>'
         scrap = CssScraper()
         soup = BeautifulSoup(sample, 'html.parser')
         self.assertEquals(scrap.scan_inline(soup), ['TODO', 'BOOM'])
@@ -36,3 +36,7 @@ class CssScraperTest(unittest.TestCase):
         scrap = CssScraper()
         soup = BeautifulSoup(sample, 'html.parser')
         self.assertEquals(scrap.scan_inline(soup), [])
+
+if __name__ == '__main__':
+    unittest.main()
+

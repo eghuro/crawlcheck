@@ -29,15 +29,18 @@ class CssScraper(IPlugin):
     def scan_internal(self, soup):
         style = soup.find('style')
         if style is not None:
-            return style
+            return style.string
         else:
             return None
 
     def scan_inline(self, soup):
         inlines = []
-        for child in soup.descendants:
-            if style in child.attrs:
-                inlines.append(child['style'])
+        for child in soup.descendants: 
+            try:
+                if 'style' in child.attrs:
+                    inlines.append(child['style'])
+            except AttributeError:
+                pass
         return inlines
 
     def process_internal(self, transactionId, style):
