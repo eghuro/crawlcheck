@@ -43,7 +43,7 @@ def main():
         # verify
         runner.run(plugins)
     else:
-        print "Usage: "+sys.argv[0]+" <configuration XML file>"
+        print "Usage: "+sys.argv[0]+" <configuration YAML file>"
 
 if __name__ == "__main__":
     main()
