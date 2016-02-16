@@ -19,23 +19,17 @@ class PluginRunnerTest(unittest.TestCase):
         self.api = DBAPI(self.dbconf)
 
     def testRunW3C(self):
-        w3c = PyW3C_HTML_Validator()
-
-        runner = PluginRunner(self.dbconf, self.typeacceptor, self.uriacceptor, 1)
-        runner.run([w3c])
+        self.runPlugins([PyW3C_HTML_Validator()])
 
     def testRunLinks(self):
-        finder = LinksFinder()
+        self.runPlugins([LinksFinder()])
 
+    def runPlugins(self, plugins):
         runner = PluginRunner(self.dbconf, self.typeacceptor, self.uriacceptor, 1)
-        runner.run([finder])
+        runner.run(plugins)
 
     def testRunMultiple(self):
-        w3c = PyW3C_HTML_Validator()
-        finder = LinksFinder()
-
-        runner = PluginRunner(self.dbconf, self.typeacceptor, self.uriacceptor, 1)
-        runner.run([w3c, finder])
+        self.runPlugins([PyW3C_HTML_Validator(), LinksFinder()])
 
     def testTransaction(self):
         #vlozit cosi do DB
