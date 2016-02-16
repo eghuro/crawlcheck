@@ -83,14 +83,15 @@ class Acceptor(object):
             return Resolution.none
 
     def pluginAcceptValueDefault(self, pluginId):
-        if pluginId in self.pluginUriDefault:
-            return Acceptor.getResolution(self.pluginUriDefault[pluginId])
-        else:
-            return Resolution.none
+        return Acceptor.resolveFromDefault(pluginId, self.pluginUriDefault)
 
     def defaultAcceptValue(self, uri):
-        if uri in self.uriDefault:
-            return Acceptor.getResolution(self.uriDefault[uri])
+        return Acceptor.resolveFromDefault(uri, self.uriDefault)
+
+    @staticmethod
+    def resolveFromDefault(identifier, default):
+        if identifier in default:
+            return Acceptor.getResolution(default[identifier])
         else:
             return Resolution.none
 
