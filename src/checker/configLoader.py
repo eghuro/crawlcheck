@@ -45,39 +45,30 @@ class ConfigLoader(object):
                self.entryPoints.append(ep)
 
 
-             self.typeAcceptor = Acceptor(False)
-             if 'content-types' in root:
-               ctypes = root['content-types']
-               if ctypes:
-                 for ctype in ctypes:
-                   if 'content-type' not in ctype:
-                     print "Content type not specified"
-                     break
-                   if 'plugins' in ctype:
-                     if ctype['plugins']:
-                       for plugin in ctype['plugins']:
-                         self.typeAcceptor.setPluginAcceptValue(plugin, ctype['content-type'], True)
-                   else:
-                     print "Forbid "+ctype['content-type']
-                     self.typeAcceptor.setDefaultAcceptValue(ctype['content-type'], False)
-
-             self.uriAcceptor = Acceptor(False)
-             if 'urls' in root:
-               urls = root['urls']
-               if urls:
-                 for url in urls:
-                   if 'url' not in url:
-                     print "URL not specified"
-                   if 'plugins' in url:
-                     if url['plugins']:
-                       for plugin in url['plugins']:
-                         self.uriAcceptor.setPluginAcceptValue(plugin, url['url'], True)
-                   else:
-                     print "Forbid "+url['url']
-                     self.uriAcceptor.setDefaultAcceptValue(url['url'], False)
+             self.typeAcceptor = ConfigLoader.getAcceptor('content-types', 'content-type', 'Content type', root)
+             self.uriAcceptor = ConfigLoader.getAcceptor('urls', 'url', 'URL', root)  #Acceptor(False)
         else:
            print "Configuration version doesn't match"
         cfile.close()
+
+    @staticmethod
+    def getAcceptor(tags_string, tag_string, description, root):
+        acceptor = Acceptor(False)
+        if tags_string in root:
+            tags = root[tags_string]
+            if tags:
+                for tag in tags:
+                    if tag_string not in tag:
+                        print description+" not specified"
+                        break
+                    if 'plugins' in tag:
+                        if tag['plugins']:
+                            for plugin in tag['plugins']:
+                                acceptor.setPluginAcceptValue(plugin, tag[tag_string], True)
+                    else:
+                        print "Forbid "+tag[tag_string]
+                        acceptor.setDefaultAcceptValue(tag[tag_string], False)
+        return acceptor
 
     def getDbconf(self):
         """ Retrieve DB configuration.
