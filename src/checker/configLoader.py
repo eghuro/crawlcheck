@@ -51,31 +51,35 @@ class ConfigLoader(object):
            self.entryPoints.append(ep)
 
 
-         self.typeAcceptor = ConfigLoader.getAcceptor('content-types', 'content-type', 'Content type', root)
-         self.uriAcceptor = ConfigLoader.getAcceptor('urls', 'url', 'URL', root)
+         self.typeAcceptor = ConfigLoader.get_acceptor('content-types', 'content-type', 'Content type', root)
+         self.uriAcceptor = ConfigLoader.get_acceptor('urls', 'url', 'URL', root)
 
     @staticmethod
-    def getAcceptor(tags_string, tag_string, description, root):
+    def get_acceptor(tags_string, tag_string, description, root):
         acceptor = Acceptor(False)
         if tags_string in root:
             tags = root[tags_string]
             if tags:
-                ConfigLoader.runTags(tags, description, acceptor, tag_string)
+                ConfigLoader.run_tags(tags, description, acceptor, tag_string)
         return acceptor
 
     @staticmethod
-    def runTags(tags, description, acceptor, tag_string):
+    def run_tags(tags, description, acceptor, tag_string):
         for tag in tags:
             if tag_string not in tag:
                 print(description+" not specified")
                 break
             if 'plugins' in tag:
-                if tag['plugins']:
-                    for plugin in tag['plugins']:
-                        acceptor.setPluginAcceptValue(plugin, tag[tag_string], True)
+                set_plugin_accept_tag_value(tag, tag_string, acceptor)
             else:
                 print("Forbid "+tag[tag_string])
                 acceptor.setDefaultAcceptValue(tag[tag_string], False)
+
+    @staticmethod
+    def set_plugin_accept_tag_value(tag, tag_string, acceptor):
+        if tag['plugins']:
+            for plugin in tag['plugins']:
+                acceptor.setPluginAcceptValue(plugin, tag[tag_string], True)
 
     def getDbconf(self):
         """ Retrieve DB configuration.

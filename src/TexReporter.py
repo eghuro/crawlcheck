@@ -39,22 +39,27 @@ class TexReporter(object):
                          'transactions on transactions.id = finding.responseId where defectType.description = "Invalid link"'
                          'order by defectType.type')
             self.cursor.execute(query)
+            
             row = self.cursor.fetchone()
             while row is not None:
-                with doc.create(Tabular('|l|l|l|')) as table:
-                    table.add_hline()
-                    table.add_row(('Decription', 'On page', 'To page'))
-                    table.add_hline()
+                row = links_page(doc, row)
+
+    def links_page(self, doc, row):
+        with doc.create(Tabular('|l|l|l|')) as table:
+            table.add_hline()
+            table.add_row(('Decription', 'On page', 'To page'))
+            table.add_hline()
   
-                    count = 0
-                    max_on_line = 47
-                    while row is not None:
-                        table.add_row((pylatex.utils.escape_latex(row[0].decode('utf-8')), pylatex.utils.escape_latex(urllib.unquote(row[1]).decode('utf-8')), pylatex.utils.escape_latex(urllib.unquote(row[3]).decode('utf-8'))))
-                        table.add_hline()
-                        count+=1
-                        row = self.cursor.fetchone()
-                        if count == max_on_line: break;
-                doc.append('\\newpage')
+            count = 0
+            max_on_line = 47
+            while row is not None:
+                table.add_row((pylatex.utils.escape_latex(row[0].decode('utf-8')), pylatex.utils.escape_latex(urllib.unquote(row[1]).decode('utf-8')), pylatex.utils.escape_latex(urllib.unquote(row[3]).decode('utf-8'))))
+                table.add_hline()
+                count += 1
+                row = self.cursor.fetchone()
+                if count == max_on_line: break;
+        doc.append('\\newpage')
+        return row
 
     def defects(self, doc):
         with doc.create(Section('Other defects')):
@@ -67,22 +72,26 @@ class TexReporter(object):
             self.cursor.execute(query)
             row = self.cursor.fetchone()
             while row is not None:
-               with doc.create(Tabular('|l|l|')) as table:
-                   table.add_hline()
-                   table.add_row(('Line', 'Description'))
-                   table.add_row((' ', 'On page'))
-                   table.add_hline()
+                row = defects_page(doc, row)
 
-                   count = 0
-                   max_on_line = 23
-                   while row is not None:
-                       table.add_row((pylatex.utils.escape_latex(str(row[2])), pylatex.utils.escape_latex(row[0].decode('utf-8')) ))
-                       table.add_row(('', pylatex.utils.escape_latex(urllib.unquote(row[1]).decode('utf-8')) ))
-                       table.add_hline()
-                       count+=1
-                       row = self.cursor.fetchone()
-                       if count == max_on_line: break;
-               doc.append('\\newpage')
+    def defects_page(selfi, doc, row):
+        with doc.create(Tabular('|l|l|')) as table:
+            table.add_hline()
+            table.add_row(('Line', 'Description'))
+            table.add_row((' ', 'On page'))
+            table.add_hline()
+
+            count = 0
+            max_on_line = 23
+            while row is not None:
+                table.add_row((pylatex.utils.escape_latex(str(row[2])), pylatex.utils.escape_latex(row[0].decode('utf-8')) ))
+                table.add_row(('', pylatex.utils.escape_latex(urllib.unquote(row[1]).decode('utf-8')) ))
+                table.add_hline()
+                count += 1
+                row = self.cursor.fetchone()
+                if count == max_on_line: break;
+        doc.append('\\newpage')
+        return row
 
 def run():
     """ Entry point - load command line arguments and call printReport or show usage.
