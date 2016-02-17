@@ -17,17 +17,8 @@ class PyW3C_HTML_Validator(IPlugin):
         """
         try:
             self.validator.validate_fragment(content)
-            for error in self.validator.errors:
-                self.database.putNewDefectType(self.transformMessageId(error['messageid'], "err"), error['message'])
-                self.database.setDefect(transactionId,
-                                        self.transformMessageId(error['messageid'], "err"),
-                                        error['line'], error['source'])
-
-            for warning in self.validator.warnings:
-                 self.database.putNewDefectType(self.transformMessageId(warning['messageid'], "warn"), warning['message'])
-                 self.database.setDefect(transactionId,
-                                         self.transformMessageId(warning['messageid'], "warn").
-                                         warning['line'], warning['source'])
+            self.check_errors(transactionId)
+            self.check_warnings(transactionId)
             time.sleep(3)
         except ValidationFault as e:
             print("Validation fault")
@@ -43,3 +34,16 @@ class PyW3C_HTML_Validator(IPlugin):
 
     def transformMessageId(self, mid, mtype):
         return self.getId()+":"+mtype+":"+mid
+
+    def check_errors(self, transactionId):
+        for error in self.validator.errors:
+            self.database.putNewDefectType(self.transformMessageId(error['messageid'], "err"), error['message'])
+            self.database.setDefect(transactionId, self.transformMessageId(error['messageid'], "err"),
+                                    error['line'], error['source'])
+
+    def check_warnings(self, transactionId):
+        for warning in self.validator.warnings:
+             self.database.putNewDefectType(self.transformMessageId(warning['messageid'], "warn"), warning['message'])
+             self.database.setDefect(transactionId, self.transformMessageId(warning['messageid'], "warn"),
+                                         warning['line'], warning['source'])
+
