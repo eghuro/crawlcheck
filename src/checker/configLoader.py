@@ -30,26 +30,29 @@ class ConfigLoader(object):
         elif 'database' not in root:
            print("Database not specified")
         elif root['version'] == self.version:
-           self.dbconf.setDbname(root['database'])
-
-           if 'maxDepth' in root:
-             self.maxDepth = root['maxDepth']
-
-           if 'entryPoints' not in root:
-             print("Entry points should be specified")
-           elif not root['entryPoints']:
-             print("At least one entry point should be specified")
-           else:
-             epSet = root['entryPoints']
-             for ep in epSet:
-               self.entryPoints.append(ep)
-
-
-             self.typeAcceptor = ConfigLoader.getAcceptor('content-types', 'content-type', 'Content type', root)
-             self.uriAcceptor = ConfigLoader.getAcceptor('urls', 'url', 'URL', root)
+           self.set_up(root)
         else:
            print("Configuration version doesn't match")
         cfile.close()
+
+    def set_up(self, root):
+       self.dbconf.setDbname(root['database'])
+
+       if 'maxDepth' in root:
+         self.maxDepth = root['maxDepth']
+
+       if 'entryPoints' not in root:
+         print("Entry points should be specified")
+       elif not root['entryPoints']:
+         print("At least one entry point should be specified")
+       else:
+         epSet = root['entryPoints']
+         for ep in epSet:
+           self.entryPoints.append(ep)
+
+
+         self.typeAcceptor = ConfigLoader.getAcceptor('content-types', 'content-type', 'Content type', root)
+         self.uriAcceptor = ConfigLoader.getAcceptor('urls', 'url', 'URL', root)
 
     @staticmethod
     def getAcceptor(tags_string, tag_string, description, root):
