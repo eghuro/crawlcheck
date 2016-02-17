@@ -73,16 +73,17 @@ class LinksFinder(IPlugin):
     def getLink(self, url, reqId, srcId):
        try:
           ct = self.check_headers(url, srcId, reqId)
-          if self.getMaxPrefix(ct) in self.types:
-             if self.getMaxPrefixUri(url) in self.uris:
-                r = requests.get(url, allow_redirects=False)
-                self.database.setResponse(reqId, r.url.encode('utf-8'), r.status_code, ct, r.text)
-             else:
-                print("Uri not accepted: "+url)
-                self.database.setFinished(reqId)
-          else: 
-            print("Content type not accepted: "+ct+" ("+url+")")
-            self.database.setFinished(reqId)
+          type_condition = self.getMaxPrefix(ct) in self.types
+          prefix_condition = self.getMaxPrefixUri(url) in self.uris
+
+          if type_condition and prefix_condition:
+              self.fetch_response(url, reqId, ct)
+          else:
+              self.database.setFinished(reqId)
+              if not prefix_condition:
+                  print("Uri not accepted: "+url)
+              if not type_condition:
+                  print("Content type not accepted: "+ct+" ("+url+")")
        except InvalidSchema:
           print("Invalid schema")
           self.database.setFinished(reqId)
@@ -107,9 +108,15 @@ class LinksFinder(IPlugin):
          ct = r.headers['Content-Type']
        else:
          ct = ''
+
        if not ct.strip():
          self.database.setDefect(srcId, "badtype", 0, url)
        return ct
+
+    def fetch_response(self, url, reqId, ct):
+        r = requests.get(url, allow_redirects=False)
+        self.database.setResponse(reqId, r.url.encode('utf-8'), r.status_code, ct, r.text)
+    
  
     def make_links_absolute(self, soup, url, tagL):
         for tag in soup.findAll(tagL, href=True):
