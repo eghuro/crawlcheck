@@ -73,17 +73,7 @@ class LinksFinder(IPlugin):
     def getLink(self, url, reqId, srcId):
        try:
           ct = self.check_headers(url, srcId, reqId)
-          type_condition = self.getMaxPrefix(ct) in self.types
-          prefix_condition = self.getMaxPrefixUri(url) in self.uris
-
-          if type_condition and prefix_condition:
-              self.fetch_response(url, reqId, ct)
-          else:
-              self.database.setFinished(reqId)
-              if not prefix_condition:
-                  print("Uri not accepted: "+url)
-              if not type_condition:
-                  print("Content type not accepted: "+ct+" ("+url+")")
+          conditional_fetch(ct, url, reqId)
        except InvalidSchema:
           print("Invalid schema")
           self.database.setFinished(reqId)
@@ -112,6 +102,19 @@ class LinksFinder(IPlugin):
        if not ct.strip():
          self.database.setDefect(srcId, "badtype", 0, url)
        return ct
+
+    def conditional_fetch(self, ct, url, reqId):
+        type_condition = self.getMaxPrefix(ct) in self.types
+        prefix_condition = self.getMaxPrefixUri(url) in self.uris
+
+        if not prefix_condition:
+            self.database.setFinished(reqId)
+            print("Uri not accepted: "+url)
+        elif not type_condition:
+            self.database.setFinished(reqId)
+            print("Content-type not accepted: "+ct+" ("+url+")")
+        else:
+            self.fetch_response(url, reqId, ct)
 
     def fetch_response(self, url, reqId, ct):
         r = requests.get(url, allow_redirects=False)
