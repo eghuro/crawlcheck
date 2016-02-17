@@ -138,9 +138,11 @@ class LinksFinder(IPlugin):
                 # urlNoQuery = urlNoAnchor.split('?')[0]
 
                 reqId = self.database.setLink(transactionId, urllib.quote(urlNoAnchor.encode('utf-8')), self.depth+1)
-                if reqId != -1:
-                  if self.maxDepth == 0 or self.depth < self.maxDepth:
+                if self.really_get_link(reqId):
                     self.getLink(url, reqId, transactionId)
+
+    def really_get_link(self, reqId):
+        return (reqId != -1) and (self.maxDepth == 0 or self.depth < self.maxDepth)
 
     def getMaxPrefix(self, ctype):
         prefList = self.trie.prefixes(unicode(ctype, encoding="utf-8"))
