@@ -60,18 +60,22 @@ class ConfigLoader(object):
         if tags_string in root:
             tags = root[tags_string]
             if tags:
-                for tag in tags:
-                    if tag_string not in tag:
-                        print(description+" not specified")
-                        break
-                    if 'plugins' in tag:
-                        if tag['plugins']:
-                            for plugin in tag['plugins']:
-                                acceptor.setPluginAcceptValue(plugin, tag[tag_string], True)
-                    else:
-                        print("Forbid "+tag[tag_string])
-                        acceptor.setDefaultAcceptValue(tag[tag_string], False)
+                ConfigLoader.runTags(tags, description, acceptor, tag_string)
         return acceptor
+
+    @staticmethod
+    def runTags(tags, description, acceptor, tag_string):
+        for tag in tags:
+            if tag_string not in tag:
+                print(description+" not specified")
+                break
+            if 'plugins' in tag:
+                if tag['plugins']:
+                    for plugin in tag['plugins']:
+                        acceptor.setPluginAcceptValue(plugin, tag[tag_string], True)
+            else:
+                print("Forbid "+tag[tag_string])
+                acceptor.setDefaultAcceptValue(tag[tag_string], False)
 
     def getDbconf(self):
         """ Retrieve DB configuration.

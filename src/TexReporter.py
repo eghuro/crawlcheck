@@ -26,6 +26,11 @@ class TexReporter(object):
         """
         doc = Document()
         doc.packages.append(Package('geometry', options = ['top=1in', 'bottom=1.25in', 'left=0.25in', 'right=1.25in']))
+        self.links(doc)
+        self.defects(doc)
+        doc.generate_pdf(out)
+
+    def links(self, doc):
         with doc.create(Section('Invalid links')):
             query = ('select defectType.description, transactions.uri, '
                          'location, evidence from defect inner join finding on'
@@ -50,7 +55,8 @@ class TexReporter(object):
                         row = self.cursor.fetchone()
                         if count == max_on_line: break;
                 doc.append('\\newpage')
- 
+
+    def defects(self, doc):
         with doc.create(Section('Other defects')):
             query = ('select defectType.description, transactions.uri, '
                          'location, evidence from defect inner join finding on'
@@ -77,8 +83,6 @@ class TexReporter(object):
                        row = self.cursor.fetchone()
                        if count == max_on_line: break;
                doc.append('\\newpage')
-
-        doc.generate_pdf(out)
 
 def run():
     """ Entry point - load command line arguments and call printReport or show usage.
