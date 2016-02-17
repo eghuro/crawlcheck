@@ -17,5 +17,5 @@ class CssValidator(IPlugin):
             for error in stylesheet.errors:
                 self.database.setDefect(transactionId, "stylesheet", error.line, error.reason)
         except UnicodeDecodeError:
-            print "Error"
+            print("Error")
         return

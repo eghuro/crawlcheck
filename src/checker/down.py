@@ -17,7 +17,7 @@ class Scraper(object):
         if not self.gotLink(uri):
            r = requests.get(uri)
 
-           print "Adding entry point: "+uri
+           print("Adding entry point: "+uri)
 
            query = ('INSERT INTO transactions (uri, method, responseStatus, contentType, origin, verificationStatusId, depth, content) VALUES ('
                     '?,\'GET\', ' + str(r.status_code) + ', "' + r.headers['Content-Type'] +'", \'CLIENT\', 3, 1, ?)')
@@ -29,7 +29,7 @@ class Scraper(object):
         """ Download a list of pages and insert them into database.
         """
         for uri in urilist:
-           print uri
+           print(uri)
         for uri in urilist:
            self.scrapOne(uri)
 
@@ -46,5 +46,5 @@ class Scraper(object):
         except mdb.Error, e:
            if self.con:
               self.con.rollback()
-           print "Error %s" % (e.args[0])
+           print("Error %s" % (e.args[0]))
            return False

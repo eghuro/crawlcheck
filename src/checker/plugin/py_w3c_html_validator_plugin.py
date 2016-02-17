@@ -29,14 +29,14 @@ class PyW3C_HTML_Validator(IPlugin):
                                          self.transformMessageId(warning['messageid'], "warn").
                                          warning['line'], warning['source'])
             time.sleep(3)
-        except ValidationFault, e:
-            print "Validation fault"
-        except HTTPError, e:
-            print "HTTP Error "+str(e.code)+": "+str(e.reason)
-        except URLError, e:
-            print "Connection problem: "+str(e.reason) 
+        except ValidationFault as e:
+            print("Validation fault")
+        except HTTPError as e:
+            print("HTTP Error "+str(e.code)+": "+str(e.reason))
+        except URLError as e:
+            print("Connection problem: "+str(e.reason) )
         except Exception as e:
-            print "Unexpected problem"
+            print("Unexpected problem")
         return
     def getId(self):
         return "htmlValidator"

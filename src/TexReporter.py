@@ -87,7 +87,7 @@ def run():
         reporter = TexReporter(sys.argv[1])
         reporter.printReport(sys.argv[2])
     else:
-        print "Usage: "+sys.argv[0]+" <dbname> <outputfile>\nFor output file - .pdf is added automatically"
+        print("Usage: "+sys.argv[0]+" <dbname> <outputfile>\nFor output file - .pdf is added automatically")
 
 if __name__ == "__main__":
     run()

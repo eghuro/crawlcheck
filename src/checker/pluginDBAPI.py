@@ -135,7 +135,7 @@ class DBAPI(object):
                                          'WHERE id = ?')
                     self.cursor.execute(statusUpdateQuery, [str(statusId), str(maxid)])
                 self.con.commit()
-        except mdb.Error, e:
+        except mdb.Error as e:
             self.error(e)
 
         return TransactionInfo(transactionId, content, contentType, urllib.unquote(uri).decode('utf-8'), depth)
@@ -169,7 +169,7 @@ class DBAPI(object):
             self.con.commit()
             return True
 
-        except mdb.Error, e:
+        except mdb.Error as e:
             self.error(e)
 
         return False
@@ -220,7 +220,7 @@ class DBAPI(object):
                 return reqId
             else:
                 return -1
-        except mdb.Error, e:
+        except mdb.Error as e:
             self.error(e)
 
         return None
@@ -239,7 +239,7 @@ class DBAPI(object):
              if row[0] is not None:
                 return (row[0])
          return -1
-      except mdb.Error, e:
+      except mdb.Error as e:
          self.error(e)
          return -1
 
@@ -276,7 +276,7 @@ class DBAPI(object):
             self.con.commit()
             return True
 
-        except mdb.Error, e:
+        except mdb.Error as e:
             self.error(e)
 
         return False
@@ -293,7 +293,7 @@ class DBAPI(object):
             self.cursor.execute(query, [str(status), contentType, str(DBAPI.getUnverifiedStatusId()), content, str(reqId)])
             self.con.commit()
             return True
-        except mdb.Error, e:
+        except mdb.Error as e:
             self.error(e)
             return -1
 
@@ -310,7 +310,7 @@ class DBAPI(object):
               return urllib.unquote(row[0]).decode('utf-8')
            else:
              return -1
-        except mdb.Error, e:
+        except mdb.Error as e:
            self.error(e)
            return -1
 

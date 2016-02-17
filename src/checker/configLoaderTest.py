@@ -25,7 +25,7 @@ class ConfigLoaderTest(unittest.TestCase):
   def testLFPUriAcceptor(self):
     ua = self.cl.getUriAcceptor()
     for val in ua.getValues():
-        print val
+        print(val)
     self.assertTrue('http://mj.ucw.cz/vyuka/' in ua.getValues())
 
 if __name__ == '__main__':

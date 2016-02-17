@@ -26,9 +26,9 @@ class ConfigLoader(object):
         root = yaml.safe_load(cfile)
 
         if 'version' not in root:
-           print "Version not specified"
+           print("Version not specified")
         elif 'database' not in root:
-           print "Database not specified"
+           print("Database not specified")
         elif root['version'] == self.version:
            self.dbconf.setDbname(root['database'])
 
@@ -36,9 +36,9 @@ class ConfigLoader(object):
              self.maxDepth = root['maxDepth']
 
            if 'entryPoints' not in root:
-             print "Entry points should be specified"
+             print("Entry points should be specified")
            elif not root['entryPoints']:
-             print "At least one entry point should be specified"
+             print("At least one entry point should be specified")
            else:
              epSet = root['entryPoints']
              for ep in epSet:
@@ -46,9 +46,9 @@ class ConfigLoader(object):
 
 
              self.typeAcceptor = ConfigLoader.getAcceptor('content-types', 'content-type', 'Content type', root)
-             self.uriAcceptor = ConfigLoader.getAcceptor('urls', 'url', 'URL', root)  #Acceptor(False)
+             self.uriAcceptor = ConfigLoader.getAcceptor('urls', 'url', 'URL', root)
         else:
-           print "Configuration version doesn't match"
+           print("Configuration version doesn't match")
         cfile.close()
 
     @staticmethod
@@ -59,14 +59,14 @@ class ConfigLoader(object):
             if tags:
                 for tag in tags:
                     if tag_string not in tag:
-                        print description+" not specified"
+                        print(description+" not specified")
                         break
                     if 'plugins' in tag:
                         if tag['plugins']:
                             for plugin in tag['plugins']:
                                 acceptor.setPluginAcceptValue(plugin, tag[tag_string], True)
                     else:
-                        print "Forbid "+tag[tag_string]
+                        print("Forbid "+tag[tag_string])
                         acceptor.setDefaultAcceptValue(tag[tag_string], False)
         return acceptor
 

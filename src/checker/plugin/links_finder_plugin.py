@@ -85,19 +85,19 @@ class LinksFinder(IPlugin):
                 r = requests.get(url, allow_redirects=False)
                 self.database.setResponse(reqId, r.url.encode('utf-8'), r.status_code, ct, r.text)
              else:
-                print "Uri not accepted: "+url
+                print("Uri not accepted: "+url)
                 self.database.setFinished(reqId)
           else: 
-            print "Content type not accepted: "+ct+" ("+url+")"
+            print("Content type not accepted: "+ct+" ("+url+")")
             self.database.setFinished(reqId)
        except InvalidSchema:
-          print "Invalid schema"
+          print("Invalid schema")
           self.database.setFinished(reqId)
        except ConnectionError:
-          print "Connection error"
+          print("Connection error")
           self.database.setFinished(reqId)
        except MissingSchema:
-          print "Missing schema"
+          print("Missing schema")
           self.database.setFinished(reqId)
 
     def make_links_absolute(self, soup, url, tagL):
