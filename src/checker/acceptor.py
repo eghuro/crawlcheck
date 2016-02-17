@@ -52,25 +52,34 @@ class Acceptor(object):
            True if a plugin should check a transaction with URI given.
            False otherwise
         """
-        res = self.pluginAcceptValue(pluginId, uri)
-        if res == Resolution.yes:
+        return self.resolvePluginAcceptValue(pluginId, uri)
+
+    def resolvePluginAcceptValue(self, pluginId, uri):
+       res = self.pluginAcceptValue(pluginId, uri)
+       if res == Resolution.yes:
+           return True
+       elif res == Resolution.no:
+           return False
+       else:
+           return self.resolvePluginAcceptValueDefault(pluginId, uri)
+
+    def resolvePluginAcceptValueDefault(self, pluginId, uri):
+       res = self.pluginAcceptValueDefault(pluginId)
+       if res == Resolution.yes:
+           return True
+       elif res == Resolution.no:
+           return False
+       else:
+           return self.resolveDefaultAcceptValue(uri)
+
+    def resolveDefaultAcceptValue(self, uri):
+       res = self.defaultAcceptValue(uri)
+       if res == Resolution.yes:
             return True
-        elif res == Resolution.no:
+       elif res == Resolution.no:
             return False
-        else:
-            res = self.pluginAcceptValueDefault(pluginId)
-            if res == Resolution.yes:
-                return True
-            elif res == Resolution.no:
-                return False
-            else:
-                res = self.defaultAcceptValue(uri)
-                if res == Resolution.yes:
-                    return True
-                elif res == Resolution.no:
-                    return False
-                else:
-                    return self.defaultUri
+       else:
+            return self.defaultUri
 
     def pluginAcceptValue(self, pluginId, uri):
         if pluginId in self.pluginUri:
