@@ -36,14 +36,13 @@ class PyW3C_HTML_Validator(IPlugin):
         return self.getId()+":"+mtype+":"+mid
 
     def check_errors(self, transactionId):
-        for error in self.validator.errors:
-            self.database.putNewDefectType(self.transformMessageId(error['messageid'], "err"), error['message'])
-            self.database.setDefect(transactionId, self.transformMessageId(error['messageid'], "err"),
-                                    error['line'], error['source'])
+        self.check_defects(transactionId, self.validator.errors, "err")
 
     def check_warnings(self, transactionId):
-        for warning in self.validator.warnings:
-             self.database.putNewDefectType(self.transformMessageId(warning['messageid'], "warn"), warning['message'])
-             self.database.setDefect(transactionId, self.transformMessageId(warning['messageid'], "warn"),
-                                         warning['line'], warning['source'])
+        self.check_defect(transactionId, self.validator.warnings, "warn")
 
+    def check_defect(self, transactionId, defects, message):
+        for defect in defects:
+            mid = self.transformMessageId(defect['messageid'], message)
+            self.database.putNewDefectType(mid, defect['message'])
+            self.database.setDefect(transactionId, mid, defect['line'], defect['source'])
