@@ -1,7 +1,6 @@
 class Defect < ActiveRecord::Base
   private
-
-  def self.inheritance_column
-    nil
-  end
+    def self.inheritance_column
+      nil
+    end
 end

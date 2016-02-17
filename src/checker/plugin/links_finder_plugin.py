@@ -8,6 +8,12 @@ import urlparse
 import urllib
 import marisa_trie
 
+class StatusError(Exception):
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return repr(self.value)
+
 class LinksFinder(IPlugin):
 
     def __init__(self):
@@ -66,20 +72,7 @@ class LinksFinder(IPlugin):
 
     def getLink(self, url, reqId, srcId):
        try:
-          r = requests.head(url)
-          if r.status_code >= 400:
-             self.database.setDefect(srcId, "badlink", 0, url)
-             self.database.setFinished(reqId)
-             return
-          if 'content-type' in r.headers.keys():
-             ct = r.headers['content-type']
-          elif 'Content-Type' in r.headers.keys():
-             ct = r.headers['Content-Type']
-          else:
-             ct = ''
-          if not ct.strip():
-             self.database.setDefect(srcId, "badtype", 0, url)
-          
+          ct = self.check_headers(url, srcId, reqId)
           if self.getMaxPrefix(ct) in self.types:
              if self.getMaxPrefixUri(url) in self.uris:
                 r = requests.get(url, allow_redirects=False)
@@ -99,7 +92,25 @@ class LinksFinder(IPlugin):
        except MissingSchema:
           print("Missing schema")
           self.database.setFinished(reqId)
+       except StatusError:
+          self.database.setFinished(reqId)
 
+    def check_headers(self, url, srcId, reqId): 
+       r = requests.head(url)
+       if r.status_code >= 400:
+         self.database.setDefect(srcId, "badlink", 0, url)
+         raise StatusError()
+       
+       if 'content-type' in r.headers.keys():
+         ct = r.headers['content-type']
+       elif 'Content-Type' in r.headers.keys():
+         ct = r.headers['Content-Type']
+       else:
+         ct = ''
+       if not ct.strip():
+         self.database.setDefect(srcId, "badtype", 0, url)
+       return ct
+ 
     def make_links_absolute(self, soup, url, tagL):
         for tag in soup.findAll(tagL, href=True):
            if 'href' in tag.attrs:
