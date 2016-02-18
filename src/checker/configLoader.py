@@ -78,7 +78,7 @@ class ConfigLoader(object):
                 print(description+" not specified")
                 break
             if 'plugins' in tag:
-                set_plugin_accept_tag_value(tag, tag_string, acceptor)
+                ConfigLoader.set_plugin_accept_tag_value(tag, tag_string, acceptor)
             else:
                 print("Forbid "+tag[tag_string])
                 acceptor.setDefaultAcceptValue(tag[tag_string], False)

@@ -4,6 +4,7 @@ from py_w3c.exceptions import ValidationFault
 from urllib2 import HTTPError, URLError
 import time
 
+
 class PyW3C_HTML_Validator(IPlugin):
     def __init__(self):
         self.validator = HTMLValidator()
@@ -25,10 +26,11 @@ class PyW3C_HTML_Validator(IPlugin):
         except HTTPError as e:
             print("HTTP Error "+str(e.code)+": "+str(e.reason))
         except URLError as e:
-            print("Connection problem: "+str(e.reason) )
+            print("Connection problem: "+str(e.reason))
         except Exception as e:
-            print("Unexpected problem")
+            print("Unexpected problem: "+str(type(e)))
         return
+
     def getId(self):
         return "htmlValidator"
 
