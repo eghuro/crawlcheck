@@ -27,8 +27,8 @@ class PyW3C_HTML_Validator(IPlugin):
             print("HTTP Error "+str(e.code)+": "+str(e.reason))
         except URLError as e:
             print("Connection problem: "+str(e.reason))
-        except Exception as e:
-            print("Unexpected problem: "+str(type(e)))
+        # except Exception as e:
+        #    print("Unexpected problem: "+str(type(e)))
         return
 
     def getId(self):
@@ -41,9 +41,9 @@ class PyW3C_HTML_Validator(IPlugin):
         self.check_defects(transactionId, self.validator.errors, "err")
 
     def check_warnings(self, transactionId):
-        self.check_defect(transactionId, self.validator.warnings, "warn")
+        self.check_defects(transactionId, self.validator.warnings, "warn")
 
-    def check_defect(self, transactionId, defects, message):
+    def check_defects(self, transactionId, defects, message):
         for defect in defects:
             mid = self.transformMessageId(defect['messageid'], message)
             self.database.putNewDefectType(mid, defect['message'])
