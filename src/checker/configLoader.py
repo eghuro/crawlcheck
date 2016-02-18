@@ -9,7 +9,8 @@ from acceptor import Acceptor
 class ConfigLoader(object):
     """ ConfigLoader loads configuration from file.
         Configuration is loaded through load()
-        Later, DB configuration, URI and Content-Type acceptors can be retrieved through getters.
+        Later, DB configuration, URI and Content-Type acceptors can be
+        retrieved through getters.
     """
     def __init__(self):
         self.version = 1.01
@@ -26,33 +27,40 @@ class ConfigLoader(object):
         root = yaml.safe_load(cfile)
 
         if 'version' not in root:
-           print("Version not specified")
+            print("Version not specified")
         elif 'database' not in root:
-           print("Database not specified")
+            print("Database not specified")
         elif root['version'] == self.version:
-           self.set_up(root)
+            self.set_up(root)
         else:
-           print("Configuration version doesn't match")
+            print("Configuration version doesn't match")
         cfile.close()
 
     def set_up(self, root):
-       self.dbconf.setDbname(root['database'])
+        self.dbconf.setDbname(root['database'])
 
-       if 'maxDepth' in root:
-         self.maxDepth = root['maxDepth']
+        if 'maxDepth' in root:
+            self.maxDepth = root['maxDepth']
 
-       if 'entryPoints' not in root:
-         print("Entry points should be specified")
-       elif not root['entryPoints']:
-         print("At least one entry point should be specified")
-       else:
-         epSet = root['entryPoints']
-         for ep in epSet:
-           self.entryPoints.append(ep)
+        if 'entryPoints' not in root:
+            print("Entry points should be specified")
+        elif not root['entryPoints']:
+            print("At least one entry point should be specified")
+        else:
+            epSet = root['entryPoints']
+            for ep in epSet:
+                self.entryPoints.append(ep)
 
+        cts = 'content-types'
+        ct = 'content-type'
+        ct_dsc = 'Content type'
 
-         self.typeAcceptor = ConfigLoader.get_acceptor('content-types', 'content-type', 'Content type', root)
-         self.uriAcceptor = ConfigLoader.get_acceptor('urls', 'url', 'URL', root)
+        us = 'urls'
+        u = 'url'
+        u_dsc = 'URL'
+
+        self.typeAcceptor = ConfigLoader.get_acceptor(cts, ct, ct_dsc, root)
+        self.uriAcceptor = ConfigLoader.get_acceptor(us, u, u_dsc, root)
 
     @staticmethod
     def get_acceptor(tags_string, tag_string, description, root):
@@ -102,9 +110,9 @@ class ConfigLoader(object):
         return self.entryPoints
 
     def getMaxDepth(self):
-         """ Get maximum depth for crawling (0 for no limit)
-         """
-         return self.maxDepth
+        """ Get maximum depth for crawling (0 for no limit)
+        """
+        return self.maxDepth
 
     def getDefaults(self, root, setKeyword, keyword):
         defaultSet = root.find(setKeyword)
@@ -132,9 +140,8 @@ class ConfigLoader(object):
     def getPluginDefaults(self, pluginId, root, setKeyword, keyword, acceptor):
         defaultSet = root.find(setKeyword)
         if defaultSet is not None:
-            acceptor.setPluginAcceptValueDefault(pluginId,
-                                                 defaultSet.attrib['default'] ==
-                                                 'True')
+            value = defaultSet.attrib['default'] == 'True'
+            acceptor.setPluginAcceptValueDefault(pluginId, value)
 
             defaultElements = defaultSet.findall(keyword)
             if defaultElements is not None:
@@ -147,6 +154,8 @@ class ConfigLoader(object):
     def getPluginResolutions(self, pluginId, root, uriAcceptor, typeAcceptor):
         defaults = root.find('resolutions')
         if defaults is not None:
-            self.getPluginDefaults(pluginId, defaults, 'uris', 'uri', uriAcceptor)
+            u = 'uri'
+            us = 'uris'
+            self.getPluginDefaults(pluginId, defaults, us, u, uriAcceptor)
             self.getPluginDefaults(pluginId, defaults, 'contentTypes',
                                    'contentType', typeAcceptor)

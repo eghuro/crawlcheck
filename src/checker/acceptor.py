@@ -55,30 +55,30 @@ class Acceptor(object):
         return self.resolvePluginAcceptValue(pluginId, uri)
 
     def resolvePluginAcceptValue(self, pluginId, uri):
-       res = self.pluginAcceptValue(pluginId, uri)
-       if res == Resolution.yes:
-           return True
-       elif res == Resolution.no:
-           return False
-       else:
-           return self.resolvePluginAcceptValueDefault(pluginId, uri)
+        res = self.pluginAcceptValue(pluginId, uri)
+        if res == Resolution.yes:
+            return True
+        elif res == Resolution.no:
+            return False
+        else:
+            return self.resolvePluginAcceptValueDefault(pluginId, uri)
 
     def resolvePluginAcceptValueDefault(self, pluginId, uri):
-       res = self.pluginAcceptValueDefault(pluginId)
-       if res == Resolution.yes:
-           return True
-       elif res == Resolution.no:
-           return False
-       else:
-           return self.resolveDefaultAcceptValue(uri)
+        res = self.pluginAcceptValueDefault(pluginId)
+        if res == Resolution.yes:
+            return True
+        elif res == Resolution.no:
+            return False
+        else:
+            return self.resolveDefaultAcceptValue(uri)
 
     def resolveDefaultAcceptValue(self, uri):
-       res = self.defaultAcceptValue(uri)
-       if res == Resolution.yes:
+        res = self.defaultAcceptValue(uri)
+        if res == Resolution.yes:
             return True
-       elif res == Resolution.no:
+        elif res == Resolution.no:
             return False
-       else:
+        else:
             return self.defaultUri
 
     def pluginAcceptValue(self, pluginId, uri):

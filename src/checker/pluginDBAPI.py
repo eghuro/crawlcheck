@@ -105,40 +105,42 @@ class DBAPI(object):
             statusId = DBAPI.getUnverifiedStatusId()
             idSelectorQuery = ('SELECT MAX(id)  FROM transactions WHERE '
                                'method = \'GET\' AND responseStatus  = 200 AND'
-                               ' verificationStatusId = ?') 
-            contentSelectorQuery = ('SELECT id, content, contentType, uri, depth FROM'
-                                    ' transactions WHERE id = ?')
+                               ' verificationStatusId = ?')
+            contentSelectorQuery = ('SELECT id, content, contentType, uri, '
+                                    'depth FROM transactions WHERE id = ?')
             self.cursor.execute(idSelectorQuery, [str(statusId)])
             row = self.cursor.fetchone()
             if row[0] is not None:
                 maxid = row[0]
                 self.cursor.execute(contentSelectorQuery, [str(maxid)])
                 row = self.cursor.fetchone()
-                if row is not None: 
-                  if row[0] is not None:
-                    assert len(row) == 5
+                if row is not None:
                     if row[0] is not None:
-                        assert row[1] is not None
-                        assert row[2] is not None
-                        assert row[3] is not None
-                        assert row[4] is not None
-                        transactionId = row[0]
-                        content = row[1]
-                        contentType = row[2].split(';')[0]
-                        # text/html; charset=utf-8 -> text/html
-                        uri = row[3]
-                        depth = row[4]
+                        assert len(row) == 5
+                        if row[0] is not None:
+                            assert row[1] is not None
+                            assert row[2] is not None
+                            assert row[3] is not None
+                            assert row[4] is not None
+                            transactionId = row[0]
+                            content = row[1]
+                            contentType = row[2].split(';')[0]
+                            # text/html; charset=utf-8 -> text/html
+                            uri = row[3]
+                            depth = row[4]
 
-                        statusId = DBAPI.getProcessingStatusId()
-                        statusUpdateQuery = ('UPDATE transactions '
-                                         'SET verificationStatusId = ?'
-                                         'WHERE id = ?')
-                    self.cursor.execute(statusUpdateQuery, [str(statusId), str(maxid)])
+                            statusId = DBAPI.getProcessingStatusId()
+                            statusUpdateQuery = ('UPDATE transactions '
+                                                 'SET verificationStatusId = ?'
+                                                 'WHERE id = ?')
+                    self.cursor.execute(statusUpdateQuery,
+                                        [str(statusId), str(maxid)])
                 self.con.commit()
         except mdb.Error as e:
             self.error(e)
 
-        return TransactionInfo(transactionId, content, contentType, urllib.unquote(uri).decode('utf-8'), depth)
+        return TransactionInfo(transactionId, content, contentType,
+                               urllib.unquote(uri).decode('utf-8'), depth)
 
     def setDefect(self, transactionId, defectType, line, evidence):
         """ Insert new defect discovered by a plugin into database.
@@ -153,7 +155,8 @@ class DBAPI(object):
             self.cursor.execute(query, [str(transactionId)])
             findingId = self.cursor.lastrowid
 
-            self.cursor.execute('SELECT id FROM defectType WHERE type = ? LIMIT 1', [str(defectType)])
+            query = ('SELECT id FROM defectType WHERE type = ? LIMIT 1')
+            self.cursor.execute(query, [str(defectType)])
             row = self.cursor.fetchone()
             if row is not None:
                 if row[0] is not None:
@@ -163,9 +166,11 @@ class DBAPI(object):
             else:
                 defectTypeId = self.putNewDefectTypeShort(defectType)
 
-            query = ('INSERT INTO defect (findingId, type, location, evidence) '
-                     'VALUES (?, ?, ?, ?)')
-            self.cursor.execute(query, [str(findingId), str(defectTypeId), str(line), evidence])
+            query = ('INSERT INTO defect (findingId, type, location, evidence)'
+                     ' VALUES (?, ?, ?, ?)')
+            self.cursor.execute(query,
+                                [str(findingId), str(defectTypeId),
+                                 str(line), evidence])
             self.con.commit()
             return True
 
