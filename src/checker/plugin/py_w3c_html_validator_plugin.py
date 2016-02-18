@@ -27,8 +27,8 @@ class PyW3C_HTML_Validator(IPlugin):
             print("HTTP Error "+str(e.code)+": "+str(e.reason))
         except URLError as e:
             print("Connection problem: "+str(e.reason))
-        # except Exception as e:
-        #    print("Unexpected problem: "+str(type(e)))
+        except Exception as e:
+            print("Unexpected problem: "+str(type(e)))
         return
 
     def getId(self):
