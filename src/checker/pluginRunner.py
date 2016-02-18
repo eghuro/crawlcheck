@@ -27,8 +27,8 @@ class PluginRunner(object):
             if self.accept(plugin.getId(), fakeTransaction):
                 print plugin.getId()
                 if plugin.getId() == "linksFinder":
-                  plugin.setDepth(info.getDepth())
-                  plugin.setMaxDepth(self.maxDepth)
+                    plugin.setDepth(info.getDepth())
+                    plugin.setMaxDepth(self.maxDepth)
                 plugin.check(info.getId(), info.getContent().encode('utf-8'))
 
     def run(self, plugins):
@@ -41,8 +41,8 @@ class PluginRunner(object):
             plugin.setDb(api)
             self.pluginsById[plugin.getId()] = plugin
             if plugin.getId() == "linksFinder":
-              plugin.setTypes(self.typeAcceptor.getValues())
-              plugin.setUris(self.uriAcceptor.getValues())
+                plugin.setTypes(self.typeAcceptor.getValues())
+                plugin.setUris(self.uriAcceptor.getValues())
 
         info = api.getTransaction()
         while info.getId() != -1:
@@ -54,7 +54,9 @@ class PluginRunner(object):
             info = api.getTransaction()
 
     def accept(self, pluginId, transaction):
-       return self.uriAcceptor.accept(pluginId, transaction.getUri()) and self.typeAcceptor.accept(pluginId, transaction.getContentType())
+        uri = self.uriAcceptor.accept(pluginId, transaction.getUri())
+        ctype = self.typeAcceptor.accept(pluginId, transaction.getContentType())
+        return uri and ctype
 
     def getMaxPrefix(self, uri):
         prefixes = self.uriAcceptor.getValues()
@@ -64,4 +66,5 @@ class PluginRunner(object):
         prefList = trie.prefixes(unicode(str(uri), encoding="utf-8"))
         if len(prefList) > 0:
             return prefList[-1]
-        else: return uri
+        else:
+            return uri

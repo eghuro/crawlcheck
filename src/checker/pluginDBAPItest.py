@@ -8,6 +8,7 @@ from pluginDBAPI import DBAPI
 from pluginDBAPI import DBAPIconfiguration
 from configLoader import ConfigLoader
 
+
 class DBAPITest(unittest.TestCase):
     def setUp(self):
         cl = ConfigLoader()
@@ -38,10 +39,10 @@ class DBAPITest(unittest.TestCase):
         cursor.execute("DELETE FROM transactions")
         response = ('<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">\n<html><head>\n<title>408 Request Timeout</title>\n</head><body>\n<h1>Request Timeout</h1>\n<p>Server timeout waiting for the HTTP request from the client.</p>\n<hr>\n<address>Apache/2.4.10 (Debian) Server at olga.majling.eu Port 80</address>\n</body></html>')
         cursor.execute("INSERT INTO transactions (id, method, uri, responseStatus, contentType, content, verificationStatusId, depth) VALUES (1, 'GET', \"http://olga.majling.eu/Vyuka\", 200, \"text/html; charset=iso-8859-1\",?, 3, 1)", [response])
-        
+
         con.commit()
 
-        api = DBAPI(self.conf)        
+        api = DBAPI(self.conf)
         tr = api.getTransaction()
 
         self.assertEqual(tr.getId(), 1)
@@ -58,7 +59,6 @@ class DBAPITest(unittest.TestCase):
         cursor.execute("INSERT INTO transactions (id, method, uri, responseStatus, contentType, content, verificationStatusId, depth) VALUES (1, 'GET', \"http://olga.majling.eu/Vyuka\", 200, \"text/html; charset=iso-8859-1\",?, 3, 1)", [response])
         con.commit()
 
-
         response2 = ('<!--\nOlga Majlingová website is licenced under Affero General Public Licence (http://www.fsf.org/licensing/licenses/agpl-3.0.html) \n(c)Alexander Mansurov, 2010\n-->\n<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0\n'
                      ' Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">\n<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="cs">\n<head>\n<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />'
                      '\n<meta http-equiv="Content-Language" content="cs" />\n<meta name="copyright" content="&copy;Olga Majlingova, 2010" />\n<meta name="author" content="Alexander Mansurov" />\n'
@@ -67,7 +67,7 @@ class DBAPITest(unittest.TestCase):
                      '<meta name="google-site-verification" content="wvcZggg6XWngknlmp1t3bSDD-q67LDDoq2n-K6wEKgg" />\n<link href="http://olga.majling.eu/novinky.rss" rel="alternate" type="application/rss+xml" title="RSS kanál" />\n'
                      '<meta name="Robots" content="index,follow" />\n</head>\n<body>\n<table border="0" align="center" width="100%">\n<tr><td class="table-up hightab"><div align="left"><a href="http://www3.fs.cvut.cz/web/">\n'
                      '<img src="http://olga.majling.eu/img/cvut-logo-pr0.gif" width="100" height="100" alt="CVUT" border="0"/></a></div>\n</td><td class="table-up hightab"><div align="center"><h1>Olga Majlingová</h1>'
-                     '<p class="desc">Ústav technické matematiky, FS ČVUT</p></div></td>\n<td class="table-up hightab"><div align="right"><a href="http://olga.majling.eu/">\n<img src="http://olga.majling.eu/img/OM5a.gif" width="95"\n'  
+                     '<p class="desc">Ústav technické matematiky, FS ČVUT</p></div></td>\n<td class="table-up hightab"><div align="right"><a href="http://olga.majling.eu/">\n<img src="http://olga.majling.eu/img/OM5a.gif" width="95"\n'
                      'height="100" alt="foto" border="0"/></a></div><!--</td></tr></table></div>--></td></tr>\n<tr><td class="upL" rowspan="2" width="25%">\n<a href="http://olga.majling.eu/">'
                      '<img src="http://olga.majling.eu//img/Úvod.gif" alt="Úvod" border="0"/></a><br />\n<a href="http://olga.majling.eu/Vyuka"><img src="http://olga.majling.eu//img/Výuka.gif" border="0" alt="Výuka"/></a><br />\n'
                      '<ul>\n<li><a href="http://olga.majling.eu/Vyuka/Matematika-3">Matematika 3</a></li>\n<li><a href="http://olga.majling.eu/Vyuka/Matematika-1">Matematika 1</a></li>\n'
@@ -82,7 +82,7 @@ class DBAPITest(unittest.TestCase):
         cursor.execute("INSERT INTO transactions (id, method, uri, responseStatus, contentType, content, verificationStatusId, depth) VALUES (2, 'GET', \"http://olga.majling.eu/\", 200, \"text/html; charset=UTF-8\",?, 3, 1)", [response])
         con.commit()
 
-        api = DBAPI(self.conf)        
+        api = DBAPI(self.conf)
         tr = api.getTransaction()
 
         self.assertEqual(tr.getId(), 2)
@@ -102,10 +102,10 @@ class DBAPITest(unittest.TestCase):
         cursor.execute("INSERT INTO transactions (id, method, uri, responseStatus, contentType, content, verificationStatusId, depth) VALUES (1, 'GET', \"http://olga.majling.eu/Vyuka\", 200, \"text/html; charset=iso-8859-1\",?, 3, 1)", [response])
         con.commit()
 
-        api = DBAPI(self.conf)        
+        api = DBAPI(self.conf)
         tr = api.getTransaction()
         self.assertEqual(tr.getId(), 1)
-        
+
         api.setFinished(tr.getId())
 
         cursor.execute("SELECT verificationStatusId from transactions where id = 1")
@@ -123,7 +123,7 @@ class DBAPITest(unittest.TestCase):
         cursor.execute("INSERT INTO transactions (id, method, uri, responseStatus, contentType, content, verificationStatusId, depth) VALUES (1, 'GET', \"http://olga.majling.eu/Vyuka\", 200, \"text/html; charset=iso-8859-1\",?, 3, 1)", [response])
         con.commit()
 
-        api = DBAPI(self.conf)        
+        api = DBAPI(self.conf)
         tr = api.getTransaction()
         self.assertEqual(tr.getId(), 1)
 
@@ -138,5 +138,3 @@ class DBAPITest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-
-

@@ -180,10 +180,11 @@ class DBAPI(object):
         return False
 
     def putNewDefectTypeShort(self, defectType):
-        """ Insert a generic new type into DB. 
+        """ Insert a generic new type into DB.
             The type won't have a description. Returns id.
         """
-        self.cursor.execute('INSERT INTO defectType (type) VALUES (?)', [defectType])
+        query = ('INSERT INTO defectType (type) VALUES (?)')
+        self.cursor.execute(query, [defectType])
         return self.cursor.lastrowid
 
     def putNewDefectType(self, defectType, description):
@@ -192,12 +193,15 @@ class DBAPI(object):
             proper description is available in report.
             Returns nothing.
         """
-        self.cursor.execute ('SELECT count(id) FROM defectType WHERE type = "'+defectType+'"')
+        query = ('SELECT count(id) FROM defectType WHERE type = ?')
+        self.cursor.execute(query, [str(defectType)])
         row = self.cursor.fetchone()
+        query = ('INSERT INTO defectType (type, description) VALUES (?, ?)')
         if row is not None:
             if row[0] is not None:
                 if row[0] == 0:
-                    self.cursor.execute('INSERT INTO defectType (type, description) VALUES(?,?)', [defectType, description])
+                    self.cursor.execute(query, [defectType, description])
+
     def setLink(self, transactionId, toUri, depth=0):
         """ Set new link into transaction, finding and link tables.
             Return requestId if content needs to be downloaded.
@@ -206,10 +210,12 @@ class DBAPI(object):
         try:
             reqId = self.gotLink(toUri)
             needContent = False
-            if reqId == -1 : #nebyl pozadavek
+            if reqId == -1:  # nebyl pozadavek
                 query = ('INSERT INTO transactions (method, uri, origin, '
-                         'verificationStatusId, depth) VALUES (\'GET\', ?, \'CHECKER\', ?, ?)')
-                self.cursor.execute(query, [toUri, str(DBAPI.getRequestedStatusId()), str(depth)])
+                         'verificationStatusId, depth) VALUES (\'GET\', ?, '
+                         '\'CHECKER\', ?, ?)')
+                status_id = str(DBAPI.getRequestedStatusId())
+                self.cursor.execute(query, [toUri, status_id, str(depth)])
                 reqId = self.cursor.lastrowid
                 needContent = True
 
@@ -231,29 +237,29 @@ class DBAPI(object):
         return None
 
     def gotLink(self, toUri):
-      """ Check if transaction with GET method and uri specified is in the
-          database.
-          Return transaction id or -1 if not present
-      """
-      try:
-         query = ('SELECT id FROM transactions WHERE method = \'GET\' and '
-                  'uri = ? LIMIT 1')
-         self.cursor.execute(query, [toUri])
-         row = self.cursor.fetchone()
-         if row is not None:
-             if row[0] is not None:
-                return (row[0])
-         return -1
-      except mdb.Error as e:
-         self.error(e)
-         return -1
+        """ Check if transaction with GET method and uri specified is in the
+            database.
+            Return transaction id or -1 if not present
+        """
+        try:
+            query = ('SELECT id FROM transactions WHERE method = \'GET\' and '
+                     'uri = ? LIMIT 1')
+            self.cursor.execute(query, [toUri])
+            row = self.cursor.fetchone()
+            if row is not None:
+                if row[0] is not None:
+                    return (row[0])
+            return -1
+        except mdb.Error as e:
+            self.error(e)
+            return -1
 
     @staticmethod
-    def getFinishedStatusId(): # odkaz v reportu
+    def getFinishedStatusId():  # odkaz v reportu
         return 5
 
     @staticmethod
-    def getUnverifiedStatusId(): # bere getTransaction
+    def getUnverifiedStatusId():  # bere getTransaction
         return 3
 
     @staticmethod
@@ -295,31 +301,32 @@ class DBAPI(object):
             query = ('UPDATE transactions SET responseStatus = ?, '
                      'contentType = ?, '
                      'verificationStatusId = ?, content = ? WHERE id = ?')
-            self.cursor.execute(query, [str(status), contentType, str(DBAPI.getUnverifiedStatusId()), content, str(reqId)])
+            self.cursor.execute(query, [str(status), contentType,
+                                        str(DBAPI.getUnverifiedStatusId()),
+                                        content, str(reqId)])
             self.con.commit()
             return True
         except mdb.Error as e:
             self.error(e)
             return -1
 
-
     def getUri(self, trID):
         """ Get URI for transaction ID.
         """
         try:
-           query = ('SELECT uri FROM transactions WHERE id = '+str(trID))
-           self.cursor.execute(query)
-           row = self.cursor.fetchone()
-           if row is not None:
-              assert row[0] is not None
-              return urllib.unquote(row[0]).decode('utf-8')
-           else:
-             return -1
+            query = ('SELECT uri FROM transactions WHERE id = '+str(trID))
+            self.cursor.execute(query)
+            row = self.cursor.fetchone()
+            if row is not None:
+                assert row[0] is not None
+                return urllib.unquote(row[0]).decode('utf-8')
+            else:
+                return -1
         except mdb.Error as e:
-           self.error(e)
-           return -1
+            self.error(e)
+            return -1
 
     def error(self, e):
         if self.con:
-           self.con.rollback()
+            self.con.rollback()
         print "Error?!? %s" % (e.args[0])

@@ -7,6 +7,7 @@ from plugin.py_w3c_html_validator_plugin import PyW3C_HTML_Validator
 from plugin.links_finder_plugin import LinksFinder
 from configLoader import ConfigLoader
 
+
 class PluginRunnerTest(unittest.TestCase):
 
     def setUp(self):
@@ -30,11 +31,6 @@ class PluginRunnerTest(unittest.TestCase):
 
     def testRunMultiple(self):
         self.runPlugins([PyW3C_HTML_Validator(), LinksFinder()])
-
-    def testTransaction(self):
-        #vlozit cosi do DB
-
-        self.testRunMultiple()
 
 if __name__ == '__main__':
     unittest.main()
