@@ -327,4 +327,4 @@ class DBAPI(object):
     def error(self, e):
         if self.con:
             self.con.rollback()
-        print ("Error?!? %s", (e.args[0]))
+        print("Error?!? %s", (e.args[0]))

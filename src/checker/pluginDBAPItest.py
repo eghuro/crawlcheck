@@ -170,11 +170,14 @@ class DBAPITest(unittest.TestCase):
         con = mdb.connect(self.conf.getDbname())
         cursor = con.cursor()
 
+        cursor.execute("DELETE FROM defectType")
         cursor.execute("SELECT type FROM defectType WHERE type = ?", [defect_type])
         self.assertEqual(cursor.fetchone(), None)  # python 2.6 compatibility
 
-        cursor.execute("DELETE FROM defectType")
         cursor.execute("DELETE FROM transactions")
+        cursor.execute('DELETE FROM finding')
+        cursor.execute('DELETE FROM defect')
+
         cursor.execute("INSERT INTO transactions (id, method, uri, depth) VALUES"
                        "(?, 'GET', 'http://www.seznam.cz', 0)", [str(trid)])
         con.commit()
@@ -199,5 +202,17 @@ class DBAPITest(unittest.TestCase):
         api = DBAPI(self.conf)
         self.assertEqual(api.setLink(0, 'http://foobar.org', 1), -1)
 
+    def testRollbackOnError(self):
+        api = DBAPI(self.conf)
+        cursor = api.con.cursor()
+
+        cursor.execute("DELETE FROM transactions")
+        cursor.execute("INSERT INTO transactions (id, method, uri, depth) VALUES"
+                       "(0, 'GET', 'http://foobar.org', 0)")
+
+        api.error(mdb.IntegrityError("Test"))
+
+        cursor.execute("SELECT id FROM transactions WHERE id = 0")
+        self.assertEqual(cursor.fetchone(), None)
 if __name__ == '__main__':
     unittest.main()
