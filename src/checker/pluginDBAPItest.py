@@ -157,13 +157,26 @@ class DBAPITest(unittest.TestCase):
         self.assertEqual(u'false', row[1])
 
     def testSetDefectNewType(self):
+        defect_type = "dummy_defect"
+        trid = 0
+
         con = mdb.connect(self.conf.getDbname())
         cursor = con.cursor()
+
+        cursor.execute("SELECT type FROM defectType WHERE type = ?", [defect_type])
+        self.assertIsNone(cursor.fetchone())
+
         cursor.execute("DELETE FROM defectType")
+        cursor.execute("DELETE FROM transactions")
+        cursor.execute("INSERT INTO transactions (id, method, uri, depth) VALUES"
+                       "(?, 'GET', 'http://www.seznam.cz', 0)", [str(trid)])
         con.commit()
 
         api = DBAPI(self.conf)
-        # TODO pokracovat zde
-        #api.setDefect(
+        api.setDefect(trid, defect_type, 0, "foobar")
+
+        cursor.execute("SELECT type FROM defectType WHERE type = ?", [defect_type])
+        self.assertIsNotNone(cursor.fetchone())
+
 if __name__ == '__main__':
     unittest.main()
