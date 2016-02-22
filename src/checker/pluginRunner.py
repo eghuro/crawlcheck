@@ -19,6 +19,7 @@ class PluginRunner(object):
         self.typeAcceptor = typeAcceptor
         self.maxDepth = maxDepth
 
+    @staticmethod
     def runPlugin(plugin, info):
         plugin.check(info.getId(), info.getContent().encode('utf-8'))
 
@@ -36,7 +37,7 @@ class PluginRunner(object):
                 if plugin.getId() == "linksFinder":
                   plugin.setDepth(info.getDepth())
                   plugin.setMaxDepth(self.maxDepth)
-                processes.append(Process(target=runPlugin, args=(plugin,info)))
+                processes.append(Process(target=PluginRunner.runPlugin, args=(plugin,info)))
         for process in processes:
             process.start()
         for process in processes:
