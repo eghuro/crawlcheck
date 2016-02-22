@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Decision if a transaction is checked by a plugin.
 
-Acceptor module contains budiness rules to decide if a transaction will be
+Acceptor module contains business rules to decide if a transaction will be
 checked by a plugin.
 
 For a plugin it's possible to set which URIs should be checked and which should

@@ -14,10 +14,7 @@ class DBAPIconfiguration(object):
     Configuration is set through respective setters and read through getters.
 
     Attributes:
-        uri (str): Database server uri, including a port
-        user (str): User name to connect to the DB as
-        password (str): Password for the user
-        dbname (str): Database to use
+        dbname (str): Sqlite3 database file to use
     """
 
     def __init__(self):
