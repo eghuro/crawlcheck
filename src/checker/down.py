@@ -46,8 +46,8 @@ class Scraper(object):
                 if row[0] is not None:
                     return row[0] != 0
             return False
-        except mdb.Error, e:
+        except mdb.Error as e:
             if self.con:
                 self.con.rollback()
-            print("Error %s" % (e.args[0]))
+            print("Error %s", (e.args[0]))
             return False
