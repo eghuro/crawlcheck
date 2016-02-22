@@ -15,15 +15,13 @@ before_install:
 install: "pip install marisa_trie yapsy py_w3c enum urllib3 requests tinycss beautifulsoup4 pyyaml"
 
 script:
- - cd src/checker
- - rm test.sqlite
- - sqlite3 test.sqlite < mysql_tables.sql
- - coverage run acceptorTest.py
- - coverage run configLoaderTest.py
- - coverage run downTest.py
- - coverage run pluginDBAPItest.py
- - coverage run pluginRunnerTest.py
- - coverage run py_w3c_html_validator_pluginTest.py
+ - cd src/checker; rm test.sqlite; sqlite3 test.sqlite < mysql_tables.sql
+ - cd src/checker; coverage run acceptorTest.py
+ - cd src/checker; coverage run configLoaderTest.py
+ - cd src/checker; coverage run downTest.py
+ - cd src/checker; coverage run pluginDBAPItest.py
+ - cd src/checker; coverage run pluginRunnerTest.py
+ - cd src/checker; coverage run py_w3c_html_validator_pluginTest.py
 
 after_success:
   - codecov --token=ccd0a006-2ef3-4eff-aac3-c185a543cd53
