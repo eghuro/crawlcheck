@@ -2,6 +2,8 @@
 
 Crawlcheck is a web crawler invoking plugins on received content. It's intended for verification of websites prior to deployment. The process of verification is customisable by configuration script that allows complex specification which plugins should check particular URIs and content-types. Main engine and plugins are written in Python, there's also possibility to show report in form of website written in Ruby on Rails or generate report in PDF. The report contains discoveries plugins made during the verification.
 
+![travis-ci](https://api.travis-ci.org/eghuro/crawlcheck.svg?branch=QA)
+
 ### Version
 0.02.1
 
