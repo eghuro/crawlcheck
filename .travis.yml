@@ -9,10 +9,21 @@ python:
 #  - "3.5-dev" # 3.5 development branch
 #  - "nightly" # currently points to 3.6-dev
 # command to install dependencies
-install: "pip install marisa_trie yapsy py_w3c enum urllib3 requests tinycss beautifulsoup4 pyyaml"
-# # command to run tests
-script: ./coverage.sh
 before_install:
-  - pip install codecov
+ - pip install codecov
+
+install: "pip install marisa_trie yapsy py_w3c enum urllib3 requests tinycss beautifulsoup4 pyyaml"
+
+script:
+ - cd src/checker
+ - rm test.sqlite
+ - sqlite3 test.sqlite < mysql_tables.sql
+ - coverage run acceptorTest.py
+ - coverage run configLoaderTest.py
+ - coverage run downTest.py
+ - coverage run pluginDBAPItest.py
+ - coverage run pluginRunnerTest.py
+ - coverage run py_w3c_html_validator_pluginTest.py
+
 after_success:
-  - codecov
+  - codecov --token=ccd0a006-2ef3-4eff-aac3-c185a543cd53
