@@ -6,8 +6,28 @@ import sqlite3 as mdb
 
 from pluginDBAPI import DBAPI
 from pluginDBAPI import DBAPIconfiguration
+from pluginDBAPI import TransactionInfo
 from configLoader import ConfigLoader
 
+
+class TransactionInfoTest(unittest.TestCase):
+    def setUp(self):
+        self.ti = TransactionInfo(0, None, '', "http://foobar.org", 36656)
+
+    def testId(self):
+        self.assertEqual(self.ti.getId(), 0)
+
+    def testGetContent(self):
+        self.assertEqual(self.ti.getContent(), None)
+
+    def testGetContentType(self):
+        self.assertEqual(self.ti.getContentType(), '')
+
+    def testGetUri(self):
+        self.assertEqual(self.ti.getUri(), "http://foobar.org")
+
+    def testGetDepth(self):
+        self.assertEqual(self.ti.getDepth(), 36656)
 
 class DBAPITest(unittest.TestCase):
     def setUp(self):
