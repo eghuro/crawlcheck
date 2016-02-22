@@ -19,7 +19,7 @@ Crawlcheck uses a number of open source projects to work properly:
 * [tinycss] - for css validation plugin
 * [beautifulsoup4] - for links finder plugin
 * [requests], [urllib3] - for networking
-* [enum] - duh
+* [enum34] - enum compatible with Python 3
 
 Following gems are needed for report
 * rails
