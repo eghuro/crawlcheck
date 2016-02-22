@@ -156,5 +156,14 @@ class DBAPITest(unittest.TestCase):
         self.assertEqual("http://olga.majling.eu/", row[0])
         self.assertEqual(u'false', row[1])
 
+    def testSetDefectNewType(self):
+        con = mdb.connect(self.conf.getDbname())
+        cursor = con.cursor()
+        cursor.execute("DELETE FROM defectType")
+        con.commit()
+
+        api = DBAPI(self.conf)
+        # TODO pokracovat zde
+        #api.setDefect(
 if __name__ == '__main__':
     unittest.main()
