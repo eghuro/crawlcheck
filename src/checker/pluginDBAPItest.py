@@ -12,7 +12,8 @@ from configLoader import ConfigLoader
 
 class TransactionInfoTest(unittest.TestCase):
     def setUp(self):
-        self.ti = TransactionInfo(0, None, '', "http://foobar.org", 36656)
+        self.uri = "http://foobar.org"
+        self.ti = TransactionInfo(0, None, '', self.uri, 36656)
 
     def testId(self):
         self.assertEqual(self.ti.getId(), 0)
@@ -24,10 +25,16 @@ class TransactionInfoTest(unittest.TestCase):
         self.assertEqual(self.ti.getContentType(), '')
 
     def testGetUri(self):
-        self.assertEqual(self.ti.getUri(), "http://foobar.org")
+        self.assertEqual(self.ti.getUri(), self.uri)
 
     def testGetDepth(self):
         self.assertEqual(self.ti.getDepth(), 36656)
+
+    def testSetUri(self):
+        self.testGetUri()
+        uri = "http://www.seznam.cz"
+        self.ti.setUri(uri)
+        self.assertEqual(self.ti.getUri(), uri)
 
 class DBAPITest(unittest.TestCase):
     def setUp(self):

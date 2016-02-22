@@ -159,10 +159,8 @@ class DBAPI(object):
             self.cursor.execute(query, [str(defectType)])
             row = self.cursor.fetchone()
             if row is not None:
-                if row[0] is not None:
-                    defectTypeId = row[0]
-                else:
-                    defectTypeId = self.putNewDefectTypeShort(defectType)
+                assert row[0] is not None
+                defectTypeId = row[0]
             else:
                 defectTypeId = self.putNewDefectTypeShort(defectType)
 
