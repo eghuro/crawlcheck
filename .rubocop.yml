@@ -210,13 +210,13 @@ Metrics/AbcSize:
                  A calculated magnitude based on number of assignments,
                  branches, and conditions.
   Reference: 'http://c2.com/cgi/wiki?AbcMetric'
-  Enabled: true
+  Enabled: false
   Max: 20
 
 Metrics/BlockNesting:
   Description: 'Avoid excessive block nesting'
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#three-is-the-number-thou-shalt-count'
-  Enabled: true
+  Enabled: false
   Max: 4
 
 Metrics/ClassLength:
