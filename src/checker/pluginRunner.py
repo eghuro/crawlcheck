@@ -2,6 +2,7 @@
 """
 from pluginDBAPI import DBAPI
 import marisa_trie
+from multiprocessing import Process
 
 
 class PluginRunner(object):
@@ -18,9 +19,16 @@ class PluginRunner(object):
         self.typeAcceptor = typeAcceptor
         self.maxDepth = maxDepth
 
+    @staticmethod
+    def runPlugin(plugin, info):
+        plugin.check(info.getId(), info.getContent().encode('utf-8'))
+
     def runTransaction(self, plugins, info, prefix):
         """ Run a single transaction through all plugins where it's accepted.
         """
+        # get list of plugins to use
+        # create processes to run each plugin
+        processes = []
         for plugin in plugins:
             fakeTransaction = info
             fakeTransaction.setUri(prefix)
@@ -29,7 +37,12 @@ class PluginRunner(object):
                 if plugin.getId() == "linksFinder":
                     plugin.setDepth(info.getDepth())
                     plugin.setMaxDepth(self.maxDepth)
-                plugin.check(info.getId(), info.getContent().encode('utf-8'))
+                p = Process(target=PluginRunner.runPlugin, args=(plugin, info))
+                processes.append(p)
+        for process in processes:
+            process.start()
+        for process in processes:
+            process.join()
 
     def run(self, plugins):
         """ Run all transactions through all plugins where it's accepted.
@@ -53,9 +66,9 @@ class PluginRunner(object):
             api.setFinished(info.getId())
             info = api.getTransaction()
 
-    def accept(self, pluginId, transaction):
-        uri = self.uriAcceptor.accept(pluginId, transaction.getUri())
-        ctype = self.typeAcceptor.accept(pluginId, transaction.getContentType())
+    def accept(self, plugId, transaction):
+        uri = self.uriAcceptor.accept(plugId, transaction.getUri())
+        ctype = self.typeAcceptor.accept(plugId, transaction.getContentType())
         return uri and ctype
 
     def getMaxPrefix(self, uri):
