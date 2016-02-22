@@ -164,7 +164,7 @@ class DBAPITest(unittest.TestCase):
         cursor = con.cursor()
 
         cursor.execute("SELECT type FROM defectType WHERE type = ?", [defect_type])
-        self.assertIsNone(cursor.fetchone())
+        self.assertEqual(cursor.fetchone(), None)  # python 2.6 compatibility
 
         cursor.execute("DELETE FROM defectType")
         cursor.execute("DELETE FROM transactions")
@@ -176,7 +176,7 @@ class DBAPITest(unittest.TestCase):
         api.setDefect(trid, defect_type, 0, "foobar")
 
         cursor.execute("SELECT type FROM defectType WHERE type = ?", [defect_type])
-        self.assertIsNotNone(cursor.fetchone())
+        self.assertNotEqual(cursor.fetchone(), None)  # python 2.6 compatibility
 
 if __name__ == '__main__':
     unittest.main()
