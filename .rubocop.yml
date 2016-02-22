@@ -210,7 +210,7 @@ Metrics/AbcSize:
                  A calculated magnitude based on number of assignments,
                  branches, and conditions.
   Reference: 'http://c2.com/cgi/wiki?AbcMetric'
-  Enabled: false
+  Enabled: true
   Max: 20
 
 Metrics/BlockNesting:
@@ -233,7 +233,7 @@ Metrics/CyclomaticComplexity:
 Metrics/LineLength:
   Description: 'Limit lines to 80 characters.'
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#80-character-limits'
-  Enabled: false
+  Enabled: true
 
 Metrics/MethodLength:
   Description: 'Avoid methods longer than 30 lines of code.'
@@ -255,7 +255,7 @@ Metrics/PerceivedComplexity:
   Description: >-
                  A complexity metric geared towards measuring complexity for a
                  human reader.
-  Enabled: false
+  Enabled: true
 
 ##################### Performance #############################
 
