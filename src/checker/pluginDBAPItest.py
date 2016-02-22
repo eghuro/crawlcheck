@@ -230,5 +230,21 @@ class DBAPITest(unittest.TestCase):
         self.assertEqual(api.getUri(0), "http://foobar.org")
         self.assertEqual(api.getUri(1), None)
 
+    def testSetResponse(self):
+        con = mdb.connect(self.conf.getDbname())
+        cursor = con.cursor()
+
+        cursor.execute("DELETE FROM transactions")
+        cursor.execute("INSERT INTO transactions (id, method, uri, depth) VALUES"
+                       "(0, 'GET', 'http://foobar.org', 0)")
+        con.commit()
+
+        cursor.execute("SELECT id FROM transactions WHERE id = 0")
+        self.assertNotEqual(cursor.fetchone(), None)
+
+        api = DBAPI(self.conf)
+        self.assertTrue(api.setResponse(0, None, 404, "text/html", "foobar"))
+        self.assertFalse(api.setResponse(1, None, 503, "text/plain", None))
+
 if __name__ == '__main__':
     unittest.main()

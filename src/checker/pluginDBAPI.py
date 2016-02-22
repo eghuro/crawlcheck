@@ -297,6 +297,12 @@ class DBAPI(object):
             Return true, if transaction was updated, false otherwise.
         """
         try:
+            query = ('SELECT id FROM transactions WHERE id = ?')
+            self.cursor.execute(query, [str(reqId)])
+            if self.cursor.fetchone() is None:
+                return False
+
+            # TODO: uri not used; call from links_finder -> fetch_response
             query = ('UPDATE transactions SET responseStatus = ?, '
                      'contentType = ?, '
                      'verificationStatusId = ?, content = ? WHERE id = ?')
