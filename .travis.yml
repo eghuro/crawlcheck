@@ -11,4 +11,8 @@ python:
 # command to install dependencies
 install: "pip install marisa_trie yapsy py_w3c enum urllib3 requests tinycss beautifulsoup4 pyyaml"
 # # command to run tests
-script: src/checker/coverage.sh
+script: coverage.sh
+before_install:
+  - pip install codecov
+after_success:
+  - codecov
