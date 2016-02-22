@@ -138,7 +138,6 @@ class DBAPI(object):
 
     def testInvariantsOnRow(self, row):
         assert row[0] is not None
-        assert len(row) == 5
         assert row[1] is not None
         assert row[2] is not None
         assert row[3] is not None
