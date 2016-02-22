@@ -23,6 +23,7 @@ class CssScraper(IPlugin):
 
     def inlines(self, soup, transactionId):
         data = self.scan_inline(transactionId, soup)
+        self.inlines_seen = set()
         for inline in data:
             self.process_inline(transactionId, inline)
 
@@ -52,7 +53,7 @@ class CssScraper(IPlugin):
             print "Error inserting " + comment +" CSS for transaction "+transactionId
 
     def process_internal(self, transactionId, style):
-        push_db(transactionId, style , "internal")
+        self.push_db(transactionId, style , "internal")
 
         # zkontroluje velikost vlozeneho CSS, pokud presahuje vybranou mez, oznacime jako chybu
         size = len(style.encode('utf-8'))
@@ -62,8 +63,13 @@ class CssScraper(IPlugin):
         return reqId
 
     def process_inline(self, transactionId, style):
-        push_db(transactionId, style, "inline")
-        # TODO: pokud zaznamenat existujici inliny do pole, pokud se tam jiz vyskytuje podretezec, 
-        # oznacit duplikaci jako defekt
-
+        self.push_db(transactionId, style, "inline")
+        if style in self.inlines:
+            self.duplicit_inline(transactionId, style)
+        else:
+            self.inlines.add(style)
+        # TODO: testovat na podretezec 
         # TODO: zkoumat id/classy, zda tam neni podretezec inline css
+
+    def duplicit_inline(self, transactionId, style):
+        self.database.setDefect(transactionId, 'seo:duplicit_inline', 0, size)
