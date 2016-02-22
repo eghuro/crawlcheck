@@ -185,5 +185,19 @@ class DBAPITest(unittest.TestCase):
         cursor.execute("SELECT type FROM defectType WHERE type = ?", [defect_type])
         self.assertNotEqual(cursor.fetchone(), None)  # python 2.6 compatibility
 
+    def testSetLinkToKnownUri(self):
+        con = mdb.connect(self.conf.getDbname())
+        cursor = con.cursor()
+
+        cursor.execute("DELETE FROM transactions")
+        cursor.execute("INSERT INTO transactions (id, method, uri, depth) VALUES"
+                       "(0, 'GET', 'http://foo.bar.org', 0)")
+        cursor.execute("INSERT INTO transactions (id, method, uri, depth) VALUES"
+                       "(1, 'GET', 'http://foobar.org', 0)")
+        con.commit()
+
+        api = DBAPI(self.conf)
+        self.assertEqual(api.setLink(0, 'http://foobar.org', 1), -1)
+
 if __name__ == '__main__':
     unittest.main()
