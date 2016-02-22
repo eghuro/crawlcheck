@@ -232,7 +232,7 @@ class DBAPI(object):
         except mdb.Error as e:
             self.error(e)
 
-        return None
+        return -255
 
     def gotLink(self, toUri):
         """ Check if transaction with GET method and uri specified is in the
@@ -247,10 +247,10 @@ class DBAPI(object):
             if row is not None:
                 if row[0] is not None:
                     return (row[0])
-            return -1
         except mdb.Error as e:
             self.error(e)
-            return -1
+
+        return -1
 
     @staticmethod
     def getFinishedStatusId():  # odkaz v reportu
@@ -306,7 +306,7 @@ class DBAPI(object):
             return True
         except mdb.Error as e:
             self.error(e)
-            return -1
+            return False
 
     def getUri(self, trID):
         """ Get URI for transaction ID.
@@ -319,10 +319,10 @@ class DBAPI(object):
                 assert row[0] is not None
                 return urllib.unquote(row[0]).decode('utf-8')
             else:
-                return -1
+                return None
         except mdb.Error as e:
             self.error(e)
-            return -1
+            return None
 
     def error(self, e):
         if self.con:
