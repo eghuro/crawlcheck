@@ -1,15 +1,11 @@
 import requests
 import sqlite3 as mdb
+from pluginDBAPI import Connector
 
 
 class Scraper(object):
     def __init__(self, conf):
-        self.con = mdb.connect(conf.getDbname())
-        self.cursor = self.con.cursor()
-
-    def __del__(self):
-        if self.con:
-            self.con.close()
+        self.con = Connector(conf)
 
     def scrapOne(self, uri):
         """ Download one page and insert it into transaction.
@@ -25,7 +21,7 @@ class Scraper(object):
                      ' "' + r.headers['Content-Type'] + '", \'CLIENT\', 3, 1,'
                      ' ?)')
 
-            self.cursor.execute(query, [uri, r.text])
+            self.con.get_cursor().execute(query, [uri, r.text])
             self.con.commit()
 
     def scrap(self, urilist):
@@ -40,14 +36,13 @@ class Scraper(object):
         try:
             query = ('SELECT count(id) FROM transactions WHERE method = '
                      '\'GET\' and uri = ?')
-            self.cursor.execute(query, [toUri])
-            row = self.cursor.fetchone()
+            self.con.get_cursor().execute(query, [toUri])
+            row = self.con.get_cursor().fetchone()
             if row is not None:
                 if row[0] is not None:
                     return row[0] != 0
             return False
         except mdb.Error as e:
-            if self.con:
-                self.con.rollback()
+            self.con.rollback()
             print("Error %s", (e.args[0]))
             return False

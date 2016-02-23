@@ -204,7 +204,7 @@ class DBAPITest(unittest.TestCase):
 
     def testRollbackOnError(self):
         api = DBAPI(self.conf)
-        cursor = api.con.cursor()
+        cursor = api.con.get_cursor()
 
         cursor.execute("DELETE FROM transactions")
         api.con.commit()

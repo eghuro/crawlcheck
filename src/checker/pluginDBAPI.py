@@ -69,18 +69,33 @@ class TransactionInfo(object):
         return self.depth
 
 
+class Connector(object):
+    def __init__(self, conf):
+        self.con = mdb.connect(conf.getDbname())
+        self.cursor = self.con.cursor()
+
+    def get_cursor(self):
+        return self.cursor
+
+    def commit(self):
+        self.con.commit()
+
+    def rollback(self):
+        if self.con:
+            self.con.rollback()
+
+    def __del__(self):
+        if self.con:
+            self.con.close()
+
+
 class DBAPI(object):
     """ API for access to underlying database.
         Connection to the database is initiated in constructor and closed in
         destructor.
     """
     def __init__(self, conf):
-        self.con = mdb.connect(conf.getDbname())
-        self.cursor = self.con.cursor()
-
-    def __del__(self):
-        if self.con:
-            self.con.close()
+        self.con = Connector(conf)
 
     def getTransaction(self):
         """ Get next transaiction from the database and mark it as in process.
@@ -105,12 +120,13 @@ class DBAPI(object):
                                ' verificationStatusId = ?')
             contentSelectorQuery = ('SELECT id, content, contentType, uri, '
                                     'depth FROM transactions WHERE id = ?')
-            self.cursor.execute(idSelectorQuery, [str(statusId)])
-            row = self.cursor.fetchone()
+            cursor = self.con.get_cursor()
+            cursor.execute(idSelectorQuery, [str(statusId)])
+            row = self.con.get_cursor().fetchone()
             if row[0] is not None:
                 maxid = row[0]
-                self.cursor.execute(contentSelectorQuery, [str(maxid)])
-                row = self.cursor.fetchone()
+                cursor.execute(contentSelectorQuery, [str(maxid)])
+                row = cursor.fetchone()
                 if row is not None:
                     self.testInvariantsOnRow(row)
                     transactionId = row[0]
@@ -124,7 +140,7 @@ class DBAPI(object):
                     statusUpdateQuery = ('UPDATE transactions '
                                          'SET verificationStatusId = ?'
                                          'WHERE id = ?')
-                    self.cursor.execute(statusUpdateQuery,
+                    cursor.execute(statusUpdateQuery,
                                         [str(statusId), str(maxid)])
                 self.con.commit()
         except mdb.Error as e:
@@ -150,12 +166,12 @@ class DBAPI(object):
         """
         try:
             query = ('INSERT INTO finding (responseId) VALUES (?)')
-            self.cursor.execute(query, [str(transactionId)])
-            findingId = self.cursor.lastrowid
+            self.con.get_cursor().execute(query, [str(transactionId)])
+            findingId = self.con.get_cursor().lastrowid
 
             query = ('SELECT id FROM defectType WHERE type = ? LIMIT 1')
-            self.cursor.execute(query, [str(defectType)])
-            row = self.cursor.fetchone()
+            self.con.get_cursor().execute(query, [str(defectType)])
+            row = self.con.get_cursor().fetchone()
             if row is not None:
                 assert row[0] is not None
                 defectTypeId = row[0]
@@ -164,9 +180,9 @@ class DBAPI(object):
 
             query = ('INSERT INTO defect (findingId, type, location, evidence)'
                      ' VALUES (?, ?, ?, ?)')
-            self.cursor.execute(query,
-                                [str(findingId), str(defectTypeId),
-                                 str(line), evidence])
+            self.con.get_cursor().execute(query,
+                                          [str(findingId), str(defectTypeId),
+                                           str(line), evidence])
             self.con.commit()
             return True
 
@@ -180,8 +196,8 @@ class DBAPI(object):
             The type won't have a description. Returns id.
         """
         query = ('INSERT INTO defectType (type) VALUES (?)')
-        self.cursor.execute(query, [defectType])
-        return self.cursor.lastrowid
+        self.con.get_cursor().execute(query, [defectType])
+        return self.con.get_cursor().lastrowid
 
     def putNewDefectType(self, defectType, description):
         """ Insert a new type with description unless already in database.
@@ -190,13 +206,14 @@ class DBAPI(object):
             Returns nothing.
         """
         query = ('SELECT count(id) FROM defectType WHERE type = ?')
-        self.cursor.execute(query, [str(defectType)])
-        row = self.cursor.fetchone()
+        self.con.get_cursor().execute(query, [str(defectType)])
+        row = self.con.get_cursor().fetchone()
         query = ('INSERT INTO defectType (type, description) VALUES (?, ?)')
         if row is not None:
             if row[0] is not None:
                 if row[0] == 0:
-                    self.cursor.execute(query, [defectType, description])
+                    self.con.get_cursor().execute(query, 
+                                                  [defectType, description])
 
     def setLink(self, transactionId, toUri, depth=0):
         """ Set new link into transaction, finding and link tables.
@@ -211,16 +228,19 @@ class DBAPI(object):
                          'verificationStatusId, depth) VALUES (\'GET\', ?, '
                          '\'CHECKER\', ?, ?)')
                 status_id = str(DBAPI.getRequestedStatusId())
-                self.cursor.execute(query, [toUri, status_id, str(depth)])
-                reqId = self.cursor.lastrowid
+                self.con.get_cursor().execute(query, 
+                                              [toUri, status_id, str(depth)])
+                reqId = self.con.get_cursor().lastrowid
                 needContent = True
 
             query = ('INSERT INTO finding (responseId) VALUES (?)')
-            self.cursor.execute(query, [str(transactionId)])
-            findingId = self.cursor.lastrowid
+            self.con.get_cursor().execute(query, [str(transactionId)])
+            findingId = self.con.get_cursor().lastrowid
 
-            query = ('INSERT INTO link (findingId, toUri, requestId) VALUES (?, ?, ?)')
-            self.cursor.execute(query, [str(findingId), toUri, str(reqId)])
+            query = ('INSERT INTO link (findingId, toUri, requestId) VALUES '
+                     '(?, ?, ?)')
+            self.con.get_cursor().execute(query, 
+                                          [str(findingId), toUri, str(reqId)])
             self.con.commit()
 
             if needContent:
@@ -240,8 +260,8 @@ class DBAPI(object):
         try:
             query = ('SELECT id FROM transactions WHERE method = \'GET\' and '
                      'uri = ? LIMIT 1')
-            self.cursor.execute(query, [toUri])
-            row = self.cursor.fetchone()
+            self.con.get_cursor().execute(query, [toUri])
+            row = self.con.get_cursor().fetchone()
             if row is not None:
                 if row[0] is not None:
                     return (row[0])
@@ -276,10 +296,10 @@ class DBAPI(object):
             statusId = DBAPI.getFinishedStatusId()
             query = ('UPDATE transactions SET verificationStatusId = ? '
                      ' WHERE id = ?')
-            self.cursor.execute(query, [str(statusId), str(transactionId)])
+            self.con.get_cursor().execute(query, [str(statusId), str(transactionId)])
 
             query = ('UPDATE link SET processed = 1 WHERE requestId = '+str(transactionId)+'')
-            self.cursor.execute(query)
+            self.con.get_cursor().execute(query)
             self.con.commit()
             return True
 
@@ -295,17 +315,17 @@ class DBAPI(object):
         """
         try:
             query = ('SELECT id FROM transactions WHERE id = ?')
-            self.cursor.execute(query, [str(reqId)])
-            if self.cursor.fetchone() is None:
+            self.con.get_cursor().execute(query, [str(reqId)])
+            if self.con.get_cursor().fetchone() is None:
                 return False
 
             # TODO: uri not used; call from links_finder -> fetch_response
             query = ('UPDATE transactions SET responseStatus = ?, '
                      'contentType = ?, '
                      'verificationStatusId = ?, content = ? WHERE id = ?')
-            self.cursor.execute(query, [str(status), contentType,
-                                        str(DBAPI.getUnverifiedStatusId()),
-                                        content, str(reqId)])
+            self.con.get_cursor().execute(query, [str(status), contentType,
+                                          str(DBAPI.getUnverifiedStatusId()),
+                                          content, str(reqId)])
             self.con.commit()
             return True
         except mdb.Error as e:
@@ -317,8 +337,8 @@ class DBAPI(object):
         """
         try:
             query = ('SELECT uri FROM transactions WHERE id = '+str(trID))
-            self.cursor.execute(query)
-            row = self.cursor.fetchone()
+            self.con.get_cursor().execute(query)
+            row = self.con.get_cursor().fetchone()
             if row is not None:
                 assert row[0] is not None
                 return urllib.unquote(row[0]).decode('utf-8')
@@ -329,6 +349,5 @@ class DBAPI(object):
             return None
 
     def error(self, e):
-        if self.con:
-            self.con.rollback()
+        self.con.rollback()
         print("Error?!? %s", (e.args[0]))
