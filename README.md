@@ -5,7 +5,7 @@ Crawlcheck is a web crawler invoking plugins on received content. It's intended 
 ![travis-ci](https://api.travis-ci.org/eghuro/crawlcheck.svg?branch=QA) ![codecov](https://img.shields.io/codecov/c/github/eghuro/crawlcheck/QA.svg)
 
 ### Version
-0.02.1
+0.03
 
 ### Tech
 
@@ -44,7 +44,7 @@ And of course Crawlcheck itself is open source with a [public repository](https:
 * You need mysql-server, python-2.7, sqlite3 (dev) and ruby installed.
 * Following packages needs also to be installed. It can be done through pip (you need python-pip and python-dev):
 ```sh
-$ pip install marisa_trie yapsy py_w3c enum urllib3 requests tinycss beautifulsoup4 pyyaml
+$ pip install marisa_trie yapsy py_w3c enum34 urllib3 requests tinycss beautifulsoup4 pyyaml
 ```
 * For report, rails also needs to be installed
 ```sh
@@ -142,8 +142,9 @@ For output file ``.pdf`` is added automatically.
 Crawlcheck is currently extended with the following plugins:
 
 * linksFinder
-* py_w3c_htmlValidator
-* tinycss_cssValidator
+* htmlValidator
+* tinycss
+* css_scraper
 
 ### How to write a plugin
 
@@ -185,7 +186,6 @@ See http://yapsy.sourceforge.net/IPlugin.html and http://yapsy.sourceforge.net/P
  - Improve Tests and Documentation
  - Report - manual annotations of findings
  - Filters and search in report
- - Scrap inline css
  - Regular expressions in configuration for plugins (URLs)
 
 License
