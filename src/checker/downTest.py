@@ -23,6 +23,9 @@ class ScraperTest(unittest.TestCase):
                       'http://mj.ucw.cz/vyuka/zap/',
                       'http://ksp.mff.cuni.cz/about/intro.html'])
 
+    def testScrapManyWithDuplicates(self):
+        self.testScrapMany()
+        self.testScrapOneMJ()
 
 if __name__ == '__main__':
     unittest.main()
