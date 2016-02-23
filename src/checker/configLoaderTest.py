@@ -55,6 +55,10 @@ class ConfigLoaderTestInvalid(unittest.TestCase):
     def testUrlNoPlugins(self):
         self.cl.load('testConf2.yml')
 
+    def testPluginsNoContentType(self):
+        self.cl.load('invalidTestConf2.yml')
+        self.assertAllNone()
+
     def assertNone(self, obj):
         self.assertEqual(obj, None)
 

@@ -5,6 +5,12 @@ import yaml
 from pluginDBAPI import DBAPIconfiguration
 from acceptor import Acceptor
 
+class ConfigurationError(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+
+    def __str__(self):
+        return self.msg
 
 class ConfigLoader(object):
     """ ConfigLoader loads configuration from file.
@@ -30,8 +36,7 @@ class ConfigLoader(object):
         db_check = self.db_check(root)
         version_check = self.version_check(root)
         if db_check and version_check:
-            self.set_up(root)
-            self.loaded = True
+            self.loaded = self.set_up(root)
         
         cfile.close()
 
@@ -83,8 +88,13 @@ class ConfigLoader(object):
         u = 'url'
         u_dsc = 'URL'
 
-        self.typeAcceptor = ConfigLoader.get_acceptor(cts, ct, ct_dsc, root)
-        self.uriAcceptor = ConfigLoader.get_acceptor(us, u, u_dsc, root)
+        try:
+            self.typeAcceptor = ConfigLoader.get_acceptor(cts, ct, ct_dsc, root)
+            self.uriAcceptor = ConfigLoader.get_acceptor(us, u, u_dsc, root)
+        except ConfigurationError as e:
+            print(e.msg)
+            return False
+        return True
 
     @staticmethod
     def get_acceptor(tags_string, tag_string, description, root):
@@ -99,8 +109,7 @@ class ConfigLoader(object):
     def run_tags(tags, description, acceptor, tag_string):
         for tag in tags:
             if tag_string not in tag:
-                print(description+" not specified")
-                break
+                raise ConfigurationError(description+" not specified")
             if 'plugins' in tag:
                 ConfigLoader.set_plugin_accept_tag_value(tag, tag_string, acceptor)
             else:
