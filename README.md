@@ -42,7 +42,7 @@ And of course Crawlcheck itself is open source with a [public repository](https:
 * You need mysql-server, python-2.7, sqlite3 (dev) and ruby installed.
 * Following packages needs also to be installed. It can be done through pip (you need python-pip and python-dev):
 ```sh
-$ pip install marisa_trie yapsy py_w3c enum urllib3 requests tinycss beautifulsoup4 pyyaml
+$ pip install marisa_trie yapsy py_w3c enum34 urllib3 requests tinycss beautifulsoup4 pyyaml
 ```
 * For report, rails also needs to be installed
 ```sh
