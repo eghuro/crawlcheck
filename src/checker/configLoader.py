@@ -19,6 +19,7 @@ class ConfigLoader(object):
         self.uriAcceptor = None
         self.entryPoints = []
         self.maxDepth = 0
+        self.loaded = False
 
     def load(self, fname):
         """Loads configuration from YAML file.
@@ -26,14 +27,24 @@ class ConfigLoader(object):
         cfile = open(fname)
         root = yaml.safe_load(cfile)
 
+        if 'database' not in root:
+            print("Database not specified")
+            db_check = False
+        else:
+            db_check = True
+
+        version_check = False
         if 'version' not in root:
             print("Version not specified")
-        elif 'database' not in root:
-            print("Database not specified")
         elif root['version'] == self.version:
-            self.set_up(root)
+            version_check = True
         else:
             print("Configuration version doesn't match")
+
+        if db_check and version_check:
+            self.set_up(root)
+            self.loaded = True
+        
         cfile.close()
 
     def set_up(self, root):
@@ -92,27 +103,42 @@ class ConfigLoader(object):
     def getDbconf(self):
         """ Retrieve DB configuration.
         """
-        return self.dbconf
+        if self.loaded:
+            return self.dbconf
+        else:
+            return None
 
     def getTypeAcceptor(self):
         """ Retrieve Acceptor instance for Content-Type.
         """
-        return self.typeAcceptor
+        if self.loaded:
+            return self.typeAcceptor
+        else:
+            return None
 
     def getUriAcceptor(self):
         """ Retrieve Acceptor instance for URI.
         """
-        return self.uriAcceptor
+        if self.loaded:
+            return self.uriAcceptor
+        else:
+            return None
 
     def getEntryPoints(self):
         """ Retrieve list of URIs for initial requests.
         """
-        return self.entryPoints
+        if self.loaded:
+            return self.entryPoints
+        else:
+            return None
 
     def getMaxDepth(self):
         """ Get maximum depth for crawling (0 for no limit)
         """
-        return self.maxDepth
+        if self.loaded:
+            return self.maxDepth
+        else:
+            return None
 
     def getDefaults(self, root, setKeyword, keyword):
         defaultSet = root.find(setKeyword)

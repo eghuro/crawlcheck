@@ -29,5 +29,26 @@ class ConfigLoaderTest(unittest.TestCase):
             print(val)
         self.assertTrue('http://mj.ucw.cz/vyuka/' in ua.getValues())
 
+class ConfigLoaderTestInvalid(unittest.TestCase):
+    def setUp(self):
+        self.cl = ConfigLoader()
+
+    def testLoad(self):
+        self.cl.load('invalidTestConf0.yml')
+        self.assertAllNone()
+
+    def testConfigurationVersion(self):
+        self.cl.load('invalidTestConf1.yml')
+        self.assertAllNone()
+
+    def assertNone(self, obj):
+        self.assertEqual(obj, None)
+
+    def assertAllNone(self):
+        self.assertNone(self.cl.getDbconf())
+        self.assertNone(self.cl.getTypeAcceptor())
+        self.assertNone(self.cl.getUriAcceptor())
+        self.assertNone(self.cl.getEntryPoints())
+        self.assertNone(self.cl.getMaxDepth())
 if __name__ == '__main__':
     unittest.main()
