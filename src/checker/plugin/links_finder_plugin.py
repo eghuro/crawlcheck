@@ -8,6 +8,15 @@ import urlparse
 import urllib
 import marisa_trie
 
+
+class StatusError(Exception):
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        return repr(self.value)
+
+
 class LinksFinder(IPlugin):
 
     def __init__(self):
@@ -16,7 +25,7 @@ class LinksFinder(IPlugin):
         self.trie = None
         self.uris = None
         self.uriTrie = None
-        self.maxDepth = 0 #unlimited
+        self.maxDepth = 0  # unlimited
         self.depth = -1
 
     def setDb(self, DB):
@@ -52,9 +61,9 @@ class LinksFinder(IPlugin):
 
     def checkType(self, soup, uri, tagL, attr, transactionId):
         if attr == 'href':
-          self.make_links_absolute(soup, uri, tagL)
+            self.make_links_absolute(soup, uri, tagL)
         else:
-          self.make_sources_absolute(soup, uri, tagL)
+            self.make_sources_absolute(soup, uri, tagL)
 
         images = soup.find_all(tagL)
 
@@ -65,45 +74,59 @@ class LinksFinder(IPlugin):
         return "linksFinder"
 
     def getLink(self, url, reqId, srcId):
-       try:
-          r = requests.head(url)
-          if r.status_code >= 400:
-             self.database.setDefect(srcId, "badlink", 0, url)
-             self.database.setFinished(reqId)
-             return
-          if 'content-type' in r.headers.keys():
-             ct = r.headers['content-type']
-          elif 'Content-Type' in r.headers.keys():
-             ct = r.headers['Content-Type']
-          else:
-             ct = ''
-          if not ct.strip():
-             self.database.setDefect(srcId, "badtype", 0, url)
-          
-          if self.getMaxPrefix(ct) in self.types:
-             if self.getMaxPrefixUri(url) in self.uris:
-                r = requests.get(url, allow_redirects=False)
-                self.database.setResponse(reqId, r.url.encode('utf-8'), r.status_code, ct, r.text)
-             else:
-                print "Uri not accepted: "+url
-                self.database.setFinished(reqId)
-          else: 
-            print "Content type not accepted: "+ct+" ("+url+")"
+        try:
+            ct = self.check_headers(url, srcId, reqId)
+            conditional_fetch(ct, url, reqId)
+        except InvalidSchema:
+            print("Invalid schema")
             self.database.setFinished(reqId)
-       except InvalidSchema:
-          print "Invalid schema"
-          self.database.setFinished(reqId)
-       except ConnectionError:
-          print "Connection error"
-          self.database.setFinished(reqId)
-       except MissingSchema:
-          print "Missing schema"
-          self.database.setFinished(reqId)
+        except ConnectionError:
+            print("Connection error")
+            self.database.setFinished(reqId)
+        except MissingSchema:
+            print("Missing schema")
+            self.database.setFinished(reqId)
+        except StatusError:
+            self.database.setFinished(reqId)
+
+    def check_headers(self, url, srcId, reqId):
+        r = requests.head(url)
+        if r.status_code >= 400:
+            self.database.setDefect(srcId, "badlink", 0, url)
+            raise StatusError()
+
+        if 'content-type' in r.headers.keys():
+            ct = r.headers['content-type']
+        elif 'Content-Type' in r.headers.keys():
+            ct = r.headers['Content-Type']
+        else:
+            ct = ''
+
+        if not ct.strip():
+            self.database.setDefect(srcId, "badtype", 0, url)
+        return ct
+
+    def conditional_fetch(self, ct, url, reqId):
+        type_condition = self.getMaxPrefix(ct) in self.types
+        prefix_condition = self.getMaxPrefixUri(url) in self.uris
+
+        if not prefix_condition:
+            self.database.setFinished(reqId)
+            print("Uri not accepted: "+url)
+        elif not type_condition:
+            self.database.setFinished(reqId)
+            print("Content-type not accepted: "+ct+" ("+url+")")
+        else:
+            self.fetch_response(url, reqId, ct)
+
+    def fetch_response(self, url, reqId, ct):
+        r = requests.get(url, allow_redirects=False)
+        self.database.setResponse(reqId, r.url.encode('utf-8'), r.status_code, ct, r.text)
 
     def make_links_absolute(self, soup, url, tagL):
         for tag in soup.findAll(tagL, href=True):
-           if 'href' in tag.attrs:
-              tag['href'] = urlparse.urljoin(url, tag['href'])
+            if 'href' in tag.attrs:
+                tag['href'] = urlparse.urljoin(url, tag['href'])
 
     def make_sources_absolute(self, soup, url, tagL):
         for tag in soup.findAll(tagL):
@@ -117,18 +140,22 @@ class LinksFinder(IPlugin):
                 # urlNoQuery = urlNoAnchor.split('?')[0]
 
                 reqId = self.database.setLink(transactionId, urllib.quote(urlNoAnchor.encode('utf-8')), self.depth+1)
-                if reqId != -1:
-                  if self.maxDepth == 0 or self.depth < self.maxDepth:
+                if self.really_get_link(reqId):
                     self.getLink(url, reqId, transactionId)
+
+    def really_get_link(self, reqId):
+        return (reqId != -1) and (self.maxDepth == 0 or self.depth < self.maxDepth)
 
     def getMaxPrefix(self, ctype):
         prefList = self.trie.prefixes(unicode(ctype, encoding="utf-8"))
         if len(prefList) > 0:
             return prefList[-1]
-        else: return ctype
+        else:
+            return ctype
 
     def getMaxPrefixUri(self, uri):
         prefList = self.uriTrie.prefixes(uri)
         if len(prefList) > 0:
             return prefList[-1]
-        else: return uri
+        else:
+            return uri

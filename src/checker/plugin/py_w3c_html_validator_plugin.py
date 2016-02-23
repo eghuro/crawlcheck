@@ -4,6 +4,7 @@ from py_w3c.exceptions import ValidationFault
 from urllib2 import HTTPError, URLError
 import time
 
+
 class PyW3C_HTML_Validator(IPlugin):
     def __init__(self):
         self.validator = HTMLValidator()
@@ -17,29 +18,33 @@ class PyW3C_HTML_Validator(IPlugin):
         """
         try:
             self.validator.validate_fragment(content)
-            for error in self.validator.errors:
-                self.database.putNewDefectType(self.transformMessageId(error['messageid'], "err"), error['message'])
-                self.database.setDefect(transactionId,
-                                        self.transformMessageId(error['messageid'], "err"),
-                                        error['line'], error['source'])
-
-            for warning in self.validator.warnings:
-                 self.database.putNewDefectType(self.transformMessageId(warning['messageid'], "warn"), warning['message'])
-                 self.database.setDefect(transactionId,
-                                         self.transformMessageId(warning['messageid'], "warn").
-                                         warning['line'], warning['source'])
+            self.check_errors(transactionId)
+            self.check_warnings(transactionId)
             time.sleep(3)
-        except ValidationFault, e:
-            print "Validation fault"
-        except HTTPError, e:
-            print "HTTP Error "+str(e.code)+": "+str(e.reason)
-        except URLError, e:
-            print "Connection problem: "+str(e.reason) 
+        except ValidationFault as e:
+            print("Validation fault")
+        except HTTPError as e:
+            print("HTTP Error "+str(e.code)+": "+str(e.reason))
+        except URLError as e:
+            print("Connection problem: "+str(e.reason))
         except Exception as e:
-            print "Unexpected problem"
+            print("Unexpected problem: "+str(type(e)))
         return
+
     def getId(self):
         return "htmlValidator"
 
     def transformMessageId(self, mid, mtype):
         return self.getId()+":"+mtype+":"+mid
+
+    def check_errors(self, transactionId):
+        self.check_defects(transactionId, self.validator.errors, "err")
+
+    def check_warnings(self, transactionId):
+        self.check_defects(transactionId, self.validator.warnings, "warn")
+
+    def check_defects(self, transactionId, defects, message):
+        for defect in defects:
+            mid = self.transformMessageId(defect['messageid'], message)
+            self.database.putNewDefectType(mid, defect['message'])
+            self.database.setDefect(transactionId, mid, defect['line'], defect['source'])

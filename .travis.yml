@@ -1,0 +1,28 @@
+language: python
+python:
+  - "2.6"
+  - "2.7"
+#  - "3.2"
+#  - "3.3"
+#  - "3.4"
+#  - "3.5"
+#  - "3.5-dev" # 3.5 development branch
+#  - "nightly" # currently points to 3.6-dev
+# command to install dependencies
+before_install:
+ - pip install codecov
+
+install: "pip install marisa_trie yapsy py_w3c enum34 urllib3 requests tinycss beautifulsoup4 pyyaml"
+
+script:
+ - cd src/checker; rm test.sqlite; sqlite3 test.sqlite < mysql_tables.sql
+ - coverage run acceptorTest.py
+ - coverage run -a configLoaderTest.py
+ - coverage run -a downTest.py
+ - coverage run -a pluginDBAPItest.py
+ - coverage run -a pluginRunnerTest.py
+ - coverage run -a py_w3c_html_validator_pluginTest.py
+ - coverage run -a plugin/test_css_scraper.py
+
+after_success:
+  - codecov --token=ccd0a006-2ef3-4eff-aac3-c185a543cd53

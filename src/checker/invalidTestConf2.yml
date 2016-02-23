@@ -9,7 +9,6 @@ content-types:
      - linksFinder
      - htmlValidator
  -
-   "content-type": "text/css"
    plugins:
      - tinycss
 

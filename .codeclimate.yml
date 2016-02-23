@@ -1,0 +1,38 @@
+---
+engines:
+  coffeelint:
+    enabled: true
+  duplication:
+    enabled: true
+    config:
+      languages:
+      - ruby
+      - javascript
+      - python
+      - php
+  eslint:
+    enabled: true
+  fixme:
+    enabled: true
+    exclude_fingerprints:
+    - ee0a31701f95b21db4aff40647a56a3d
+    - cdc1cac1f5cb7afe72dca9f9bca8a237
+    - b86af833d6b2b1fa18da63471e2278d9
+
+  radon:
+    enabled: true
+    exclude_fingerprints:
+    - 4e46f4f2b2886ed7731a8fa9dfcd61ce
+  rubocop:
+    enabled: true
+ratings:
+  paths:
+  - "**.coffee"
+  - "**.inc"
+  - "**.js"
+  - "**.jsx"
+  - "**.module"
+  - "**.php"
+  - "**.py"
+  - "**.rb"
+exclude_paths: []

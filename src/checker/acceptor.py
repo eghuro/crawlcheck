@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Decision if a transaction is checked by a plugin.
 
-Acceptor module contains budiness rules to decide if a transaction will be
+Acceptor module contains business rules to decide if a transaction will be
 checked by a plugin.
 
 For a plugin it's possible to set which URIs should be checked and which should
@@ -52,25 +52,34 @@ class Acceptor(object):
            True if a plugin should check a transaction with URI given.
            False otherwise
         """
+        return self.resolvePluginAcceptValue(pluginId, uri)
+
+    def resolvePluginAcceptValue(self, pluginId, uri):
         res = self.pluginAcceptValue(pluginId, uri)
         if res == Resolution.yes:
             return True
         elif res == Resolution.no:
             return False
         else:
-            res = self.pluginAcceptValueDefault(pluginId)
-            if res == Resolution.yes:
-                return True
-            elif res == Resolution.no:
-                return False
-            else:
-                res = self.defaultAcceptValue(uri)
-                if res == Resolution.yes:
-                    return True
-                elif res == Resolution.no:
-                    return False
-                else:
-                    return self.defaultUri
+            return self.resolvePluginAcceptValueDefault(pluginId, uri)
+
+    def resolvePluginAcceptValueDefault(self, pluginId, uri):
+        res = self.pluginAcceptValueDefault(pluginId)
+        if res == Resolution.yes:
+            return True
+        elif res == Resolution.no:
+            return False
+        else:
+            return self.resolveDefaultAcceptValue(uri)
+
+    def resolveDefaultAcceptValue(self, uri):
+        res = self.defaultAcceptValue(uri)
+        if res == Resolution.yes:
+            return True
+        elif res == Resolution.no:
+            return False
+        else:
+            return self.defaultUri
 
     def pluginAcceptValue(self, pluginId, uri):
         if pluginId in self.pluginUri:
@@ -83,14 +92,15 @@ class Acceptor(object):
             return Resolution.none
 
     def pluginAcceptValueDefault(self, pluginId):
-        if pluginId in self.pluginUriDefault:
-            return Acceptor.getResolution(self.pluginUriDefault[pluginId])
-        else:
-            return Resolution.none
+        return Acceptor.resolveFromDefault(pluginId, self.pluginUriDefault)
 
     def defaultAcceptValue(self, uri):
-        if uri in self.uriDefault:
-            return Acceptor.getResolution(self.uriDefault[uri])
+        return Acceptor.resolveFromDefault(uri, self.uriDefault)
+
+    @staticmethod
+    def resolveFromDefault(identifier, default):
+        if identifier in default:
+            return Acceptor.getResolution(default[identifier])
         else:
             return Resolution.none
 

@@ -7,6 +7,7 @@ from plugin.py_w3c_html_validator_plugin import PyW3C_HTML_Validator
 from plugin.links_finder_plugin import LinksFinder
 from configLoader import ConfigLoader
 
+
 class PluginRunnerTest(unittest.TestCase):
 
     def setUp(self):
@@ -19,23 +20,17 @@ class PluginRunnerTest(unittest.TestCase):
         self.api = DBAPI(self.dbconf)
 
     def testRunW3C(self):
-        w3c = PyW3C_HTML_Validator()
-
-        runner = PluginRunner(self.dbconf, self.typeacceptor, self.uriacceptor, 1)
-        runner.run([w3c])
+        self.runPlugins([PyW3C_HTML_Validator()])
 
     def testRunLinks(self):
-        finder = LinksFinder()
+        self.runPlugins([LinksFinder()])
 
+    def runPlugins(self, plugins):
         runner = PluginRunner(self.dbconf, self.typeacceptor, self.uriacceptor, 1)
-        runner.run([finder])
+        runner.run(plugins)
 
     def testRunMultiple(self):
-        w3c = PyW3C_HTML_Validator()
-        finder = LinksFinder()
-
-        runner = PluginRunner(self.dbconf, self.typeacceptor, self.uriacceptor, 1)
-        runner.run([w3c, finder])
+        self.runPlugins([PyW3C_HTML_Validator(), LinksFinder()])
 
 if __name__ == '__main__':
     unittest.main()

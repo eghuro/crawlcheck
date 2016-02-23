@@ -8,18 +8,10 @@ content-types:
    plugins:
      - linksFinder
      - htmlValidator
- -
-   "content-type": "text/css"
-   plugins:
-     - tinycss
 
 urls:
  -
     url: "http://mj.ucw.cz/vyuka/"
-    plugins:
-       - linksFinder
-       - htmlValidator
-       - tinycss
 
 entryPoints:
  - "http://mj.ucw.cz/vyuka/"
