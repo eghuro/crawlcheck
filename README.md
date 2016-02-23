@@ -187,6 +187,9 @@ See http://yapsy.sourceforge.net/IPlugin.html and http://yapsy.sourceforge.net/P
  - Report - manual annotations of findings
  - Filters and search in report
  - Regular expressions in configuration for plugins (URLs)
+ - Dockerize
+ - Detect forms and Javascript actions
+ - Event based parallel processing
 
 License
 ----
