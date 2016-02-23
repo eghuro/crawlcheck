@@ -94,3 +94,5 @@ INSERT INTO verificationStatus(id, status) VALUES (5, "FINISHED");
 INSERT INTO defectType(type, description) VALUES ("badlink", "Invalid link");
 INSERT INTO defectType(type, description) VALUES ("stylesheet", "Stylesheet error");
 INSERT INTO defectType(type, description) VALUES ("badtype", "Content-type empty");
+INSERT INTO defectType(type, description) VALUES ("seo:huge_internal", "Big internal CSS");
+INSERT INTO defectType(type, description) VALUES ("seo:duplicit_inline", "Duplicit inline CSS");
