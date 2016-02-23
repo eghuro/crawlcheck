@@ -51,7 +51,10 @@ class ConfigLoader(object):
         self.dbconf.setDbname(root['database'])
 
         if 'maxDepth' in root:
-            self.maxDepth = root['maxDepth']
+            if root['maxDepth'] >= 0:
+                self.maxDepth = root['maxDepth']
+            else:
+                print("Max depth must be zero or positive! Setting to 0.")
 
         if 'entryPoints' not in root:
             print("Entry points should be specified")

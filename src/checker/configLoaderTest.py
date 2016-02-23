@@ -41,6 +41,16 @@ class ConfigLoaderTestInvalid(unittest.TestCase):
         self.cl.load('invalidTestConf1.yml')
         self.assertAllNone()
 
+    def testMaxDepthEmptyEntryPoints(self):
+        self.cl.load('testConf0.yml')
+        self.assertEqual(5, self.cl.getMaxDepth())
+        self.assertEqual([], self.cl.getEntryPoints())
+
+    def testNegativeMaxDepthNoEntryPoints(self):
+        self.cl.load('testConf1.yml')
+        self.assertEqual(0, self.cl.getMaxDepth())
+        self.assertEqual([], self.cl.getEntryPoints())
+
     def assertNone(self, obj):
         self.assertEqual(obj, None)
 
