@@ -52,6 +52,9 @@ class ConfigLoaderTestInvalid(unittest.TestCase):
     def testNegativeMaxDepthNoEntryPoints(self):
         self.maxDepthEntryPoints('testConf1.yml', 0, [])
 
+    def testUrlNoPlugins(self):
+        self.cl.load('testConf2.yml')
+
     def assertNone(self, obj):
         self.assertEqual(obj, None)
 

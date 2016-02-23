@@ -1,0 +1,17 @@
+---
+version:  1.01
+database: test.sqlite
+    
+content-types:
+ - 
+   "content-type": "text/html"
+   plugins:
+     - linksFinder
+     - htmlValidator
+
+urls:
+ -
+    url: "http://mj.ucw.cz/vyuka/"
+
+entryPoints:
+ - "http://mj.ucw.cz/vyuka/"
