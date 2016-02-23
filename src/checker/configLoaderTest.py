@@ -54,6 +54,9 @@ class ConfigLoaderTestInvalid(unittest.TestCase):
 
     def testUrlNoPlugins(self):
         self.cl.load('testConf2.yml')
+        acceptor = self.cl.getUriAcceptor()
+        accept = acceptor.accept('foobar', 'http://mj.ucw.cz/vyuka/rp/')
+        self.assertFalse(accept)
 
     def testPluginsNoContentType(self):
         self.cl.load('invalidTestConf2.yml')
