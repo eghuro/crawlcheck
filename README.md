@@ -5,7 +5,7 @@ Crawlcheck is a web crawler invoking plugins on received content. It's intended 
 ![travis-ci](https://api.travis-ci.org/eghuro/crawlcheck.svg?branch=QA) ![codecov](https://img.shields.io/codecov/c/github/eghuro/crawlcheck/QA.svg)
 
 ### Version
-0.02.1
+0.03
 
 ### Tech
 
@@ -142,8 +142,9 @@ For output file ``.pdf`` is added automatically.
 Crawlcheck is currently extended with the following plugins:
 
 * linksFinder
-* py_w3c_htmlValidator
-* tinycss_cssValidator
+* htmlValidator
+* tinycss
+* css_scraper
 
 ### How to write a plugin
 
@@ -185,7 +186,6 @@ See http://yapsy.sourceforge.net/IPlugin.html and http://yapsy.sourceforge.net/P
  - Improve Tests and Documentation
  - Report - manual annotations of findings
  - Filters and search in report
- - Scrap inline css
  - Regular expressions in configuration for plugins (URLs)
 
 License
