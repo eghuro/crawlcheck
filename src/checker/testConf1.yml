@@ -2,21 +2,3 @@
 version:  1.01
 database: test.sqlite
 maxDepth: -1
-content-types:
- - 
-   "content-type": "text/html"
-   plugins:
-     - linksFinder
-     - htmlValidator
- -
-   "content-type": "text/css"
-   plugins:
-     - tinycss
-
-urls:
- -
-    url: "http://mj.ucw.cz/vyuka/"
-    plugins:
-       - linksFinder
-       - htmlValidator
-       - tinycss
