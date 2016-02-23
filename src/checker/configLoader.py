@@ -27,12 +27,22 @@ class ConfigLoader(object):
         cfile = open(fname)
         root = yaml.safe_load(cfile)
 
+        db_check = self.db_check(root)
+        version_check = self.version_check(root)
+        if db_check and version_check:
+            self.set_up(root)
+            self.loaded = True
+        
+        cfile.close()
+
+    def db_check(self, root):
         if 'database' not in root:
             print("Database not specified")
-            db_check = False
+            return False
         else:
-            db_check = True
+            return True
 
+    def version_check(self, root):
         version_check = False
         if 'version' not in root:
             print("Version not specified")
@@ -40,13 +50,8 @@ class ConfigLoader(object):
             version_check = True
         else:
             print("Configuration version doesn't match")
-
-        if db_check and version_check:
-            self.set_up(root)
-            self.loaded = True
-        
-        cfile.close()
-
+        return version_check
+    
     def set_up(self, root):
         self.dbconf.setDbname(root['database'])
 

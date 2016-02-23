@@ -50,7 +50,7 @@ class CssScraper(IPlugin):
         if reqId != -1:
             self.database.setResponse(reqId, urllib.quote(uri.encode('utf-8')), 200, 'text/css', style)
         else:
-            print "Error inserting " + comment +" CSS for transaction "+transactionId
+            print("Error inserting " + comment +" CSS for transaction "+transactionId)
 
     def process_internal(self, transactionId, style):
         self.push_db(transactionId, style , "internal")
