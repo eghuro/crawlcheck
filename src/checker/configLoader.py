@@ -51,16 +51,15 @@ class ConfigLoader(object):
         else:
             print("Configuration version doesn't match")
         return version_check
-    
-    def set_up(self, root):
-        self.dbconf.setDbname(root['database'])
 
+    def set_max_depth(self, root):
         if 'maxDepth' in root:
             if root['maxDepth'] >= 0:
                 self.maxDepth = root['maxDepth']
             else:
                 print("Max depth must be zero or positive! Setting to 0.")
-
+    
+    def set_entry_points(self, root):
         if 'entryPoints' not in root:
             print("Entry points should be specified")
         elif not root['entryPoints']:
@@ -69,6 +68,12 @@ class ConfigLoader(object):
             epSet = root['entryPoints']
             for ep in epSet:
                 self.entryPoints.append(ep)
+ 
+    def set_up(self, root):
+        self.dbconf.setDbname(root['database'])
+
+        self.set_max_depth(root)
+        self.set_entry_points(root)
 
         cts = 'content-types'
         ct = 'content-type'
