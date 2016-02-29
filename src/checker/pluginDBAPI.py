@@ -231,6 +231,7 @@ class DBAPI(object):
           Return transaction id or -1 if not present
       """
       try:
+         #TODO: osetrit pripad permutace parametru
          query = ('SELECT id FROM transactions WHERE method = \'GET\' and '
                   'uri = ? LIMIT 1')
          self.cursor.execute(query, [toUri])

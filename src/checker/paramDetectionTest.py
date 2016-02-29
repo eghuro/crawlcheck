@@ -48,7 +48,7 @@ class DBAPItest(unittest.TestCase):
         self.cleanDb()
         trId = self.insertTransaction()
 
-        self.usecaseLinkWithParams(trId, 1) 
+        self.usecaseLinkWithParams(trId, 1)
 
     def usecaseLinkWithParams(self, trId, depth):
         #nalezli jsme odkaz na script.php?name=Bobbby&check=false

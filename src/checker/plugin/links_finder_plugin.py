@@ -4,7 +4,7 @@ from requests.exceptions import InvalidSchema
 from requests.exceptions import ConnectionError
 from requests.exceptions import MissingSchema
 import requests
-import urlparse
+from urlparse import urlparse, parse_qsl
 import urllib
 import marisa_trie
 
@@ -114,12 +114,18 @@ class LinksFinder(IPlugin):
             url = link.get(tag)
             if url is not None:
                 urlNoAnchor = url.split('#')[0]
-                # urlNoQuery = urlNoAnchor.split('?')[0]
 
-                reqId = self.database.setLink(transactionId, urllib.quote(urlNoAnchor.encode('utf-8')), self.depth+1)
+                addr = urllib.quote(urlNoAnchor.encode('utf-8'))
+                reqId = self.database.setLink(transactionId, addr, self.depth+1)
+
+                for key_val in parse_qsl(urlparse(url).query):
+                    self.database.setScript(transactionId, addr, 'GET', key_val[0])
+                    self.database.setParams(addr, key_val[0], key_val[1])
+                
                 if reqId != -1:
-                  if self.maxDepth == 0 or self.depth < self.maxDepth:
-                    self.getLink(url, reqId, transactionId)
+                    if self.maxDepth == 0 or self.depth < self.maxDepth:
+                        self.getLink(url, reqId, transactionId)
+
 
     def getMaxPrefix(self, ctype):
         prefList = self.trie.prefixes(unicode(ctype, encoding="utf-8"))
