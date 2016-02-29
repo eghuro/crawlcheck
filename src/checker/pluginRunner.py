@@ -26,7 +26,7 @@ class PluginRunner(object):
             fakeTransaction.setUri(prefix)
             if self.accept(plugin.getId(), fakeTransaction):
                 print plugin.getId()
-                if plugin.getId() == "linksFinder":
+                if (plugin.getId() == "linksFinder") or (plugin.getId() == "formChecker"):
                   plugin.setDepth(info.getDepth())
                   plugin.setMaxDepth(self.maxDepth)
                 plugin.check(info.getId(), info.getContent().encode('utf-8'))
