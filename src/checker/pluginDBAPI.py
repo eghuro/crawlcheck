@@ -356,12 +356,12 @@ class DBAPI(object):
     def setForm(self, trId, action):
         try:
             query = ('INSERT INTO finding (responseId) VALUES (?)')
-            self.cursor.execute(query, [str(trId)])
-            findingId = self.cursor.lastrowid
+            self.con.get_cursor().execute(query, [str(trId)])
+            findingId = self.con.get_cursor().lastrowid
 
             query = ('INSERT INTO link (findingId, toUri) VALUES (?, ?)')
-            self.cursor.execute(query, [str(findingId), action])
-            linkId = self.cursor.lastrowid
+            self.con.get_cursor().execute(query, [str(findingId), action])
+            linkId = self.con.get_cursor().lastrowid
 
             self.con.commit()
             return linkId
@@ -376,15 +376,16 @@ class DBAPI(object):
             sa_query = ('INSERT INTO scriptAction '
                         '(findingId, parameterId, method)'
                         'VALUES (?, ?, ?)')
+            cursor = self.con.get_cursor()
             for param in params:
-                self.cursor.execute(f_query, [str(trId)])
-                findingId = self.cursor.lastrowid
+                cursor.execute(f_query, [str(trId)])
+                findingId = cursor.lastrowid
 
-                self.cursor.execute(p_query, [action, param])
-                paramId = self.cursor.lastrowid
+                cursor.execute(p_query, [action, param])
+                paramId = cursor.lastrowid
 
-                self.cursor.execute(sa_query, [str(findingId),
-                                               str(paramId), method])
+                cursor.execute(sa_query, [str(findingId),
+                                          str(paramId), method])
 
             self.con.commit()
             return True

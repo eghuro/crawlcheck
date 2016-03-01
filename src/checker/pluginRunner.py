@@ -43,8 +43,9 @@ class PluginRunner(object):
             process.start()
         for process in processes:
             process.join()
+
     def special_setup(self, pluginId):
-        return (pluginId == "linksFinder") | (pluginId == "formChecker")
+        return (pluginId == "linksFinder") or (pluginId == "formChecker")
 
     def run(self, plugins):
         """ Run all transactions through all plugins where it's accepted.
