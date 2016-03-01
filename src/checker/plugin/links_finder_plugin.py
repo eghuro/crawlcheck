@@ -4,7 +4,7 @@ from requests.exceptions import InvalidSchema
 from requests.exceptions import ConnectionError
 from requests.exceptions import MissingSchema
 import requests
-import urlparse
+from urlparse import urlparse, parse_qsl
 import urllib
 import marisa_trie
 
@@ -137,9 +137,14 @@ class LinksFinder(IPlugin):
             url = link.get(tag)
             if url is not None:
                 urlNoAnchor = url.split('#')[0]
-                # urlNoQuery = urlNoAnchor.split('?')[0]
 
-                reqId = self.database.setLink(transactionId, urllib.quote(urlNoAnchor.encode('utf-8')), self.depth+1)
+                addr = urllib.quote(urlNoAnchor.encode('utf-8'))
+                reqId = self.database.setLink(transactionId, addr, self.depth+1)
+
+                for key_val in parse_qsl(urlparse(url).query):
+                    self.database.setScript(transactionId, addr, 'GET', key_val[0])
+                    self.database.setParams(addr, key_val[0], key_val[1])
+                
                 if self.really_get_link(reqId):
                     self.getLink(url, reqId, transactionId)
 

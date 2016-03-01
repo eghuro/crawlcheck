@@ -258,6 +258,7 @@ class DBAPI(object):
             Return transaction id or -1 if not present
         """
         try:
+            #TODO: osetrit pripad permutace parametru
             query = ('SELECT id FROM transactions WHERE method = \'GET\' and '
                      'uri = ? LIMIT 1')
             self.con.get_cursor().execute(query, [toUri])
@@ -351,3 +352,42 @@ class DBAPI(object):
     def error(self, e):
         self.con.rollback()
         print("Error?!? %s", (e.args[0]))
+
+    def setForm(self, trId, action):
+        try:
+            query = ('INSERT INTO finding (responseId) VALUES (?)')
+            self.cursor.execute(query, [str(trId)])
+            findingId = self.cursor.lastrowid
+
+            query = ('INSERT INTO link (findingId, toUri) VALUES (?, ?)')
+            self.cursor.execute(query, [str(findingId), action])
+            linkId = self.cursor.lastrowid
+
+            self.con.commit()
+            return linkId
+        except mdb.Error as e:
+            self.error(e)
+            return -1
+
+    def setScript(self, trId, action, method, params):
+        try:
+            f_query = ('INSERT INTO finding (responseId) VALUES (?)')
+            p_query = ('INSERT INTO parameter (uri, name) VALUES (?, ?)')
+            sa_query = ('INSERT INTO scriptAction '
+                        '(findingId, parameterId, method)'
+                        'VALUES (?, ?, ?)')
+            for param in params:
+                self.cursor.execute(f_query, [str(trId)])
+                findingId = self.cursor.lastrowid
+
+                self.cursor.execute(p_query, [action, param])
+                paramId = self.cursor.lastrowid
+
+                self.cursor.execute(sa_query, [str(findingId),
+                                               str(paramId), method])
+
+            self.con.commit()
+            return True
+        except mdb.Error as e:
+            self.error(e)
+            return False
