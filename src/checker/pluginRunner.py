@@ -51,7 +51,7 @@ class PluginRunner(object):
         """ Run all transactions through all plugins where it's accepted.
         """
 
-        print "Running checker"
+        print("Running checker")
         api = DBAPI(self.dbconf)
         for plugin in plugins:
             plugin.setDb(api)
@@ -62,7 +62,7 @@ class PluginRunner(object):
 
         info = api.getTransaction()
         while info.getId() != -1:
-            print "Processing "+info.getUri()
+            print("Processing "+info.getUri())
             prefix = self.getMaxPrefix(info.getUri())
             # uri se nahradi nejdelsim prefixem dle konfigurace pluginu
             self.runTransaction(plugins, info, prefix)

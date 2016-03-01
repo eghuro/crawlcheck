@@ -418,6 +418,6 @@ class DBAPI(object):
 
             self.con.commit()
             return True
-        except mdb.Error, e:
+        except mdb.Error as e:
             self.error(e)
             return False
