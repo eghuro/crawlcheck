@@ -33,7 +33,7 @@ class PluginRunner(object):
             fakeTransaction = info
             fakeTransaction.setUri(prefix)
             if self.accept(plugin.getId(), fakeTransaction):
-                print plugin.getId()
+                print(plugin.getId())
                 if special_setup(plugin.getId()):
                     plugin.setDepth(info.getDepth())
                     plugin.setMaxDepth(self.maxDepth)
