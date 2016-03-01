@@ -402,18 +402,19 @@ class DBAPI(object):
                         'VALUES (?, ?, ?)')
             pv_query = ('INSERT INTO parameterValue (findingId, value) VALUES (?,?)')
 
+            cursor = self.con.get_cursor()
             for param in params:
                 key = ''
                 value = ''
 
-                self.cursor.execute(f_query, [str(trId)])
-                findingId = self.cursor.lastrowid
+                cursor.execute(f_query, [str(trId)])
+                findingId = cursor.lastrowid
 
-                self.cursor.execute(p_query, [action, key])
-                paramId = self.cursor.lastrowid
+                cursor.execute(p_query, [action, key])
+                paramId = cursor.lastrowid
 
-                self.cursor.execute(sa_query, [str(findingId), str(paramId), method])
-                self.cursor.execute(pv_query, [str(findingId), value])
+                cursor.execute(sa_query, [str(findingId), str(paramId), method])
+                cursor.execute(pv_query, [str(findingId), value])
 
             self.con.commit()
             return True
