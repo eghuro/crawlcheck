@@ -5,7 +5,12 @@ Parameters of connection to the database are set in DBAPIConfiguration
 """
 
 import sqlite3 as mdb
-import urllib
+#import urllib
+
+try:
+    from urllib.parse import unquote
+except ImportError:
+    from urllib import unquote
 
 
 class DBAPIconfiguration(object):
@@ -147,7 +152,8 @@ class DBAPI(object):
             self.error(e)
 
         return TransactionInfo(transactionId, content, contentType,
-                               urllib.unquote(uri).decode('utf-8'), depth)
+                               unquote(uri).decode('utf-8'),
+                               depth)
 
     def testInvariantsOnRow(self, row):
         assert row[0] is not None
@@ -342,7 +348,7 @@ class DBAPI(object):
             row = self.con.get_cursor().fetchone()
             if row is not None:
                 assert row[0] is not None
-                return urllib.unquote(row[0]).decode('utf-8')
+                return unquote(row[0]).decode('utf-8')
             else:
                 return None
         except mdb.Error as e:
