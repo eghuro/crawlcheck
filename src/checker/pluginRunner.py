@@ -34,8 +34,7 @@ class PluginRunner(object):
             fakeTransaction.setUri(prefix)
             if self.accept(plugin.getId(), fakeTransaction):
                 print plugin.getId()
-                if (plugin.getId() == "linksFinder") or 
-                   (plugin.getId() == "formChecker"):
+                if special_setup(plugin.getId()):
                     plugin.setDepth(info.getDepth())
                     plugin.setMaxDepth(self.maxDepth)
                 p = Process(target=PluginRunner.runPlugin, args=(plugin, info))
@@ -44,6 +43,8 @@ class PluginRunner(object):
             process.start()
         for process in processes:
             process.join()
+    def special_setup(self, pluginId):
+        return (pluginId == "linksFinder") | (pluginId == "formChecker")
 
     def run(self, plugins):
         """ Run all transactions through all plugins where it's accepted.
