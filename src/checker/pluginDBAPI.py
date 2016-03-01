@@ -359,7 +359,7 @@ class DBAPI(object):
             self.error(e)
             return False
 
-    def setiScriptParams(self, trId, action, method, params):
+    def setScriptParams(self, trId, action, method, params):
         try:
             f_query = ('INSERT INTO finding (responseId) VALUES (?)')
             p_query = ('INSERT INTO parameter (uri, name) VALUES (?,?)')
