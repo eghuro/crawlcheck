@@ -140,11 +140,10 @@ class LinksFinder(IPlugin):
 
                 addr = urllib.quote(urlNoAnchor.encode('utf-8'))
                 reqId = self.database.setLink(transactionId, addr, self.depth+1)
-
-                for key_val in parse_qsl(urlparse(url).query):
-                    self.database.setScript(transactionId, addr, 'GET', key_val[0])
-                    self.database.setParams(addr, key_val[0], key_val[1])
-                
+                self.database.setScriptParams(transactionId, addr, 'GET',
+                                              parse_qs(urlparse(url).query, 
+                                                       True)) 
+ 
                 if self.really_get_link(reqId):
                     self.getLink(url, reqId, transactionId)
 
