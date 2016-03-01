@@ -76,6 +76,14 @@ CREATE TABLE scriptAction (
     ON DELETE CASCADE
 );
 
+CREATE TABLE parameterValue (
+  findingId INTEGER PRIMARY KEY NOT NULL,
+  value VARCHAR(255) NOT NULL,
+  FOREIGN KEY (findingId)
+    REFERENCES scriptAction(findingId)
+    ON DELETE CASCADE
+);
+
 CREATE TABLE defectType (
   id INTEGER PRIMARY KEY NOT NULL,
   type VARCHAR(255) NOT NULL,

@@ -358,3 +358,31 @@ class DBAPI(object):
         except mdb.Error as e:
             self.error(e)
             return False
+
+    def setiScriptParams(self, trId, action, method, params):
+        try:
+            f_query = ('INSERT INTO finding (responseId) VALUES (?)')
+            p_query = ('INSERT INTO parameter (uri, name) VALUES (?,?)')
+            sa_query = ('INSERT INTO scriptAction '
+                        '(findingId, parameterId, method)'
+                        'VALUES (?, ?, ?)')
+            pv_query = ('INSERT INTO parameterValue (findingId, value) VALUES (?,?)')
+
+            for param in params:
+                key = ''
+                value = ''
+
+                self.cursor.execute(f_query, [str(trId)])
+                findingId = self.cursor.lastrowid
+
+                self.cursor.execute(p_query, [action, key])
+                paramId = self.cursor.lastrowid
+
+                self.cursor.execute(sa_query, [str(findingId), str(paramId), method])
+                self.cursor.execute(pv_query, [str(findingId), value])
+
+            self.con.commit()
+            return True
+        except mdb.Error, e:
+            self.error(e)
+            return False

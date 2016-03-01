@@ -53,9 +53,7 @@ class DBAPItest(unittest.TestCase):
     def usecaseLinkWithParams(self, trId, depth):
         #nalezli jsme odkaz na script.php?name=Bobbby&check=false
         self.api.setLink(trId, 'script.php?name=Bobby&check=false', depth)
-        self.api.setScript(trId, 'script.php', 'GET', ['name', 'check'])
-        self.api.setParams('script.php', 'name', 'Bobby')
-        self.api.setParams('script.php', 'check', 'false')
+        self.api.setScriptParams(trId, 'script.php', 'GET', {'name':'Bobby', 'check':'false'})
 
     def cleanDb(self):
         a = ('DELETE FROM finding')
