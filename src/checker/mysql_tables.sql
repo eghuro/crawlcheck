@@ -8,7 +8,7 @@ CREATE TABLE HTTPmethods (
   method VARCHAR(10) PRIMARY KEY
 );
 
-INSERT INTO HTTPmethosd (method) VALUES ("GET");
+INSERT INTO HTTPmethods (method) VALUES ("GET");
 INSERT INTO HTTPmethods (method) VALUES ("POST");
 INSERT INTO HTTPmethods (method) VALUES ("PUT");
 INSERT INTO HTTPmethods (method) VALUES ("CONNECT");
