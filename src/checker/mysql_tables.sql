@@ -5,7 +5,7 @@ CREATE TABLE verificationStatus (
 );
 
 CREATE TABLE HTTPmethods (
-  type VARCHAR(10) PRIMARY KEY
+  method VARCHAR(10) PRIMARY KEY
 );
 
 INSERT INTO HTTPmethosd (method) VALUES ("GET");
