@@ -4,17 +4,17 @@ CREATE TABLE verificationStatus (
   description TEXT
 );
 
-CREATE TABLE HTTPmethod (
-  type VARCHAR(10) PRIMARY KEY
+CREATE TABLE HTTPmethods (
+  method VARCHAR(10) PRIMARY KEY
 );
 
-INSERT INTO HTTPmethod (type) VALUES ("GET");
-INSERT INTO HTTPmethod (type) VALUES ("POST");
-INSERT INTO HTTPmethod (type) VALUES ("PUT");
-INSERT INTO HTTPmethod (type) VALUES ("CONNECT");
-INSERT INTO HTTPmethod (type) VALUES ("HEAD");
-INSERT INTO HTTPmethod (type) VALUES ("DELETE");
-INSERT INTO HTTPmethod (type) VALUES ("TRACE");
+INSERT INTO HTTPmethods (method) VALUES ("GET");
+INSERT INTO HTTPmethods (method) VALUES ("POST");
+INSERT INTO HTTPmethods (method) VALUES ("PUT");
+INSERT INTO HTTPmethods (method) VALUES ("CONNECT");
+INSERT INTO HTTPmethods (method) VALUES ("HEAD");
+INSERT INTO HTTPmethods (method) VALUES ("DELETE");
+INSERT INTO HTTPmethods (method) VALUES ("TRACE");
 
 CREATE TABLE transactions (
   id INTEGER PRIMARY KEY,
@@ -30,7 +30,7 @@ CREATE TABLE transactions (
     REFERENCES verificationStatus(id)
     ON DELETE CASCADE,
   FOREIGN KEY (method)
-    REFERENCES HTTPmethod(type)
+    REFERENCES HTTPmethods(method)
     ON DELETE CASCADE
 );
 
