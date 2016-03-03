@@ -103,7 +103,7 @@ class LinksFinder(IPlugin):
             ct = ''
 
         if not ct.strip():
-            self.database.setDefect(srcId, "badtype", 0, url)
+            self.database.setDefect(reqId, "badtype", 0, url)
         return ct
 
     def conditional_fetch(self, ct, url, reqId):
