@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 from yapsy.IPlugin import IPlugin
+import urllib
 
 class CssScraper(IPlugin):
     def __init__(self):
@@ -22,7 +23,7 @@ class CssScraper(IPlugin):
             self.process_internal(transactionId, data)
 
     def inlines(self, soup, transactionId):
-        data = self.scan_inline(transactionId, soup)
+        data = self.scan_inline(soup)
         self.inlines_seen = set()
         for inline in data:
             self.process_inline(transactionId, inline)
@@ -47,10 +48,10 @@ class CssScraper(IPlugin):
     def push_db(self, transactionId, style, comment):
         uri = self.database.getUri(transactionId)
         reqId = self.database.setLink(transactionId, urllib.quote(uri.encode('utf-8')), 0)
-        if reqId != -1:
-            self.database.setResponse(reqId, urllib.quote(uri.encode('utf-8')), 200, 'text/css', style)
-        else:
-            print("Error inserting " + comment +" CSS for transaction "+transactionId)
+        #if reqId != -1:
+        self.database.setResponse(reqId, urllib.quote(uri.encode('utf-8')), 200, 'text/css', style)
+        #else:
+        #    print("Error inserting " + comment +" CSS for transaction "+str(transactionId))
 
     def process_internal(self, transactionId, style):
         self.push_db(transactionId, style , "internal")
@@ -64,12 +65,12 @@ class CssScraper(IPlugin):
 
     def process_inline(self, transactionId, style):
         self.push_db(transactionId, style, "inline")
-        if style in self.inlines:
+        if style in self.inlines_seen:
             self.duplicit_inline(transactionId, style)
         else:
-            self.inlines.add(style)
+            self.inlines_seen.add(style)
         # TODO: testovat na podretezec 
         # TODO: zkoumat id/classy, zda tam neni podretezec inline css
 
     def duplicit_inline(self, transactionId, style):
-        self.database.setDefect(transactionId, 'seo:duplicit_inline', 0, size)
+        self.database.setDefect(transactionId, 'seo:duplicit_inline', 0, style)

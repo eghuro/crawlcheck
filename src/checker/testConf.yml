@@ -1,6 +1,6 @@
 ---
 version:  1.01
-database: test.sqlite
+database: crawlcheck.sqlite
     
 content-types:
  - 
@@ -8,6 +8,8 @@ content-types:
    plugins:
      - linksFinder
      - htmlValidator
+     - css_scraper
+     - formChecker
  -
    "content-type": "text/css"
    plugins:
@@ -20,6 +22,8 @@ urls:
        - linksFinder
        - htmlValidator
        - tinycss
+       - css_scraper
+       - formChecker
 
 entryPoints:
  - "http://mj.ucw.cz/vyuka/"
