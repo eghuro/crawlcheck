@@ -4,7 +4,7 @@ from requests.exceptions import InvalidSchema
 from requests.exceptions import ConnectionError
 from requests.exceptions import MissingSchema
 import requests
-from urlparse import urlparse, parse_qsl
+from urlparse import urlparse, parse_qs, urljoin
 import urllib
 import marisa_trie
 
@@ -76,7 +76,7 @@ class LinksFinder(IPlugin):
     def getLink(self, url, reqId, srcId):
         try:
             ct = self.check_headers(url, srcId, reqId)
-            conditional_fetch(ct, url, reqId)
+            self.conditional_fetch(ct, url, reqId)
         except InvalidSchema:
             print("Invalid schema")
             self.database.setFinished(reqId)
@@ -93,7 +93,7 @@ class LinksFinder(IPlugin):
         r = requests.head(url)
         if r.status_code >= 400:
             self.database.setDefect(srcId, "badlink", 0, url)
-            raise StatusError()
+            raise StatusError(r.status_code)
 
         if 'content-type' in r.headers.keys():
             ct = r.headers['content-type']
@@ -126,11 +126,11 @@ class LinksFinder(IPlugin):
     def make_links_absolute(self, soup, url, tagL):
         for tag in soup.findAll(tagL, href=True):
             if 'href' in tag.attrs:
-                tag['href'] = urlparse.urljoin(url, tag['href'])
+                tag['href'] = urljoin(url, tag['href'])
 
     def make_sources_absolute(self, soup, url, tagL):
         for tag in soup.findAll(tagL):
-            tag['src'] = urlparse.urljoin(url, tag['src'])
+            tag['src'] = urljoin(url, tag['src'])
 
     def check_links(self, links, transactionId, tag):
         for link in links:
