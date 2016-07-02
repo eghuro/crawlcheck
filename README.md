@@ -65,9 +65,11 @@ $ bin/bundle install
 
   First sqlite command will create tables, rake command will do initialization needed for ruby, second sqlite call will set up initial values in certain tables and ensures integrity constraints remains unchanged.
 ```sh
-$ sqlite3 <dbfile> < ../checker/mysql_tables.sql
+$ cp ../checker/mysql_tables.sql db/structure.sql
+$ DATABASE_URL="sqlite3://<dbfile>" bin/bundle exec rake db:schema:load
 $ DATABASE_URL="sqlite3://<dbfile>" bin/rake db:drop db:create db:schema:load
 $ sqlite3 <dbfile> < ../checker/mysql_tables.sql
+$ DATABASE_URL="sqlite3://<dbfile>" bin/rake db:migrate RAILS_ENV=development
 ```
 
 ### Configuration

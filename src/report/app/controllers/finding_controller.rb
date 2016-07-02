@@ -22,8 +22,8 @@ class FindingController < ApplicationController
   def show
     begin
       @transaction = Transaction.find(params[:id])
-      @defects = Defect.find_by_sql("select * from defect where findingId in (select id from finding where responseId = #{params[:id]})")
-      @links = Link.find_by_sql("select * from link where findingId in (select id from finding where responseId = #{params[:id]})")
+      @defects = Defect.paginate_by_sql("select * from defect where findingId in (select id from finding where responseId = #{params[:id]})", page: params[:defect], per_page: 25)
+      @links = Link.paginate_by_sql("select * from link where findingId in (select id from finding where responseId = #{params[:id]})", page: params[:link], per_page: 25)
     rescue ActiveRecord::RecordNotFound
     end
   end
