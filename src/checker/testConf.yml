@@ -1,6 +1,6 @@
 ---
 version:  1.01
-database: crawlcheck.sqlite
+database: test.sqlite
     
 content-types:
  - 
