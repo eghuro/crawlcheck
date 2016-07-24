@@ -55,6 +55,35 @@ CREATE TABLE link (
     ON DELETE CASCADE
 );
 
+CREATE TABLE parameter (
+  id INTEGER PRIMARY KEY NOT NULL,
+  uri VARCHAR(255) NOT NULL,
+  name VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE scriptAction (
+  findingId INTEGER PRIMARY KEY NOT NULL,
+  parameterId INTEGER NOT NULL,
+  method VARCHAR(10) NOT NULL,
+  FOREIGN KEY (findingId)
+    REFERENCES finding(id)
+    ON DELETE CASCADE,
+  FOREIGN KEY (parameterId)
+    REFERENCES parameter(id)
+    ON DELETE CASCADE,
+  FOREIGN KEY (method)
+    REFERENCES HTTPmethod(type)
+    ON DELETE CASCADE
+);
+
+CREATE TABLE parameterValue (
+  findingId INTEGER PRIMARY KEY NOT NULL,
+  value VARCHAR(255) NOT NULL,
+  FOREIGN KEY (findingId)
+    REFERENCES scriptAction(findingId)
+    ON DELETE CASCADE
+);
+
 CREATE TABLE defectType (
   id INTEGER PRIMARY KEY NOT NULL,
   type VARCHAR(255) NOT NULL,

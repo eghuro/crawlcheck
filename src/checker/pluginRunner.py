@@ -33,8 +33,8 @@ class PluginRunner(object):
             fakeTransaction = info
             fakeTransaction.setUri(prefix)
             if self.accept(plugin.getId(), fakeTransaction):
-                print plugin.getId()
-                if plugin.getId() == "linksFinder":
+                print(plugin.getId())
+                if self.special_setup(plugin.getId()):
                     plugin.setDepth(info.getDepth())
                     plugin.setMaxDepth(self.maxDepth)
                 p = Process(target=PluginRunner.runPlugin, args=(plugin, info))
@@ -44,11 +44,14 @@ class PluginRunner(object):
         for process in processes:
             process.join()
 
+    def special_setup(self, pluginId):
+        return (pluginId == "linksFinder") or (pluginId == "formChecker")
+
     def run(self, plugins):
         """ Run all transactions through all plugins where it's accepted.
         """
 
-        print "Running checker"
+        print("Running checker")
         api = DBAPI(self.dbconf)
         for plugin in plugins:
             plugin.setDb(api)
@@ -59,7 +62,7 @@ class PluginRunner(object):
 
         info = api.getTransaction()
         while info.getId() != -1:
-            print "Processing "+info.getUri()
+            print("Processing "+info.getUri())
             prefix = self.getMaxPrefix(info.getUri())
             # uri se nahradi nejdelsim prefixem dle konfigurace pluginu
             self.runTransaction(plugins, info, prefix)

@@ -5,15 +5,19 @@
   <thead>
     <tr>
       <th>URI</th>
+      <th>Method</th>
       <th>Response status</th>
       <th>Content type</th>
+      <th>Depth</th>
     </tr>
   </thead>
   <tbody>
     <tr>
       <td><%=format(@transaction.uri) %></td>
+      <td><%=@transaction.method %></td>
       <td><%=@transaction.responseStatus %></td>
       <td><%=@transaction.contentType %></td>
+      <td><%=@transaction.depth %></td>
     </tr>
   </tbody>
 </table>
@@ -25,24 +29,47 @@
   <thead>
     <tr>
       <th>Defect</th>
-      <th>Line</th>
       <th>Evidence</th>
     </tr>
   </thead>
   <tbody>
     <% if @defects and @defects.size > 0 %>
+      <% @counter = 0 %>
       <% @defects.each do |defect| %>
         <tr>
           <td><%= getDefectDescription(defect.type)%></td>
-          <td><%= defect.location%></td>
           <td><%= defect.evidence%></td>
+        </tr>
         <tr>
+        <td colspan="2"  id="content<%= @counter %>"></td>
+            <script type="text/babel">
+            // To get started with this tutorial running your own code, simply remove
+            // the script tag loading scripts/example.js and start writing code here.
+
+var CommentBox = React.createClass({
+  render: function() {
+    return (
+      <div className="commentBox">
+        Hello, world! I am a CommentBox.
+      </div>
+    );
+  }
+});
+ReactDOM.render(
+  <CommentBox />,
+  document.getElementById('content')
+);
+
+            </script>
+        </tr>
+        <% @counter += 1 %>
       <% end %>
     <% else %>
       <tr><td colspan="3">None found</td></tr>
     <%end%>
   </tbody>
 </table>
+<%= will_paginate @defects, :param_name => 'defect', renderer: BootstrapPagination::Rails %>
 
 <h2>Links</h2>
 <table border="1" class="table table-striped table-bordered">
@@ -66,3 +93,4 @@
     <%end%>
   </tbody>
 </table>
+<%= will_paginate @links, :param_name => 'link', renderer: BootstrapPagination::Rails %>

@@ -2,7 +2,7 @@
 
 Crawlcheck is a web crawler invoking plugins on received content. It's intended for verification of websites prior to deployment. The process of verification is customisable by configuration script that allows complex specification which plugins should check particular URIs and content-types. Main engine and plugins are written in Python, there's also possibility to show report in form of website written in Ruby on Rails or generate report in PDF. The report contains discoveries plugins made during the verification.
 
-![travis-ci](https://api.travis-ci.org/eghuro/crawlcheck.svg?branch=master) ![codecov](https://img.shields.io/codecov/c/github/eghuro/crawlcheck/master.svg) [![Code Climate](https://codeclimate.com/github/eghuro/crawlcheck/badges/gpa.svg)](https://codeclimate.com/github/eghuro/crawlcheck)
+![travis-ci](https://api.travis-ci.org/eghuro/crawlcheck.svg?branch=QA) ![codecov](https://img.shields.io/codecov/c/github/eghuro/crawlcheck/QA.svg)
 
 ### Version
 0.03
@@ -65,9 +65,11 @@ $ bin/bundle install
 
   First sqlite command will create tables, rake command will do initialization needed for ruby, second sqlite call will set up initial values in certain tables and ensures integrity constraints remains unchanged.
 ```sh
-$ sqlite3 <dbfile> < ../checker/mysql_tables.sql
+$ cp ../checker/mysql_tables.sql db/structure.sql
+$ DATABASE_URL="sqlite3://<dbfile>" bin/bundle exec rake db:schema:load
 $ DATABASE_URL="sqlite3://<dbfile>" bin/rake db:drop db:create db:schema:load
 $ sqlite3 <dbfile> < ../checker/mysql_tables.sql
+$ DATABASE_URL="sqlite3://<dbfile>" bin/rake db:migrate RAILS_ENV=development
 ```
 
 ### Configuration
