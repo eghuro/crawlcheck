@@ -120,7 +120,7 @@ Note: ```[root]/crawlcheck``` is where repository was cloned to, ```[config.xml]
 Assuming you have gone through set-up and configuration and checker either finished or is still running (otherwise there are just no data to display), now run report app:
 ```sh
 $ cd [root]/crawlcheck/src/report/
-$ DATABASE_URL="sqlite3://<dbfile>" bin/rails server
+$ bin/rails server
 ```
 Note: you can specify port by adding ```-p [number]``` and interface by specifying ```-b [ip address]```
 
