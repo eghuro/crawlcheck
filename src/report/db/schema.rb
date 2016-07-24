@@ -16,8 +16,6 @@ ActiveRecord::Schema.define(version: 1) do
   create_table "HTTPmethods", primary_key: "method", force: :cascade do |t|
   end
 
-  add_index "HTTPmethods", ["method"], name: "sqlite_autoindex_HTTPmethods_1", unique: true
-
   create_table "annotation", force: :cascade do |t|
     t.integer  "findingId", limit: 4,     null: false
     t.text     "comment",   limit: 65535, null: false
