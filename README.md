@@ -40,41 +40,17 @@ And of course Crawlcheck itself is open source with a [public repository](https:
 
 ### Installation
 
-1) Install dependencies
-* You need python-2.7, sqlite3 (dev) and ruby installed.
-* Following packages needs also to be installed. It can be done through pip (you need python-pip and python-dev):
-```sh
-$ pip install marisa_trie yapsy py_w3c enum34 urllib3 requests tinycss beautifulsoup4 pyyaml
-```
-* For report, rails also needs to be installed
-```sh
-$ gem install rails
-```
-2) Install crawlcheck
-* Clone and install Crawlcheck as follows: (make sure to prepare configuration file beforehand)
+1) Fetch sources
 ```sh
 $ git clone [git-repo-url] crawlcheck
-$ cd crawlcheck/src
 ```
-* Install report
-```sh
-$ cd report
-$ bin/bundle install
-```
-* Install database
 
-  Set the database file location in config/database.yml.
-
-  First sqlite command will create tables, rake command will do initialization needed for ruby, second sqlite call will set up initial values in certain tables and ensures integrity constraints remains unchanged.
+2) Run install script
 ```sh
-$ cp ../checker/mysql_tables.sql db/structure.sql
-$ sqlite3 <dbfile> < ../checker/mysql_tables.sql
-$ bin/rake db:migrate
-$ bin/bundle exec rake db:schema:load
-$ bin/rake db:drop db:create db:schema:load
-$ sqlite3 <dbfile> < ../checker/mysql_tables.sql
-$ bin/rake db:migrate RAILS_ENV=development
+cd crawlcheck
+./install.sh
 ```
+You will need python-2.7, python-pip and python-dev, sqlite3 (dev) and ruby installed.
 
 ### Configuration
 Configuration file is a simple YAML file.
