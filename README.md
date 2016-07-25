@@ -42,13 +42,15 @@ And of course Crawlcheck itself is open source with a [public repository](https:
 
 1) Fetch sources
 ```sh
-$ git clone [git-repo-url] crawlcheck
+$ git clone https://github.com/eghuro/crawlcheck crawlcheck
 ```
 
-2) Run install script
+2) Set database location in ```crawlcheck/src/report/config/database.yml```
+
+3) Run install script
 ```sh
 cd crawlcheck
-./install.sh
+./install.sh [database-file-location]
 ```
 You will need python-2.7, python-pip and python-dev, sqlite3 (dev) and ruby installed.
 

@@ -7,7 +7,7 @@ cd src/report
 bin/bundle install
 
 cp ../checker/mysql_tables.sql db/structure.sql
-sqlite3 ../crawlcheck < ../checker/mysql_tables.sql
+sqlite3 $1 < ../checker/mysql_tables.sql
 bin/rake db:migrate
 bin/rake db:migrate RAILS_ENV=development
-sqlite3 ../crawlcheck < ../checker/mysql_tables.sql
+sqlite3 $1 < ../checker/mysql_tables.sql
