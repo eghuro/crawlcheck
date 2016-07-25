@@ -5,7 +5,7 @@ Crawlcheck is a web crawler invoking plugins on received content. It's intended 
 ![travis-ci](https://api.travis-ci.org/eghuro/crawlcheck.svg?branch=master) ![codecov](https://img.shields.io/codecov/c/github/eghuro/crawlcheck/master.svg)
 
 ### Version
-0.03
+0.04
 
 ### Tech
 
