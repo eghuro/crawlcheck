@@ -9,9 +9,5 @@ bin/bundle install
 cp ../checker/mysql_tables.sql db/structure.sql
 sqlite3 ../crawlcheck < ../checker/mysql_tables.sql
 bin/rake db:migrate
-
-bin/bundle exec rake db:schema:load
-bin/rake db:drop db:create db:schema:load
-sqlite3 ../crawlcheck < ../checker/mysql_tables.sql
-
 bin/rake db:migrate RAILS_ENV=development
+sqlite3 ../crawlcheck < ../checker/mysql_tables.sql
