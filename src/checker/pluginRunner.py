@@ -1,8 +1,11 @@
 """ PluginRunner runs all transactions through applicable checkers.
 """
+
 from pluginDBAPI import DBAPI
+from plugin.common import PluginType
 import marisa_trie
 from multiprocessing import Process
+
 
 
 class PluginRunner(object):
@@ -12,75 +15,127 @@ class PluginRunner(object):
         For acceptors, uri is changed to the longest prefix based on
         plugin's configuration using trie.
     """
+    
+    
     def __init__(self, dbconf, uriAcceptor, typeAcceptor, maxDepth):
-        self.dbconf = dbconf
-        self.pluginsById = {}
-        self.uriAcceptor = uriAcceptor
-        self.typeAcceptor = typeAcceptor
-        self.maxDepth = maxDepth
+        self.__dbconf = dbconf
+        self.__uri_acceptor = uriAcceptor
+        self.__type_acceptor = typeAcceptor
+        self.__max_depth = maxDepth
 
-    @staticmethod
-    def runPlugin(plugin, info):
-        plugin.check(info.getId(), info.getContent().encode('utf-8'))
 
-    def runTransaction(self, plugins, info, prefix):
-        """ Run a single transaction through all plugins where it's accepted.
-        """
-        # get list of plugins to use
-        # create processes to run each plugin
-        processes = []
-        for plugin in plugins:
-            fakeTransaction = info
-            fakeTransaction.setUri(prefix)
-            if self.accept(plugin.getId(), fakeTransaction):
-                print(plugin.getId())
-                if self.special_setup(plugin.getId()):
-                    plugin.setDepth(info.getDepth())
-                    plugin.setMaxDepth(self.maxDepth)
-                p = Process(target=PluginRunner.runPlugin, args=(plugin, info))
-                processes.append(p)
-        for process in processes:
-            process.start()
-        for process in processes:
-            process.join()
-
-    def special_setup(self, pluginId):
-        return (pluginId == "linksFinder") or (pluginId == "formChecker")
-
+    ### PUBLIC API ###
+    
+    
     def run(self, plugins):
         """ Run all transactions through all plugins where it's accepted.
         """
 
         print("Running checker")
-        api = DBAPI(self.dbconf)
+        api = DBAPI(self.__dbconf)
+        
+        # initialization
+        self.__initialize_plugins(plugins, api)
+
+        # process data
+        self.__loop_database(api)
+
+
+    ### PRIVATE IMPLEMENTATION ###
+
+    def __initialize_plugins(self, plugins, api):
+        
         for plugin in plugins:
             plugin.setDb(api)
-            self.pluginsById[plugin.getId()] = plugin
-            if plugin.getId() == "linksFinder":
-                plugin.setTypes(self.typeAcceptor.getValues())
-                plugin.setUris(self.uriAcceptor.getValues())
+            
+            # TODO: refactor to be more Pythonic
+            if plugin.type == PluginType.CRAWLER:
+                plugin.setTypes(self.__type_acceptor.getValues())
+                plugin.setUris(self.__uri_acceptor.getValues())
+                plugin.setMaxDepth(self.__max_depth)
+            
+            elif plugin.type == PluginType.CHECKER:
+                pass
+            
+            else:
+                #FATAL ERROR: unknown plugin type
+                #TODO: Raise
+                pass
+
+
+    def __loop_database(self, api):
 
         info = api.getTransaction()
+        
         while info.getId() != -1:
             print("Processing "+info.getUri())
-            prefix = self.getMaxPrefix(info.getUri())
-            # uri se nahradi nejdelsim prefixem dle konfigurace pluginu
-            self.runTransaction(plugins, info, prefix)
+            # uri is replaced by the longest prefix according to configuration
+            prefix = self.__get_max_prefix(info.getUri())
+            self.__run_transaction(plugins, info, prefix)
             api.setFinished(info.getId())
             info = api.getTransaction()
 
-    def accept(self, plugId, transaction):
-        uri = self.uriAcceptor.accept(plugId, transaction.getUri())
-        ctype = self.typeAcceptor.accept(plugId, transaction.getContentType())
+
+    @staticmethod
+    def __run_plugin(plugin, info):
+        plugin.check(info.getId(), info.getContent().encode('utf-8'))
+
+
+    def __run_transaction(self, plugins, info, prefix):
+
+        """ Run a single transaction through all plugins where it's accepted.
+        """
+
+        # create processes to run each plugin        
+        # TODO: have processes created back in initialization, only once
+        # TODO: only set info here
+        processes = self.__create_processes(plugins, info, prefix)
+
+        for process in processes:
+            process.start()
+
+        for process in processes:
+            process.join()
+
+
+    def __create_processes(self, plugins, info, prefix):
+
+        processes = []
+        
+        for plugin in plugins:
+            fakeTransaction = info
+            fakeTransaction.setUri(prefix)
+
+            if self.__accept(plugin.getId(), fakeTransaction):
+                print(plugin.getId())
+                
+                if plugin.type == PluginType.CRAWLER:
+                    plugin.setDepth(info.getDepth())
+                
+                p = Process(target=PluginRunner.__runPlugin, args=(plugin, info))
+                processes.append(p)
+
+        return processes
+
+
+    def __accept(self, plugId, transaction):
+        
+        uri = self.__uri_acceptor.accept(plugId, transaction.getUri())
+        ctype = self.__type_acceptor.accept(plugId, transaction.getContentType())
+        
         return uri and ctype
 
-    def getMaxPrefix(self, uri):
-        prefixes = self.uriAcceptor.getValues()
+
+    def __get_max_prefix(self, uri):
+        
+        prefixes = self.__uri_acceptor.getValues()
 
         # seznam prefixu, pro nas uri chceme nejdelsi prefix
         trie = marisa_trie.Trie(prefixes)
         prefList = trie.prefixes(unicode(str(uri), encoding="utf-8"))
+        
         if len(prefList) > 0:
             return prefList[-1]
+        
         else:
             return uri
