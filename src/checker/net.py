@@ -1,13 +1,11 @@
 import requests
-from requests.exceptions import InvalidSchema
-from requests.exceptions import ConnectionError
-from requests.exceptions import MissingSchema
+from requests.exceptions import InvalidSchema, ConnectionError, MissingSchema
 
 
 class NetworkError(Exception):
     pass
 
-class StatusError(Exception):
+class StatusError(NetworkError):
 
     def __init__(self, value):
         self.value = value
@@ -39,9 +37,9 @@ class Network(object):
         except MissingSchema as e:
             print("Missing schema")
             raise NetworkError(e)
-        except StatusError as e:
+        except StatusError:
             print("Status error")
-            raise NetworkError(e)
+            raise
      
      
     @staticmethod
