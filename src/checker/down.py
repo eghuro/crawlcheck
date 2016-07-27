@@ -1,4 +1,3 @@
-import requests
 from pluginDBAPI import DBAPI
 
 
@@ -10,13 +9,16 @@ class Scraper(object):
         """ Download one page and insert it into transaction.
         """
         if not self.__api.gotLink(uri):
-            r = requests.get(uri)
+            try:
+                r = Network.getPage(uri, self.__api)
 
-            print("Adding entry point: "+uri)
+                print("Adding entry point: "+uri)
 
-            #set request using DBAPI
-            self.__api.setRequest(uri, str(r.status_code), 
-                                  r.headers["Content-Type"], r.text)
+                #set request using DBAPI
+                reqId = self.__api.setRequest(uri, str(r.status_code), 
+                                      r.headers["Content-Type"], r.text)
+            except NetworkError:
+                self.__api.setFinished(reqId)
 
     def scrap(self, urilist):
         """ Download a list of pages and insert them into database.
