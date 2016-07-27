@@ -2,7 +2,7 @@
 """
 
 from pluginDBAPI import DBAPI
-from plugin.common import PluginType
+from plugin.common import PluginType, TypeError
 import marisa_trie
 from multiprocessing import Process
 
@@ -59,8 +59,7 @@ class PluginRunner(object):
             
             else:
                 #FATAL ERROR: unknown plugin type
-                #TODO: Raise
-                pass
+                raise TypeError
 
 
     def __loop_database(self, api):

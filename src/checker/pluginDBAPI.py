@@ -398,6 +398,20 @@ class DBAPI(object):
         except mdb.Error as e:
             self.error(e)
             return False
+        
+    def setRequest(self, uri, status_code, content_type, text):
+        try:
+            query = ('INSERT INTO transactions (uri, method, responseStatus, '
+                     'contentType, origin, verificationStatusId, depth, '
+                     'content) VALUES (?,\'GET\', ' + str(r.status_code) + ','
+                     ' "' + r.headers['Content-Type'] + '", \'CLIENT\', 3, 1,'
+                     ' ?)')
+            self.con.get_cursor().execute(query, [uri, r.text])
+            self.con.commit()
+            return True
+        except mdb.Error as e:
+            self.error(e)
+            return False
 
     def setScriptParams(self, trId, action, method, params):
         try:

@@ -38,6 +38,7 @@ def main():
 
         if len(plugins) == 0:
             print("No plugins found")
+
         runner = PluginRunner(cl.getDbconf(), cl.getUriAcceptor(),
                               cl.getTypeAcceptor(), cl.getMaxDepth())
 

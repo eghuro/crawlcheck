@@ -10,13 +10,13 @@ class ScraperTest(unittest.TestCase):
         self.s = Scraper(c)
 
     def testScrapOneRP(self):
-        self.s._scrapOne('http://ulita.ms.mff.cuni.cz/mff/sylaby/rp.html')
+        self.s.scrap_one('http://ulita.ms.mff.cuni.cz/mff/sylaby/rp.html')
 
     def testScrapOneMJ(self):
-        self.s._scrapOne('http://mj.ucw.cz/vyuka/zap/')
+        self.s.scrap_one('http://mj.ucw.cz/vyuka/zap/')
 
     def testScrapOneKSP(self):
-        self.s._scrapOne('http://ksp.mff.cuni.cz/about/intro.html')
+        self.s.scrap_one('http://ksp.mff.cuni.cz/about/intro.html')
 
     def testScrapMany(self):
         self.s.scrap(['http://ulita.ms.mff.cuni.cz/mff/sylaby/rp.html',
