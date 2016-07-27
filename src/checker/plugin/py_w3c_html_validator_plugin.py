@@ -1,3 +1,4 @@
+from common import PluginType
 from yapsy.IPlugin import IPlugin
 from py_w3c.validators.html.validator import HTMLValidator
 from py_w3c.exceptions import ValidationFault
@@ -6,6 +7,10 @@ import time
 
 
 class PyW3C_HTML_Validator(IPlugin):
+    
+    type = PluginType.CHECKER
+    
+    
     def __init__(self):
         self.validator = HTMLValidator()
         self.database = None

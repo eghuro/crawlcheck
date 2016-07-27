@@ -1,8 +1,13 @@
+from common import PluginType
 import tinycss
 from yapsy.IPlugin import IPlugin
 
 
 class CssValidator(IPlugin):
+    
+    type = PluginType.CHECKER
+    
+    
     def __init__(self):
         self.database = None
 

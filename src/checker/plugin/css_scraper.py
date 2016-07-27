@@ -1,26 +1,36 @@
+from common import PluginType
 from bs4 import BeautifulSoup
 from yapsy.IPlugin import IPlugin
-import urllib
+
 
 class CssScraper(IPlugin):
+    
+    type = PluginType.CHECKER
+    
+    
     def __init__(self):
         self.database = None
+
 
     def setDb(self, DB):
         self.database = DB
 
+
     def getId(self):
         return "css_scraper"
+
 
     def check(self, transactionId, content):
         soup = BeautifulSoup(content, 'html.parser')
         self.internal(soup, transactionId)
         self.inlines(soup, transactionId)
 
+
     def internal(self, soup, transactionId):
         data = self.scan_internal(soup)
         if data is not None:
             self.process_internal(transactionId, data)
+
 
     def inlines(self, soup, transactionId):
         data = self.scan_inline(soup)
@@ -28,12 +38,14 @@ class CssScraper(IPlugin):
         for inline in data:
             self.process_inline(transactionId, inline)
 
+
     def scan_internal(self, soup):
         style = soup.find('style')
         if style is not None:
             return style.string
         else:
             return None
+
 
     def scan_inline(self, soup):
         inlines = []
@@ -45,6 +57,7 @@ class CssScraper(IPlugin):
                 pass
         return inlines
 
+
     #def push_db(self, transactionId, style, comment):
         #uri = self.database.getUri(transactionId)
         #reqId = self.database.setLink(transactionId, urllib.quote(uri.encode('utf-8')), 0)
@@ -52,6 +65,7 @@ class CssScraper(IPlugin):
         #self.database.setResponse(reqId, urllib.quote(uri.encode('utf-8')), 200, 'text/css', style)
         #else:
         #    print("Error inserting " + comment +" CSS for transaction "+str(transactionId))
+
 
     def process_internal(self, transactionId, style):
         #self.push_db(transactionId, style , "internal")
@@ -63,6 +77,7 @@ class CssScraper(IPlugin):
             self.database.setDefect(transactionId, 'seo:huge_internal', 0, size)
         return reqId
 
+
     def process_inline(self, transactionId, style):
         #self.push_db(transactionId, style, "inline")
         if style in self.inlines_seen:
@@ -71,6 +86,7 @@ class CssScraper(IPlugin):
             self.inlines_seen.add(style)
         # TODO: testovat na podretezec 
         # TODO: zkoumat id/classy, zda tam neni podretezec inline css
+
 
     def duplicit_inline(self, transactionId, style):
         self.database.setDefect(transactionId, 'seo:duplicit_inline', 0, style)
