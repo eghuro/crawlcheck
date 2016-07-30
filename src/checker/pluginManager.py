@@ -33,6 +33,8 @@ def main():
         s.scrap(cl.getEntryPoints(), cl.getUserAgent())
 
         logging.getLogger("yapsy").addHandler(logging.StreamHandler())
+        log = logging.getLogger("crawlcheck")
+        log.addHandler(logging.StreamHandler())
 
         # load plugins
         manager = PluginManager()
@@ -41,11 +43,11 @@ def main():
 
         plugins = []
         for pluginInfo in manager.getAllPlugins():
-            print(pluginInfo.name)
+            log.info(pluginInfo.name)
             plugins.append(pluginInfo.plugin_object)
 
         if len(plugins) == 0:
-            print("No plugins found")
+            log.info("No plugins found")
 
         runner = PluginRunner(cl.getDbconf(), cl.getUriAcceptor(),
                               cl.getTypeAcceptor(), cl.getMaxDepth(), cl.getUserAgent())

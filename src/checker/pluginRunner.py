@@ -5,6 +5,7 @@ from pluginDBAPI import DBAPI
 from plugin.common import PluginType, TypeError
 import marisa_trie
 from multiprocessing import Process
+import logging
 
 
 
@@ -23,6 +24,7 @@ class PluginRunner(object):
         self.__type_acceptor = typeAcceptor
         self.__max_depth = maxDepth
         self.__agent = agent
+        self.__log = logging.getLogger("crawlcheck")
 
 
     ### PUBLIC API ###
@@ -32,7 +34,7 @@ class PluginRunner(object):
         """ Run all transactions through all plugins where it's accepted.
         """
 
-        print("Running checker")
+        self.__log("Running checker")
         api = DBAPI(self.__dbconf)
         
         # initialization
@@ -69,7 +71,7 @@ class PluginRunner(object):
         info = api.getTransaction()
         
         while info.getId() != -1:
-            print("Processing "+info.getUri())
+            self.__log.info("Processing "+info.getUri())
             # uri is replaced by the longest prefix according to configuration
             prefix = self.__get_max_prefix(info.getUri())
             self.__run_transaction(plugins, info, prefix)
@@ -79,7 +81,10 @@ class PluginRunner(object):
 
     @staticmethod
     def __run_plugin(plugin, info):
+        log = logging.getLogger("crawlcheck")
+        log.info(plugin.getId() + " started checking " + info.getUri())
         plugin.check(info.getId(), info.getContent().encode('utf-8'))
+        log.info(plugin.getId() + " stopped checking " + info.getUri())
 
 
     def __run_transaction(self, plugins, info, prefix):
@@ -108,7 +113,7 @@ class PluginRunner(object):
             fakeTransaction.setUri(prefix)
 
             if self.__accept(plugin.getId(), fakeTransaction):
-                print(plugin.getId())
+                self.__log.info(plugin.getId())
                 
                 if plugin.type == PluginType.CRAWLER:
                     plugin.setDepth(info.getDepth())
