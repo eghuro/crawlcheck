@@ -19,6 +19,7 @@ class LinksFinder(IPlugin):
         self.trie = None
         self.uris = None
         self.uriTrie = None
+        self.agent = None
         self.maxDepth = 0  # unlimited
         self.depth = -1
 
@@ -44,6 +45,9 @@ class LinksFinder(IPlugin):
 
     def setMaxDepth(self, maxDepth):
         self.maxDepth = maxDepth
+
+    def setAgent(self, agent):
+        self.agent = agent
 
 
     def check(self, transactionId, content):
@@ -82,7 +86,7 @@ class LinksFinder(IPlugin):
     def getLink(self, url, reqId, srcId):
    
         try:
-             r, name = Network.getLink(url, reqId, srcId, self.database)
+             r, name = Network.getLink(url, reqId, srcId, self.database, self.agent)
              self.database.setResponse(reqId, r.url.encode('utf-8'), r.status_code, ct, name)
         except NetworkError, UrlError:
             self.database.setFinished(reqId)

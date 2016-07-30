@@ -30,7 +30,7 @@ def main():
 
         # download initial transactions
         s = Scraper(cl.getDbconf())
-        s.scrap(cl.getEntryPoints())
+        s.scrap(cl.getEntryPoints(), cl.getUserAgent())
 
         logging.getLogger("yapsy").addHandler(logging.StreamHandler())
 
@@ -48,7 +48,7 @@ def main():
             print("No plugins found")
 
         runner = PluginRunner(cl.getDbconf(), cl.getUriAcceptor(),
-                              cl.getTypeAcceptor(), cl.getMaxDepth())
+                              cl.getTypeAcceptor(), cl.getMaxDepth(), cl.getUserAgent())
 
         # verify
         runner.run(plugins)

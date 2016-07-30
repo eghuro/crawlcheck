@@ -28,19 +28,19 @@ class Network(object):
 
 
     @staticmethod
-    def getPage(uri, db):
-        return getLink(uri, -1, db) 
+    def getPage(uri, db, agent):
+        return getLink(uri, -1, db, agent) 
 
     @staticmethod
-    def getLink(url, srcId, db):
+    def getLink(url, srcId, db, agent):
 
         s = urlparse(url).scheme
         if s != 'http' and s != 'https':
             raise UrlError
 
         try:
-            ct = Network.check_headers(url, srcId, db)
-            r = Network.conditional_fetch(ct, url, db)
+            ct = Network.check_headers(url, srcId, db, agent)
+            r = Network.conditional_fetch(ct, url, db, agent)
             name = save_content(r.text)
             match, mime = test_content_type(ct, name)
             if not match:
@@ -62,9 +62,9 @@ class Network(object):
      
      
     @staticmethod
-    def check_headers(url, srcId, database):
+    def check_headers(url, srcId, database, agent):
         
-        r = requests.head(url)
+        r = requests.head(url, headers={ "user-agent": agent })
         if r.status_code >= 400:
             database.setDefect(srcId, "badlink", 0, url)
             raise StatusError(r.status_code)
@@ -82,7 +82,7 @@ class Network(object):
         return ct
     
     @staticmethod
-    def conditional_fetch(ct, url, database):
+    def conditional_fetch(ct, url, database, agent):
         
         type_condition = getMaxPrefix(ct) in self.types
         prefix_condition = getMaxPrefixUri(url) in self.uris
@@ -96,12 +96,12 @@ class Network(object):
             raise NetworkError
         
         else:
-            return fetch_response(url, reqId, ct, database)
+            return fetch_response(url, reqId, ct, database, agent)
 
     @staticmethod
-    def fetch_response(url, ct, database):
+    def fetch_response(url, ct, database, agent):
         
-        r = requests.get(url, allow_redirects=False)
+        r = requests.get(url, allow_redirects=False, headers = {"user-agent" : agent })
         #database.setResponse(reqId, r.url.encode('utf-8'), r.status_code, ct, r.text)
         return r
     

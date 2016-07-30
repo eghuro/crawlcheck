@@ -17,11 +17,12 @@ class PluginRunner(object):
     """
     
     
-    def __init__(self, dbconf, uriAcceptor, typeAcceptor, maxDepth):
+    def __init__(self, dbconf, uriAcceptor, typeAcceptor, maxDepth, agent):
         self.__dbconf = dbconf
         self.__uri_acceptor = uriAcceptor
         self.__type_acceptor = typeAcceptor
         self.__max_depth = maxDepth
+        self.__agent = agent
 
 
     ### PUBLIC API ###
@@ -53,6 +54,7 @@ class PluginRunner(object):
                 plugin.setTypes(self.__type_acceptor.getValues())
                 plugin.setUris(self.__uri_acceptor.getValues())
                 plugin.setMaxDepth(self.__max_depth)
+                plugin.setAgent(self.__agent)
             
             elif plugin.type == PluginType.CHECKER:
                 pass

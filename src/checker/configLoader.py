@@ -25,6 +25,7 @@ class ConfigLoader(object):
         self.entryPoints = []
         self.maxDepth = 0
         self.loaded = False
+        self.agent = "Crawlcheck/"+_VERSION
 
     def load(self, fname):
         """Loads configuration from YAML file.
@@ -73,12 +74,17 @@ class ConfigLoader(object):
             epSet = root['entryPoints']
             for ep in epSet:
                 self.entryPoints.append(ep)
+
+    def _set_user_agent(self, root):
+        if 'agent' in root:
+            self.agent = root['agent']
  
     def _set_up(self, root):
         self._dbconf.setDbname(root['database'])
 
         self._set_max_depth(root)
         self._set_entry_points(root)
+        self._set_user_agent(root)
 
         cts = 'content-types'
         ct = 'content-type'
@@ -159,5 +165,11 @@ class ConfigLoader(object):
         """
         if self.loaded:
             return self.maxDepth
+        else:
+            return None
+
+    def getUserAgent(self):
+        if self.loaded:
+            return self.agent
         else:
             return None

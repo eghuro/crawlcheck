@@ -5,12 +5,12 @@ class Scraper(object):
     def __init__(self, conf):
         self.__api = DBAPI(conf)
 
-    def scrap_one(self, uri):
+    def scrap_one(self, uri, agent):
         """ Download one page and insert it into transaction.
         """
         if not self.__api.gotLink(uri):
             try:
-                r, name = Network.getPage(uri, self.__api)
+                r, name = Network.getPage(uri, self.__api, agent)
 
                 print("Adding entry point: "+uri)
 
@@ -20,10 +20,10 @@ class Scraper(object):
             except NetworkError:
                 self.__api.setFinished(reqId)
 
-    def scrap(self, urilist):
+    def scrap(self, urilist, agent):
         """ Download a list of pages and insert them into database.
         """
         for uri in urilist:
             print(uri)
         for uri in urilist:
-            self.scrap_one(uri)
+            self.scrap_one(uri, agent)
