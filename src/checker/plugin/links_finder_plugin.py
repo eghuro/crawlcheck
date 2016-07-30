@@ -83,7 +83,8 @@ class LinksFinder(IPlugin):
    
         try:
              r = Network.getLink(url, reqId, srcId, self.database)
-             self.database.setResponse(reqId, r.url.encode('utf-8'), r.status_code, ct, r.text)
+             name = Network.save_content(r.text)
+             self.database.setResponse(reqId, r.url.encode('utf-8'), r.status_code, ct, name)
         except NetworkError, UrlError:
             self.database.setFinished(reqId)
    

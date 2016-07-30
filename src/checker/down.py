@@ -15,8 +15,9 @@ class Scraper(object):
                 print("Adding entry point: "+uri)
 
                 #set request using DBAPI
+		name = Network.save_content(r.text)
                 reqId = self.__api.setRequest(uri, str(r.status_code), 
-                                      r.headers["Content-Type"], r.text)
+                                      r.headers["Content-Type"], name)
             except NetworkError:
                 self.__api.setFinished(reqId)
 

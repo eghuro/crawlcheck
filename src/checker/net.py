@@ -1,6 +1,9 @@
 import requests
 from requests.exceptions import InvalidSchema, ConnectionError, MissingSchema
 from urlparse import urlparse
+import os
+import tempfile
+
 
 
 class NetworkError(Exception):
@@ -112,3 +115,10 @@ class Network(object):
             return prefList[-1]
         else:
             return uri
+
+    @staticmethod
+    def save_content(self, content):
+        with tempfile.TemporaryFile() as tmp:
+            tmp.write(content)
+            name = tmp.name
+        return name

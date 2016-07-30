@@ -22,7 +22,7 @@ CREATE TABLE transactions (
   uri VARCHAR(255) NOT NULL,
   responseStatus INTEGER,
   contentType VARCHAR(255),
-  content TEXT,
+  content VARCHAR(255),
   verificationStatusId INTEGER,
   origin VARCHAR(255),
   depth INTEGER NOT NULL,
