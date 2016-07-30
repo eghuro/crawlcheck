@@ -3,6 +3,7 @@ from requests.exceptions import InvalidSchema, ConnectionError, MissingSchema
 from urlparse import urlparse
 import os
 import tempfile
+import magic
 
 
 
@@ -39,7 +40,12 @@ class Network(object):
 
         try:
             ct = Network.check_headers(url, srcId, db)
-            return Network.conditional_fetch(ct, url, db)
+            r = Network.conditional_fetch(ct, url, db)
+            name = save_content(r.text)
+            match, mime = test_content_type(ct, name)
+            if not match:
+                database.setDefect(reqId, "type-mishmash", 0, mime)
+            return r, name
             
         except InvalidSchema as e:
             print("Invalid schema")
@@ -72,6 +78,7 @@ class Network(object):
 
         if not ct.strip():
             database.setDefect(reqId, "badtype", 0, url)
+
         return ct
     
     @staticmethod
@@ -122,3 +129,8 @@ class Network(object):
             tmp.write(content)
             name = tmp.name
         return name
+
+    @staticmethod
+    def test_content_type(self, ctype, fname):
+        mime = magic.from_file(fname, mime=True)
+        return (mime == ctype), mime

@@ -10,12 +10,11 @@ class Scraper(object):
         """
         if not self.__api.gotLink(uri):
             try:
-                r = Network.getPage(uri, self.__api)
+                r, name = Network.getPage(uri, self.__api)
 
                 print("Adding entry point: "+uri)
 
                 #set request using DBAPI
-		name = Network.save_content(r.text)
                 reqId = self.__api.setRequest(uri, str(r.status_code), 
                                       r.headers["Content-Type"], name)
             except NetworkError:

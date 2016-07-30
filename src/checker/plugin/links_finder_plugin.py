@@ -82,8 +82,7 @@ class LinksFinder(IPlugin):
     def getLink(self, url, reqId, srcId):
    
         try:
-             r = Network.getLink(url, reqId, srcId, self.database)
-             name = Network.save_content(r.text)
+             r, name = Network.getLink(url, reqId, srcId, self.database)
              self.database.setResponse(reqId, r.url.encode('utf-8'), r.status_code, ct, name)
         except NetworkError, UrlError:
             self.database.setFinished(reqId)
