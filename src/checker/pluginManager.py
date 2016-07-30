@@ -9,12 +9,20 @@ from configLoader import ConfigLoader
 from down import Scraper
 
 import logging
+import signal
 import sys
+
+
+def signal_handler(signal, frame):
+    print("Interrupted, bye")
+    sys.exit(0)
 
 
 def main():
     """ Load configuration, find plugins, run plugin runner.
     """
+    signal.signal(signal.SIGINT, signal_handler)
+
     if len(sys.argv) == 2:
         # load configuration
         cl = ConfigLoader()
