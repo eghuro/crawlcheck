@@ -84,7 +84,7 @@ class LinksFinder(IPlugin):
         try:
              r = Network.getLink(url, reqId, srcId, self.database)
              self.database.setResponse(reqId, r.url.encode('utf-8'), r.status_code, ct, r.text)
-        except NetworkError:
+        except NetworkError, UrlError:
             self.database.setFinished(reqId)
    
    
@@ -107,13 +107,16 @@ class LinksFinder(IPlugin):
             url = link.get(tag)
             
             if url is not None:
+                p = urlparse(url)
+                if p.scheme != 'http' and p.scheme != 'https':
+                    continue #check only HTTP(S) - no FTP, MAILTO, etc.
+
                 urlNoAnchor = url.split('#')[0]
 
                 addr = urllib.quote(urlNoAnchor.encode('utf-8'))
                 reqId = self.database.setLink(transactionId, addr, self.depth+1)
                 self.database.setScriptParams(transactionId, addr, 'GET',
-                                              parse_qs(urlparse(url).query, 
-                                                       True)) 
+                                              parse_qs(p.query, True)) 
  
                 if self.really_get_link(reqId):
                     self.getLink(url, reqId, transactionId)

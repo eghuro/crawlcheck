@@ -1,9 +1,15 @@
 import requests
 from requests.exceptions import InvalidSchema, ConnectionError, MissingSchema
+from urlparse import urlparse
 
 
 class NetworkError(Exception):
     pass
+
+
+class UrlError(Exception):
+    pass
+
 
 class StatusError(NetworkError):
 
@@ -23,7 +29,11 @@ class Network(object):
 
     @staticmethod
     def getLink(url, srcId, db):
-    
+
+        s = urlparse(url).scheme
+        if s != 'http' and s != 'https':
+            raise UrlError
+
         try:
             ct = Network.check_headers(url, srcId, db)
             return Network.conditional_fetch(ct, url, db)
