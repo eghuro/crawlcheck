@@ -32,7 +32,7 @@ class Network(object):
             print("Invalid schema")
             raise NetworkError(e)
         except ConnectionError as e:
-            print("Connection error")
+            print("Connection error: {0}", format(e))
             raise NetworkError(e)
         except MissingSchema as e:
             print("Missing schema")
