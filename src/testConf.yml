@@ -25,5 +25,8 @@ urls:
        - css_scraper
        - formChecker
 
+ -
+    url: "http://mj.ucw.cz/" # Zakaz
+
 entryPoints:
  - "http://mj.ucw.cz/vyuka/"
