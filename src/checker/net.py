@@ -16,17 +16,12 @@ class StatusError(NetworkError):
 
 class Network(object):
 
-
-    @staticmethod
-    def getPage(uri, db):
-        return getLink(uri, -1, db) 
-
     @staticmethod
     def getLink(url, srcId, db):
     
         try:
             ct = Network.check_headers(url, srcId, db)
-            return Network.conditional_fetch(ct, url, db)
+            return Network.conditional_fetch(ct, url)
             
         except InvalidSchema as e:
             print("Invalid schema")
@@ -62,7 +57,7 @@ class Network(object):
         return ct
     
     @staticmethod
-    def conditional_fetch(ct, url, database):
+    def conditional_fetch(ct, url):
         
         type_condition = getMaxPrefix(ct) in self.types
         prefix_condition = getMaxPrefixUri(url) in self.uris
@@ -76,13 +71,12 @@ class Network(object):
             raise NetworkError
         
         else:
-            return fetch_response(url, reqId, ct, database)
+            return fetch_response(url, reqId, ct)
 
     @staticmethod
-    def fetch_response(url, ct, database):
+    def fetch_response(url, ct):
         
         r = requests.get(url, allow_redirects=False)
-        #database.setResponse(reqId, r.url.encode('utf-8'), r.status_code, ct, r.text)
         return r
     
     @staticmethod

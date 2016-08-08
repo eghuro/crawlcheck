@@ -77,15 +77,7 @@ class LinksFinder(IPlugin):
 
     def getId(self):
         return "linksFinder"
-
-
-    def getLink(self, url, reqId, srcId):
-   
-        try:
-             r = Network.getLink(url, reqId, srcId, self.database)
-             self.database.setResponse(reqId, r.url.encode('utf-8'), r.status_code, ct, r.text)
-        except NetworkError:
-            self.database.setFinished(reqId)
+       self.database.setFinished(reqId)
    
    
     def make_links_absolute(self, soup, url, tagL):
@@ -113,11 +105,4 @@ class LinksFinder(IPlugin):
                 reqId = self.database.setLink(transactionId, addr, self.depth+1)
                 self.database.setScriptParams(transactionId, addr, 'GET',
                                               parse_qs(urlparse(url).query, 
-                                                       True)) 
- 
-                if self.really_get_link(reqId):
-                    self.getLink(url, reqId, transactionId)
-
-
-    def really_get_link(self, reqId):
-        return (reqId != -1) and (self.maxDepth == 0 or self.depth < self.maxDepth)
+                                                       True))
