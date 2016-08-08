@@ -9,9 +9,15 @@ class Core:
         self.plugins = plugins
 
     def initialize(self, uriAcceptor, typeAcceptor, db, entryPoints, maxDepth):
-        self.queue = Queue(db)
-        self.rack = Rack(self.plugins, uriAcceptor, typeAcceptor)
         self.db = DBAPI(db)
+
+        self.queue = Queue(self.db)
+	self.queue.load()
+
+        self.journal = Journal(self.db)
+        self.journal.load()
+
+        self.rack = Rack(self.plugins, uriAcceptor, typeAcceptor)
         self.uriAcceptor = uriAcceptor
 
         for entryPoint in entryPoints:
@@ -32,7 +38,8 @@ class Core:
             self.db.setFinished(transaction.trId, VerificationStatus.done_ok) #TODO journal
 
     def finalize(self):
-        pass
+        self.queue.store()
+        self.journal.store()
 
     def __initializePlugin(self, plugin, typeAcceptor, uriAcceptor, maxDepth):
         plugin.setDb(self.db)
@@ -119,13 +126,32 @@ class Rack:
 class Queue:
 
     def __init__(self, db):
-        pass
+        self.db = db
 
     def isEmpty(self):
         pass
 
     def pop(self):
         pass
+        
 
     def push(self, transaction, parent=None):
+        pass
+
+    def load(self):
+        pass
+
+    def store(self):
+        pass
+
+class Journal:
+
+
+    def __init__(self, db):
+        pass
+
+    def load(self):
+        pass
+
+    def store(self):
         pass
