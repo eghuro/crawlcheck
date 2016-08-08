@@ -40,19 +40,12 @@ class Acceptor(object):
         self.uriDefault = dict()
         self.uris = set()
 
-    def accept(self, pluginId, uri):
+    def accept(self, transaction, pluginId):
         """ Does a plugin accept an URI?
         Main API method, that runs a resolution algorithm.
-
-        Args:
-            pluginId: pluign identifier
-            URI: transaction's URI
-
-        Returns:
-           True if a plugin should check a transaction with URI given.
-           False otherwise
         """
-        return self.resolvePluginAcceptValue(pluginId, uri)
+
+        return self.resolvePluginAcceptValue(pluginId, transaction.uri)
 
     def resolvePluginAcceptValue(self, pluginId, uri):
         res = self.pluginAcceptValue(pluginId, uri)

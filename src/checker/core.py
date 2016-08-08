@@ -1,5 +1,5 @@
 import marisa_trie
-from pluginDBAPI import DBAPI
+from pluginDBAPI import DBAPI, VerificationStatus
 from plugin.common import PluginType, PluginTypeError
 
 
@@ -24,13 +24,12 @@ class Core:
         while not self.queue.isEmpty():
             transaction = self.queue.pop()
             try:
-                transaction.loadResponse(self.uriAcceptor, self.db) #DB potrebuji pro zapsani pripadnych defektu
+                transaction.loadResponse(self.uriAcceptor, self.db) #DB potrebuji pro zapsani pripadnych defektu, TODO journal
                 self.rack.run(transaction)
-            except TouchException:
+            except TouchException, NetworkError:
+                self.db.setFinished(transaction.trId, VerificationStatus.done_ko) #TODO journal
                 raise
-            except NetworkError:
-                raise
-            #nastavit setFinished, refaktorovat na stavy: neprobehlo, probiha, probehlo uspesne, probehlo neuspesne
+            self.db.setFinished(transaction.trId, VerificationStatus.done_ok) #TODO journal
 
     def finalize(self):
         pass
@@ -65,6 +64,7 @@ class Transaction:
        self.type = None
        self.file = None
        self.srcId = srcId
+       self.trId = -1 #TODO
 
    def loadResponse(self, uriAcceptor, db):
        if self.isTouchable(uriAcceptor):
@@ -102,13 +102,19 @@ class Rack:
 
     def run(self, transaction):
         for plugin in self.plugins:
-            if self.typeAcceptor.accept(transaction, plugin) and self.uriAcceptor.accept(transaction, plugin): #TODO: acceptory si zavolaji getMaxPrefix(), pouzivaji transaction
+            fakeTransaction = transaction
+            fakeTransaction.uri = transaction.getMaxPrefix(uriAcceptor)
+            if self.__accept(fakeTransaction, plugin):
                 if plugin.type == PluginType.CRAWLER:
                     plugin.setDepth(transaction.depth)
                 plugin.check(transaction) #TODO: plugin nepouziva novou transaction, ale stare DBAPI->transaction info
+                #  plugin.check(info.getId(), info.getContent().encode('utf-8'))
 
     def insert(self, plugin):
         self.plugins.append(plugin)
+
+    def __accept(fakeTransaction, plugin):
+        return self.typeAcceptor.accept(fakeTransaction, plugin.getId()) and self.uriAcceptor.accept(fakeTransaction, plugin.getId())
 
 class Queue:
 

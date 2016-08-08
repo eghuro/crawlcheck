@@ -5,7 +5,7 @@ Parameters of connection to the database are set in DBAPIConfiguration
 """
 
 import sqlite3 as mdb
-#import urllib
+from enum import Enum
 
 try:
     from urllib.parse import unquote
@@ -73,6 +73,12 @@ class TransactionInfo(object):
     def getDepth(self):
         return self.depth
 
+class VerificationStatus(Enum):
+
+    detected = 1
+    processing = 2
+    done_ok = 3
+    done_ko = 4
 
 class Connector(object):
     def __init__(self, conf):
@@ -293,14 +299,17 @@ class DBAPI(object):
     def getProcessingStatusId():
         return 4
 
-    def setFinished(self, transactionId):
+    def setFinished(self, transactionId, status):
         """ Mark in the database that we are done with verification of a
             particular transaction.
 
             Return: True, if change was made, false if MySQL error occured
         """
         try:
-            statusId = DBAPI.getFinishedStatusId()
+            if status is VerificationStatus.done_ok:
+                statusId = 5
+            elif status is VerificationStatus.done_ko:
+                statusIs = 6
             query = ('UPDATE transactions SET verificationStatusId = ? '
                      ' WHERE id = ?')
             self.con.get_cursor().execute(query, [str(statusId), str(transactionId)])

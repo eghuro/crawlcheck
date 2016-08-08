@@ -118,7 +118,8 @@ INSERT INTO verificationStatus(id, status) VALUES (1, "REQUESTED");
 INSERT INTO verificationStatus(id, status) VALUES (2, "RETRIEVING");
 INSERT INTO verificationStatus(id, status) VALUES (3, "RESPONDED");
 INSERT INTO verificationStatus(id, status) VALUES (4, "PROCESSING");
-INSERT INTO verificationStatus(id, status) VALUES (5, "FINISHED");
+INSERT INTO verificationStatus(id, status) VALUES (5, "FINISHED - OK");
+INSERT INTO verificationStatus(id, status) VALUES (6, "FINISHED - ERRORS");
 
 INSERT INTO defectType(type, description) VALUES ("badlink", "Invalid link");
 INSERT INTO defectType(type, description) VALUES ("stylesheet", "Stylesheet error");
