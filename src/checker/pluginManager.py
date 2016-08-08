@@ -35,7 +35,7 @@ def main():
             print("No plugins found")
 
         core = Core(plugins)
-        core.initialize(cl.getUriAcceptor(), cl.getTypeAcceptor(), cl.getDbconf(), cl.getEntryPoints())
+        core.initialize(cl.getUriAcceptor(), cl.getTypeAcceptor(), cl.getDbconf(), cl.getEntryPoints(), cl.getMaxDepth())
         core.run()
         core.finalize()
     else:

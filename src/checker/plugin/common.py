@@ -7,7 +7,7 @@ class PluginType(Enum):
     
     
     
-class TypeError(Exception):
+class PluginTypeError(Exception):
 
     def __str__(self):
         return "Unknown plugin type"
