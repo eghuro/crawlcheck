@@ -1,5 +1,6 @@
 import requests
 from requests.exceptions import InvalidSchema, ConnectionError, MissingSchema
+from core import Defect
 
 
 class NetworkError(Exception):
@@ -17,10 +18,10 @@ class StatusError(NetworkError):
 class Network(object):
 
     @staticmethod
-    def getLink(url, srcId, db):
+    def getLink(urlToFetch, srcTransaction, journal):
     
         try:
-            ct = Network.check_headers(url, srcId, db)
+            ct = Network.check_headers(urlToFetch, srcTransaction, journal)
             return Network.conditional_fetch(ct, url)
             
         except InvalidSchema as e:
@@ -38,11 +39,11 @@ class Network(object):
      
      
     @staticmethod
-    def check_headers(url, srcId, database):
+    def check_headers(url, srcTransaction, journal):
         
         r = requests.head(url)
         if r.status_code >= 400:
-            database.setDefect(srcId, "badlink", 0, url)
+            journal.foundDefect(srcTransaction, Defect("badlink", url))
             raise StatusError(r.status_code)
 
         if 'content-type' in r.headers.keys():
@@ -53,7 +54,7 @@ class Network(object):
             ct = ''
 
         if not ct.strip():
-            database.setDefect(reqId, "badtype", 0, url)
+            journal.foundDefect(srcTransaction, Defect("badtype", url))
         return ct
     
     @staticmethod

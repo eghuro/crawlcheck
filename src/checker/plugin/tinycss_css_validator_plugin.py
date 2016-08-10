@@ -9,22 +9,22 @@ class CssValidator(IPlugin):
     
     
     def __init__(self):
-        self.database = None
+        self.journal = None
 
-    def setDb(self, DB):
-        self.database = DB
+    def setJournal(self, journal):
+        self.journal = journal
 
     def getId(self):
         return "tinycss"
 
-    def check(self, transactionId, content):
+    def check(self, transaction):
         """Pusti validator, ulozi chyby.
         """
         try:
             parser = tinycss.make_parser('page3')
-            stylesheet = parser.parse_stylesheet(content)
+            stylesheet = parser.parse_stylesheet(transaction.getContent())
             for error in stylesheet.errors:
-                self.database.setDefect(transactionId, "stylesheet", error.line, error.reason)
+                self.journal.foundDefect(transaction, ["stylesheet", error.line, error.reason])
         except UnicodeDecodeError:
             print("Error")
         return

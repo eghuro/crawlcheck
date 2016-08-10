@@ -13,18 +13,19 @@ class PyW3C_HTML_Validator(IPlugin):
     
     def __init__(self):
         self.validator = HTMLValidator()
-        self.database = None
+        self.journal = None
 
-    def setDb(self, DB):
-        self.database = DB
+    def setJournal(self, journal):
+        self.journal = journal
 
-    def check(self, transactionId, content):
+    def check(self, transaction):
         """ Pusti validator, ulozi chyby a varovani.
         """
+        content = transaction.getContent()
         try:
             self.validator.validate_fragment(content)
-            self.check_errors(transactionId)
-            self.check_warnings(transactionId)
+            self.check_errors(transaction)
+            self.check_warnings(transaction)
             time.sleep(3)
         except ValidationFault as e:
             print("Validation fault")
@@ -42,14 +43,13 @@ class PyW3C_HTML_Validator(IPlugin):
     def transformMessageId(self, mid, mtype):
         return self.getId()+":"+mtype+":"+mid
 
-    def check_errors(self, transactionId):
-        self.check_defects(transactionId, self.validator.errors, "err")
+    def check_errors(self, transaction):
+        self.check_defects(transaction, self.validator.errors, "err")
 
-    def check_warnings(self, transactionId):
-        self.check_defects(transactionId, self.validator.warnings, "warn")
+    def check_warnings(self, transaction):
+        self.check_defects(transaction, self.validator.warnings, "warn")
 
-    def check_defects(self, transactionId, defects, message):
+    def check_defects(self, transaction, defects, message):
         for defect in defects:
             mid = self.transformMessageId(defect['messageid'], message)
-            self.database.putNewDefectType(mid, defect['message'])
-            self.database.setDefect(transactionId, mid, defect['line'], defect['source'])
+            self.journal.foundDefect(transaction, [mid, defect['message'], defect['line'], defect['source']] #TODO: refactor DB?

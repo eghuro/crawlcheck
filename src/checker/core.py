@@ -10,6 +10,7 @@ class Core:
 
     def initialize(self, uriAcceptor, typeAcceptor, db, entryPoints, maxDepth):
         self.db = DBAPI(db)
+        self.uriAcceptor = uriAcceptor
 
         self.queue = Queue(self.db)
 	self.queue.load()
@@ -18,7 +19,6 @@ class Core:
         self.journal.load()
 
         self.rack = Rack(self.plugins, uriAcceptor, typeAcceptor)
-        self.uriAcceptor = uriAcceptor
 
         for entryPoint in entryPoints:
             self.queue.push(Transaction(entryPoint, 0))
@@ -30,25 +30,24 @@ class Core:
         while not self.queue.isEmpty():
             transaction = self.queue.pop()
             try:
-                transaction.loadResponse(self.uriAcceptor, self.db) #DB potrebuji pro zapsani pripadnych defektu, TODO journal
+                transaction.loadResponse(self.uriAcceptor, self.journal)
                 self.rack.run(transaction)
             except TouchException, NetworkError:
-                self.db.setFinished(transaction.trId, VerificationStatus.done_ko) #TODO journal
+                self.journal.stopChecking(transaction, VerificationStatus.done_ko)
                 raise
-            self.db.setFinished(transaction.trId, VerificationStatus.done_ok) #TODO journal
+            self.journal.stopChecking(transaction, VerificationStatus.done_ok)
 
     def finalize(self):
         self.queue.store()
         self.journal.store()
 
     def __initializePlugin(self, plugin, typeAcceptor, uriAcceptor, maxDepth):
-        plugin.setDb(self.db)
+        plugin.setJournal(self.journal)
 
         # TODO: refactor to be more Pythonic
         if plugin.type == PluginType.CRAWLER:
             plugin.setTypes(typeAcceptor.getValues())
             plugin.setUris(uriAcceptor.getValues())
-            plugin.setMaxDepth(maxDepth)
             
         elif plugin.type == PluginType.CHECKER:
             pass
@@ -73,14 +72,17 @@ class Transaction:
        self.srcId = srcId
        self.trId = -1 #TODO
 
-   def loadResponse(self, uriAcceptor, db):
+   def loadResponse(self, uriAcceptor, journal):
        if self.isTouchable(uriAcceptor):
            try:
-               self.type, self.file = Network.getLink(self.uri, self.srcId, db)
+               self.type, self.file = Network.getLink(self.uri, self, journal)
            except NetworkError:
                raise
        else:
            raise TouchException()
+
+   def getContent(self):
+        return "" #info.getContent().encode('utf-8')
 
    def isTouchable(self, uriAcceptor):
        return uriAcceptor.defaultAcceptValue(self.uri) != Resolution.no
@@ -112,10 +114,7 @@ class Rack:
             fakeTransaction = transaction
             fakeTransaction.uri = transaction.getMaxPrefix(uriAcceptor)
             if self.__accept(fakeTransaction, plugin):
-                if plugin.type == PluginType.CRAWLER:
-                    plugin.setDepth(transaction.depth)
-                plugin.check(transaction) #TODO: plugin nepouziva novou transaction, ale stare DBAPI->transaction info
-                #  plugin.check(info.getId(), info.getContent().encode('utf-8'))
+                plugin.check(transaction)
 
     def insert(self, plugin):
         self.plugins.append(plugin)
@@ -132,8 +131,7 @@ class Queue:
         pass
 
     def pop(self):
-        pass
-        
+        pass  
 
     def push(self, transaction, parent=None):
         pass
@@ -148,10 +146,30 @@ class Journal:
 
 
     def __init__(self, db):
-        pass
+        self.db = db
 
     def load(self):
         pass
 
     def store(self):
         pass
+
+    def startChecking(self, transaction):
+        pass
+
+    def stopChecking(self, transaction, status):
+        pass
+
+    def foundLink(self, transaction, link):
+        pass
+
+    def foundDefect(self, transaction, defect):
+        pass
+
+class Defect:
+
+
+    def __init__(self, name, additional):
+        self.name = name
+        self.additional = additional
+
