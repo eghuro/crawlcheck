@@ -14,6 +14,7 @@ class Core:
         self.db = DBAPI(db)
         self.uriAcceptor = uriAcceptor
         self.agent = agent
+        self.maxDepth = maxDepth
 
         self.queue = Queue(self.db)
 	self.queue.load()
@@ -27,11 +28,15 @@ class Core:
             self.queue.push(Transaction(entryPoint, 0))
 
         for plugin in self.plugins:
-            self.__initializePlugin(plugin, typeAcceptor, uriAcceptor) #TODO: maxDepth not checked?
+            self.__initializePlugin(plugin, typeAcceptor, uriAcceptor)
 
     def run(self):
         while not self.queue.isEmpty():
             transaction = self.queue.pop()
+
+            if transaction.depth > self.maxDepth:
+                continue #skip
+
             self.log.info("Processing "+transaction.uri)
             try:
                 transaction.loadResponse(self.uriAcceptor, self.journal, self.agent)
@@ -52,6 +57,7 @@ class Core:
         if plugin.type == PluginType.CRAWLER:
             plugin.setTypes(typeAcceptor.getValues())
             plugin.setUris(uriAcceptor.getValues())
+            plugin.setQueue(self.queue)
             
         elif plugin.type == PluginType.CHECKER:
             pass
@@ -73,8 +79,6 @@ class Transaction:
        self.depth = depth
        self.type = None
        self.file = None
-       self.srcId = srcId
-       self.trId = -1 #TODO
 
    def loadResponse(self, uriAcceptor, journal, agent):
        if self.isTouchable(uriAcceptor):
@@ -165,9 +169,6 @@ class Journal:
         pass
 
     def stopChecking(self, transaction, status):
-        pass
-
-    def foundLink(self, transaction, link):
         pass
 
     def foundDefect(self, transaction, defect):

@@ -1,4 +1,5 @@
 from common import PluginType
+from core import Transaction
 from yapsy.IPlugin import IPlugin
 from bs4 import BeautifulSoup
 import urlparse
@@ -9,10 +10,13 @@ class Form_Checker(IPlugin):
     id = "formChecker"
 
     def __init__(self):
-        self.journal = None
+        self.queue = None
 
     def setJournal(self, journal):
-        self.journal = journal
+        pass
+
+    def setQueue(self, queue):
+        self.queue = queue
 
     def check(self, transaction):
         soup = BeautifulSoup(transaction.getContent(), 'html.parser')
@@ -25,7 +29,7 @@ class Form_Checker(IPlugin):
         action = self.get_action(form, transactionId)
         params = self.get_params(form)
 
-        self.journal.foundLink(transaction, action)
+        self.queue.push(Transaction(action, transaction.depth+1), transaction)
         #self.database.setScript(transactionId, action, method, params)
         # TODO: script
         # TODO: params

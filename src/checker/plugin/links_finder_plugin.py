@@ -1,10 +1,10 @@
 from common import PluginType
+from core import Transaction
 from bs4 import BeautifulSoup
 from yapsy.IPlugin import IPlugin
 from urlparse import urlparse, parse_qs, urljoin
 import urllib
 import marisa_trie
-from net import Network
 
 
 
@@ -15,7 +15,7 @@ class LinksFinder(IPlugin):
     
     
     def __init__(self):
-        self.journal = None
+        self.queue = None
         self.types = None
         self.trie = None
         self.uris = None
@@ -23,7 +23,11 @@ class LinksFinder(IPlugin):
 
 
     def setJournal(self, journal):
-        self.journal = journal
+        pass
+
+
+    def setQueue(self, queue):
+        self.queue = queue
 
 
     def setTypes(self, types):
@@ -92,5 +96,5 @@ class LinksFinder(IPlugin):
                 urlNoAnchor = url.split('#')[0]
 
                 addr = urllib.quote(urlNoAnchor.encode('utf-8'))
-                self.journal.foundLink(transaction, addr)
+                self.queue.push(Transaction(addr,transaction.depth+1), transaction) #TODO: refactor
                 #TODO: scriptParams?
