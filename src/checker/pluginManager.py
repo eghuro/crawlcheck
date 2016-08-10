@@ -9,11 +9,19 @@ from core import Core
 
 import logging
 import sys
+import signal
 
+
+def handler(signum, frame):
+    core.finalize()
+    sys.exit(1)
 
 def main():
     """ Load configuration, find plugins, run core.
     """
+    global core
+    signal.signal(signal.SIGINT, handler)
+
     if len(sys.argv) == 2:
         # load configuration
         cl = ConfigLoader()
