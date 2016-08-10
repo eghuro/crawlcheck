@@ -120,7 +120,7 @@ class Rack:
         self.plugins.append(plugin)
 
     def __accept(fakeTransaction, plugin):
-        return self.typeAcceptor.accept(fakeTransaction, plugin.getId()) and self.uriAcceptor.accept(fakeTransaction, plugin.getId())
+        return self.typeAcceptor.accept(fakeTransaction, plugin.id) and self.uriAcceptor.accept(fakeTransaction, plugin.id)
 
 class Queue:
 

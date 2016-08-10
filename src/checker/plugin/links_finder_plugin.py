@@ -11,6 +11,7 @@ from net import Network
 class LinksFinder(IPlugin):
 
     type = PluginType.CRAWLER
+    id = "linksFinder"
     
     
     def __init__(self):
@@ -63,10 +64,6 @@ class LinksFinder(IPlugin):
 
         self.check_links(images, transaction, attr)
         return
-
-
-    def getId(self):
-        return "linksFinder"
    
    
     def make_links_absolute(self, soup, url, tagL):

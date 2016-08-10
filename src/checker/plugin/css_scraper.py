@@ -6,6 +6,7 @@ from yapsy.IPlugin import IPlugin
 class CssScraper(IPlugin):
     
     type = PluginType.CHECKER
+    id = "css_scraper"
     
     
     def __init__(self):
@@ -14,10 +15,6 @@ class CssScraper(IPlugin):
 
     def setJournal(self, journal):
         self.journal = journal
-
-
-    def getId(self):
-        return "css_scraper"
 
 
     def check(self, transaction):

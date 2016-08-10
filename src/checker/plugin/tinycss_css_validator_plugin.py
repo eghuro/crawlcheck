@@ -6,6 +6,7 @@ from yapsy.IPlugin import IPlugin
 class CssValidator(IPlugin):
     
     type = PluginType.CHECKER
+    id = "tinycss"
     
     
     def __init__(self):
@@ -13,9 +14,6 @@ class CssValidator(IPlugin):
 
     def setJournal(self, journal):
         self.journal = journal
-
-    def getId(self):
-        return "tinycss"
 
     def check(self, transaction):
         """Pusti validator, ulozi chyby.

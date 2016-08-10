@@ -9,6 +9,7 @@ import time
 class PyW3C_HTML_Validator(IPlugin):
     
     type = PluginType.CHECKER
+    id = "htmlValidator"
     
     
     def __init__(self):
@@ -36,9 +37,6 @@ class PyW3C_HTML_Validator(IPlugin):
         except Exception as e:
             print("Unexpected problem: "+str(type(e)))
         return
-
-    def getId(self):
-        return "htmlValidator"
 
     def transformMessageId(self, mid, mtype):
         return self.getId()+":"+mtype+":"+mid
