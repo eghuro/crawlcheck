@@ -1,10 +1,19 @@
 import requests
 from requests.exceptions import InvalidSchema, ConnectionError, MissingSchema
 from core import Defect
+from urlparse import urlparse
+import os
+import tempfile
+import magic
 
 
 class NetworkError(Exception):
     pass
+
+
+class UrlError(Exception):
+    pass
+
 
 class StatusError(NetworkError):
 
@@ -17,18 +26,29 @@ class StatusError(NetworkError):
 
 class Network(object):
 
+    __allowed_schemas = ['http', 'https']
+
     @staticmethod
-    def getLink(urlToFetch, srcTransaction, journal):
+    def getLink(urlToFetch, srcTransaction, journal, agent):
     
+        s = urlparse(urlToFetch).scheme
+        if s not in Network.__allowed_schemas:
+            raise UrlError(s)
+
         try:
-            ct = Network.check_headers(urlToFetch, srcTransaction, journal)
-            return Network.conditional_fetch(ct, url)
+            ct = Network.check_headers(urlToFetch, srcTransaction, journal, agent)
+            r = Network.conditional_fetch(ct, url, agent)
+            name = save_content(r.text)
+            match, mime = test_content_type(ct, name)
+            if not match:
+                journal.foundDefect(srcTransaction, Defect("type-mishmash", mime))
+            return r, name
             
         except InvalidSchema as e:
             print("Invalid schema")
             raise NetworkError(e)
         except ConnectionError as e:
-            print("Connection error")
+            print("Connection error: {0}", format(e))
             raise NetworkError(e)
         except MissingSchema as e:
             print("Missing schema")
@@ -39,9 +59,9 @@ class Network(object):
      
      
     @staticmethod
-    def check_headers(url, srcTransaction, journal):
+    def check_headers(url, srcTransaction, journal, agent):
         
-        r = requests.head(url)
+        r = requests.head(url, headers={ "user-agent": agent })
         if r.status_code >= 400:
             journal.foundDefect(srcTransaction, Defect("badlink", url))
             raise StatusError(r.status_code)
@@ -58,7 +78,7 @@ class Network(object):
         return ct
     
     @staticmethod
-    def conditional_fetch(ct, url):
+    def conditional_fetch(ct, url, agent):
         
         type_condition = getMaxPrefix(ct) in self.types
         prefix_condition = getMaxPrefixUri(url) in self.uris
@@ -72,12 +92,12 @@ class Network(object):
             raise NetworkError
         
         else:
-            return fetch_response(url, reqId, ct)
+            return fetch_response(url, agent)
 
     @staticmethod
-    def fetch_response(url, ct):
+    def fetch_response(url, agent):
         
-        r = requests.get(url, allow_redirects=False)
+        r = requests.get(url, allow_redirects=False, headers = {"user-agent" : agent })
         return r
     
     @staticmethod
@@ -97,3 +117,15 @@ class Network(object):
             return prefList[-1]
         else:
             return uri
+
+    @staticmethod
+    def save_content(self, content):
+        with tempfile.TemporaryFile() as tmp:
+            tmp.write(content)
+            name = tmp.name
+        return name
+
+    @staticmethod
+    def test_content_type(self, ctype, fname):
+        mime = magic.from_file(fname, mime=True)
+        return (mime == ctype), mime

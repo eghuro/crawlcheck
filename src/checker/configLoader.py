@@ -19,12 +19,13 @@ class ConfigLoader(object):
     _VERSION = 1.01
 
     def __init__(self):
-        self._dbconf = DBAPIconfiguration()
+        self.__dbconf = DBAPIconfiguration()
         self.typeAcceptor = None
         self.uriAcceptor = None
         self.entryPoints = []
         self.maxDepth = 0
         self.loaded = False
+        self.agent = "Crawlcheck/"+_VERSION
 
     def load(self, fname):
         """Loads configuration from YAML file.
@@ -32,22 +33,22 @@ class ConfigLoader(object):
         cfile = open(fname)
         root = yaml.safe_load(cfile)
 
-        db_check = ConfigLoader._db_check(root)
-        version_check = self._version_check(root)
+        db_check = ConfigLoader.__db_check(root)
+        version_check = self.__version_check(root)
         if db_check and version_check:
-            self.loaded = self._set_up(root)
+            self.loaded = self.__set_up(root)
         
         cfile.close()
 
     @staticmethod
-    def _db_check(root):
+    def __db_check(root):
         if 'database' not in root:
             print("Database not specified")
             return False
         else:
             return True
 
-    def _version_check(self, root):
+    def __version_check(self, root):
         version_check = False
         if 'version' not in root:
             print("Version not specified")
@@ -57,14 +58,14 @@ class ConfigLoader(object):
             print("Configuration version doesn't match")
         return version_check
 
-    def _set_max_depth(self, root):
+    def __set_max_depth(self, root):
         if 'maxDepth' in root:
             if root['maxDepth'] >= 0:
                 self.maxDepth = root['maxDepth']
             else:
                 print("Max depth must be zero or positive! Setting to 0.")
     
-    def _set_entry_points(self, root):
+    def __set_entry_points(self, root):
         if 'entryPoints' not in root:
             print("Entry points should be specified")
         elif not root['entryPoints']:
@@ -73,12 +74,17 @@ class ConfigLoader(object):
             epSet = root['entryPoints']
             for ep in epSet:
                 self.entryPoints.append(ep)
- 
-    def _set_up(self, root):
-        self._dbconf.setDbname(root['database'])
 
-        self._set_max_depth(root)
-        self._set_entry_points(root)
+    def __set_user_agent(self, root):
+        if 'agent' in root:
+            self.agent = root['agent']
+ 
+    def __set_up(self, root):
+        self.__dbconf.setDbname(root['database'])
+
+        self.__set_max_depth(root)
+        self.__set_entry_points(root)
+        self.__set_user_agent(root)
 
         cts = 'content-types'
         ct = 'content-type'
@@ -89,24 +95,24 @@ class ConfigLoader(object):
         u_dsc = 'URL'
 
         try:
-            self.typeAcceptor = ConfigLoader._get_acceptor(cts, ct, ct_dsc, root)
-            self.uriAcceptor = ConfigLoader._get_acceptor(us, u, u_dsc, root)
+            self.typeAcceptor = ConfigLoader.__get_acceptor(cts, ct, ct_dsc, root)
+            self.uriAcceptor = ConfigLoader.__get_acceptor(us, u, u_dsc, root)
         except ConfigurationError as e:
             print(e.msg)
             return False
         return True
 
     @staticmethod
-    def _get_acceptor(tags_string, tag_string, description, root):
+    def __get_acceptor(tags_string, tag_string, description, root):
         acceptor = Acceptor(False)
         if tags_string in root:
             tags = root[tags_string]
             if tags:
-                ConfigLoader._run_tags(tags, description, acceptor, tag_string)
+                ConfigLoader.__run_tags(tags, description, acceptor, tag_string)
         return acceptor
 
     @staticmethod
-    def _run_tags(tags, description, acceptor, tag_string):
+    def __run_tags(tags, description, acceptor, tag_string):
         for tag in tags:
             if tag_string not in tag:
                 raise ConfigurationError(description+" not specified")
@@ -117,12 +123,12 @@ class ConfigLoader(object):
                 acceptor.setDefaultAcceptValue(tag[tag_string], False)
 
     @staticmethod
-    def _set_plugin_accept_tag_value(tag, tag_string, acceptor):
+    def __set_plugin_accept_tag_value(tag, tag_string, acceptor):
         if tag['plugins']:
             for plugin in tag['plugins']:
                 acceptor.setPluginAcceptValue(plugin, tag[tag_string], True)
 
-    def getDbconf(self):
+    def get_dbconf(self):
         """ Retrieve DB configuration.
         """
         if self.loaded:
@@ -130,7 +136,7 @@ class ConfigLoader(object):
         else:
             return None
 
-    def getTypeAcceptor(self):
+    def get_type_acceptor(self):
         """ Retrieve Acceptor instance for Content-Type.
         """
         if self.loaded:
@@ -138,7 +144,7 @@ class ConfigLoader(object):
         else:
             return None
 
-    def getUriAcceptor(self):
+    def get_uri_acceptor(self):
         """ Retrieve Acceptor instance for URI.
         """
         if self.loaded:
@@ -146,7 +152,7 @@ class ConfigLoader(object):
         else:
             return None
 
-    def getEntryPoints(self):
+    def get_entry_points(self):
         """ Retrieve list of URIs for initial requests.
         """
         if self.loaded:
@@ -154,10 +160,16 @@ class ConfigLoader(object):
         else:
             return None
 
-    def getMaxDepth(self):
+    def get_max_depth(self):
         """ Get maximum depth for crawling (0 for no limit)
         """
         if self.loaded:
             return self.maxDepth
+        else:
+            return None
+
+    def get_user_agent(self):
+        if self.loaded:
+            return self.agent
         else:
             return None

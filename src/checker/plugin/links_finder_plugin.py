@@ -20,7 +20,6 @@ class LinksFinder(IPlugin):
         self.trie = None
         self.uris = None
         self.uriTrie = None
-        self.depth = -1
 
 
     def setJournal(self, journal):
@@ -64,6 +63,7 @@ class LinksFinder(IPlugin):
 
         self.check_links(images, transaction, attr)
         return
+
    
    
     def make_links_absolute(self, soup, url, tagL):
@@ -85,6 +85,10 @@ class LinksFinder(IPlugin):
             url = link.get(tag)
             
             if url is not None:
+                p = urlparse(url)
+                if p.scheme not in ['http', 'https']:
+                    continue #check only HTTP(S) - no FTP, MAILTO, etc.
+
                 urlNoAnchor = url.split('#')[0]
 
                 addr = urllib.quote(urlNoAnchor.encode('utf-8'))

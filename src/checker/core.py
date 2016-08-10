@@ -1,16 +1,19 @@
 import marisa_trie
 from pluginDBAPI import DBAPI, VerificationStatus
 from plugin.common import PluginType, PluginTypeError
+import logging
 
 
 class Core:
 
     def __init__(self, plugins):
         self.plugins = plugins
+        self.log = logging.getLogger("crawlcheck")
 
-    def initialize(self, uriAcceptor, typeAcceptor, db, entryPoints, maxDepth):
+    def initialize(self, uriAcceptor, typeAcceptor, db, entryPoints, maxDepth, agent):
         self.db = DBAPI(db)
         self.uriAcceptor = uriAcceptor
+        self.agent = agent
 
         self.queue = Queue(self.db)
 	self.queue.load()
@@ -24,13 +27,14 @@ class Core:
             self.queue.push(Transaction(entryPoint, 0))
 
         for plugin in self.plugins:
-            self.__initializePlugin(plugin, typeAcceptor, uriAcceptor, maxDepth)
+            self.__initializePlugin(plugin, typeAcceptor, uriAcceptor) #TODO: maxDepth not checked?
 
     def run(self):
         while not self.queue.isEmpty():
             transaction = self.queue.pop()
+            self.log.info("Processing "+transaction.uri)
             try:
-                transaction.loadResponse(self.uriAcceptor, self.journal)
+                transaction.loadResponse(self.uriAcceptor, self.journal, self.agent)
                 self.rack.run(transaction)
             except TouchException, NetworkError:
                 self.journal.stopChecking(transaction, VerificationStatus.done_ko)
@@ -41,7 +45,7 @@ class Core:
         self.queue.store()
         self.journal.store()
 
-    def __initializePlugin(self, plugin, typeAcceptor, uriAcceptor, maxDepth):
+    def __initializePlugin(self, plugin, typeAcceptor, uriAcceptor):
         plugin.setJournal(self.journal)
 
         # TODO: refactor to be more Pythonic
@@ -72,10 +76,10 @@ class Transaction:
        self.srcId = srcId
        self.trId = -1 #TODO
 
-   def loadResponse(self, uriAcceptor, journal):
+   def loadResponse(self, uriAcceptor, journal, agent):
        if self.isTouchable(uriAcceptor):
            try:
-               self.type, self.file = Network.getLink(self.uri, self, journal)
+               self.type, self.file = Network.getLink(self.uri, self, journal, agent)
            except NetworkError:
                raise
        else:
@@ -110,11 +114,14 @@ class Rack:
         self.typeAcceptor = typeAcceptor
 
     def run(self, transaction):
+        log = logging.getLogger("crawlcheck")
         for plugin in self.plugins:
             fakeTransaction = transaction
             fakeTransaction.uri = transaction.getMaxPrefix(uriAcceptor)
             if self.__accept(fakeTransaction, plugin):
+                log.info(plugin.id + " started checking " + transaction.uri)
                 plugin.check(transaction)
+                log.info(plugin.id + " stopped checking " + transaction.uri)
 
     def insert(self, plugin):
         self.plugins.append(plugin)
