@@ -10,12 +10,13 @@ class Core:
         self.plugins = plugins
         self.log = logging.getLogger("crawlcheck")
 
-    def initialize(self, uriAcceptor, typeAcceptor, db, entryPoints, maxDepth, agent):
+    def initialize(self, uriAcceptor, typeAcceptor, db, entryPoints, maxDepth, agent, uriMap):
         self.db = DBAPI(db)
         self.uriAcceptor = uriAcceptor
         self.typeAcceptor = typeAcceptor
         self.agent = agent
         self.maxDepth = maxDepth
+        self.uriMap = uriMap
 
         self.queue = Queue(self.db)
 	self.queue.load()
@@ -40,7 +41,7 @@ class Core:
 
             self.log.info("Processing "+transaction.uri)
             try:
-                transaction.loadResponse(self.uriAcceptor, self.typeAcceptor, self.journal, self.agent)
+                transaction.loadResponse(self.uriAcceptor, self.uriMap, self.journal, self.agent)
                 self.rack.run(transaction)
             except TouchException, NetworkError:
                 self.journal.stopChecking(transaction, VerificationStatus.done_ko)
@@ -81,11 +82,11 @@ class Transaction:
        self.type = None
        self.file = None
 
-   def loadResponse(self, uriAcceptor, typeAcceptor, journal, agent):
+   def loadResponse(self, uriAcceptor, uriMap, journal, agent):
        if self.isTouchable(uriAcceptor):
            try:
-               acceptedTypes = self.__get_accepted_types(typeAcceptor)
-               self.type, self.file = Network.getLink(self.uri, self, journal, agent, accepted Types)
+               acceptedTypes = self.__get_accepted_types(uriMap)
+               self.type, self.file = Network.getLink(self.uri, self, journal, agent, acceptedTypes)
            except NetworkError:
                raise
        else:
@@ -111,8 +112,11 @@ class Transaction:
        else:
            return uri
 
-   def __get_accepted_types(self, typeAcceptor):
-        return []
+   def __get_accepted_types(self, uriMap):
+        if uriMap[self.uri]:
+            return uriMap[self.uri]
+        else:
+            return []
 
 
 class Rack:

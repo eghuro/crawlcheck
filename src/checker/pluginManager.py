@@ -47,7 +47,8 @@ def main():
 
         log.info("Running checker")
         core = Core(plugins)
-        core.initialize(cl.get_uri_acceptor(), cl.get_type_acceptor(), cl.get_dbconf(), cl.get_entry_points(), cl.get_max_depth(), cl.get_user_agent())
+        #TODO: put the whole config loader into core, there's too many arguments now, let the core to pull them where needed
+        core.initialize(cl.get_uri_acceptor(), cl.get_type_acceptor(), cl.get_dbconf(), cl.get_entry_points(), cl.get_max_depth(), cl.get_user_agent(), cl.get_uri_map())
         core.run()
         core.finalize()
     else:

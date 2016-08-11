@@ -26,6 +26,7 @@ class ConfigLoader(object):
         self.maxDepth = 0
         self.loaded = False
         self.agent = "Crawlcheck/"+_VERSION
+        self.uriMap = Dict()
 
     def load(self, fname):
         """Loads configuration from YAML file.
@@ -34,7 +35,7 @@ class ConfigLoader(object):
         root = yaml.safe_load(cfile)
 
         db_check = ConfigLoader.__db_check(root)
-        version_check = self.__version_check(root)
+        version_check = ConfigLoader.__version_check(root)
         if db_check and version_check:
             self.loaded = self.__set_up(root)
         
@@ -48,7 +49,8 @@ class ConfigLoader(object):
         else:
             return True
 
-    def __version_check(self, root):
+    @staticmethod
+    def __version_check(root):
         version_check = False
         if 'version' not in root:
             print("Version not specified")
@@ -95,38 +97,62 @@ class ConfigLoader(object):
         u_dsc = 'URL'
 
         try:
-            self.typeAcceptor = ConfigLoader.__get_acceptor(cts, ct, ct_dsc, root)
-            self.uriAcceptor = ConfigLoader.__get_acceptor(us, u, u_dsc, root)
+            uriPlugins = Dict()
+            pluginTypes = Dict()
+            self.typeAcceptor = ConfigLoader.__get_acceptor(cts, ct, ct_dsc, root, None, pluginTypes)
+            self.uriAcceptor = ConfigLoader.__get_acceptor(us, u, u_dsc, root, uriPlugins, None)
+
+            #create mapping of accepted content types for URI
+            uris = self.uriAcceptor.getValues()
+            for uri in uris:
+                for plugin in self.uriPlugin[uri]:
+                    #put list of types for plugin into a dict for uri; merge lists together
+                    if not self.uriMap[uri]:
+                        self.uriMap[uri] = []
+                    self.uriMap[uri] += pluginTypes[plugin]
         except ConfigurationError as e:
             print(e.msg)
             return False
         return True
 
     @staticmethod
-    def __get_acceptor(tags_string, tag_string, description, root):
+    def __get_acceptor(tags_string, tag_string, description, root, record, drocer):
         acceptor = Acceptor(False)
         if tags_string in root:
             tags = root[tags_string]
             if tags:
-                ConfigLoader.__run_tags(tags, description, acceptor, tag_string)
+                ConfigLoader.__run_tags(tags, description, acceptor, tag_string, record, drocer)
         return acceptor
 
     @staticmethod
-    def __run_tags(tags, description, acceptor, tag_string):
+    def __run_tags(tags, description, acceptor, tag_string, record, drocer):
         for tag in tags:
             if tag_string not in tag:
                 raise ConfigurationError(description+" not specified")
             if 'plugins' in tag:
-                ConfigLoader._set_plugin_accept_tag_value(tag, tag_string, acceptor)
+                ConfigLoader._set_plugin_accept_tag_value(tag, tag_string, acceptor, record, drocer)
             else:
                 print("Forbid "+tag[tag_string])
                 acceptor.setDefaultAcceptValue(tag[tag_string], False)
 
     @staticmethod
-    def __set_plugin_accept_tag_value(tag, tag_string, acceptor):
+    def __set_plugin_accept_tag_value(tag, tag_string, acceptor, record, drocer):
         if tag['plugins']:
             for plugin in tag['plugins']:
                 acceptor.setPluginAcceptValue(plugin, tag[tag_string], True)
+
+                #TODO: refactor hard
+                if record is not None:
+                    if not record[tag[tag_string]]:
+                        record[tag[tag_string]] = [plugin]
+                    else:
+                        record[tag[tag_string]].append(plugin)
+                        #zde operuji s predpokladem, ze v seznamu adres bude kazdy plugin nejvyse jednou
+                else: #predpoklad, ze mame pouze 2 acceptory (uri a type); ten se projevuje i v parametrech (record, drocer)
+                    if not drocer[plugin]:
+                        drocer[plugin] = [tag[tag_string]]
+                    elif tag[tag_string] not in drocer[plugin]:
+                        drocer[plugin].append(tag[tag_string])
 
     def get_dbconf(self):
         """ Retrieve DB configuration.
@@ -171,5 +197,11 @@ class ConfigLoader(object):
     def get_user_agent(self):
         if self.loaded:
             return self.agent
+        else:
+            return None
+
+    def get_uri_map(self):
+        if self.loaded:
+            return self.uriMap
         else:
             return None

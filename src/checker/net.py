@@ -36,7 +36,7 @@ class Network(object):
             raise UrlError(s)
 
         try:
-            acc = Network.create_accept_header(urlToFetch, acceptedTypes)
+            acc = Network.create_accept_header(acceptedTypes)
             ct = Network.check_headers(urlToFetch, srcTransaction, journal, agent, acc)
             r = Network.conditional_fetch(ct, url, agent, acc)
             name = save_content(r.text)
@@ -132,9 +132,12 @@ class Network(object):
         return (mime == ctype), mime
 
     @staticmethod
-    def create_accept_header(self, forUrl, acceptedTypes):
+    def create_accept_header(self, acceptedTypes):
         #see RFC 2616, section 14.1
-        string = ""
-        for aType in acceptedTypes:
-            string += ", "+aType
-        return string
+        if len(acceptedTypes) > 0:
+            string = acceptedTypes[0]
+            for aType in acceptedTypes:
+                string += ", "+aType
+            return string
+        else:
+            return ""
