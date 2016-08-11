@@ -48,7 +48,7 @@ def main():
         log.info("Running checker")
         core = Core(plugins)
         #TODO: put the whole config loader into core, there are too many arguments now, let the core to pull them where needed
-        core.initialize(cl)
+        core.initialize(cl.get_configuration())
         core.run()
         core.finalize()
     else:

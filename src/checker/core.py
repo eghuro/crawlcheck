@@ -11,13 +11,8 @@ class Core:
         self.log = logging.getLogger("crawlcheck")
 
     def initialize(self, conf):
-        #TODO: use conf directly
-        self.db = DBAPI(conf.get_dbconf())
-        self.uriAcceptor = conf.get_uri_acceptor()
-        self.typeAcceptor = conf.get_type_acceptor()
-        self.agent = conf.get_user_agent()
-        self.maxDepth = conf.get_max_depth()
-        self.uriMap = conf.get_uri_map()
+        self.conf = conf
+        self.db = DBAPI(conf.dbconf)
 
         self.queue = Queue(self.db)
 	self.queue.load()
@@ -25,24 +20,24 @@ class Core:
         self.journal = Journal(self.db)
         self.journal.load()
 
-        self.rack = Rack(self.plugins, uriAcceptor, typeAcceptor)
+        self.rack = Rack(self.plugins, self.conf.uri_acceptor, self.conf.type_acceptor)
 
-        for entryPoint in entryPoints:
+        for entryPoint in self.conf.entry_points:
             self.queue.push(Transaction(entryPoint, 0))
 
         for plugin in self.plugins:
-            self.__initializePlugin(plugin, typeAcceptor, uriAcceptor)
+            self.__initializePlugin(plugin)
 
     def run(self):
         while not self.queue.isEmpty():
             transaction = self.queue.pop()
 
-            if transaction.depth > self.maxDepth:
+            if transaction.depth > self.conf.max_depth:
                 continue #skip
 
             self.log.info("Processing "+transaction.uri)
             try:
-                transaction.loadResponse(self.uriAcceptor, self.uriMap, self.journal, self.agent)
+                transaction.loadResponse(self.conf.uri_acceptor, self.conf.uri_map, self.journal, self.conf.user_agent)
                 self.rack.run(transaction)
             except TouchException, NetworkError:
                 self.journal.stopChecking(transaction, VerificationStatus.done_ko)
@@ -53,13 +48,13 @@ class Core:
         self.queue.store()
         self.journal.store()
 
-    def __initializePlugin(self, plugin, typeAcceptor, uriAcceptor):
+    def __initializePlugin(self, plugin):
         plugin.setJournal(self.journal)
 
         # TODO: refactor to be more Pythonic
         if plugin.type == PluginType.CRAWLER:
-            plugin.setTypes(typeAcceptor.getValues())
-            plugin.setUris(uriAcceptor.getValues())
+            plugin.setTypes(self.conf.type_acceptor.getValues())
+            plugin.setUris(self.conf.uri_acceptor.getValues())
             plugin.setQueue(self.queue)
             
         elif plugin.type == PluginType.CHECKER:

@@ -154,54 +154,18 @@ class ConfigLoader(object):
                     elif tag[tag_string] not in drocer[plugin]:
                         drocer[plugin].append(tag[tag_string])
 
-    def get_dbconf(self):
-        """ Retrieve DB configuration.
-        """
+    def get_configuration(self):
         if self.loaded:
-            return self._dbconf
+            return Configuration(self._dbconf, self.typeAcceptor, self.uriAcceptor, self.entryPoints, self.maxDepth, self.agent, self.uriMap)
         else:
             return None
 
-    def get_type_acceptor(self):
-        """ Retrieve Acceptor instance for Content-Type.
-        """
-        if self.loaded:
-            return self.typeAcceptor
-        else:
-            return None
-
-    def get_uri_acceptor(self):
-        """ Retrieve Acceptor instance for URI.
-        """
-        if self.loaded:
-            return self.uriAcceptor
-        else:
-            return None
-
-    def get_entry_points(self):
-        """ Retrieve list of URIs for initial requests.
-        """
-        if self.loaded:
-            return self.entryPoints
-        else:
-            return None
-
-    def get_max_depth(self):
-        """ Get maximum depth for crawling (0 for no limit)
-        """
-        if self.loaded:
-            return self.maxDepth
-        else:
-            return None
-
-    def get_user_agent(self):
-        if self.loaded:
-            return self.agent
-        else:
-            return None
-
-    def get_uri_map(self):
-        if self.loaded:
-            return self.uriMap
-        else:
-            return None
+class Configuration(object):
+    def __init__(self, db, ta, ua, ep, md, ag, um):
+        self.dbconf = db
+        self.type_acceptor = ta
+        self.uri_acceptor = ua
+        self.entry_points = ep
+        self.max_depth = md
+        self.user_agent = ag
+        self.uri_map = um
