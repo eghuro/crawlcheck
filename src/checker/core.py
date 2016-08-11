@@ -85,7 +85,7 @@ class Transaction:
    def loadResponse(self, uriAcceptor, uriMap, journal, agent):
        if self.isTouchable(uriAcceptor):
            try:
-               acceptedTypes = self.__get_accepted_types(uriMap)
+               acceptedTypes = self.__get_accepted_types(uriMap, uriAcceptor)
                self.type, self.file = Network.getLink(self.uri, self, journal, agent, acceptedTypes)
            except NetworkError:
                raise
@@ -112,9 +112,9 @@ class Transaction:
        else:
            return uri
 
-   def __get_accepted_types(self, uriMap):
+   def __get_accepted_types(self, uriMap, uriAcceptor):
         if uriMap[self.uri]:
-            return uriMap[self.uri]
+            return uriMap[self.getMaxPrefix(uriAcceptor)]
         else:
             return []
 
