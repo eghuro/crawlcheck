@@ -46,9 +46,7 @@ def main():
             log.info("No plugins found")
 
         log.info("Running checker")
-        core = Core(plugins)
-        #TODO: put the whole config loader into core, there are too many arguments now, let the core to pull them where needed
-        core.initialize(cl.get_configuration())
+        core = Core(plugins, cl.get_configuration())
         core.run()
         core.finalize()
     else:

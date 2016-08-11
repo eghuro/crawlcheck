@@ -6,11 +6,9 @@ import logging
 
 class Core:
 
-    def __init__(self, plugins):
+    def __init__(self, plugins, conf):
         self.plugins = plugins
         self.log = logging.getLogger("crawlcheck")
-
-    def initialize(self, conf):
         self.conf = conf
         self.db = DBAPI(conf.dbconf)
 
