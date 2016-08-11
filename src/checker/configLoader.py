@@ -16,7 +16,7 @@ class ConfigLoader(object):
         retrieved through getters.
     """
 
-    _VERSION = 1.01
+    __VERSION = 1.02
 
     def __init__(self):
         self.__dbconf = DBAPIconfiguration()
@@ -25,7 +25,7 @@ class ConfigLoader(object):
         self.entryPoints = []
         self.maxDepth = 0
         self.loaded = False
-        self.agent = "Crawlcheck/"+_VERSION
+        self.agent = "Crawlcheck/"+__VERSION
         self.uriMap = Dict()
 
     def load(self, fname):
@@ -54,7 +54,7 @@ class ConfigLoader(object):
         version_check = False
         if 'version' not in root:
             print("Version not specified")
-        elif root['version'] == ConfigLoader._VERSION:
+        elif root['version'] == ConfigLoader.__VERSION:
             version_check = True
         else:
             print("Configuration version doesn't match")
@@ -96,11 +96,16 @@ class ConfigLoader(object):
         u = 'url'
         u_dsc = 'URL'
 
+        sus = 'suffixes'
+        su = 'suffix'
+        su_dsc = 'Suffix'
+
         try:
             uriPlugins = Dict()
             pluginTypes = Dict()
             self.typeAcceptor = ConfigLoader.__get_acceptor(cts, ct, ct_dsc, root, None, pluginTypes)
             self.uriAcceptor = ConfigLoader.__get_acceptor(us, u, u_dsc, root, uriPlugins, None)
+            self.suffixAcceptor = ConfigLoader.__get_acceptor(sus, su, su_dsc, root, None, None)
 
             self.__create_uri_plugin_map()
         except ConfigurationError as e:
@@ -141,7 +146,7 @@ class ConfigLoader(object):
                     else:
                         record[tag[tag_string]].append(plugin)
                         #zde operuji s predpokladem, ze v seznamu adres bude kazdy plugin nejvyse jednou
-                else: #predpoklad, ze mame pouze 2 acceptory (uri a type); ten se projevuje i v parametrech (record, drocer)
+                else if drocer is not None:
                     if not drocer[plugin]:
                         drocer[plugin] = [tag[tag_string]]
                     elif tag[tag_string] not in drocer[plugin]:
@@ -158,15 +163,16 @@ class ConfigLoader(object):
 
     def get_configuration(self):
         if self.loaded:
-            return Configuration(self._dbconf, self.typeAcceptor, self.uriAcceptor, self.entryPoints, self.maxDepth, self.agent, self.uriMap)
+            return Configuration(self._dbconf, self.typeAcceptor, self.uriAcceptor, self.suffixAcceptor, self.entryPoints, self.maxDepth, self.agent, self.uriMap)
         else:
             return None
 
 class Configuration(object):
-    def __init__(self, db, ta, ua, ep, md, ag, um):
+    def __init__(self, db, ta, ua, sa, ep, md, ag, um):
         self.dbconf = db
         self.type_acceptor = ta
         self.uri_acceptor = ua
+        self.suffix_acceptor = sa
         self.entry_points = ep
         self.max_depth = md
         self.user_agent = ag
