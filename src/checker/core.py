@@ -13,6 +13,7 @@ class Core:
     def initialize(self, uriAcceptor, typeAcceptor, db, entryPoints, maxDepth, agent):
         self.db = DBAPI(db)
         self.uriAcceptor = uriAcceptor
+        self.typeAcceptor = typeAcceptor
         self.agent = agent
         self.maxDepth = maxDepth
 
@@ -39,7 +40,7 @@ class Core:
 
             self.log.info("Processing "+transaction.uri)
             try:
-                transaction.loadResponse(self.uriAcceptor, self.journal, self.agent)
+                transaction.loadResponse(self.uriAcceptor, self.typeAcceptor, self.journal, self.agent)
                 self.rack.run(transaction)
             except TouchException, NetworkError:
                 self.journal.stopChecking(transaction, VerificationStatus.done_ko)
@@ -80,10 +81,11 @@ class Transaction:
        self.type = None
        self.file = None
 
-   def loadResponse(self, uriAcceptor, journal, agent):
+   def loadResponse(self, uriAcceptor, typeAcceptor, journal, agent):
        if self.isTouchable(uriAcceptor):
            try:
-               self.type, self.file = Network.getLink(self.uri, self, journal, agent)
+               acceptedTypes = self.__get_accepted_types(typeAcceptor)
+               self.type, self.file = Network.getLink(self.uri, self, journal, agent, accepted Types)
            except NetworkError:
                raise
        else:
@@ -108,6 +110,9 @@ class Transaction:
         
        else:
            return uri
+
+   def __get_accepted_types(self, typeAcceptor):
+        return []
 
 
 class Rack:
