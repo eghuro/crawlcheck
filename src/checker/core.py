@@ -10,13 +10,14 @@ class Core:
         self.plugins = plugins
         self.log = logging.getLogger("crawlcheck")
 
-    def initialize(self, uriAcceptor, typeAcceptor, db, entryPoints, maxDepth, agent, uriMap):
-        self.db = DBAPI(db)
-        self.uriAcceptor = uriAcceptor
-        self.typeAcceptor = typeAcceptor
-        self.agent = agent
-        self.maxDepth = maxDepth
-        self.uriMap = uriMap
+    def initialize(self, conf):
+        #TODO: use conf directly
+        self.db = DBAPI(conf.get_dbconf())
+        self.uriAcceptor = conf.get_uri_acceptor()
+        self.typeAcceptor = conf.get_type_acceptor()
+        self.agent = conf.get_user_agent()
+        self.maxDepth = conf.get_max_depth()
+        self.uriMap = conf.get_uri_map()
 
         self.queue = Queue(self.db)
 	self.queue.load()
