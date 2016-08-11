@@ -102,14 +102,7 @@ class ConfigLoader(object):
             self.typeAcceptor = ConfigLoader.__get_acceptor(cts, ct, ct_dsc, root, None, pluginTypes)
             self.uriAcceptor = ConfigLoader.__get_acceptor(us, u, u_dsc, root, uriPlugins, None)
 
-            #create mapping of accepted content types for URI
-            uris = self.uriAcceptor.getValues()
-            for uri in uris:
-                for plugin in self.uriPlugin[uri]:
-                    #put list of types for plugin into a dict for uri; merge lists together
-                    if not self.uriMap[uri]:
-                        self.uriMap[uri] = []
-                    self.uriMap[uri] += pluginTypes[plugin]
+            self.__create_uri_plugin_map()
         except ConfigurationError as e:
             print(e.msg)
             return False
@@ -153,6 +146,15 @@ class ConfigLoader(object):
                         drocer[plugin] = [tag[tag_string]]
                     elif tag[tag_string] not in drocer[plugin]:
                         drocer[plugin].append(tag[tag_string])
+
+    def __create_uri_plugin_map(self):
+        #create mapping of accepted content types for URI
+        for uri in self.uriAcceptor.getValues():
+            for plugin in self.uriPlugin[uri]:
+                #put list of types for plugin into a dict for uri; merge lists together
+                if not self.uriMap[uri]:
+                    self.uriMap[uri] = []
+                self.uriMap[uri] += pluginTypes[plugin]
 
     def get_configuration(self):
         if self.loaded:
