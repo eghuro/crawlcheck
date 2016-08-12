@@ -14,13 +14,15 @@ import signal
 
 
 def handler(signum, frame):
-    core.finalize()
+    if core is not None:
+        core.finalize()
     sys.exit(0)
 
 def main():
     """ Load configuration, find plugins, run core.
     """
     global core
+    core = None
     signal.signal(signal.SIGINT, handler)
 
     if len(sys.argv) == 2:

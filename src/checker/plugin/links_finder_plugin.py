@@ -1,5 +1,5 @@
 from common import PluginType
-from core import Transaction
+import core
 from bs4 import BeautifulSoup
 from yapsy.IPlugin import IPlugin
 from urlparse import urlparse, parse_qs, urljoin
@@ -81,5 +81,5 @@ class LinksFinder(IPlugin):
                 urlNoAnchor = url.split('#')[0]
 
                 addr = urllib.quote(urlNoAnchor.encode('utf-8'))
-                self.queue.push(Transaction(addr,transaction.depth+1), transaction) #TODO: refactor
+                self.queue.push(core.createTransaction(addr,transaction.depth+1), transaction) #TODO: refactor
                 #TODO: scriptParams?

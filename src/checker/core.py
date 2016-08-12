@@ -3,6 +3,8 @@ from pluginDBAPI import DBAPI, VerificationStatus
 from plugin.common import PluginType, PluginTypeError
 import logging
 from urlparse import urlparse
+import Queue
+from copy import deepcopy
 
 
 class Core:
@@ -22,7 +24,7 @@ class Core:
         self.rack = Rack(self.plugins, self.conf.uri_acceptor, self.conf.type_acceptor)
 
         for entryPoint in self.conf.entry_points:
-            self.queue.push(Transaction(entryPoint, 0))
+            self.queue.push(createTransaction(entryPoint, 0))
 
         for plugin in self.plugins:
             self.__initializePlugin(plugin)
@@ -49,17 +51,8 @@ class Core:
 
     def __initializePlugin(self, plugin):
         plugin.setJournal(self.journal)
-
-        # TODO: refactor to be more Pythonic
         if plugin.type == PluginType.CRAWLER:
             plugin.setQueue(self.queue)
-            
-        elif plugin.type == PluginType.CHECKER:
-            pass
-            
-        else:
-            #FATAL ERROR: unknown plugin type
-            raise PluginTypeError
 
 
 class TouchException(Exception):
@@ -69,11 +62,13 @@ class TouchException(Exception):
 
 class Transaction:
 
-    def __init__(self, uri, depth, srcId = -1):
+    def __init__(self, uri, depth, srcId, idno):
+        #Use the factory method below!!
         self.uri = uri
         self.depth = depth
         self.type = None
         self.file = None
+        self.idno = idno
 
     def loadResponse(self, conf):
         if self.isTouchable(conf.uri_acceptor):
@@ -102,6 +97,12 @@ class Transaction:
         else:
             return []
 
+transactionId = 0
+def createTransaction(uri, depth, srcId = -1):
+    tr = Transaction(uri, depth, srcId, transactionId)
+    transactionId = transactionId + 1
+    return tr
+
 
 class Rack:
 
@@ -119,11 +120,8 @@ class Rack:
                 plugin.check(transaction)
                 log.info(plugin.id + " stopped checking " + transaction.uri)
 
-    def insert(self, plugin):
-        self.plugins.append(plugin)
-
     def __accept(transaction, plugin):
-        rotTransaction = transaction
+        rotTransaction = deepcopy(transaction)
         rotTransaction.uri = transaction.getStripedUri()[::-1]
 
         return self.typeAcceptor.accept(transaction, plugin.id) 
@@ -132,17 +130,22 @@ class Rack:
 
 class Queue:
 
+
     def __init__(self, db):
-        self.db = db
+        self.__db = db
+        self.__q = Queue.Queue()
+        self.__parent = Dict()
 
     def isEmpty(self):
-        pass
+        return self.__q.empty()
 
     def pop(self):
-        pass  
+        return self.__q.get()
 
     def push(self, transaction, parent=None):
-        pass
+        self.__q.put(transaction)
+        if parent is not None:
+            self.__parent[transaction.idno] = parent.idno
 
     def load(self):
         pass
@@ -154,7 +157,7 @@ class Journal:
 
 
     def __init__(self, db):
-        self.db = db
+        self.__db = db
 
     def load(self):
         pass
