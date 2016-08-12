@@ -29,40 +29,41 @@ class Network(object):
     __allowed_schemas = ['http', 'https']
 
     @staticmethod
-    def getLink(urlToFetch, srcTransaction, journal, agent, acceptedTypes):
+    def getLink(srcTransaction, acceptedTypes, conf):
     
-        s = urlparse(urlToFetch).scheme
+        s = urlparse(srcTransaction.uri).scheme
         if s not in Network.__allowed_schemas:
             raise UrlError(s)
 
         try:
-            acc = Network.create_accept_header(acceptedTypes)
-            ct = Network.check_headers(urlToFetch, srcTransaction, journal, agent, acc)
-            r = Network.conditional_fetch(ct, url, agent, acc)
-            name = save_content(r.text)
-            match, mime = test_content_type(ct, name)
+            acc_header = Network.__create_accept_header(acceptedTypes)
+
+            ct = Network.__check_headers(srcTransaction, conf.journal, conf.user_agent, acc_header)
+            r = Network.__conditional_fetch(ct, srcTransaction, conf.user_agent, acc_header, conf.uri_acceptor, conf.suffix_acceptor, conf.type_acceptor)
+            name = Network.__save_content(r.text)
+            match, mime = Network.__test_content_type(ct, name)
             if not match:
                 journal.foundDefect(srcTransaction, Defect("type-mishmash", mime))
             return r, name
             
-        except InvalidSchema as e:
-            print("Invalid schema")
-            raise NetworkError(e)
         except ConnectionError as e:
             print("Connection error: {0}", format(e))
             raise NetworkError(e)
+        except StatusError:
+            print("Status error: {0}", format(e))
+            raise
         except MissingSchema as e:
             print("Missing schema")
             raise NetworkError(e)
-        except StatusError:
-            print("Status error")
-            raise
+        except InvalidSchema as e:
+            print("Invalid schema")
+            raise NetworkError(e)
      
      
     @staticmethod
-    def check_headers(url, srcTransaction, journal, agent, accept):
+    def __check_headers(srcTransaction, journal, agent, accept):
         
-        r = requests.head(url, headers={ "user-agent": agent, "accept":  accept})
+        r = requests.head(srcTransaction.uri, headers={ "user-agent": agent, "accept":  accept})
         if r.status_code >= 400:
             journal.foundDefect(srcTransaction, Defect("badlink", url))
             raise StatusError(r.status_code)
@@ -79,12 +80,14 @@ class Network(object):
         return ct
     
     @staticmethod
-    def conditional_fetch(ct, url, agent, accept):
+    def __conditional_fetch(ct, transaction, agent, accept, pa, sa, ta):
         
-        type_condition = getMaxPrefix(ct) in self.types
-        prefix_condition = getMaxPrefixUri(url) in self.uris
+        type_condition = ta.mightAccept(ct)
+        prefix_condition = pa.mightAccept(transaction.uri)
+        reverse_striped_uri = transaction.getStripedUri()[::-1] #odrizne path, params, query, fragment; zrotuje pomoci [::-1]
+        suffix_condition =  sa.mightAccept(reverse_striped_uri) #config loader jiz zrotoval kazdou hodnotu
 
-        if not prefix_condition:
+        if not (prefix_condition or suffix_condition):
             print("Uri not accepted: "+url)
             raise NetworkError
         
@@ -93,46 +96,31 @@ class Network(object):
             raise NetworkError
         
         else:
-            return fetch_response(url, agent)
+            return fetch_response(transaction.uri, agent)
 
     @staticmethod
     def fetch_response(url, agent, accept):
         
         r = requests.get(url, allow_redirects=False, headers = {"user-agent" : agent, "accept" : accept })
         return r
-    
-    @staticmethod
-    def getMaxPrefix(self, ctype):
-
-        prefList = self.trie.prefixes(unicode(ctype, encoding="utf-8"))
-        if len(prefList) > 0:
-            return prefList[-1]
-        else:
-            return ctype
 
     @staticmethod
-    def getMaxPrefixUri(self, uri):
-        
-        prefList = self.uriTrie.prefixes(uri)
-        if len(prefList) > 0:
-            return prefList[-1]
-        else:
-            return uri
+    def __save_content(content):
 
-    @staticmethod
-    def save_content(self, content):
         with tempfile.TemporaryFile() as tmp:
             tmp.write(content)
             name = tmp.name
         return name
 
     @staticmethod
-    def test_content_type(self, ctype, fname):
+    def __test_content_type(ctype, fname):
+
         mime = magic.from_file(fname, mime=True)
         return (mime == ctype), mime
 
     @staticmethod
-    def create_accept_header(self, acceptedTypes):
+    def __create_accept_header(acceptedTypes):
+
         #see RFC 2616, section 14.1
         if len(acceptedTypes) > 0:
             string = acceptedTypes[0]

@@ -2,6 +2,7 @@ import marisa_trie
 from pluginDBAPI import DBAPI, VerificationStatus
 from plugin.common import PluginType, PluginTypeError
 import logging
+from urlparse import urlparse
 
 
 class Core:
@@ -35,7 +36,7 @@ class Core:
 
             self.log.info("Processing "+transaction.uri)
             try:
-                transaction.loadResponse(self.conf.uri_acceptor, self.conf.uri_map, self.journal, self.conf.user_agent)
+                transaction.loadResponse(self.conf)
                 self.rack.run(transaction)
             except TouchException, NetworkError:
                 self.journal.stopChecking(transaction, VerificationStatus.done_ko)
@@ -51,8 +52,6 @@ class Core:
 
         # TODO: refactor to be more Pythonic
         if plugin.type == PluginType.CRAWLER:
-            plugin.setTypes(self.conf.type_acceptor.getValues())
-            plugin.setUris(self.conf.uri_acceptor.getValues())
             plugin.setQueue(self.queue)
             
         elif plugin.type == PluginType.CHECKER:
@@ -70,62 +69,51 @@ class TouchException(Exception):
 
 class Transaction:
 
-   def __init__(self, uri, depth, srcId = -1):
-       self.uri = uri
-       self.depth = depth
-       self.type = None
-       self.file = None
+    def __init__(self, uri, depth, srcId = -1):
+        self.uri = uri
+        self.depth = depth
+        self.type = None
+        self.file = None
 
-   def loadResponse(self, uriAcceptor, uriMap, journal, agent):
-       if self.isTouchable(uriAcceptor):
-           try:
-               acceptedTypes = self.__get_accepted_types(uriMap, uriAcceptor)
-               self.type, self.file = Network.getLink(self.uri, self, journal, agent, acceptedTypes)
-           except NetworkError:
-               raise
-       else:
-           raise TouchException()
+    def loadResponse(self, conf):
+        if self.isTouchable(conf.uri_acceptor):
+            try:
+                acceptedTypes = self.__get_accepted_types(conf.uri_map, conf.uri_acceptor)
+                self.type, self.file = Network.getLink(self, acceptedTypes, conf)
+            except NetworkError:
+                raise
+        else:
+            raise TouchException()
 
-   def getContent(self):
+    def getContent(self):
         return "" #info.getContent().encode('utf-8')
 
-   def isTouchable(self, uriAcceptor):
-       return uriAcceptor.defaultAcceptValue(self.uri) != Resolution.no
+    def isTouchable(self, uriAcceptor):
+        return uriAcceptor.defaultAcceptValue(self.uri) != Resolution.no
 
-   def getMaxPrefix(self, uriAcceptor):
-        
-       prefixes = uriAcceptor.getValues()
-
-       # seznam prefixu, pro nas uri chceme nejdelsi prefix
-       trie = marisa_trie.Trie(prefixes)
-       prefList = trie.prefixes(unicode(str(self.uri), encoding="utf-8"))
-        
-       if len(prefList) > 0:
-           return prefList[-1]
-        
-       else:
-           return uri
+    def getStripedUri(self):
+        pr = urlparse(self.uri)
+        return pr.scheme+'://'+pr.netloc
 
    def __get_accepted_types(self, uriMap, uriAcceptor):
         if uriMap[self.uri]:
-            return uriMap[self.getMaxPrefix(uriAcceptor)]
+            return uriMap[uriAcceptor.getMaxPrefix(self.uri)]
         else:
             return []
 
 
 class Rack:
 
-    def __init__(self, plugins = [], uriAcceptor, typeAcceptor):
+    def __init__(self, plugins = [], uriAcceptor, typeAcceptor, suffixAcceptor):
         self.plugins = plugins
         self.uriAcceptor = uriAcceptor
         self.typeAcceptor = typeAcceptor
+        self.suffixAcceptor = suffixAcceptor
 
     def run(self, transaction):
         log = logging.getLogger("crawlcheck")
         for plugin in self.plugins:
-            fakeTransaction = transaction
-            fakeTransaction.uri = transaction.getMaxPrefix(uriAcceptor)
-            if self.__accept(fakeTransaction, plugin):
+            if self.__accept(transaction, plugin):
                 log.info(plugin.id + " started checking " + transaction.uri)
                 plugin.check(transaction)
                 log.info(plugin.id + " stopped checking " + transaction.uri)
@@ -133,8 +121,11 @@ class Rack:
     def insert(self, plugin):
         self.plugins.append(plugin)
 
-    def __accept(fakeTransaction, plugin):
-        return self.typeAcceptor.accept(fakeTransaction, plugin.id) and self.uriAcceptor.accept(fakeTransaction, plugin.id)
+    def __accept(transaction, plugin):
+        rotTransaction = transaction
+        rotTransaction.uri = transaction.getStripedUri()[::-1]
+
+        return self.typeAcceptor.accept(transaction, plugin.id) and (self.prefixAcceptor.accept(transaction, plugin.id) or self.suffixAcceptor.accept(rotTransaction, plugin.id))
 
 class Queue:
 

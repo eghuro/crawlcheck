@@ -16,10 +16,6 @@ class LinksFinder(IPlugin):
     
     def __init__(self):
         self.queue = None
-        self.types = None
-        self.trie = None
-        self.uris = None
-        self.uriTrie = None
 
 
     def setJournal(self, journal):
@@ -28,17 +24,6 @@ class LinksFinder(IPlugin):
 
     def setQueue(self, queue):
         self.queue = queue
-
-
-    def setTypes(self, types):
-        
-        self.types = types
-        self.trie = marisa_trie.Trie(types)
-
-
-    def setUris(self, uris):
-        self.uris = uris
-        self.uriTrie = marisa_trie.Trie(uris)
 
 
     def check(self, transaction):

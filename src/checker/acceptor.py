@@ -45,7 +45,21 @@ class Acceptor(object):
         Main API method, that runs a resolution algorithm.
         """
 
-        return self.resolvePluginAcceptValue(pluginId, transaction.uri)
+        return self.resolvePluginAcceptValue(pluginId, self.getMaxPrefix(transaction.uri))
+
+    def getMaxPrefix(self, value):
+        # seznam prefixu, pro nas uri chceme nejdelsi prefix
+       trie = marisa_trie.Trie(self.uris)
+       prefList = trie.prefixes(unicode(str(value), encoding="utf-8"))
+        
+       if len(prefList) > 0:
+           return prefList[-1]
+        
+       else:
+           return value
+
+    def mightAccept(self, value):
+        return getMaxPrefix(value) in self.uris
 
     def resolvePluginAcceptValue(self, pluginId, uri):
         res = self.pluginAcceptValue(pluginId, uri)
@@ -116,8 +130,14 @@ class Acceptor(object):
         return self.uris
 
     @staticmethod
-    def getResolution(yes):
-        if yes is True:
+    def getResolution(val):
+        if val is True:
             return Resolution.yes
         else:
             return Resolution.no
+
+    def reverseValues(self):
+        reverse = set()
+        for value in self.uris:
+            reverse.add(value[::-1])
+        self.uris = reverse

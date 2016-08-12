@@ -106,8 +106,8 @@ class ConfigLoader(object):
             self.typeAcceptor = ConfigLoader.__get_acceptor(cts, ct, ct_dsc, root, None, pluginTypes)
             self.uriAcceptor = ConfigLoader.__get_acceptor(us, u, u_dsc, root, uriPlugins, None)
             self.suffixAcceptor = ConfigLoader.__get_acceptor(sus, su, su_dsc, root, None, None)
-
-            self.__create_uri_plugin_map()
+            self.suffixAcceptor.reverseValues()
+            self.__create_uri_plugin_map() #TODO: suffixAcceptor not used here
         except ConfigurationError as e:
             print(e.msg)
             return False
