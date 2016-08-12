@@ -85,8 +85,9 @@ class Transaction:
         else:
             raise TouchException()
 
-    def getContent(self): #TODO
-        return "" #info.getContent().encode('utf-8')
+    def getContent(self):
+        with open(self.file, 'r') as f:
+            return f.read().encode('utf-8')
 
     def isTouchable(self, uriAcceptor):
         return uriAcceptor.defaultAcceptValue(self.uri) != Resolution.no
