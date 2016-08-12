@@ -85,7 +85,7 @@ class Transaction:
         else:
             raise TouchException()
 
-    def getContent(self):
+    def getContent(self): #TODO
         return "" #info.getContent().encode('utf-8')
 
     def isTouchable(self, uriAcceptor):
@@ -125,7 +125,9 @@ class Rack:
         rotTransaction = transaction
         rotTransaction.uri = transaction.getStripedUri()[::-1]
 
-        return self.typeAcceptor.accept(transaction, plugin.id) and (self.prefixAcceptor.accept(transaction, plugin.id) or self.suffixAcceptor.accept(rotTransaction, plugin.id))
+        return self.typeAcceptor.accept(transaction, plugin.id) 
+               and ( self.prefixAcceptor.accept(transaction, plugin.id) 
+                     or self.suffixAcceptor.accept(rotTransaction, plugin.id) )
 
 class Queue:
 
