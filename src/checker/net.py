@@ -39,7 +39,7 @@ class Network(object):
             acc_header = Network.__create_accept_header(acceptedTypes)
 
             ct = Network.__check_headers(srcTransaction, conf.journal, conf.user_agent, acc_header)
-            r = Network.__conditional_fetch(ct, srcTransaction, conf.user_agent, acc_header, conf.uri_acceptor, conf.suffix_acceptor, conf.type_acceptor)
+            r = Network.__conditional_fetch(ct, srcTransaction, acc_header, conf)
             name = Network.__save_content(r.text)
             match, mime = Network.__test_content_type(ct, name)
             if not match:
@@ -80,23 +80,23 @@ class Network(object):
         return ct
     
     @staticmethod
-    def __conditional_fetch(ct, transaction, agent, accept, pa, sa, ta):
+    def __conditional_fetch(ct, transaction, accept, conf):
         
-        type_condition = ta.mightAccept(ct)
-        prefix_condition = pa.mightAccept(transaction.uri)
-        reverse_striped_uri = transaction.getStripedUri()[::-1] #odrizne path, params, query, fragment; zrotuje pomoci [::-1]
-        suffix_condition =  sa.mightAccept(reverse_striped_uri) #config loader jiz zrotoval kazdou hodnotu
+        type_condition = conf.type_acceptor.mightAccept(ct)
+        prefix_condition = conf.uri_acceptor.mightAccept(transaction.uri)
+        reverse_striped_uri = transaction.getStripedUri()[::-1] #odrizne cestu a zrotuje
+        suffix_condition =  conf.suffix_acceptor.mightAccept(reverse_striped_uri) #config loader jiz zrotoval kazdou hodnotu
 
         if not (prefix_condition or suffix_condition):
-            print("Uri not accepted: "+url)
+            print("Uri not accepted: "+transaction.uri)
             raise NetworkError
         
         elif not type_condition:
-            print("Content-type not accepted: "+ct+" ("+url+")")
+            print("Content-type not accepted: "+ct+" ("+transaction.uri+")")
             raise NetworkError
         
         else:
-            return fetch_response(transaction.uri, agent)
+            return fetch_response(transaction.uri, conf.agent)
 
     @staticmethod
     def fetch_response(url, agent, accept):
