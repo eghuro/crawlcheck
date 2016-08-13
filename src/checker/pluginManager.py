@@ -14,15 +14,15 @@ import signal
 
 
 def handler(signum, frame):
-    if core is not None:
-        core.finalize()
+    if core_instance is not None:
+        core_instance.finalize()
     sys.exit(0)
 
 def main():
     """ Load configuration, find plugins, run core.
     """
-    global core
-    core = None
+    global core_instance
+    core_instance = None
     signal.signal(signal.SIGINT, handler)
 
     if len(sys.argv) == 2:
@@ -49,8 +49,10 @@ def main():
 
         log.info("Running checker")
         core = Core(plugins, cl.get_configuration())
-        core.run()
-        core.finalize()
+        try:
+            core.run()
+        finally:
+            core.finalize()
     else:
         print("Usage: "+sys.argv[0]+" <configuration YAML file>")
 

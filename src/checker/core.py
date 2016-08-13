@@ -107,23 +107,25 @@ def createTransaction(uri, depth, srcId = -1):
 class Rack:
 
     def __init__(self, plugins = [], uriAcceptor, typeAcceptor, suffixAcceptor):
+
         self.plugins = plugins
         self.uriAcceptor = uriAcceptor
         self.typeAcceptor = typeAcceptor
         self.suffixAcceptor = suffixAcceptor
+        self.log = logging.getLogger("crawlcheck")
 
     def run(self, transaction):
-        log = logging.getLogger("crawlcheck")
+ 
         for plugin in self.plugins:
             if self.__accept(transaction, plugin):
-                log.info(plugin.id + " started checking " + transaction.uri)
+                self.log.info(plugin.id + " started checking " + transaction.uri)
                 plugin.check(transaction)
-                log.info(plugin.id + " stopped checking " + transaction.uri)
+                self.log.info(plugin.id + " stopped checking " + transaction.uri)
 
     def __accept(transaction, plugin):
+
         rotTransaction = deepcopy(transaction)
         rotTransaction.uri = transaction.getStripedUri()[::-1]
-
         return self.typeAcceptor.accept(transaction, plugin.id) 
                and ( self.prefixAcceptor.accept(transaction, plugin.id) 
                      or self.suffixAcceptor.accept(rotTransaction, plugin.id) )
