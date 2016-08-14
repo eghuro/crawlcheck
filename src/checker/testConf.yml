@@ -1,6 +1,8 @@
 ---
-version:  1.01
-database: test.sqlite
+version: 1.02
+database: crawlcheck
+maxDepth: 10
+agent: Googlebot/2.1
     
 content-types:
  - 
@@ -24,6 +26,15 @@ urls:
        - tinycss
        - css_scraper
        - formChecker
+
+ -
+    url: "http://mj.ucw.cz/" # Zakaz
+
+suffixes:
+ -
+    suffix: "ucw.cz/"
+    plugins:
+       - linksFinder
 
 entryPoints:
  - "http://mj.ucw.cz/vyuka/"

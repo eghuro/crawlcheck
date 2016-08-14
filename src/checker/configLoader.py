@@ -25,8 +25,8 @@ class ConfigLoader(object):
         self.entryPoints = []
         self.maxDepth = 0
         self.loaded = False
-        self.agent = "Crawlcheck/"+__VERSION
-        self.uriMap = Dict()
+        self.agent = "Crawlcheck/"+str(ConfigLoader.__VERSION)
+        self.uriMap = dict()
 
     def load(self, fname):
         """Loads configuration from YAML file.
@@ -54,10 +54,10 @@ class ConfigLoader(object):
         version_check = False
         if 'version' not in root:
             print("Version not specified")
-        elif root['version'] == ConfigLoader.__VERSION:
+        elif str(root['version']) == str(ConfigLoader.__VERSION):
             version_check = True
         else:
-            print("Configuration version doesn't match")
+            print("Configuration version doesn't match (got "+str(root['version'])+", expected: "+str(ConfigLoader.__VERSION)+")")
         return version_check
 
     def __set_max_depth(self, root):
@@ -101,13 +101,13 @@ class ConfigLoader(object):
         su_dsc = 'Suffix'
 
         try:
-            uriPlugins = Dict()
-            pluginTypes = Dict()
+            uriPlugins = dict()
+            pluginTypes = dict()
             self.typeAcceptor = ConfigLoader.__get_acceptor(cts, ct, ct_dsc, root, None, pluginTypes)
             self.uriAcceptor = ConfigLoader.__get_acceptor(us, u, u_dsc, root, uriPlugins, None)
             self.suffixAcceptor = ConfigLoader.__get_acceptor(sus, su, su_dsc, root, None, None)
             self.suffixAcceptor.reverseValues()
-            self.__create_uri_plugin_map() #TODO: suffixAcceptor not used here
+            self.__create_uri_plugin_map(uriPlugins, pluginTypes) #TODO: suffixAcceptor not used here
         except ConfigurationError as e:
             print(e.msg)
             return False
@@ -128,7 +128,7 @@ class ConfigLoader(object):
             if tag_string not in tag:
                 raise ConfigurationError(description+" not specified")
             if 'plugins' in tag:
-                ConfigLoader._set_plugin_accept_tag_value(tag, tag_string, acceptor, record, drocer)
+                ConfigLoader.__set_plugin_accept_tag_value(tag, tag_string, acceptor, record, drocer)
             else:
                 print("Forbid "+tag[tag_string])
                 acceptor.setDefaultAcceptValue(tag[tag_string], False)
@@ -141,29 +141,32 @@ class ConfigLoader(object):
 
                 #TODO: refactor hard
                 if record is not None:
-                    if not record[tag[tag_string]]:
+                    if tag[tag_string] not in record:
                         record[tag[tag_string]] = [plugin]
                     else:
                         record[tag[tag_string]].append(plugin)
                         #zde operuji s predpokladem, ze v seznamu adres bude kazdy plugin nejvyse jednou
-                else if drocer is not None:
-                    if not drocer[plugin]:
+                elif drocer is not None:
+                    if plugin not in drocer:
                         drocer[plugin] = [tag[tag_string]]
                     elif tag[tag_string] not in drocer[plugin]:
                         drocer[plugin].append(tag[tag_string])
 
-    def __create_uri_plugin_map(self):
+    def __create_uri_plugin_map(self, uriPlugin, pluginTypes):
         #create mapping of accepted content types for URI
-        for uri in self.uriAcceptor.getValues():
-            for plugin in self.uriPlugin[uri]:
-                #put list of types for plugin into a dict for uri; merge lists together
-                if not self.uriMap[uri]:
-                    self.uriMap[uri] = []
-                self.uriMap[uri] += pluginTypes[plugin]
+        for uri in self.uriAcceptor.getPositiveValues():
+            if uri in uriPlugin:
+                for plugin in uriPlugin[uri]:
+                    #put list of types for plugin into a dict for uri; merge lists together
+                    if uri not in self.uriMap:
+                        self.uriMap[uri] = []
+                    self.uriMap[uri] += pluginTypes[plugin]
+            else:
+                print("Uri not in uriPlugin: "+uri)
 
     def get_configuration(self):
         if self.loaded:
-            return Configuration(self._dbconf, self.typeAcceptor, self.uriAcceptor, self.suffixAcceptor, self.entryPoints, self.maxDepth, self.agent, self.uriMap)
+            return Configuration(self.__dbconf, self.typeAcceptor, self.uriAcceptor, self.suffixAcceptor, self.entryPoints, self.maxDepth, self.agent, self.uriMap)
         else:
             return None
 

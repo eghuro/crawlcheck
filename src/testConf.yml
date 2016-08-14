@@ -1,8 +1,8 @@
-version:  1.02
+---
+version: 1.02
 database: crawlcheck
 maxDepth: 10
 agent: Googlebot/2.1
----
     
 content-types:
  - 
