@@ -15,6 +15,7 @@ there are URI and content type specific rules and a default fallback. The only
 exception is that the default fallback must be set.
 """
 from enum import Enum
+import marisa_trie
 
 
 class Resolution(Enum):
@@ -33,12 +34,12 @@ class Acceptor(object):
     method and setter methods used by ConfigLoader.
     """
 
-    def __init__(self, defaultUri):
+    def __init__(self, defaultUri=False):
         self.defaultUri = defaultUri
         self.pluginUri = dict()
-        self.pluginUriDefault = dict()
         self.uriDefault = dict()
         self.uris = set()
+        self.positive_uris = set()
 
     def accept(self, transaction, pluginId):
         """ Does a plugin accept an URI?
@@ -48,7 +49,7 @@ class Acceptor(object):
         return self.resolvePluginAcceptValue(pluginId, self.getMaxPrefix(transaction.uri))
 
     def getMaxPrefix(self, value):
-        # seznam prefixu, pro nas uri chceme nejdelsi prefix
+       # seznam prefixu, pro nas uri chceme nejdelsi prefix
        trie = marisa_trie.Trie(self.uris)
        prefList = trie.prefixes(unicode(str(value), encoding="utf-8"))
         
@@ -59,7 +60,7 @@ class Acceptor(object):
            return value
 
     def mightAccept(self, value):
-        return getMaxPrefix(value) in self.uris
+        return self.getMaxPrefix(value) in self.positive_uris
 
     def resolvePluginAcceptValue(self, pluginId, uri):
         res = self.pluginAcceptValue(pluginId, uri)
@@ -68,19 +69,10 @@ class Acceptor(object):
         elif res == Resolution.no:
             return False
         else:
-            return self.resolvePluginAcceptValueDefault(pluginId, uri)
-
-    def resolvePluginAcceptValueDefault(self, pluginId, uri):
-        res = self.pluginAcceptValueDefault(pluginId)
-        if res == Resolution.yes:
-            return True
-        elif res == Resolution.no:
-            return False
-        else:
             return self.resolveDefaultAcceptValue(uri)
 
     def resolveDefaultAcceptValue(self, uri):
-        res = self.defaultAcceptValue(uri)
+        res = self.resolveFromDefault(uri, self.uriDefault)
         if res == Resolution.yes:
             return True
         elif res == Resolution.no:
@@ -98,12 +90,6 @@ class Acceptor(object):
         else:
             return Resolution.none
 
-    def pluginAcceptValueDefault(self, pluginId):
-        return Acceptor.resolveFromDefault(pluginId, self.pluginUriDefault)
-
-    def defaultAcceptValue(self, uri):
-        return Acceptor.resolveFromDefault(uri, self.uriDefault)
-
     @staticmethod
     def resolveFromDefault(identifier, default):
         if identifier in default:
@@ -118,16 +104,20 @@ class Acceptor(object):
         values = self.pluginUri[plugin]
         values[value] = accept
         self.uris.add(value)
-
-    def setPluginAcceptValueDefault(self, plugin, accept):
-        self.pluginUriDefault[plugin] = accept
+        if accept is True:
+            self.positive_uris.add(value)
 
     def setDefaultAcceptValue(self, uri, value):
         self.uriDefault[uri] = value
         self.uris.add(uri)
+        if value:
+            self.positive_uris.add(uri)
 
     def getValues(self):
         return self.uris
+
+    def getPositiveValues(self):
+        return self.positive_uris
 
     @staticmethod
     def getResolution(val):

@@ -21,7 +21,7 @@ class Core:
         self.journal = Journal(self.db)
         self.journal.load()
 
-        self.rack = Rack(self.plugins, self.conf.uri_acceptor, self.conf.type_acceptor)
+        self.rack = Rack(self.conf.uri_acceptor, self.conf.type_acceptor, self.plugins)
 
         for entryPoint in self.conf.entry_points:
             self.queue.push(createTransaction(entryPoint, 0))
@@ -91,14 +91,15 @@ class Transaction:
         pr = urlparse(self.uri)
         return pr.scheme+'://'+pr.netloc
 
-   def __get_accepted_types(self, uriMap, uriAcceptor):
+    def __get_accepted_types(self, uriMap, uriAcceptor):
         if uriMap[self.uri]:
             return uriMap[uriAcceptor.getMaxPrefix(self.uri)]
         else:
             return []
 
 transactionId = 0
-def createTransaction(uri, depth, srcId = -1):
+def createTransaction(uri, depth = 0, srcId = -1):
+    global transactionId
     tr = Transaction(uri, depth, srcId, transactionId)
     transactionId = transactionId + 1
     return tr
@@ -106,7 +107,7 @@ def createTransaction(uri, depth, srcId = -1):
 
 class Rack:
 
-    def __init__(self, plugins = [], uriAcceptor, typeAcceptor, suffixAcceptor):
+    def __init__(self, uriAcceptor, typeAcceptor, suffixAcceptor, plugins = []):
 
         self.plugins = plugins
         self.uriAcceptor = uriAcceptor
@@ -126,9 +127,7 @@ class Rack:
 
         rotTransaction = deepcopy(transaction)
         rotTransaction.uri = transaction.getStripedUri()[::-1]
-        return self.typeAcceptor.accept(transaction, plugin.id) 
-               and ( self.prefixAcceptor.accept(transaction, plugin.id) 
-                     or self.suffixAcceptor.accept(rotTransaction, plugin.id) )
+        return self.typeAcceptor.accept(transaction, plugin.id) and ( self.prefixAcceptor.accept(transaction, plugin.id) or self.suffixAcceptor.accept(rotTransaction, plugin.id) )
 
 class Queue:
 

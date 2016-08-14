@@ -115,7 +115,7 @@ class ConfigLoader(object):
 
     @staticmethod
     def __get_acceptor(tags_string, tag_string, description, root, record, drocer):
-        acceptor = Acceptor(False)
+        acceptor = Acceptor()
         if tags_string in root:
             tags = root[tags_string]
             if tags:
