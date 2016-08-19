@@ -1,6 +1,7 @@
 import marisa_trie
 from pluginDBAPI import DBAPI, VerificationStatus
 from plugin.common import PluginType, PluginTypeError
+from net import Network
 import logging
 from urlparse import urlparse
 import Queue
@@ -71,9 +72,9 @@ class Transaction:
         self.idno = idno
 
     def loadResponse(self, conf):
-        if self.isTouchable(conf.uri_acceptor):
+        if self.isTouchable(conf.uri_acceptor, conf.suffix_acceptor):
             try:
-                acceptedTypes = self.__get_accepted_types(conf.uri_map, conf.uri_acceptor)
+                acceptedTypes = self.__create_accepted_types(conf)
                 self.type, self.file = Network.getLink(self, acceptedTypes, conf)
             except NetworkError:
                 raise
@@ -84,8 +85,8 @@ class Transaction:
         with open(self.file, 'r') as f:
             return f.read().encode('utf-8')
 
-    def isTouchable(self, uriAcceptor):
-        return uriAcceptor.defaultAcceptValue(self.uri) != Resolution.no
+    def isTouchable(self, uriAcceptor, suffixAcceptor):
+        return (uriAcceptor.defaultAcceptValue(self.uri) != Resolution.no) and (suffixAcceptor.defaultAcceptValue(self.uri[::-1]) != Resolution.no)
 
     def getStripedUri(self):
         pr = urlparse(self.uri)
@@ -96,6 +97,14 @@ class Transaction:
             return uriMap[uriAcceptor.getMaxPrefix(self.uri)]
         else:
             return []
+
+    def getAcceptedTypes(self, conf):
+        acceptedTypes = self.__get_accepted_types(conf.uri_map, conf.uri_acceptor)
+        bak = self.uri
+        self.uri = self.uri[::-1]
+        acceptedTypes += self.__get_accepted_types(conf.suffix_uri_map, conf.suffix_acceptor)
+        self.uri = bak
+        return acceptedTypes
 
 transactionId = 0
 def createTransaction(uri, depth = 0, srcId = -1):

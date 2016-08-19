@@ -26,7 +26,8 @@ class ConfigLoader(object):
         self.maxDepth = 0
         self.loaded = False
         self.agent = "Crawlcheck/"+str(ConfigLoader.__VERSION)
-        self.uriMap = dict()
+        self.uriMap = None
+        self.suffixUriMap = None
 
     def load(self, fname):
         """Loads configuration from YAML file.
@@ -102,12 +103,15 @@ class ConfigLoader(object):
 
         try:
             uriPlugins = dict()
+            sufixUriPlugins = dict()
             pluginTypes = dict()
             self.typeAcceptor = ConfigLoader.__get_acceptor(cts, ct, ct_dsc, root, None, pluginTypes)
             self.uriAcceptor = ConfigLoader.__get_acceptor(us, u, u_dsc, root, uriPlugins, None)
-            self.suffixAcceptor = ConfigLoader.__get_acceptor(sus, su, su_dsc, root, None, None)
+            self.suffixAcceptor = ConfigLoader.__get_acceptor(sus, su, su_dsc, root, suffixUriPlugins, None)
             self.suffixAcceptor.reverseValues()
-            self.__create_uri_plugin_map(uriPlugins, pluginTypes) #TODO: suffixAcceptor not used here
+            self.__revese_dict_values(suffixUriPlugins)
+            self.uriMap = self.__create_uri_plugin_map(uriPlugins, pluginTypes)
+            self.suffixMap = self.__create_uri_plugin_map(suffixUriPlugins, pluginTypes)
         except ConfigurationError as e:
             print(e.msg)
             return False
@@ -139,39 +143,47 @@ class ConfigLoader(object):
             for plugin in tag['plugins']:
                 acceptor.setPluginAcceptValue(plugin, tag[tag_string], True)
 
-                #TODO: refactor hard
+                #TODO: refactor hard #TODO: TESTME!!
                 if record is not None:
                     if tag[tag_string] not in record:
-                        record[tag[tag_string]] = [plugin]
+                        record[tag[tag_string]] = set([plugin])
                     else:
-                        record[tag[tag_string]].append(plugin)
-                        #zde operuji s predpokladem, ze v seznamu adres bude kazdy plugin nejvyse jednou
+                        record[tag[tag_string]].add(plugin)
                 elif drocer is not None:
                     if plugin not in drocer:
-                        drocer[plugin] = [tag[tag_string]]
+                        drocer[plugin] = set([tag[tag_string]])
                     elif tag[tag_string] not in drocer[plugin]:
-                        drocer[plugin].append(tag[tag_string])
+                        drocer[plugin].add(tag[tag_string])
 
     def __create_uri_plugin_map(self, uriPlugin, pluginTypes):
+        uriMap = dict()
         #create mapping of accepted content types for URI
         for uri in self.uriAcceptor.getPositiveValues():
             if uri in uriPlugin:
                 for plugin in uriPlugin[uri]:
-                    #put list of types for plugin into a dict for uri; merge lists together
+                    #put list of types for plugin into a dict for uri; join sets together
                     if uri not in self.uriMap:
-                        self.uriMap[uri] = []
-                    self.uriMap[uri] += pluginTypes[plugin]
+                        uriMap[uri] = set()
+                    uriMap[uri].update(pluginTypes[plugin])
             else:
                 print("Uri not in uriPlugin: "+uri)
+        return uriMap
 
     def get_configuration(self):
         if self.loaded:
-            return Configuration(self.__dbconf, self.typeAcceptor, self.uriAcceptor, self.suffixAcceptor, self.entryPoints, self.maxDepth, self.agent, self.uriMap)
+            return Configuration(self.__dbconf, self.typeAcceptor, self.uriAcceptor, self.suffixAcceptor, self.entryPoints, self.maxDepth, self.agent, self.uriMap, self.suffixUriMap)
         else:
             return None
 
+    def __reverse_dict_values(self, sufdict):
+        for key in sufdict.keys():
+            lst = []
+            for val in sufdict[key]:
+                lst.append(val[::-1])
+            sufdict[key]=lst
+
 class Configuration(object):
-    def __init__(self, db, ta, ua, sa, ep, md, ag, um):
+    def __init__(self, db, ta, ua, sa, ep, md, ag, um, su):
         self.dbconf = db
         self.type_acceptor = ta
         self.uri_acceptor = ua
@@ -180,3 +192,4 @@ class Configuration(object):
         self.max_depth = md
         self.user_agent = ag
         self.uri_map = um
+        self.suffix_uri_map = su
