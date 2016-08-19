@@ -1,9 +1,11 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+import tempfile
 import unittest
 from unittest.mock import patch
 import core
+from core import TouchException
 from net import Network
 from configLoader import Configuration
 
@@ -21,7 +23,7 @@ class TransactionTest(unittest.TestCase):
     @patch('net.Network.getLink')
     def testLoad(self, mock_get_link):
         mock_get_link.return_value = 'text/html', '/tmp/foobar'
-        conf = Configuration(None, None, None, None, None, None, None, None, None)
+        conf = Configuration(None, Acceptor(True), Acceptor(True), Acceptor(True), None, None, None, None, None)
         t = core.createTransaction('foobar')
         t.loadResponse(conf)
         self.assertEqual(t.type, 'text/html')
@@ -29,24 +31,43 @@ class TransactionTest(unittest.TestCase):
         mock_get_link.assert_called_with(t, [], conf)
 
     def testLoadNotTouchable(self):
-        pass
+        ua = Acceptor(False)
+        ua.setDefaultAcceptValue('foobar', False)
+        try:
+            t = core.createTransaction('foobar')
+            conf = Configuration(None, Acceptor(True), ua, Acceptor(True), None, None, None, None, None)
+            t.loadResponse(conf)
+        except TouchException:#TODO: expected exception
+            return
+        self.assertFalse(True)
+            
 
-    def testLoadNetworkError(self):
-        pass
+    @patch('net.Network.getLink')
+    def testLoadNetworkError(self, mock_get_link):
+        #set mock to raise NetworkException
+        try:
+            conf = Configuration(None, Acceptor(True), Acceptor(True), Acceptor(True), None, None, None, None, None)
+            t = core.createTransaction('foobar')
+            t.loadResponse(conf)
+        except NetworkException:#TODO: expected exception
+            return
+        self.assertFalse(True)
+        
 
     def testContent(self):
-        # create temp
-        # put content in
-        # create transaction
-        # set file
-        # get content and assert
-        pass
+        content = 'foobar content'
+        with tempfile.TemporaryFile() as tmp:
+            tmp.write(content)
+            t = core.createTransaction('moo')
+            t.file = tmp.name
+            self.assertEqual(t.getContent(), content)
 
     def testAcceptedTypes(self):
-        #prepare conf
-        #call
-        #assert
-        pass
+        uri = 'foo'
+        types = ['one', 'two', 'three']
+        #TODO: prepare conf: uri_acceptor, uri_map, suffix acceptor, suffix uri map
+        conf = Configuration(None, Acceptor(True), Acceptor(True), Acceptor(True), None, None, None, None, None)
+        self.assertEqual(core.createTransaction(uri).getAcceptedTypes(conf), types)
 
 
 class RackTest(unittest.TestCase):
@@ -58,7 +79,7 @@ class RackTest(unittest.TestCase):
         pass
 
 
- class QueueTest(unittest.TestCase):
+class QueueTest(unittest.TestCase):
 
     def testEmpty(self):
         pass
