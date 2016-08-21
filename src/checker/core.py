@@ -1,11 +1,14 @@
 import marisa_trie
+import logging
+import Queue
+from urlparse import urlparse
+from copy import deepcopy
+from multiprocessing import Pool, Process
 from pluginDBAPI import DBAPI, VerificationStatus
 from plugin.common import PluginType, PluginTypeError
-from net import Network
-import logging
-from urlparse import urlparse
-import Queue
-from copy import deepcopy
+from net import Network, NetworkError
+
+
 
 
 class Core:
@@ -74,7 +77,7 @@ class Transaction:
     def loadResponse(self, conf):
         if self.isTouchable(conf.uri_acceptor, conf.suffix_acceptor):
             try:
-                acceptedTypes = self.__create_accepted_types(conf)
+                acceptedTypes = self.getAcceptedTypes(conf)
                 self.type, self.file = Network.getLink(self, acceptedTypes, conf)
             except NetworkError:
                 raise
@@ -83,22 +86,28 @@ class Transaction:
 
     def getContent(self):
         with open(self.file, 'r') as f:
-            return f.read().encode('utf-8')
+            data = f.read()
+            return data.encode('utf-8')
 
     def isTouchable(self, uriAcceptor, suffixAcceptor):
-        return (uriAcceptor.defaultAcceptValue(self.uri) != Resolution.no) and (suffixAcceptor.defaultAcceptValue(self.uri[::-1]) != Resolution.no)
+        return uriAcceptor.resolveDefaultAcceptValue(self.uri) and suffixAcceptor.resolveDefaultAcceptValue(self.uri[::-1])
 
     def getStripedUri(self):
         pr = urlparse(self.uri)
         return pr.scheme+'://'+pr.netloc
 
     def __get_accepted_types(self, uriMap, uriAcceptor):
-        if uriMap[self.uri]:
-            return uriMap[uriAcceptor.getMaxPrefix(self.uri)]
-        else:
-            return []
+        if self.uri in uriMap:
+            if uriMap[self.uri]:
+                return uriMap[uriAcceptor.getMaxPrefix(self.uri)]
+        return []
+ 
 
     def getAcceptedTypes(self, conf):
+        if conf is None:
+            return []
+        if conf.uri_map is None:
+            return []
         acceptedTypes = self.__get_accepted_types(conf.uri_map, conf.uri_acceptor)
         bak = self.uri
         self.uri = self.uri[::-1]
@@ -127,16 +136,69 @@ class Rack:
     def run(self, transaction):
  
         for plugin in self.plugins:
-            if self.__accept(transaction, plugin):
-                self.log.info(plugin.id + " started checking " + transaction.uri)
-                plugin.check(transaction)
-                self.log.info(plugin.id + " stopped checking " + transaction.uri)
+            self.__run_one(transaction, plugin)
 
-    def __accept(transaction, plugin):
+    def __run_one(self, transaction, plugin):
+
+        if self.accept(transaction, plugin):
+            self.log.info(plugin.id + " started checking " + transaction.uri)
+            plugin.check(transaction)
+            self.log.info(plugin.id + " stopped checking " + transaction.uri)
+
+    def accept(transaction, plugin):
 
         rotTransaction = deepcopy(transaction)
         rotTransaction.uri = transaction.getStripedUri()[::-1]
         return self.typeAcceptor.accept(transaction, plugin.id) and ( self.prefixAcceptor.accept(transaction, plugin.id) or self.suffixAcceptor.accept(rotTransaction, plugin.id) )
+
+
+class ParallelRack(Rack):
+
+    def __init__(self, prefixAcceptor, typeAcceptor, suffixAcceptor, plugins = []):
+
+        Rack.__init__(uriAcceptor, typeAcceptor, suffixAcceptor, plugins)
+        self.__count = count
+        self.__pool = []
+        for plugin in plugins: #TODO: refactor - process count per plugin in conf
+            p = Worker(self.log, typeAcceptor, prefixAcceptor, suffixAcceptor, plugin)
+            self.__pool.append(p)
+            p.start()
+        for plugin in plugins:
+            p.join()
+
+    def run(self, transaction):
+
+        for worker in self.__pool:
+            if self.accept(transaction, worker.plugin):
+                worker.register(transaction)
+
+
+class Worker(Process):
+
+    def __init__(self, initialize (log, typeAcceptor, prefixAcceptor, suffixAcceptor, plugin, db):
+
+        super(Worker, self).__init__()
+        self.log = log
+        self.typeAcceptor = typeAcceptor
+        self.prefixAcceptor = prefixAcceptor
+        self.suffixAcceptor = suffixAcceptor
+        self.plugin = plugin
+        self.queue = Queue()
+
+    def run(self):
+
+        #TODO: loop; wait for queue
+        #TODO: finalizer???
+        transaction = self.queue.pop()
+        self.log.info(plugin.id + " started checking " + transaction.uri)
+        self.plugin.check(transaction)
+        self.log.info(plugin.id + " stopped checking " + transaction.uri)
+
+    def register(self, transaction):
+
+        self.log.info(plugin.id + " will check " + transaction.uri)
+        self.queue.push(transaction)
+
 
 class Queue:
 
@@ -156,6 +218,7 @@ class Queue:
         self.__q.put(transaction)
         if parent is not None:
             self.__parent[transaction.idno] = parent.idno
+        #write into in-memory DB
 
     def load(self):
         pass
@@ -170,11 +233,15 @@ class Journal:
         self.__db = db
 
     def load(self):
+        #copy on-disk to in-memory
         pass
 
     def store(self):
+        #copy in-memory on disk
         pass
 
+
+    #always write into in-memory DB
     def startChecking(self, transaction):
         pass
 
@@ -182,6 +249,9 @@ class Journal:
         pass
 
     def foundDefect(self, transaction, defect):
+        pass
+
+    def foundDefect(self, transaction, name, additional):
         pass
 
 class Defect:
