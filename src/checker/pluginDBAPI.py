@@ -133,6 +133,7 @@ class DBAPI(object):
         cursor.execute(query, [str(VerificationStatus.requested)])
         data = cursor.fetchall()
         cursor.execute('DROP VIEW linkedUris')
+        return data
 
     def get_max_transaction_id(self):
         q = 'SELECT MAX(id) FROM transactions'
