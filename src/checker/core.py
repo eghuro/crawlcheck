@@ -18,7 +18,10 @@ class Core:
         self.plugins = plugins
         self.log = logging.getLogger("crawlcheck")
         self.conf = conf
+
         self.db = DBAPI(conf.dbconf)
+        self.db.load_defect_types()
+        self.db.load_finding_id()
 
         Queue.initialize()
         self.queue = Queue(self.db)
@@ -26,7 +29,6 @@ class Core:
 
         Journal.initialize()
         self.journal = Journal(self.db)
-        self.journal.load()
 
         self.rack = Rack(self.conf.uri_acceptor, self.conf.type_acceptor, self.plugins)
 
@@ -282,12 +284,7 @@ class Journal:
 
     def __init__(self, db):
         self.__db = db
-
-    def load(self):
-        #load correct findingId in DBAPI and populate defect_types there
-        self.__db.load_defect_types()
-        self.__db.load_finding_id()
-
+       
     def startChecking(self, transaction):
         self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatusId = ? WHERE id = ?', [str(Queue.__status_ids["verifying"]), transaction.idno]) )
 
