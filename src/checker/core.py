@@ -41,6 +41,7 @@ class Core:
             transaction = self.queue.pop()
 
             if transaction.depth > self.conf.max_depth:
+                self.log.debug("Skipping "+transaction.uri+" as it's depth "+transaction.depth+" and max depth condition is "+self.conf.max_depth)
                 continue #skip
 
             self.log.info("Processing "+transaction.uri)
@@ -175,7 +176,8 @@ class ParallelRack(Rack):
 
         for worker in self.__pool:
             if self.accept(transaction, worker.plugin):
-                worker.register(transaction)
+                personal_transaction = deepcopy(transaction)
+                worker.register(personal_transaction)
 
 
     def stop(self):
@@ -212,7 +214,7 @@ class Worker(Process):
 
     def register(self, transaction):
 
-        self.log.info(plugin.id + " requested to check " + transaction.uri)
+        self.log.info(plugin.id + " is requested to check " + transaction.uri)
         self.queue.put(transaction, True, None)
         self.log.info(plugin.id + " will check " + transaction.uri)
 
