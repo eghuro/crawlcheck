@@ -234,8 +234,6 @@ class Queue:
     def initialize():
         __status_ids["requested"] = 1
         __status_ids["processing"] = 2
-        __status_ids["finok"] = 4
-        __status_ids["finko"] = 5
 
     def __init__(self, db):
         self.__db = db
@@ -261,7 +259,15 @@ class Queue:
             self.__db.log_link(parent.idno, transaction.uri, transaction.idno)
 
     def load(self):
-        pass
+        #load transactions from DB to memory - only where status is requested
+        for t in self.__db.get_requested_transactions():
+            #uri = t[0]; depth = t[1]; idno = t[3]
+            srcId = -1
+            if t[2] is not None:
+                srcId = t[2]
+            self.__q.put(Transaction(t[0], t[1], srcId, t[3]))
+        #set up transaction id for factory method
+        core.transactionId = self.__db.get_max_transaction_id() + 1
 
 class Journal:
 
@@ -276,8 +282,9 @@ class Journal:
         self.__db = db
 
     def load(self):
-        #copy on-disk to in-memory
-        pass
+        #load correct findingId in DBAPI and populate defect_types there
+        self.__db.load_defect_types()
+        self.__db.load_finding_id()
 
     def startChecking(self, transaction):
         self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatusId = ? WHERE id = ?', [str(Queue.__status_ids["verifying"]), transaction.idno]) )
