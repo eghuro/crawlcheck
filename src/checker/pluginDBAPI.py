@@ -53,18 +53,17 @@ class DBAPI(object):
     def __init__(self, conf):
         self.con = Connector(conf)
         self.findingId = -1
+        self.tables = [Table.defect_types, Table.transactions, Table.finding, Table.link_defect]
         self.logs = dict()
-        self.logs[Table.transactions] = []
-        self.logs[Table.finding] = []
-        self.logs[Table.link_defect] = []
-        self.logs[Table.defect_types] = []
+        for table in self.tables:
+            self.logs[table] = []
         self.defect_types = []
 
     def log(self, table, query_pair):
         if table in self.logs:
             self.logs[table].append(query_pair)
         else:
-            raise
+            raise TableError()
 
     def log_link(self, parent_id, uri, new_id):
        self.findingId = self.findingId + 1
