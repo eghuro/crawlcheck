@@ -1,10 +1,10 @@
-CREATE TABLE verificationStatus (
+CREATE TABLE IF NOT EXISTS verificationStatus (
   id INTEGER PRIMARY KEY,
   status VARCHAR(255) NOT NULL,
   description TEXT
 );
 
-CREATE TABLE HTTPmethods (
+CREATE TABLE IF NOT EXISTS HTTPmethods (
   method VARCHAR(10) PRIMARY KEY
 );
 
@@ -16,7 +16,7 @@ INSERT INTO HTTPmethods (method) VALUES ("HEAD");
 INSERT INTO HTTPmethods (method) VALUES ("DELETE");
 INSERT INTO HTTPmethods (method) VALUES ("TRACE");
 
-CREATE TABLE transactions (
+CREATE TABLE IF NOT EXISTS transactions (
   id INTEGER PRIMARY KEY,
   method VARCHAR(10) NOT NULL,
   uri VARCHAR(255) NOT NULL,
@@ -34,7 +34,7 @@ CREATE TABLE transactions (
     ON DELETE CASCADE
 );
 
-CREATE TABLE finding (
+CREATE TABLE IF NOT EXISTS finding (
   id INTEGER PRIMARY KEY NOT NULL,
   responseId INT UNSIGNED NOT NULL,
   FOREIGN KEY(responseId)
@@ -42,7 +42,7 @@ CREATE TABLE finding (
     ON DELETE CASCADE
 );
 
-CREATE TABLE link (
+CREATE TABLE IF NOT EXISTS link (
   findingId INTEGER PRIMARY KEY NOT NULL,
   toUri VARCHAR(255) NOT NULL,
   processed BOOLEAN NOT NULL DEFAULT false,
@@ -55,13 +55,13 @@ CREATE TABLE link (
     ON DELETE CASCADE
 );
 
-CREATE TABLE parameter (
+CREATE TABLE IF NOT EXISTS parameter (
   id INTEGER PRIMARY KEY NOT NULL,
   uri VARCHAR(255) NOT NULL,
   name VARCHAR(255) NOT NULL
 );
 
-CREATE TABLE scriptAction (
+CREATE TABLE IF NOT EXISTS scriptAction (
   findingId INTEGER PRIMARY KEY NOT NULL,
   parameterId INTEGER NOT NULL,
   method VARCHAR(10) NOT NULL,
@@ -76,7 +76,7 @@ CREATE TABLE scriptAction (
     ON DELETE CASCADE
 );
 
-CREATE TABLE parameterValue (
+CREATE TABLE IF NOT EXISTS parameterValue (
   findingId INTEGER PRIMARY KEY NOT NULL,
   value VARCHAR(255) NOT NULL,
   FOREIGN KEY (findingId)
@@ -84,7 +84,7 @@ CREATE TABLE parameterValue (
     ON DELETE CASCADE
 );
 
-CREATE TABLE defectType (
+CREATE TABLE IF NOT EXISTS defectType (
   id INTEGER PRIMARY KEY NOT NULL,
   type VARCHAR(255) NOT NULL,
   description TEXT
@@ -93,7 +93,6 @@ CREATE TABLE defectType (
 CREATE TABLE IF NOT EXISTS defect (
   findingId INTEGER PRIMARY KEY NOT NULL,
   type INT UNSIGNED NOT NULL,
-  location INT UNSIGNED NOT NULL,
   evidence TEXT NOT NULL,
   FOREIGN KEY (findingId)
     REFERENCES finding(id)
@@ -115,11 +114,10 @@ CREATE TABLE IF NOT EXISTS annotation (
 );
 
 INSERT INTO verificationStatus(id, status) VALUES (1, "REQUESTED");
-INSERT INTO verificationStatus(id, status) VALUES (2, "RETRIEVING");
-INSERT INTO verificationStatus(id, status) VALUES (3, "RESPONDED");
-INSERT INTO verificationStatus(id, status) VALUES (4, "PROCESSING");
-INSERT INTO verificationStatus(id, status) VALUES (5, "FINISHED - OK");
-INSERT INTO verificationStatus(id, status) VALUES (6, "FINISHED - ERRORS");
+INSERT INTO verificationStatus(id, status) VALUES (2, "PROCESSING");
+INSERT INTO verificationStatus(id, status) VALUES (3, "VERIFYING");
+INSERT INTO verificationStatus(id, status) VALUES (4, "FINISHED - OK");
+INSERT INTO verificationStatus(id, status) VALUES (5, "FINISHED - ERRORS");
 
 INSERT INTO defectType(type, description) VALUES ("badlink", "Invalid link");
 INSERT INTO defectType(type, description) VALUES ("stylesheet", "Stylesheet error");

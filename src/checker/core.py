@@ -1,10 +1,11 @@
 import marisa_trie
 import logging
 import Queue
+import sqlite3
 from urlparse import urlparse
 from copy import deepcopy
 from multiprocessing import Pool, Process
-from pluginDBAPI import DBAPI, VerificationStatus
+from pluginDBAPI import DBAPI, VerificationStatus, Table
 from plugin.common import PluginType, PluginTypeError
 from net import Network, NetworkError
 
@@ -19,9 +20,11 @@ class Core:
         self.conf = conf
         self.db = DBAPI(conf.dbconf)
 
+        Queue.initialize()
         self.queue = Queue(self.db)
 	self.queue.load()
 
+        Journal.initialize()
         self.journal = Journal(self.db)
         self.journal.load()
 
@@ -43,6 +46,7 @@ class Core:
             self.log.info("Processing "+transaction.uri)
             try:
                 transaction.loadResponse(self.conf)
+                self.journal.startChecking(transaction)
                 self.rack.run(transaction)
             except TouchException, NetworkError:
                 self.journal.stopChecking(transaction, VerificationStatus.done_ko)
@@ -50,8 +54,8 @@ class Core:
             self.journal.stopChecking(transaction, VerificationStatus.done_ok)
 
     def finalize(self):
-        self.queue.store()
-        self.journal.store()
+        self.rack.stop()
+        self.db.sync()
 
     def __initializePlugin(self, plugin):
         plugin.setJournal(self.journal)
@@ -151,6 +155,9 @@ class Rack:
         rotTransaction.uri = transaction.getStripedUri()[::-1]
         return self.typeAcceptor.accept(transaction, plugin.id) and ( self.prefixAcceptor.accept(transaction, plugin.id) or self.suffixAcceptor.accept(rotTransaction, plugin.id) )
 
+    def stop(self):
+        pass
+
 
 class ParallelRack(Rack):
 
@@ -163,8 +170,6 @@ class ParallelRack(Rack):
             p = Worker(self.log, typeAcceptor, prefixAcceptor, suffixAcceptor, plugin)
             self.__pool.append(p)
             p.start()
-        for plugin in plugins:
-            p.join()
 
     def run(self, transaction):
 
@@ -173,9 +178,16 @@ class ParallelRack(Rack):
                 worker.register(transaction)
 
 
+    def stop(self):
+
+        for worker in self.__pool:
+            worker.stop()
+            worker.join()
+
+
 class Worker(Process):
 
-    def __init__(self, initialize (log, typeAcceptor, prefixAcceptor, suffixAcceptor, plugin, db):
+    def __init__(self, initialize (log, typeAcceptor, prefixAcceptor, suffixAcceptor, plugin):
 
         super(Worker, self).__init__()
         self.log = log
@@ -183,51 +195,82 @@ class Worker(Process):
         self.prefixAcceptor = prefixAcceptor
         self.suffixAcceptor = suffixAcceptor
         self.plugin = plugin
-        self.queue = Queue()
+        self.queue = Queue.Queue()
+        self.do_work = True
 
     def run(self):
 
-        #TODO: loop; wait for queue
-        #TODO: finalizer???
-        transaction = self.queue.pop()
-        self.log.info(plugin.id + " started checking " + transaction.uri)
-        self.plugin.check(transaction)
-        self.log.info(plugin.id + " stopped checking " + transaction.uri)
+        while self.do_work:
+            transaction = self.queue.get(block=True, timeout=None)
+
+            if self.do_work: #flag could have changed while we were waiting
+                self.log.info(plugin.id + " started checking " + transaction.uri)
+                self.plugin.check(transaction)
+                self.log.info(plugin.id + " stopped checking " + transaction.uri)
+
+            self.queue.task_done()
 
     def register(self, transaction):
 
+        self.log.info(plugin.id + " requested to check " + transaction.uri)
+        self.queue.put(transaction, True, None)
         self.log.info(plugin.id + " will check " + transaction.uri)
-        self.queue.push(transaction)
+
+    def stop(self):
+
+        self.do_work = False
+        try:
+            self.queue.put_nowait(None) #if we're waiting on empty queue, this will push through
+        except Full: #if queue is full, we are not waiting in queue.get
+            pass
 
 
 class Queue:
 
 
+    __status_ids = dict()
+    
+    @staticmethod
+    def initialize():
+        __status_ids["requested"] = 1
+        __status_ids["processing"] = 2
+        __status_ids["finok"] = 4
+        __status_ids["finko"] = 5
+
     def __init__(self, db):
         self.__db = db
         self.__q = Queue.Queue()
-        self.__parent = Dict()
-
+        
     def isEmpty(self):
         return self.__q.empty()
 
     def pop(self):
-        return self.__q.get()
+        t = self.__q.get()
+
+        self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatusId = ? WHERE id = ?', [str(Queue.__status_ids["processing"]), t.idno]) )
+        
+        return t
 
     def push(self, transaction, parent=None):
         self.__q.put(transaction)
+
+        self.__db.log(Table.transactions, ('INSERT INTO transactions (id, method, uri, origin, verificationStatusId, depth) VALUES (?, \'GET\', ?, \'CHECKER\', ?, ?', 
+                 [str(transaction.idno), str(transaction.uri), str(Queue.__status_ids["requested"]), str(transaction.depth)]) )
+
         if parent is not None:
-            self.__parent[transaction.idno] = parent.idno
-        #write into in-memory DB
+            self.__db.log_link(parent.idno, transaction.uri, transaction.idno)
 
     def load(self):
         pass
 
-    def store(self):
-        pass
-
 class Journal:
 
+
+    __status_ids = dict()
+    
+    @staticmethod
+    def initialize():
+        __status_ids["verifying"] = 3
 
     def __init__(self, db):
         self.__db = db
@@ -236,23 +279,17 @@ class Journal:
         #copy on-disk to in-memory
         pass
 
-    def store(self):
-        #copy in-memory on disk
-        pass
-
-
-    #always write into in-memory DB
     def startChecking(self, transaction):
-        pass
+        self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatusId = ? WHERE id = ?', [str(Queue.__status_ids["verifying"]), transaction.idno]) )
 
     def stopChecking(self, transaction, status):
-        pass
+        self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatusId = ? WHERE id = ?', [str(status), transaction.idno]) )
 
     def foundDefect(self, transaction, defect):
-        pass
+        self.foundDefect(transaction, defect.name, defect.additional)
 
     def foundDefect(self, transaction, name, additional):
-        pass
+        self.__db.log_defect(transaction.idno, name, additional)
 
 class Defect:
 
