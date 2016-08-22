@@ -87,7 +87,7 @@ class DBAPI(object):
             #only then findings depending on transactions
             #and links and defects depending on findings and possibly defect types at the end
 
-            for table in [Table.defect_types, Table.transactions, Table.finding, Table.link_defect]:
+            for table in self.tables:
                 self.__sync_table(cursor, table]
 
             self.con.commit()
