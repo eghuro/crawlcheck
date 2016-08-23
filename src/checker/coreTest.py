@@ -9,7 +9,7 @@ import core
 from core import TouchException
 from acceptor import Acceptor
 from net import Network, StatusError, NetworkError
-from configLoader import Configuration
+from configLoader import Configuration, ConfigLoader
 
 class TransactionTest(unittest.TestCase):
 
@@ -73,9 +73,58 @@ class TransactionTest(unittest.TestCase):
     def testAcceptedTypes(self):
         uri = 'foo'
         types = ['one', 'two', 'three']
-        #TODO: prepare conf: uri_acceptor, uri_map, suffix acceptor, suffix uri map
-        conf = Configuration(None, Acceptor(True), Acceptor(True), Acceptor(True), None, None, None, None, None)
-        self.assertEqual(core.createTransaction(uri).getAcceptedTypes(conf), types)
+
+        ua = Acceptor(False)
+        ua.setPluginAcceptValue('p1', 'fo', True)
+        ua.setPluginAcceptValue('p3', 'f', True)
+        self.assertEqual(ua.getValues(), set(['fo', 'f']))
+        self.assertEqual(ua.getPositiveValues(), set(['fo', 'f']))
+
+        sa = Acceptor(False)
+        sa.setPluginAcceptValue('p2', 'oo', True)
+        sa.setPluginAcceptValue('p3', 'oo', True)
+        self.assertEqual(sa.getValues(), set(['oo']))
+        self.assertEqual(sa.getPositiveValues(), set(['oo']))
+
+        ta = Acceptor(False)
+        ta.setPluginAcceptValue('p1', 'one', True)
+        ta.setPluginAcceptValue('p1', 'five', False)
+        ta.setPluginAcceptValue('p2', 'one', False)
+        ta.setPluginAcceptValue('p2', 'two', True)
+        ta.setPluginAcceptValue('p3', 'three', True)
+        ta.setPluginAcceptValue('p3', 'two', True)
+        self.assertEqual(ta.getValues(), set(['one', 'five', 'two', 'three']))
+        self.assertEqual(ta.getPositiveValues(), set(['one', 'two', 'three']))
+
+        r1 = dict() #uriPlugins
+        r1['fo'] = set(['p1'])
+        r1['f'] = set(['p3'])
+        
+        r2 = dict() #suffixUriPlugins
+        r2['oo'] = set(['p2'])
+        r2['oo'].add('p3')
+        
+        r3 = dict() #pluginTypes
+        r3['p1'] = set(['one'])
+        r3['p2'] = set(['two'])
+        r3['p3'] = set(['three'])
+        r3['p3'].add('two')
+
+        r2 = ConfigLoader.reverse_dict_keys(r2)
+
+        uri_map = ConfigLoader.create_uri_plugin_map(r1, r3, ua)
+        #ua.positiveValues -> ['fo', 'f']]
+        #uriPlugin['fo'] -> set(['p1'])
+        #uriPlugin['f'] -> set(['p3'])
+        self.assertEqual(uri_map.keys(), ['fo', 'f'])
+
+        suffix_map = ConfigLoader.create_uri_plugin_map(r2, r3, sa)
+        self.assertEqual(suffix_map.keys(), ['oo'])
+        
+        conf = Configuration(None, ta, ua, sa, None, None, None, uri_map, suffix_map)
+        t = core.createTransaction(uri)
+        self.assertFalse(conf.suffix_uri_map is None)
+        self.assertEqual(t.getAcceptedTypes(conf), types)
 
 
 class RackTest(unittest.TestCase):

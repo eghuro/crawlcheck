@@ -18,10 +18,10 @@ class Core:
         self.plugins = plugins
         self.log = logging.getLogger("crawlcheck")
         self.conf = conf
-
         self.db = DBAPI(conf.dbconf)
         self.db.load_defect_types()
         self.db.load_finding_id()
+
 
         Queue.initialize()
         self.queue = Queue(self.db)
@@ -104,23 +104,35 @@ class Transaction:
         return pr.scheme+'://'+pr.netloc
 
     def __get_accepted_types(self, uriMap, uriAcceptor):
-        if self.uri in uriMap:
-            if uriMap[self.uri]:
-                return uriMap[uriAcceptor.getMaxPrefix(self.uri)]
+        p = uriAcceptor.getMaxPrefix(self.uri)
+        if p in uriMap:
+            if uriMap[p]:
+                return uriMap[p]
         return []
  
 
     def getAcceptedTypes(self, conf):
         if conf is None:
             return []
+        
         if conf.uri_map is None:
-            return []
-        acceptedTypes = self.__get_accepted_types(conf.uri_map, conf.uri_acceptor)
+            acceptedTypes = []
+        else:
+            acceptedTypes = Transaction.__set2list(self.__get_accepted_types(conf.uri_map, conf.uri_acceptor))
+        
         bak = self.uri
         self.uri = self.uri[::-1]
-        acceptedTypes += self.__get_accepted_types(conf.suffix_uri_map, conf.suffix_acceptor)
+        if conf.suffix_uri_map is not None:
+             acceptedTypes += Transaction.__set2list(self.__get_accepted_types(conf.suffix_uri_map, conf.suffix_acceptor))
         self.uri = bak
         return acceptedTypes
+
+    @staticmethod
+    def __set2list(x):
+        y = []
+        for z in x:
+          y.append(z)
+        return y
 
 transactionId = 0
 def createTransaction(uri, depth = 0, srcId = -1):
@@ -191,7 +203,7 @@ class ParallelRack(Rack):
 
 class Worker(Process):
 
-    def __init__(self, initialize (log, typeAcceptor, prefixAcceptor, suffixAcceptor, plugin):
+    def __init__(self, log, typeAcceptor, prefixAcceptor, suffixAcceptor, plugin):
 
         super(Worker, self).__init__()
         self.log = log

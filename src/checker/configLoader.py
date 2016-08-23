@@ -109,9 +109,10 @@ class ConfigLoader(object):
             self.uriAcceptor = ConfigLoader.__get_acceptor(us, u, u_dsc, root, uriPlugins, None)
             self.suffixAcceptor = ConfigLoader.__get_acceptor(sus, su, su_dsc, root, suffixUriPlugins, None)
             self.suffixAcceptor.reverseValues()
-            self.__revese_dict_values(suffixUriPlugins)
-            self.uriMap = self.__create_uri_plugin_map(uriPlugins, pluginTypes)
-            self.suffixMap = self.__create_uri_plugin_map(suffixUriPlugins, pluginTypes)
+            #self.__revese_dict_values(suffixUriPlugins)
+            suffixUriPlugins = ConfigLoader.reverse_dict_keys(suffixUriPlugins)
+            self.uriMap = ConfigLoader.create_uri_plugin_map(uriPlugins, pluginTypes, self.uriAcceptor)
+            self.suffixMap = ConfigLoader.create_uri_plugin_map(suffixUriPlugins, pluginTypes, self.suffixAcceptor)
         except ConfigurationError as e:
             print(e.msg)
             return False
@@ -155,16 +156,19 @@ class ConfigLoader(object):
                     elif tag[tag_string] not in drocer[plugin]:
                         drocer[plugin].add(tag[tag_string])
 
-    def __create_uri_plugin_map(self, uriPlugin, pluginTypes):
+    @staticmethod
+    def create_uri_plugin_map(uriPlugin, pluginTypes, uriAcceptor):
         uriMap = dict()
-        #create mapping of accepted content types for URI
-        for uri in self.uriAcceptor.getPositiveValues():
-            if uri in uriPlugin:
+        #create mapping of accepted content types for URI:
+
+        for uri in uriAcceptor.getPositiveValues(): #accepted prefixes
+            if uri in uriPlugin: #any plugin accepting this prefix? (careful!!)
                 for plugin in uriPlugin[uri]:
-                    #put list of types for plugin into a dict for uri; join sets together
-                    if uri not in self.uriMap:
-                        uriMap[uri] = set()
-                    uriMap[uri].update(pluginTypes[plugin])
+                    if plugin in pluginTypes: #content types accepted by the plugin (should always pass)
+                        #put list of types for plugin into a dict for uri; join sets together
+                        if uri not in uriMap:
+                            uriMap[uri] = set()
+                        uriMap[uri].update(pluginTypes[plugin])
             else:
                 print("Uri not in uriPlugin: "+uri)
         return uriMap
@@ -175,12 +179,13 @@ class ConfigLoader(object):
         else:
             return None
 
-    def __reverse_dict_values(self, sufdict):
+    @staticmethod
+    def reverse_dict_keys(sufdict):
+        revdict = dict()
         for key in sufdict.keys():
-            lst = []
-            for val in sufdict[key]:
-                lst.append(val[::-1])
-            sufdict[key]=lst
+            revkey = key[::-1]
+            revdict[revkey] = sufdict[key]
+        return revdict
 
 class Configuration(object):
     def __init__(self, db, ta, ua, sa, ep, md, ag, um, su):

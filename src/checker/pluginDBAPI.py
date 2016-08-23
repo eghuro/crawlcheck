@@ -8,6 +8,36 @@ import sqlite3 as mdb
 from enum import Enum
 
 
+class DBAPIconfiguration(object):
+    """ Configuration class for DBAPI.
+
+    Configuration is set through respective setters and read through getters.
+
+    Attributes:
+        dbname (str): Sqlite3 database file to use
+    """
+
+    def __init__(self):
+        """Default constructor.
+        """
+
+        self.dbname = ""
+
+    def getDbname(self):
+        """ Database name getter.
+        """
+
+        return self.dbname
+
+    def setDbname(self, dbname):
+        """Database name setter.
+
+        Args:
+            dbname: database name where data are stored
+        """
+
+        self.dbname = dbname
+
 class VerificationStatus(Enum):
 
     requested = 1
@@ -68,15 +98,15 @@ class DBAPI(object):
     def log_link(self, parent_id, uri, new_id):
        self.findingId = self.findingId + 1
        self.log(Table.finding, ('INSERT INTO finding (id, responseId) VALUES (?, ?)', [str(self.findingId), str(parent_id)]) )
-       self.log(Table.link_defect, ('INSERT INTO link (findingId, toUri, requestId) VALUES (?, ?, ?)', [str(self.findingId), str(uri), str(new_id)] )
+       self.log(Table.link_defect, ('INSERT INTO link (findingId, toUri, requestId) VALUES (?, ?, ?)', [str(self.findingId), str(uri), str(new_id)]) )
 
     def log_defect(self, transactionId, name, additional):
         self.findingId = self.findingId + 1
-        self.log(Table.finding, ('INSERT INTO finding (id, responseId) VALUES (?, ?)', [str(self.findingId), str(transactionId)])
+        self.log(Table.finding, ('INSERT INTO finding (id, responseId) VALUES (?, ?)', [str(self.findingId), str(transactionId)]))
         if name not in self.defect_types:
             self.log(Table.defect_types, ('INSERT INTO defectType (type) VALUES (?)', [str(name)]))
             self.defect_types.append(name)
-        self.log(Table.link_defect, ('INSERT INTO defect (findingId, type, evidence) VALUES (?, ?, ?)', [str(self.findingId), str(name), str(additional)])
+        self.log(Table.link_defect, ('INSERT INTO defect (findingId, type, evidence) VALUES (?, ?, ?)', [str(self.findingId), str(name), str(additional)]))
         
     def sync(self):
         try:
@@ -88,11 +118,11 @@ class DBAPI(object):
             #and links and defects depending on findings and possibly defect types at the end
 
             for table in self.tables:
-                self.__sync_table(cursor, table]
+                self.__sync_table(cursor, table)
 
             self.con.commit()
 
-         except mdb.Error as e:
+        except mdb.Error as e:
             self.error(e)
 
     def __sync_table(self, cursor, table):
