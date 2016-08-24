@@ -113,9 +113,6 @@ class TransactionTest(unittest.TestCase):
         r2 = ConfigLoader.reverse_dict_keys(r2)
 
         uri_map = ConfigLoader.create_uri_plugin_map(r1, r3, ua)
-        #ua.positiveValues -> ['fo', 'f']]
-        #uriPlugin['fo'] -> set(['p1'])
-        #uriPlugin['f'] -> set(['p3'])
         self.assertEqual(uri_map.keys(), ['fo', 'f'])
 
         suffix_map = ConfigLoader.create_uri_plugin_map(r2, r3, sa)
@@ -129,10 +126,10 @@ class TransactionTest(unittest.TestCase):
 
 class RackTest(unittest.TestCase):
 
-    def testInsert(self):
+    def testRun(self):
         pass
 
-    def testRun(self):
+    def testAccept(self):
         pass
 
 

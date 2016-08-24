@@ -43,7 +43,7 @@ class Network(object):
             match, mime = Network.__test_content_type(ct, name)
             if not match:
                 journal.foundDefect(srcTransaction, "type-mishmash", mime)
-            return r, name
+            return ct, name
             
         except ConnectionError as e:
             print("Connection error: {0}", format(e))

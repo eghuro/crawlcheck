@@ -51,9 +51,12 @@ class Core:
                 transaction.loadResponse(self.conf)
                 self.journal.startChecking(transaction)
                 self.rack.run(transaction)
-            except TouchException, NetworkError:
+            except TouchException: #nesmim se toho dotykat
+                self.journal.stopChecking(transaction, VerificationStatus.done_ok)
+            except NetworkError as e:
                 self.journal.stopChecking(transaction, VerificationStatus.done_ko)
-                raise
+                self.log.exception(e) ##
+                continue
             self.journal.stopChecking(transaction, VerificationStatus.done_ok)
 
     def finalize(self):
@@ -253,6 +256,7 @@ class Queue:
 
     def __init__(self, db):
         self.__db = db
+        self.__seen = set()
         self.__q = Queue.Queue()
         
     def isEmpty(self):
@@ -266,13 +270,18 @@ class Queue:
         return t
 
     def push(self, transaction, parent=None):
-        self.__q.put(transaction)
-
-        self.__db.log(Table.transactions, ('INSERT INTO transactions (id, method, uri, origin, verificationStatusId, depth) VALUES (?, \'GET\', ?, \'CHECKER\', ?, ?', 
-                 [str(transaction.idno), str(transaction.uri), str(Queue.__status_ids["requested"]), str(transaction.depth)]) )
+        if transaction.uri not in self.__seen:
+            self.__seen.add(transaction.uri)
+            self.__q.put(transaction)
+            self.__db.log(Table.transactions,
+                          ('INSERT INTO transactions (id, method, uri, origin, verificationStatusId, depth) VALUES (?, \'GET\', ?, \'CHECKER\', ?, ?', 
+                          [str(transaction.idno), str(transaction.uri), str(Queue.__status_ids["requested"]), str(transaction.depth)]) )
 
         if parent is not None:
             self.__db.log_link(parent.idno, transaction.uri, transaction.idno)
+
+    def push_link(self, uri, parent):
+        self.push(core.createTransaction(uri,parent.depth+1), parent)
 
     def load(self):
         #load transactions from DB to memory - only where status is requested
@@ -282,6 +291,8 @@ class Queue:
             if t[2] is not None:
                 srcId = t[2]
             self.__q.put(Transaction(t[0], t[1], srcId, t[3]))
+        #load uris from transactions table for list of seen URIs
+        self.__seen.update(self.__db.get_seen_uris())
         #set up transaction id for factory method
         core.transactionId = self.__db.get_max_transaction_id() + 1
 

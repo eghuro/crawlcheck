@@ -1,5 +1,4 @@
 from common import PluginType
-import core
 from bs4 import BeautifulSoup
 from yapsy.IPlugin import IPlugin
 from urlparse import urlparse, parse_qs, urljoin
@@ -28,9 +27,7 @@ class LinksFinder(IPlugin):
 
     def check(self, transaction):
         """ Najde tagy <a>, <link>, <img>, <iframe>, <frame>,
-            vybere atribut href, resp. src, ulozi jako odkazy,
-            stahne obsah jako dalsi transakci - pritom kontroluje,
-            zda se stahovani vyplati - tj. ze obsah bude kontrolovan.
+            vybere atribut href, resp. src, ulozi jako odkazy
         """
 
         soup = BeautifulSoup(transaction.getContent(), 'html.parser')
@@ -81,5 +78,5 @@ class LinksFinder(IPlugin):
                 urlNoAnchor = url.split('#')[0]
 
                 addr = urllib.quote(urlNoAnchor.encode('utf-8'))
-                self.queue.push(core.createTransaction(addr,transaction.depth+1), transaction) #TODO: refactor
+                self.queue.push_link(addr, transaction) #duplicates handled in queue
                 #TODO: scriptParams?

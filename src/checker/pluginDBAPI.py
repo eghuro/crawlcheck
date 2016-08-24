@@ -164,6 +164,12 @@ class DBAPI(object):
         cursor.execute('DROP VIEW linkedUris')
         return data
 
+    def get_seen_uris(self):
+        query = 'SELECT uri FROM transactions'
+        c = self.con.get_cursor()
+        c.execute(query)
+        return c.fetchall()
+
     def get_max_transaction_id(self):
         q = 'SELECT MAX(id) FROM transactions'
         cursor = self.con.get_cursor()

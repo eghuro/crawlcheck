@@ -103,13 +103,12 @@ class ConfigLoader(object):
 
         try:
             uriPlugins = dict()
-            sufixUriPlugins = dict()
+            suffixUriPlugins = dict()
             pluginTypes = dict()
             self.typeAcceptor = ConfigLoader.__get_acceptor(cts, ct, ct_dsc, root, None, pluginTypes)
             self.uriAcceptor = ConfigLoader.__get_acceptor(us, u, u_dsc, root, uriPlugins, None)
             self.suffixAcceptor = ConfigLoader.__get_acceptor(sus, su, su_dsc, root, suffixUriPlugins, None)
             self.suffixAcceptor.reverseValues()
-            #self.__revese_dict_values(suffixUriPlugins)
             suffixUriPlugins = ConfigLoader.reverse_dict_keys(suffixUriPlugins)
             self.uriMap = ConfigLoader.create_uri_plugin_map(uriPlugins, pluginTypes, self.uriAcceptor)
             self.suffixMap = ConfigLoader.create_uri_plugin_map(suffixUriPlugins, pluginTypes, self.suffixAcceptor)
@@ -164,11 +163,11 @@ class ConfigLoader(object):
         for uri in uriAcceptor.getPositiveValues(): #accepted prefixes
             if uri in uriPlugin: #any plugin accepting this prefix? (careful!!)
                 for plugin in uriPlugin[uri]:
-                    if plugin in pluginTypes: #content types accepted by the plugin (should always pass)
-                        #put list of types for plugin into a dict for uri; join sets together
-                        if uri not in uriMap:
-                            uriMap[uri] = set()
-                        uriMap[uri].update(pluginTypes[plugin])
+                    assert plugin in pluginTypes #content types accepted by the plugin (should always pass)
+                    #put list of types for plugin into a dict for uri; join sets together
+                    if uri not in uriMap:
+                        uriMap[uri] = set()
+                    uriMap[uri].update(pluginTypes[plugin])
             else:
                 print("Uri not in uriPlugin: "+uri)
         return uriMap

@@ -2,9 +2,9 @@
 rm crawlcheck
 sqlite3 crawlcheck < mysql_tables.sql
 coverage erase
-#coverage run acceptorTest.py
-#coverage run -a configLoaderTest.py
-coverage run coreTest.py
+coverage run acceptorTest.py
+coverage run -a configLoaderTest.py
+coverage run -a coreTest.py
 ##coverage run -a downTest.py
 ##coverage run -a pluginDBAPItest.py
 ##coverage run -a pluginRunnerTest.py

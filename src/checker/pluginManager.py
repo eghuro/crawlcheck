@@ -48,11 +48,11 @@ def main():
             log.info("No plugins found")
 
         log.info("Running checker")
-        core = Core(plugins, cl.get_configuration())
+        core_instance = Core(plugins, cl.get_configuration())
         try:
-            core.run()
+            core_instance.run()
         finally:
-            core.finalize()
+            core_instance.finalize()
     else:
         print("Usage: "+sys.argv[0]+" <configuration YAML file>")
 
