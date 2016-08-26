@@ -150,7 +150,7 @@ class Rack:
     def __init__(self, uriAcceptor, typeAcceptor, suffixAcceptor, plugins = []):
 
         self.plugins = plugins
-        self.uriAcceptor = uriAcceptor
+        self.prefixAcceptor = uriAcceptor
         self.typeAcceptor = typeAcceptor
         self.suffixAcceptor = suffixAcceptor
         self.log = logging.getLogger("crawlcheck")
@@ -167,11 +167,10 @@ class Rack:
             plugin.check(transaction)
             self.log.info(plugin.id + " stopped checking " + transaction.uri)
 
-    def accept(transaction, plugin):
+    def accept(self, transaction, plugin):
 
-        rotTransaction = deepcopy(transaction)
-        rotTransaction.uri = transaction.getStripedUri()[::-1]
-        return self.typeAcceptor.accept(transaction, plugin.id) and ( self.prefixAcceptor.accept(transaction, plugin.id) or self.suffixAcceptor.accept(rotTransaction, plugin.id) )
+        rot = transaction.getStripedUri()[::-1]
+        return self.typeAcceptor.accept(transaction.type, plugin.id) and ( self.prefixAcceptor.accept(transaction.uri, plugin.id) or self.suffixAcceptor.accept(rot, plugin.id) )
 
     def stop(self):
         pass

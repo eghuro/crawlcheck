@@ -41,12 +41,9 @@ class Acceptor(object):
         self.uris = set()
         self.positive_uris = set()
 
-    def accept(self, transaction, pluginId):
-        """ Does a plugin accept an URI?
-        Main API method, that runs a resolution algorithm.
-        """
+    def accept(self, value, pluginId):
 
-        return self.resolvePluginAcceptValue(pluginId, self.getMaxPrefix(transaction.uri))
+        return self.resolvePluginAcceptValue(pluginId, self.getMaxPrefix(value))
 
     def getMaxPrefix(self, value):
        # seznam prefixu, pro nas uri chceme nejdelsi prefix

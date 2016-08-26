@@ -253,27 +253,27 @@ class AcceptorTest(unittest.TestCase):
 
     def testAcceptTrue(self):
         a = self.__getPreloadedAcceptor_pluginAcceptValue_multiple(False)
-        t = core.createTransaction('goof.org/about/offices/')
+        t = 'goof.org/about/offices/'
         self.assertTrue(a.accept(t, 'plug'))
-        t.uri = 'meow.net'
+        t = 'meow.net'
         self.assertTrue(a.accept(t, 'glup'))
-        t.uri = 'foo.bar.org/foobar'
+        t = 'foo.bar.org/foobar'
         self.assertTrue(a.accept(t, ''))
         self.assertTrue(a.accept(t, None))
         self.assertTrue(a.accept(t, 12345))
         self.assertTrue(a.accept(t, -12.35))
-        t.uri = 'foog.com/'
+        t = 'foog.com/'
         self.assertTrue(a.accept(t, 'plug'))
 
     def testAcceptFalse(self):
         a = self.__getPreloadedAcceptor_pluginAcceptValue_multiple(False)
-        t = core.createTransaction('meow.net/about/offices/')
+        t = 'meow.net/about/offices/'
         self.assertFalse(a.accept(t, 'plug'))
-        t.uri = 'goof.org'
+        t = 'goof.org'
         self.assertFalse(a.accept(t, 'glup'))
-        t.uri = 'woem.edu/about.html'
+        t = 'woem.edu/about.html'
         self.assertFalse(a.accept(t, 'plug'))
-        t.uri = 'moo.baz.net/glory'
+        t = 'moo.baz.net/glory'
         self.assertFalse(a.accept(t, ''))
         self.assertFalse(a.accept(t, None))
         self.assertFalse(a.accept(t, 12345))

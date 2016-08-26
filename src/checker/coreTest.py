@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from mock import patch
 import core
-from core import TouchException
+from core import TouchException, Rack
 from acceptor import Acceptor
 from net import Network, StatusError, NetworkError
 from configLoader import Configuration, ConfigLoader
@@ -124,10 +124,57 @@ class TransactionTest(unittest.TestCase):
         self.assertEqual(t.getAcceptedTypes(conf), types)
 
 
+class FakePlugin():
+
+    def __init__(self, name):
+        self.counter = 0
+        self.id = name
+        self.checked = []
+
+    def check(self, transaction):
+        #print ("Check invoked on "+self.id+" with uri "+transaction.uri)
+        self.counter = self.counter + 1
+        self.checked.append(transaction.idno)
+
+
 class RackTest(unittest.TestCase):
 
     def testRun(self):
-        pass
+
+        pp = []
+        ps = ["p1", "p2", "p3"]
+        for s in ps:
+            pp.append(FakePlugin(s))
+
+        uri = "foo"
+        rotUri = "oof"
+        ctype = "bar"
+
+        ta = Acceptor(False)
+        for s in ps:
+            ta.setPluginAcceptValue(s, ctype, True)
+
+        ua = Acceptor(False)
+        for s in ps:
+            ua.setPluginAcceptValue(s, uri, True)
+
+        sa = Acceptor(False)
+        for s in ps:
+            sa.setPluginAcceptValue(s, rotUri, True)
+
+        t = core.createTransaction(uri)
+        t.type = ctype
+
+        r = Rack(ua, ta, sa, pp)
+
+        for p in pp:
+            self.assertTrue(r.accept(t, p))
+
+        r.run(t)
+
+        for p in pp:
+            self.assertEqual(p.counter, 1)
+            self.assertEqual(p.checked, [t.idno])
 
     def testAccept(self):
         pass
