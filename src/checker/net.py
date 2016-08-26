@@ -14,7 +14,11 @@ class UrlError(Exception):
     pass
 
 
-class StatusError(NetworkError):
+class ConditionError(Exception):
+    pass
+
+
+class StatusError(Exception):
 
     def __init__(self, value):
         self.value = value
@@ -48,7 +52,7 @@ class Network(object):
         except ConnectionError as e:
             print("Connection error: {0}", format(e))
             raise NetworkError(e)
-        except StatusError:
+        except StatusError as e:
             print("Status error: {0}", format(e))
             raise
         except MissingSchema as e:
@@ -64,7 +68,7 @@ class Network(object):
         
         r = requests.head(srcTransaction.uri, headers={ "user-agent": agent, "accept":  accept})
         if r.status_code >= 400:
-            journal.foundDefect(srcTransaction, "badlink", url)
+            journal.foundDefect(srcTransaction, "badlink", srcTransaction.uri)
             raise StatusError(r.status_code)
 
         if 'content-type' in r.headers.keys():
@@ -88,11 +92,11 @@ class Network(object):
 
         if not (prefix_condition or suffix_condition):
             print("Uri not accepted: "+transaction.uri)
-            raise NetworkError
+            raise ConditionError
         
         elif not type_condition:
             print("Content-type not accepted: "+ct+" ("+transaction.uri+")")
-            raise NetworkError
+            raise ConditionError
         
         else:
             return Network.fetch_response(transaction.uri, conf.user_agent, accept)

@@ -20,9 +20,9 @@ class CssValidator(IPlugin):
         """
         try:
             parser = tinycss.make_parser('page3')
-            stylesheet = parser.parse_stylesheet(transaction.getContent())
+            stylesheet = parser.parse_stylesheet(transaction.getContent().encode("utf-8"))
             for error in stylesheet.errors:
-                self.journal.foundDefect(transaction, ["stylesheet", error.line, error.reason])
+                self.journal.foundDefect(transaction, "stylesheet", [error.line, error.reason])
         except UnicodeDecodeError:
             print("Error")
         return

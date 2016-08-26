@@ -10,11 +10,14 @@ class PyW3C_HTML_Validator(IPlugin):
     
     category = PluginType.CHECKER
     id = "htmlValidator"
+    MAX_COUNT = 100
+    DELAY = 3
     
     
     def __init__(self):
         self.validator = HTMLValidator()
         self.journal = None
+        self.count = 0
 
     def setJournal(self, journal):
         self.journal = journal
@@ -27,7 +30,10 @@ class PyW3C_HTML_Validator(IPlugin):
             self.validator.validate_fragment(content)
             self.check_errors(transaction)
             self.check_warnings(transaction)
-            time.sleep(3)
+            self.count = self.count +1
+            if self.count == PyW3C_HTML_Validator.MAX_COUNT:
+                time.sleep(PyW3C_HTML_Validator.DELAY)
+                self.count = 0
         except ValidationFault as e:
             print("Validation fault")
         except HTTPError as e:

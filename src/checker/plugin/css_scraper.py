@@ -86,4 +86,4 @@ class CssScraper(IPlugin):
 
 
     def duplicit_inline(self, transaction, style):
-        self.journal.foundDefect(transaction, ['seo:duplicit_inline', style])
+        self.journal.foundDefect(transaction, 'seo:duplicit_inline', style)

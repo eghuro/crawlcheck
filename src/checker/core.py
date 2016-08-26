@@ -2,12 +2,14 @@ import marisa_trie
 import logging
 import Queue
 import sqlite3
+import urllib
+import os
 from urlparse import urlparse
 from copy import deepcopy
 from multiprocessing import Pool, Process
 from pluginDBAPI import DBAPI, VerificationStatus, Table
 from common import PluginType, PluginTypeError
-from net import Network, NetworkError
+from net import Network, NetworkError, ConditionError, StatusError
 
 
 
@@ -21,6 +23,7 @@ class Core:
         self.db = DBAPI(conf.dbconf)
         self.db.load_defect_types()
         self.db.load_finding_id()
+        self.files = []
 
         TransactionQueue.initialize()
         self.queue = TransactionQueue(self.db)
@@ -48,12 +51,19 @@ class Core:
             self.log.info("Processing "+transaction.uri)
             try:
                 transaction.loadResponse(self.conf, self.journal)
+                self.files.append(transaction.file)
                 self.journal.startChecking(transaction)
                 self.rack.run(transaction)
             except TouchException: #nesmim se toho dotykat
                 self.log.debug("Forbidden to touch "+transaction.uri)
                 self.journal.stopChecking(transaction, VerificationStatus.done_ok)
                 continue
+            except ConditionError:
+               self.log.debug("Condition failed")
+               self.journal.stopChecking(transaction, VerificationStatus.done_ok)
+            except StatusError as e:
+               self.log.debug("Status error: "+str(e))
+               self.journal.stopChecking(transaction, VerificationStatus.done_ko)
             except NetworkError as e:
                 self.log.error("Network error")
                 self.journal.stopChecking(transaction, VerificationStatus.done_ko)
@@ -64,7 +74,11 @@ class Core:
     def finalize(self):
         self.rack.stop()
         self.db.sync()
-        #TODO: delete temporary files
+        for filename in self.files:
+            try:
+                os.remove(filename)
+            except OSError:
+                pass
 
     def __initializePlugin(self, plugin):
         plugin.setJournal(self.journal)
@@ -97,7 +111,7 @@ class Transaction:
             try:
                 acceptedTypes = self.getAcceptedTypes(conf)
                 self.type, self.file = Network.getLink(self, acceptedTypes, conf, journal)
-            except NetworkError:
+            except (NetworkError, ConditionError, StatusError):
                 raise
         else:
             raise TouchException()
@@ -108,14 +122,22 @@ class Transaction:
             return data
 
     def isTouchable(self, uriAcceptor, suffixAcceptor):
+        #self.log.debug("URI: "+self.uri)
         up = uriAcceptor.getMaxPrefix(self.uri)
-        sp = suffixAcceptor.getMaxPrefix(self.getStripedUri()[::-1])
+        #self.log.debug("Prefix:"+up)
+        striped = self.getStripedUri()
+        #self.log.debug("Striped uri:"+striped)
+        sp = suffixAcceptor.getMaxPrefix(striped)
+        #self.log.debug("Suffix:"+sp)
         prefix = uriAcceptor.resolveDefaultAcceptValue(up)
+        #self.log.debug("Prefix resolution: "+str(prefix))
         suffix = suffixAcceptor.resolveDefaultAcceptValue(sp)
+        #self.log.debug("Suffix resolution: "+str(suffix))
         return prefix or suffix
 
     def getStripedUri(self):
         pr = urlparse(self.uri)
+        #self.log.debug("Parse result: "+str(pr))
         return pr.scheme+'://'+pr.netloc
 
     def __get_accepted_types(self, uriMap, uriAcceptor):
@@ -152,7 +174,8 @@ class Transaction:
 transactionId = 0
 def createTransaction(uri, depth = 0, srcId = -1):
     global transactionId
-    tr = Transaction(uri, depth, srcId, transactionId)
+    decoded = urllib.unquote(urllib.unquote(uri))
+    tr = Transaction(decoded, depth, srcId, transactionId)
     transactionId = transactionId + 1
     return tr
 

@@ -127,7 +127,7 @@ class DBAPI(object):
 
     def __sync_table(self, cursor, table):
         for record in self.logs[table]:
-            print("Executing "+record[0]+" with "+str(record[1]))
+            #print("Executing "+record[0]+" with "+str(record[1]))
             cursor.execute(record[0], record[1])
 
     def error(self, e):
