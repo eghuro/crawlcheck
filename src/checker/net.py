@@ -28,7 +28,7 @@ class Network(object):
     __allowed_schemas = ['http', 'https']
 
     @staticmethod
-    def getLink(srcTransaction, acceptedTypes, conf):
+    def getLink(srcTransaction, acceptedTypes, conf, journal):
     
         s = urlparse(srcTransaction.uri).scheme
         if s not in Network.__allowed_schemas:
@@ -37,7 +37,7 @@ class Network(object):
         try:
             acc_header = Network.__create_accept_header(acceptedTypes)
 
-            ct = Network.__check_headers(srcTransaction, conf.journal, conf.user_agent, acc_header)
+            ct = Network.__check_headers(srcTransaction, journal, conf.user_agent, acc_header)
             r = Network.__conditional_fetch(ct, srcTransaction, acc_header, conf)
             name = Network.__save_content(r.text)
             match, mime = Network.__test_content_type(ct, name)
@@ -95,7 +95,7 @@ class Network(object):
             raise NetworkError
         
         else:
-            return fetch_response(transaction.uri, conf.agent)
+            return Network.fetch_response(transaction.uri, conf.user_agent, accept)
 
     @staticmethod
     def fetch_response(url, agent, accept):
@@ -106,8 +106,8 @@ class Network(object):
     @staticmethod
     def __save_content(content):
 
-        with tempfile.TemporaryFile() as tmp:
-            tmp.write(content)
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            tmp.write(content.encode("utf-8"))
             name = tmp.name
         return name
 

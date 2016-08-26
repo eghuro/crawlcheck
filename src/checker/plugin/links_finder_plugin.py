@@ -9,7 +9,7 @@ import marisa_trie
 
 class LinksFinder(IPlugin):
 
-    type = PluginType.CRAWLER
+    category = PluginType.CRAWLER
     id = "linksFinder"
     
     

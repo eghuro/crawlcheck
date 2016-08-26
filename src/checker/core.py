@@ -6,7 +6,7 @@ from urlparse import urlparse
 from copy import deepcopy
 from multiprocessing import Pool, Process
 from pluginDBAPI import DBAPI, VerificationStatus, Table
-from plugin.common import PluginType, PluginTypeError
+from common import PluginType, PluginTypeError
 from net import Network, NetworkError
 
 
@@ -14,23 +14,22 @@ from net import Network, NetworkError
 
 class Core:
 
-    def __init__(self, plugins, conf):
+    def __init__(self, plugins, conf):           
         self.plugins = plugins
-        self.log = logging.getLogger("crawlcheck")
+        self.log = logging.getLogger()
         self.conf = conf
         self.db = DBAPI(conf.dbconf)
         self.db.load_defect_types()
         self.db.load_finding_id()
 
-
-        Queue.initialize()
-        self.queue = Queue(self.db)
+        TransactionQueue.initialize()
+        self.queue = TransactionQueue(self.db)
 	self.queue.load()
 
         Journal.initialize()
         self.journal = Journal(self.db)
 
-        self.rack = Rack(self.conf.uri_acceptor, self.conf.type_acceptor, self.plugins)
+        self.rack = Rack(self.conf.uri_acceptor, self.conf.type_acceptor, self.conf.suffix_acceptor, plugins)
 
         for entryPoint in self.conf.entry_points:
             self.queue.push(createTransaction(entryPoint, 0))
@@ -48,12 +47,15 @@ class Core:
 
             self.log.info("Processing "+transaction.uri)
             try:
-                transaction.loadResponse(self.conf)
+                transaction.loadResponse(self.conf, self.journal)
                 self.journal.startChecking(transaction)
                 self.rack.run(transaction)
             except TouchException: #nesmim se toho dotykat
+                self.log.debug("Forbidden to touch "+transaction.uri)
                 self.journal.stopChecking(transaction, VerificationStatus.done_ok)
+                continue
             except NetworkError as e:
+                self.log.error("Network error")
                 self.journal.stopChecking(transaction, VerificationStatus.done_ko)
                 self.log.exception(e) ##
                 continue
@@ -62,11 +64,16 @@ class Core:
     def finalize(self):
         self.rack.stop()
         self.db.sync()
+        #TODO: delete temporary files
 
     def __initializePlugin(self, plugin):
         plugin.setJournal(self.journal)
-        if plugin.type == PluginType.CRAWLER:
+        if plugin.category == PluginType.CRAWLER:
             plugin.setQueue(self.queue)
+        elif plugin.category == PluginType.CHECKER:
+            pass
+        else:
+            raise Exception
 
 
 class TouchException(Exception):
@@ -83,12 +90,13 @@ class Transaction:
         self.type = None
         self.file = None
         self.idno = idno
+        self.log = logging.getLogger()
 
-    def loadResponse(self, conf):
+    def loadResponse(self, conf, journal):
         if self.isTouchable(conf.uri_acceptor, conf.suffix_acceptor):
             try:
                 acceptedTypes = self.getAcceptedTypes(conf)
-                self.type, self.file = Network.getLink(self, acceptedTypes, conf)
+                self.type, self.file = Network.getLink(self, acceptedTypes, conf, journal)
             except NetworkError:
                 raise
         else:
@@ -97,10 +105,14 @@ class Transaction:
     def getContent(self):
         with open(self.file, 'r') as f:
             data = f.read()
-            return data.encode('utf-8')
+            return data
 
     def isTouchable(self, uriAcceptor, suffixAcceptor):
-        return uriAcceptor.resolveDefaultAcceptValue(self.uri) and suffixAcceptor.resolveDefaultAcceptValue(self.uri[::-1])
+        up = uriAcceptor.getMaxPrefix(self.uri)
+        sp = suffixAcceptor.getMaxPrefix(self.getStripedUri()[::-1])
+        prefix = uriAcceptor.resolveDefaultAcceptValue(up)
+        suffix = suffixAcceptor.resolveDefaultAcceptValue(sp)
+        return prefix or suffix
 
     def getStripedUri(self):
         pr = urlparse(self.uri)
@@ -153,7 +165,7 @@ class Rack:
         self.prefixAcceptor = uriAcceptor
         self.typeAcceptor = typeAcceptor
         self.suffixAcceptor = suffixAcceptor
-        self.log = logging.getLogger("crawlcheck")
+        self.log = logging.getLogger()
 
     def run(self, transaction):
  
@@ -243,15 +255,15 @@ class Worker(Process):
             pass
 
 
-class Queue:
+class TransactionQueue:
 
 
-    __status_ids = dict()
+    status_ids = dict()
     
     @staticmethod
     def initialize():
-        __status_ids["requested"] = 1
-        __status_ids["processing"] = 2
+        TransactionQueue.status_ids["requested"] = 1
+        TransactionQueue.status_ids["processing"] = 2
 
     def __init__(self, db):
         self.__db = db
@@ -264,7 +276,7 @@ class Queue:
     def pop(self):
         t = self.__q.get()
 
-        self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatusId = ? WHERE id = ?', [str(Queue.__status_ids["processing"]), t.idno]) )
+        self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatusId = ? WHERE id = ?', [str(TransactionQueue.status_ids["processing"]), t.idno]) )
         
         return t
 
@@ -273,14 +285,14 @@ class Queue:
             self.__seen.add(transaction.uri)
             self.__q.put(transaction)
             self.__db.log(Table.transactions,
-                          ('INSERT INTO transactions (id, method, uri, origin, verificationStatusId, depth) VALUES (?, \'GET\', ?, \'CHECKER\', ?, ?', 
-                          [str(transaction.idno), str(transaction.uri), str(Queue.__status_ids["requested"]), str(transaction.depth)]) )
+                          ('INSERT INTO transactions (id, method, uri, origin, verificationStatusId, depth) VALUES (?, \'GET\', ?, \'CHECKER\', ?, ?)', 
+                          [str(transaction.idno), str(transaction.uri), str(TransactionQueue.status_ids["requested"]), str(transaction.depth)]) )
 
         if parent is not None:
             self.__db.log_link(parent.idno, transaction.uri, transaction.idno)
 
     def push_link(self, uri, parent):
-        self.push(core.createTransaction(uri,parent.depth+1), parent)
+        self.push(createTransaction(uri,parent.depth+1), parent)
 
     def load(self):
         #load transactions from DB to memory - only where status is requested
@@ -293,22 +305,22 @@ class Queue:
         #load uris from transactions table for list of seen URIs
         self.__seen.update(self.__db.get_seen_uris())
         #set up transaction id for factory method
-        core.transactionId = self.__db.get_max_transaction_id() + 1
+        transactionId = self.__db.get_max_transaction_id() + 1
 
 class Journal:
 
 
-    __status_ids = dict()
+    status_ids = dict()
     
     @staticmethod
     def initialize():
-        __status_ids["verifying"] = 3
+        Journal.status_ids["verifying"] = 3
 
     def __init__(self, db):
         self.__db = db
        
     def startChecking(self, transaction):
-        self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatusId = ? WHERE id = ?', [str(Queue.__status_ids["verifying"]), transaction.idno]) )
+        self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatusId = ? WHERE id = ?', [str(Journal.status_ids["verifying"]), transaction.idno]) )
 
     def stopChecking(self, transaction, status):
         self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatusId = ? WHERE id = ?', [str(status), transaction.idno]) )

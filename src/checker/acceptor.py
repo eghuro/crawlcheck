@@ -125,6 +125,10 @@ class Acceptor(object):
 
     def reverseValues(self):
         reverse = set()
+        positive_reverse = set()
         for value in self.uris:
             reverse.add(value[::-1])
+            if value in self.positive_uris:
+                positive_reverse.add(value[::-1])
         self.uris = reverse
+        self.positive_uris = positive_reverse

@@ -127,11 +127,12 @@ class DBAPI(object):
 
     def __sync_table(self, cursor, table):
         for record in self.logs[table]:
+            print("Executing "+record[0]+" with "+str(record[1]))
             cursor.execute(record[0], record[1])
 
     def error(self, e):
         self.con.rollback()
-        print("Error?!? %s", (e.args[0]))
+        print("Error?!?"+str(e))
 
     def load_defect_types(self):
         query = 'SELECT type FROM defectType'
@@ -153,9 +154,9 @@ class DBAPI(object):
                 self.findingId = row[0]
 
     def get_requested_transactions(self):
-        q = 'CREATE TEMPORARY VIEW linkedUris AS SELECT link.toUri as to, transactions.id AS srcId FROM link INNER JOIN finding ON link.findingId = finding.id INNER JOIN transactions ON finding.responseId = transactions.id'
-
-        query = 'SELECT linkedUris.to AS uri, transactions.depth AS depth, linkedUris.srcId AS srcId, transactions.id AS idno FROM transactions LEFT JOIN linkedUris ON transactions.uri = linkedUris.to WHERE transactions.verificationStatusId = ?'
+        q = 'CREATE TEMPORARY VIEW linkedUris AS SELECT link.toUri, transactions.id FROM link INNER JOIN finding ON link.findingId = finding.id INNER JOIN transactions ON finding.responseId = transactions.id'
+        query = ('SELECT linkedUris.toUri AS uri, transactions.depth AS depth, linkedUris.id AS srcId, transactions.id AS idno'
+                 ' FROM transactions LEFT JOIN linkedUris ON transactions.uri = linkedUris.toUri WHERE transactions.verificationStatusId = ?')
 
         cursor = self.con.get_cursor()
         cursor.execute(q)

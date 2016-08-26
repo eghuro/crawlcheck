@@ -133,6 +133,7 @@ class ConfigLoader(object):
                 raise ConfigurationError(description+" not specified")
             if 'plugins' in tag:
                 ConfigLoader.__set_plugin_accept_tag_value(tag, tag_string, acceptor, record, drocer)
+                acceptor.setDefaultAcceptValue(tag[tag_string], True)
             else:
                 print("Forbid "+tag[tag_string])
                 acceptor.setDefaultAcceptValue(tag[tag_string], False)

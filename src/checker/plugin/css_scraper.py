@@ -5,7 +5,7 @@ from yapsy.IPlugin import IPlugin
 
 class CssScraper(IPlugin):
     
-    type = PluginType.CHECKER
+    category = PluginType.CHECKER
     id = "css_scraper"
     
     

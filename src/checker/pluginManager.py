@@ -31,8 +31,14 @@ def main():
         cl.load(sys.argv[1])
 
         logging.getLogger("yapsy").addHandler(logging.StreamHandler())
-        log = logging.getLogger("crawlcheck")
-        log.addHandler(logging.StreamHandler())
+        
+        logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+        log = logging.getLogger()
+        #ch = logging.StreamHandler(sys.stdout)
+        #ch.setLevel(logging.DEBUG)
+        #formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        #ch.setFormatter(formatter)
+        #log.addHandler(ch)
 
         # load plugins
         manager = PluginManager()

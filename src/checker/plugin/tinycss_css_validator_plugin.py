@@ -5,7 +5,7 @@ from yapsy.IPlugin import IPlugin
 
 class CssValidator(IPlugin):
     
-    type = PluginType.CHECKER
+    category = PluginType.CHECKER
     id = "tinycss"
     
     

@@ -6,7 +6,7 @@ import urlparse
 
 class Form_Checker(IPlugin):
 
-    type = PluginType.CRAWLER
+    category = PluginType.CRAWLER
     id = "formChecker"
 
     def __init__(self):

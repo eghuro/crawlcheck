@@ -8,7 +8,7 @@ import time
 
 class PyW3C_HTML_Validator(IPlugin):
     
-    type = PluginType.CHECKER
+    category = PluginType.CHECKER
     id = "htmlValidator"
     
     
