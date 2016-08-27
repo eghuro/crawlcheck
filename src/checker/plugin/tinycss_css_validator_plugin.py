@@ -1,6 +1,7 @@
 from common import PluginType
 import tinycss
 from yapsy.IPlugin import IPlugin
+import logging
 
 
 class CssValidator(IPlugin):
@@ -20,9 +21,10 @@ class CssValidator(IPlugin):
         """
         try:
             parser = tinycss.make_parser('page3')
-            stylesheet = parser.parse_stylesheet(transaction.getContent().encode("utf-8"))
+            data = unicode(transaction.getContent(), 'utf-8')
+            stylesheet = parser.parse_stylesheet(data)
             for error in stylesheet.errors:
                 self.journal.foundDefect(transaction, "stylesheet", [error.line, error.reason])
-        except UnicodeDecodeError:
-            print("Error")
+        except UnicodeDecodeError as e:
+            logging.getLogger().debug("Unicode decode error: "+format(e))
         return

@@ -48,7 +48,7 @@ class Acceptor(object):
     def getMaxPrefix(self, value):
        # seznam prefixu, pro nas uri chceme nejdelsi prefix
        trie = marisa_trie.Trie(self.uris)
-       prefList = trie.prefixes(unicode(str(value), encoding="utf-8"))
+       prefList = trie.prefixes(value)
         
        if len(prefList) > 0:
            return prefList[-1]

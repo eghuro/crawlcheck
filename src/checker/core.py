@@ -50,26 +50,24 @@ class Core:
 
             self.log.info("Processing "+transaction.uri)
             try:
-                transaction.loadResponse(self.conf, self.journal)
-                self.files.append(transaction.file)
-                self.journal.startChecking(transaction)
-                self.rack.run(transaction)
+                transaction.loadResponse(self.conf, self.journal)           
             except TouchException: #nesmim se toho dotykat
                 self.log.debug("Forbidden to touch "+transaction.uri)
-                self.journal.stopChecking(transaction, VerificationStatus.done_ok)
                 continue
             except ConditionError:
                self.log.debug("Condition failed")
-               self.journal.stopChecking(transaction, VerificationStatus.done_ok)
+               continue
             except StatusError as e:
                self.log.debug("Status error: "+str(e))
-               self.journal.stopChecking(transaction, VerificationStatus.done_ko)
+               continue
             except NetworkError as e:
-                self.log.error("Network error")
-                self.journal.stopChecking(transaction, VerificationStatus.done_ko)
-                self.log.exception(e) ##
+                self.log.error("Network error: "+str(e))
                 continue
-            self.journal.stopChecking(transaction, VerificationStatus.done_ok)
+            else:
+                self.files.append(transaction.file)
+                self.journal.startChecking(transaction)
+                self.rack.run(transaction)
+                self.journal.stopChecking(transaction, VerificationStatus.done_ok)
 
     def finalize(self):
         self.rack.stop()
@@ -78,7 +76,7 @@ class Core:
             try:
                 os.remove(filename)
             except OSError:
-                pass
+                continue
 
     def __initializePlugin(self, plugin):
         plugin.setJournal(self.journal)
@@ -104,7 +102,7 @@ class Transaction:
         self.type = None
         self.file = None
         self.idno = idno
-        self.log = logging.getLogger()
+        #self.log = logging.getLogger()
 
     def loadResponse(self, conf, journal):
         if self.isTouchable(conf.uri_acceptor, conf.suffix_acceptor):
@@ -174,7 +172,7 @@ class Transaction:
 transactionId = 0
 def createTransaction(uri, depth = 0, srcId = -1):
     global transactionId
-    decoded = urllib.unquote(urllib.unquote(uri))
+    decoded = unicode(urllib.unquote(urllib.unquote(uri)), 'utf-8')
     tr = Transaction(decoded, depth, srcId, transactionId)
     transactionId = transactionId + 1
     return tr
@@ -309,7 +307,7 @@ class TransactionQueue:
             self.__q.put(transaction)
             self.__db.log(Table.transactions,
                           ('INSERT INTO transactions (id, method, uri, origin, verificationStatusId, depth) VALUES (?, \'GET\', ?, \'CHECKER\', ?, ?)', 
-                          [str(transaction.idno), str(transaction.uri), str(TransactionQueue.status_ids["requested"]), str(transaction.depth)]) )
+                          [str(transaction.idno), transaction.uri, str(TransactionQueue.status_ids["requested"]), str(transaction.depth)]) )
 
         if parent is not None:
             self.__db.log_link(parent.idno, transaction.uri, transaction.idno)
@@ -324,7 +322,8 @@ class TransactionQueue:
             srcId = -1
             if t[2] is not None:
                 srcId = t[2]
-            self.__q.put(Transaction(t[0], t[1], srcId, t[3]))
+            decoded = unicode(urllib.unquote(urllib.unquote(t[0])), 'utf-8')
+            self.__q.put(Transaction(decoded, t[1], srcId, t[3]))
         #load uris from transactions table for list of seen URIs
         self.__seen.update(self.__db.get_seen_uris())
         #set up transaction id for factory method

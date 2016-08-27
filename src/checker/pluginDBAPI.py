@@ -6,6 +6,7 @@ Parameters of connection to the database are set in DBAPIConfiguration
 
 import sqlite3 as mdb
 from enum import Enum
+import logging
 
 
 class DBAPIconfiguration(object):
@@ -98,7 +99,7 @@ class DBAPI(object):
     def log_link(self, parent_id, uri, new_id):
        self.findingId = self.findingId + 1
        self.log(Table.finding, ('INSERT INTO finding (id, responseId) VALUES (?, ?)', [str(self.findingId), str(parent_id)]) )
-       self.log(Table.link_defect, ('INSERT INTO link (findingId, toUri, requestId) VALUES (?, ?, ?)', [str(self.findingId), str(uri), str(new_id)]) )
+       self.log(Table.link_defect, ('INSERT INTO link (findingId, toUri, requestId) VALUES (?, ?, ?)', [str(self.findingId), uri, str(new_id)]) )
 
     def log_defect(self, transactionId, name, additional):
         self.findingId = self.findingId + 1
@@ -126,13 +127,16 @@ class DBAPI(object):
             self.error(e)
 
     def __sync_table(self, cursor, table):
-        for record in self.logs[table]:
-            #print("Executing "+record[0]+" with "+str(record[1]))
-            cursor.execute(record[0], record[1])
+        log = logging.getLogger()
+        log.info("Imagine I execute all the SQL commands now ...")
+        #for record in self.logs[table]:
+            #log.debug("SQL: "+record[0]+" with "+str(record[1]))
+            #cursor.execute(record[0], record[1])
 
     def error(self, e):
         self.con.rollback()
-        print("Error?!?"+str(e))
+        log = logging.getLogger()
+        log.debug("SQL Error: "+str(e))
 
     def load_defect_types(self):
         query = 'SELECT type FROM defectType'

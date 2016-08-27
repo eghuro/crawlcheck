@@ -25,20 +25,20 @@ def main():
     core_instance = None
     signal.signal(signal.SIGINT, handler)
 
+    logging.getLogger("yapsy").addHandler(logging.StreamHandler())
+        
+    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+    log = logging.getLogger()
+    #ch = logging.StreamHandler(sys.stdout)
+    #ch.setLevel(logging.DEBUG)
+    #formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    #ch.setFormatter(formatter)
+    #log.addHandler(ch)
+
     if len(sys.argv) == 2:
         # load configuration
         cl = ConfigLoader()
         cl.load(sys.argv[1])
-
-        logging.getLogger("yapsy").addHandler(logging.StreamHandler())
-        
-        logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-        log = logging.getLogger()
-        #ch = logging.StreamHandler(sys.stdout)
-        #ch.setLevel(logging.DEBUG)
-        #formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        #ch.setFormatter(formatter)
-        #log.addHandler(ch)
 
         # load plugins
         manager = PluginManager()

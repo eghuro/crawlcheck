@@ -4,13 +4,14 @@ from py_w3c.validators.html.validator import HTMLValidator
 from py_w3c.exceptions import ValidationFault
 from urllib2 import HTTPError, URLError
 import time
+import logging
 
 
 class PyW3C_HTML_Validator(IPlugin):
     
     category = PluginType.CHECKER
     id = "htmlValidator"
-    MAX_COUNT = 100
+    MAX_COUNT = 80
     DELAY = 3
     
     
@@ -26,22 +27,26 @@ class PyW3C_HTML_Validator(IPlugin):
         """ Pusti validator, ulozi chyby a varovani.
         """
         content = transaction.getContent()
+        log = logging.getLogger()
         try:
-            self.validator.validate_fragment(content)
+            self.validator.validate_fragment(content) ##this takes too long
             self.check_errors(transaction)
             self.check_warnings(transaction)
-            self.count = self.count +1
+
+            self.count = self.count + 1
+            log.debug("counter: "+str(self.count))
             if self.count == PyW3C_HTML_Validator.MAX_COUNT:
+                log.debug("Sleep")
                 time.sleep(PyW3C_HTML_Validator.DELAY)
                 self.count = 0
         except ValidationFault as e:
-            print("Validation fault")
+            log.debug("Validation fault: "+format(e))
         except HTTPError as e:
-            print("HTTP Error "+str(e.code)+": "+str(e.reason))
+            log.debug("HTTP Error "+str(e.code)+": "+str(e.reason))
         except URLError as e:
-            print("Connection problem: "+str(e.reason))
+            log.debug("Connection problem: "+str(e.reason))
         except Exception as e:
-            print("Unexpected problem: "+str(type(e)))
+            log.debug("Unexpected problem: "+str(type(e)))
         return
 
     def transformMessageId(self, mid, mtype):

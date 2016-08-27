@@ -4,6 +4,7 @@ from urlparse import urlparse
 import os
 import tempfile
 import magic
+import logging
 
 
 class NetworkError(Exception):
@@ -38,10 +39,11 @@ class Network(object):
         if s not in Network.__allowed_schemas:
             raise UrlError(s)
 
+        log = logging.getLogger()
         try:
             acc_header = Network.__create_accept_header(acceptedTypes)
 
-            ct = Network.__check_headers(srcTransaction, journal, conf.user_agent, acc_header)
+            ct = unicode(Network.__check_headers(srcTransaction, journal, conf.user_agent, acc_header))
             r = Network.__conditional_fetch(ct, srcTransaction, acc_header, conf)
             name = Network.__save_content(r.text)
             match, mime = Network.__test_content_type(ct, name)
@@ -50,16 +52,16 @@ class Network(object):
             return ct, name
             
         except ConnectionError as e:
-            print("Connection error: {0}", format(e))
+            log.debug("Connection error: "+format(e))
             raise NetworkError(e)
         except StatusError as e:
-            print("Status error: {0}", format(e))
+            log.debug("Status error: "+format(e))
             raise
         except MissingSchema as e:
-            print("Missing schema")
+            log.debug("Missing schema")
             raise NetworkError(e)
         except InvalidSchema as e:
-            print("Invalid schema")
+            log.debug("Invalid schema")
             raise NetworkError(e)
      
      
@@ -90,12 +92,13 @@ class Network(object):
         reverse_striped_uri = transaction.getStripedUri()[::-1] #odrizne cestu a zrotuje
         suffix_condition =  conf.suffix_acceptor.mightAccept(reverse_striped_uri) #config loader jiz zrotoval kazdou hodnotu
 
+        log = logging.getLogger()
         if not (prefix_condition or suffix_condition):
-            print("Uri not accepted: "+transaction.uri)
+            log.debug("Uri not accepted: "+transaction.uri)
             raise ConditionError
         
         elif not type_condition:
-            print("Content-type not accepted: "+ct+" ("+transaction.uri+")")
+            log.debug("Content-type not accepted: "+ct+" ("+transaction.uri+")")
             raise ConditionError
         
         else:
