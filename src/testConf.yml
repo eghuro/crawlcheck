@@ -9,7 +9,7 @@ content-types:
    "content-type": "text/html"
    plugins:
      - linksFinder
-     - htmlValidator
+     - tidyHtmlValidator
      - css_scraper
      - formChecker
  -
@@ -22,7 +22,7 @@ urls:
     url: "http://mj.ucw.cz/vyuka/"
     plugins:
        - linksFinder
-       - htmlValidator
+       - tidyHtmlValidator
        - tinycss
        - css_scraper
        - formChecker

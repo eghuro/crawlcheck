@@ -1,0 +1,8 @@
+[Core]
+Name = tidy HTML validator plugin
+Module = tidy_html_validator
+
+[Documentation]
+Author = Alexandr Mansurov
+Version = 0.1
+Description = Validate HTML using libtidy
