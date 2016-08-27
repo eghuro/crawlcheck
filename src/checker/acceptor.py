@@ -66,7 +66,7 @@ class Acceptor(object):
         elif res == Resolution.no:
             return False
         else:
-            return self.resolveDefaultAcceptValue(uri)
+            return self.defaultUri #self.resolveDefaultAcceptValue(uri)
 
     def resolveDefaultAcceptValue(self, uri):
         res = self.resolveFromDefault(uri, self.uriDefault)

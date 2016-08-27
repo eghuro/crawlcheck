@@ -50,7 +50,7 @@ class PyW3C_HTML_Validator(IPlugin):
         return
 
     def transformMessageId(self, mid, mtype):
-        return self.getId()+":"+mtype+":"+mid
+        return self.id+":"+mtype+":"+mid
 
     def check_errors(self, transaction):
         self.check_defects(transaction, self.validator.errors, "err")

@@ -111,6 +111,7 @@ class DBAPI(object):
         
     def sync(self):
         try:
+            logging.getLogger().info("Writing into database")
             cursor = self.con.get_cursor()
 
             #first defect types
@@ -127,11 +128,10 @@ class DBAPI(object):
             self.error(e)
 
     def __sync_table(self, cursor, table):
-        log = logging.getLogger()
-        log.info("Imagine I execute all the SQL commands now ...")
-        #for record in self.logs[table]:
+        #log.info("Imagine I execute all the SQL commands now ...")
+        for record in self.logs[table]:
             #log.debug("SQL: "+record[0]+" with "+str(record[1]))
-            #cursor.execute(record[0], record[1])
+            cursor.execute(record[0], record[1])
 
     def error(self, e):
         self.con.rollback()
