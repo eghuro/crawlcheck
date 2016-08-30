@@ -42,10 +42,11 @@ class Acceptor(object):
         self.positive_uris = set()
 
     def accept(self, value, pluginId):
-
+        #value je rovnou adresa, nikoliv Transaction
         return self.resolvePluginAcceptValue(pluginId, self.getMaxPrefix(value))
 
     def getMaxPrefix(self, value):
+       assert type(value) is unicode
        # seznam prefixu, pro nas uri chceme nejdelsi prefix
        trie = marisa_trie.Trie(self.uris)
        prefList = trie.prefixes(value)
@@ -66,9 +67,9 @@ class Acceptor(object):
         elif res == Resolution.no:
             return False
         else:
-            return self.defaultUri #self.resolveDefaultAcceptValue(uri)
+            return self.defaultUri #self.resolveDefaultAcceptValue(uri) #TODO: fix in tests?
 
-    def resolveDefaultAcceptValue(self, uri):
+    def resolveDefaultAcceptValue(self, uri): #used in Transaction.isTouchable
         res = self.resolveFromDefault(uri, self.uriDefault)
         if res == Resolution.yes:
             return True
@@ -88,7 +89,7 @@ class Acceptor(object):
             return Resolution.none
 
     @staticmethod
-    def resolveFromDefault(identifier, default):
+    def resolveFromDefault(identifier, default): #from resolveDefaultAcceptValue
         if identifier in default:
             return Acceptor.getResolution(default[identifier])
         else:
@@ -105,6 +106,8 @@ class Acceptor(object):
             self.positive_uris.add(value)
 
     def setDefaultAcceptValue(self, uri, value):
+        #config loader nastavi True, pokud nekdy videl danou hodnotu v konfiguraci a nebyla zakazana
+        #config loader nastavi False, pokud je zakazano se danych hodnot dotykat
         self.uriDefault[uri] = value
         self.uris.add(uri)
         if value:

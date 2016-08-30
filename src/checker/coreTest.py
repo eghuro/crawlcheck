@@ -27,20 +27,22 @@ class TransactionTest(unittest.TestCase):
         mock_get_link.return_value = 'text/html', '/tmp/foobar'
         conf = Configuration(None, Acceptor(True), Acceptor(True), Acceptor(True), None, None, None, None, None)
         t = core.createTransaction('foobar')
-        t.loadResponse(conf)
+        t.loadResponse(conf, None)
         self.assertEqual(t.type, 'text/html')
         self.assertEqual(t.file, '/tmp/foobar')
-        mock_get_link.assert_called_with(t, [], conf)
+        mock_get_link.assert_called_with(t, [], conf, None)
 
     @patch('net.Network.getLink')
     def testLoadNotTouchable(self, mock):
         mock.return_value = 'text/html', '/tmp/foobar'
         ua = Acceptor(False)
         ua.setDefaultAcceptValue('foobar', False)
+        sa = Acceptor(False)
+        sa.setDefaultAcceptValue('raboof', False)
         try:
             t = core.createTransaction('foobar')
-            conf = Configuration(None, Acceptor(True), ua, Acceptor(True), None, None, None, None, None)
-            t.loadResponse(conf)
+            conf = Configuration(None, Acceptor(True), ua, sa, None, None, None, None, None)
+            t.loadResponse(conf, None)
         except TouchException:#TODO: expected exception
             return
         self.assertFalse(True)
@@ -53,8 +55,8 @@ class TransactionTest(unittest.TestCase):
         try:
             conf = Configuration(None, Acceptor(True), Acceptor(True), Acceptor(True), None, None, None, None, None)
             t = core.createTransaction('foobar')
-            t.loadResponse(conf)
-        except NetworkError:#TODO: expected exception
+            t.loadResponse(conf, None)
+        except StatusError:#TODO: expected exception
             return
         self.assertFalse(True)
         

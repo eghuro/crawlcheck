@@ -18,7 +18,9 @@ class ConfigLoaderTest(unittest.TestCase):
 
     def testTypeAcceptor(self):
         ta = self.cl.get_configuration().type_acceptor
-        self.assertFalse(ta.accept(core.createTransaction('boo'), 'text/javascript'))
+        t = core.createTransaction('boo')
+        self.assertEqual(type(t.uri), unicode)
+        self.assertFalse(ta.accept(t.uri, 'text/javascript'))
 
     def testUriAcceptor(self):
         ua = self.cl.get_configuration().uri_acceptor
@@ -56,7 +58,7 @@ class ConfigLoaderTestInvalid(unittest.TestCase):
     def testUrlNoPlugins(self):
         self.cl.load('testConf2.yml')
         acceptor = self.cl.get_configuration().uri_acceptor
-        accept = acceptor.accept(core.createTransaction('http://mj.ucw.cz/vyuka/rp/'), 'foobar')
+        accept = acceptor.accept(core.createTransaction('http://mj.ucw.cz/vyuka/rp/').uri, 'foobar')
         self.assertFalse(accept)
 
     def testPluginsNoContentType(self):
