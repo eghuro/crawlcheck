@@ -32,17 +32,20 @@ class Core:
         Journal.initialize()
         self.journal = Journal(self.db)
 
-        self.rack = Rack(self.conf.uri_acceptor, self.conf.type_acceptor, self.conf.suffix_acceptor, plugins)
+        for plugin in self.plugins:
+            self.__initializePlugin(plugin)
 
         for entryPoint in self.conf.entry_points:
             self.queue.push(createTransaction(entryPoint, 0))
 
-        for plugin in self.plugins:
-            self.__initializePlugin(plugin)
+        self.rack = Rack(self.conf.uri_acceptor, self.conf.type_acceptor, self.conf.suffix_acceptor, plugins)
 
     def run(self):
         while not self.queue.isEmpty():
-            transaction = self.queue.pop()
+            try:
+                transaction = self.queue.pop()
+            except Queue.Empty:
+                continue
 
             if transaction.depth > self.conf.max_depth:
                 self.log.debug("Skipping "+transaction.uri+" as it's depth "+transaction.depth+" and max depth condition is "+self.conf.max_depth)
@@ -71,7 +74,14 @@ class Core:
 
     def finalize(self):
         self.rack.stop()
-        self.db.sync()
+        try:
+            self.db.sync()
+        except:
+            self.rack.stop()
+        finally:
+            self.clean_tmps()
+
+    def clean_tmps(self):
         for filename in self.files:
             try:
                 os.remove(filename)
@@ -120,23 +130,16 @@ class Transaction:
             return data
 
     def isTouchable(self, uriAcceptor, suffixAcceptor):
-        #self.log.debug("URI: "+self.uri)
         up = uriAcceptor.getMaxPrefix(self.uri)
-        #self.log.debug("Prefix:"+up)
         striped = self.getStripedUri()
-        #self.log.debug("Striped uri:"+striped)
         sp = suffixAcceptor.getMaxPrefix(striped)
-        #self.log.debug("Suffix:"+sp)
         prefix = uriAcceptor.resolveDefaultAcceptValue(up)
-        #self.log.debug("Prefix resolution: "+str(prefix))
         suffix = suffixAcceptor.resolveDefaultAcceptValue(sp)
-        #self.log.debug("Suffix resolution: "+str(suffix))
         return prefix or suffix
 
     def getStripedUri(self):
         pr = urlparse(self.uri)
-        #self.log.debug("Parse result: "+str(pr))
-        return pr.scheme+'://'+pr.netloc
+        return unicode(pr.scheme+'://'+pr.netloc)
 
     def __get_accepted_types(self, uriMap, uriAcceptor):
         p = uriAcceptor.getMaxPrefix(self.uri)
@@ -203,78 +206,13 @@ class Rack:
     def accept(self, transaction, plugin):
 
         rot = transaction.getStripedUri()[::-1]
-        return self.typeAcceptor.accept(transaction.type, plugin.id) and ( self.prefixAcceptor.accept(transaction.uri, plugin.id) or self.suffixAcceptor.accept(rot, plugin.id) )
+        type_cond = self.typeAcceptor.accept(unicode(transaction.type), plugin.id)
+        prefix_cond = self.prefixAcceptor.accept(transaction.uri, plugin.id)
+        suffix_cond = self.suffixAcceptor.accept(rot, plugin.id)
+        return type_cond and ( prefix_cond or suffix_cond )
 
     def stop(self):
         pass
-
-
-class ParallelRack(Rack):
-
-    def __init__(self, prefixAcceptor, typeAcceptor, suffixAcceptor, plugins = []):
-
-        Rack.__init__(uriAcceptor, typeAcceptor, suffixAcceptor, plugins)
-        self.__count = count
-        self.__pool = []
-        for plugin in plugins: #TODO: refactor - process count per plugin in conf
-            p = Worker(self.log, typeAcceptor, prefixAcceptor, suffixAcceptor, plugin)
-            self.__pool.append(p)
-            p.start()
-
-    def run(self, transaction):
-
-        for worker in self.__pool:
-            if self.accept(transaction, worker.plugin):
-                personal_transaction = deepcopy(transaction)
-                worker.register(personal_transaction)
-
-
-    def stop(self):
-
-        for worker in self.__pool:
-            worker.stop()
-            worker.join()
-
-
-class Worker(Process):
-
-    def __init__(self, log, typeAcceptor, prefixAcceptor, suffixAcceptor, plugin):
-
-        super(Worker, self).__init__()
-        self.log = log
-        self.typeAcceptor = typeAcceptor
-        self.prefixAcceptor = prefixAcceptor
-        self.suffixAcceptor = suffixAcceptor
-        self.plugin = plugin
-        self.queue = Queue.Queue()
-        self.do_work = True
-
-    def run(self):
-
-        while self.do_work:
-            transaction = self.queue.get(block=True, timeout=None)
-
-            if self.do_work: #flag could have changed while we were waiting
-                self.log.info(plugin.id + " started checking " + transaction.uri)
-                self.plugin.check(transaction)
-                self.log.info(plugin.id + " stopped checking " + transaction.uri)
-
-            self.queue.task_done()
-
-    def register(self, transaction):
-
-        self.log.info(plugin.id + " is requested to check " + transaction.uri)
-        self.queue.put(transaction, True, None)
-        self.log.info(plugin.id + " will check " + transaction.uri)
-
-    def stop(self):
-
-        self.do_work = False
-        try:
-            self.queue.put_nowait(None) #if we're waiting on empty queue, this will push through
-        except Full: #if queue is full, we are not waiting in queue.get
-            pass
-
 
 class TransactionQueue:
 
@@ -295,11 +233,13 @@ class TransactionQueue:
         return self.__q.empty()
 
     def pop(self):
-        t = self.__q.get()
-
-        self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatusId = ? WHERE id = ?', [str(TransactionQueue.status_ids["processing"]), t.idno]) )
-        
-        return t
+        try:
+            t = self.__q.get(block=True, timeout=1)
+        except Queue.Empty:
+            raise
+        else:
+            self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatusId = ? WHERE id = ?', [str(TransactionQueue.status_ids["processing"]), t.idno]) )
+            return t
 
     def push(self, transaction, parent=None):
         if transaction.uri not in self.__seen:
@@ -347,16 +287,16 @@ class Journal:
     def stopChecking(self, transaction, status):
         self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatusId = ? WHERE id = ?', [str(status), transaction.idno]) )
 
-    def foundDefect(self, transaction, defect):
-        self.foundDefect(transaction, defect.name, defect.additional)
+    def foundDefect(self, transaction, defect, evidence):
+        self.foundDefect(transaction, defect.name, defect.additional, evidence)
 
-    def foundDefect(self, transaction, name, additional):
-        self.__db.log_defect(transaction.idno, name, additional)
+    def foundDefect(self, transaction, name, additional, evidence):
+        self.__db.log_defect(transaction.idno, name, additional, evidence)
 
 class Defect:
 
 
-    def __init__(self, name, additional):
+    def __init__(self, name, additional = None):
         self.name = name
         self.additional = additional
 

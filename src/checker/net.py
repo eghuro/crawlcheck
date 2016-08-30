@@ -48,7 +48,7 @@ class Network(object):
             name = Network.__save_content(r.text)
             match, mime = Network.__test_content_type(ct, name)
             if not match:
-                journal.foundDefect(srcTransaction, "type-mishmash", mime)
+                journal.foundDefect(srcTransaction, "type-mishmash", "Declared content-type doesn't match detected one", mime)
             return ct, name
             
         except ConnectionError as e:
@@ -70,7 +70,7 @@ class Network(object):
         
         r = requests.head(srcTransaction.uri, headers={ "user-agent": agent, "accept":  accept})
         if r.status_code >= 400:
-            journal.foundDefect(srcTransaction, "badlink", srcTransaction.uri)
+            journal.foundDefect(srcTransaction, "badlink", "Invalid link", srcTransaction.uri)
             raise StatusError(r.status_code)
 
         if 'content-type' in r.headers.keys():
@@ -81,7 +81,7 @@ class Network(object):
             ct = ''
 
         if not ct.strip():
-            journal.foundDefect(srcTransaction, "badtype", url)
+            journal.foundDefect(srcTransaction, "badtype", "Content-type empty")
         return ct
     
     @staticmethod

@@ -89,6 +89,8 @@ class DBAPI(object):
         for table in self.tables:
             self.logs[table] = []
         self.defect_types = []
+        self.defectId = -1
+        self.defectTypesWithId = dict()
 
     def log(self, table, query_pair):
         if table in self.logs:
@@ -101,13 +103,16 @@ class DBAPI(object):
        self.log(Table.finding, ('INSERT INTO finding (id, responseId) VALUES (?, ?)', [str(self.findingId), str(parent_id)]) )
        self.log(Table.link_defect, ('INSERT INTO link (findingId, toUri, requestId) VALUES (?, ?, ?)', [str(self.findingId), uri, str(new_id)]) )
 
-    def log_defect(self, transactionId, name, additional):
+    def log_defect(self, transactionId, name, additional, evidence):
         self.findingId = self.findingId + 1
         self.log(Table.finding, ('INSERT INTO finding (id, responseId) VALUES (?, ?)', [str(self.findingId), str(transactionId)]))
         if name not in self.defect_types:
-            self.log(Table.defect_types, ('INSERT INTO defectType (type) VALUES (?)', [str(name)]))
+            self.defectId = self.defectId + 1
+            self.log(Table.defect_types, ('INSERT INTO defectType (id, type, description) VALUES (?, ?, ?)', [str(self.defectId), str(name), str(additional)]))
             self.defect_types.append(name)
-        self.log(Table.link_defect, ('INSERT INTO defect (findingId, type, evidence) VALUES (?, ?, ?)', [str(self.findingId), str(name), str(additional)]))
+            self.defectTypesWithId[name] = self.defectId
+        defId = self.defectTypesWithId[name]
+        self.log(Table.link_defect, ('INSERT INTO defect (findingId, type, evidence) VALUES (?, ?, ?)', [str(self.findingId), str(defId), str(evidence)]))
         
     def sync(self):
         try:
@@ -139,7 +144,7 @@ class DBAPI(object):
         log.debug("SQL Error: "+str(e))
 
     def load_defect_types(self):
-        query = 'SELECT type FROM defectType'
+        query = 'SELECT type, id FROM defectType'
         cursor = self.con.get_cursor()
         cursor.execute(query)
         types = cursor.fetchall()
@@ -147,6 +152,14 @@ class DBAPI(object):
             if dt is not None:
                 if dt[0] is not None:
                     self.defect_types.append(dt[0])
+                    if dt[1] is not None:
+                        self.defectTypesWithId[dt[0]] = dt[1]
+        query = 'SELECT MAX(id) from defectType'
+        cursor.execute(query)
+        row = cursor.fetchone()
+        if row is not None:
+            if row[0] is not None:
+                self.defectId = row[0]
 
     def load_finding_id(self):
         query = 'SELECT MAX(id) FROM finding'
@@ -183,5 +196,4 @@ class DBAPI(object):
         if row is not None:
             if row[0] is not None:
                 return row[0]
-        return -1
-        return data
+        return 0

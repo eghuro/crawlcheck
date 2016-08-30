@@ -29,7 +29,7 @@ class Tidy_HTML_Validator(IPlugin):
 
     def __record(self, transaction, loc, cat, desc):
         code = self.__get_code(cat, desc)
-        self.journal.foundDefect(transaction, code, [loc, desc])
+        self.journal.foundDefect(transaction, code, desc, [cat, loc])
 
     def __generate_code(self, letter, number, desc):
         code = letter+str(number)

@@ -61,4 +61,4 @@ class PyW3C_HTML_Validator(IPlugin):
     def check_defects(self, transaction, defects, message):
         for defect in defects:
             mid = self.transformMessageId(defect['messageid'], message)
-            self.journal.foundDefect(transaction, mid, [defect['message'], defect['line'], defect['source']])
+            self.journal.foundDefect(transaction, mid, None, [defect['message'], defect['line'], defect['source']])
