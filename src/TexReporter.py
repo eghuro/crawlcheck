@@ -7,9 +7,9 @@ import urllib
 
 class LinkPage(object):
     def __init__(self):
-        self.section_name = 'Invalid links'
-        self.query = ('select defectType.description, transactions.uri, '
-                      'location, evidence from defect inner join finding on'
+        self.__section_name = 'Invalid links'
+        self.__query = ('select defectType.description, transactions.uri, '
+                      'evidence from defect inner join finding on'
                       ' finding.id = defect.findingId inner join defectType'
                       ' on defect.type = defectType.id inner join '
                       'transactions on transactions.id = finding.responseId '
@@ -17,10 +17,10 @@ class LinkPage(object):
                       'order by defectType.type')
 
     def section_name(self):
-        return self.section_name
+        return self.__section_name
 
     def query(self):
-        return self.query
+        return self.__query
 
     def page(self, doc, row):
         with doc.create(Tabular('|l|l|l|')) as table:
@@ -41,9 +41,9 @@ class LinkPage(object):
 
 class DefectPage(object):
     def __init__(self):
-        self.section_name = 'ther defects'
-        self.query = ('select defectType.description, transactions.uri, '
-                      'location, evidence from defect inner join finding on'
+        self.__section_name = 'Defects'
+        self.__query = ('select defectType.description, transactions.uri, '
+                      'evidence from defect inner join finding on'
                       ' finding.id = defect.findingId inner join defectType'
                       ' on defect.type = defectType.id inner join '
                       'transactions on transactions.id = finding.responseId '
@@ -51,23 +51,21 @@ class DefectPage(object):
                       'order by defectType.type')
 
     def section_name(self):
-        return self.section_name
+        return self.__section_name
 
     def query(self):
-        return self.query
+        return self.__query
 
     def page(self, doc, row): 
         with doc.create(Tabular('|l|l|')) as table:
             table.add_hline()
-            table.add_row(('Line', 'Description'))
-            table.add_row((' ', 'On page'))
+            table.add_row(('On Page', 'Description' 'Evidence'))
             table.add_hline()
 
             count = 0
             max_on_line = 23
             while row is not None:
-                table.add_row((pylatex.utils.escape_latex(str(row[2])), pylatex.utils.escape_latex(row[0].decode('utf-8')) ))
-                table.add_row(('', pylatex.utils.escape_latex(urllib.unquote(row[1]).decode('utf-8')) ))
+                table.add_row((pylatex.utils.escape_latex(str(row[1].decode('utf-8'))), pylatex.utils.escape_latex(row[0].decode('utf-8')), pylatex.utils.escape_latex(urllib.unquote(row[2]).decode('utf-8')) ))
                 table.add_hline()
                 count += 1
                 row = self.cursor.fetchone()
