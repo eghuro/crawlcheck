@@ -87,18 +87,8 @@ class Network(object):
     @staticmethod
     def __conditional_fetch(ct, transaction, accept, conf):
         
-        type_condition = conf.type_acceptor.mightAccept(ct)
-        prefix_condition = conf.uri_acceptor.mightAccept(transaction.uri)
-        reverse_striped_uri = transaction.getStripedUri()[::-1] #odrizne cestu a zrotuje
-        suffix_condition =  conf.suffix_acceptor.mightAccept(reverse_striped_uri) #config loader jiz zrotoval kazdou hodnotu
-
-        log = logging.getLogger()
-        if not (prefix_condition or suffix_condition):
-            log.debug("Uri not accepted: "+transaction.uri)
-            raise ConditionError
-        
-        elif not type_condition:
-            log.debug("Content-type not accepted: "+ct+" ("+transaction.uri+")")
+        if not conf.type_acceptor.mightAccept(ct): #zbyle podminky jiz overeny
+            logging.getLogger().debug("Content-type not accepted: "+ct+" ("+transaction.uri+")")
             raise ConditionError
         
         else:

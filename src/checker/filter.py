@@ -1,10 +1,7 @@
 import logging
-import urllib.robotparser
 import reppy
 from reppy.cache import RobotsCache
 from reppy.exceptions import ReppyException
-from urllib.parse import urlparse
-from http.client import RemoteDisconnected
 
 class FilterException(Exception):
 

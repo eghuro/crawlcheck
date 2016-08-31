@@ -1,12 +1,8 @@
-import marisa_trie
 import logging
 import queue
-import sqlite3
-import urllib.request, urllib.parse, urllib.error
+import urllib.parse
 import os
 from urllib.parse import urlparse
-from copy import deepcopy
-from multiprocessing import Pool, Process
 from pluginDBAPI import DBAPI, VerificationStatus, Table
 from common import PluginType, PluginTypeError
 from net import Network, NetworkError, ConditionError, StatusError
@@ -115,7 +111,7 @@ class Core:
         elif plugin.category == PluginType.CHECKER:
             pass
         else:
-            raise Exception
+            raise PluginTypeError
 
 
 class TouchException(Exception):
@@ -187,7 +183,7 @@ class Transaction:
         return acceptedTypes
 
     def isWorthIt(self, conf):
-        return conf.uri_acceptor.mightAccept(self.uri) or conf.suffix_acceptor.mightAccept(self.uri[::-1])
+        return conf.uri_acceptor.mightAccept(self.uri) or conf.suffix_acceptor.mightAccept(self.getStripedUri()[::-1])
 
     @staticmethod
     def __set2list(x):
