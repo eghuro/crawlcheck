@@ -6,11 +6,7 @@ gem install bundler
 gem install rails
 
 cd src/report
-#PATCH CFG
-python -c "
-	cfile = open('config/database.yml');
-	cfile.close()
-"
+python ./patch-cfgs.py $1 #TODO: hardend
 
 bin/bundle install
 
