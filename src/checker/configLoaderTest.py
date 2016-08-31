@@ -19,7 +19,7 @@ class ConfigLoaderTest(unittest.TestCase):
     def testTypeAcceptor(self):
         ta = self.cl.get_configuration().type_acceptor
         t = core.createTransaction('boo')
-        self.assertEqual(type(t.uri), unicode)
+        self.assertEqual(type(t.uri), str)
         self.assertFalse(ta.accept(t.uri, 'text/javascript'))
 
     def testUriAcceptor(self):

@@ -1,10 +1,10 @@
 import marisa_trie
 import logging
-import Queue
+import queue
 import sqlite3
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import os
-from urlparse import urlparse
+from urllib.parse import urlparse
 from copy import deepcopy
 from multiprocessing import Pool, Process
 from pluginDBAPI import DBAPI, VerificationStatus, Table
@@ -27,7 +27,7 @@ class Core:
 
         TransactionQueue.initialize()
         self.queue = TransactionQueue(self.db)
-	self.queue.load()
+        self.queue.load()
 
         Journal.initialize()
         self.journal = Journal(self.db)
@@ -44,7 +44,7 @@ class Core:
         while not self.queue.isEmpty():
             try:
                 transaction = self.queue.pop()
-            except Queue.Empty:
+            except queue.Empty:
                 continue
 
             if transaction.depth > self.conf.max_depth:
@@ -139,7 +139,7 @@ class Transaction:
 
     def getStripedUri(self):
         pr = urlparse(self.uri)
-        return unicode(pr.scheme+'://'+pr.netloc)
+        return str(pr.scheme+'://'+pr.netloc)
 
     def __get_accepted_types(self, uriMap, uriAcceptor):
         p = uriAcceptor.getMaxPrefix(self.uri)
@@ -175,7 +175,7 @@ class Transaction:
 transactionId = 0
 def createTransaction(uri, depth = 0, srcId = -1):
     global transactionId
-    decoded = unicode(urllib.unquote(urllib.unquote(uri)), 'utf-8')
+    decoded = str(urllib.parse.unquote(urllib.parse.unquote(uri)))
     tr = Transaction(decoded, depth, srcId, transactionId)
     transactionId = transactionId + 1
     return tr
@@ -206,7 +206,7 @@ class Rack:
     def accept(self, transaction, plugin):
 
         rot = transaction.getStripedUri()[::-1]
-        type_cond = self.typeAcceptor.accept(unicode(transaction.type), plugin.id)
+        type_cond = self.typeAcceptor.accept(str(transaction.type), plugin.id)
         prefix_cond = self.prefixAcceptor.accept(transaction.uri, plugin.id)
         suffix_cond = self.suffixAcceptor.accept(rot, plugin.id)
         return type_cond and ( prefix_cond or suffix_cond )
@@ -227,7 +227,7 @@ class TransactionQueue:
     def __init__(self, db):
         self.__db = db
         self.__seen = set()
-        self.__q = Queue.Queue()
+        self.__q = queue.Queue()
         
     def isEmpty(self):
         return self.__q.empty()
@@ -235,7 +235,7 @@ class TransactionQueue:
     def pop(self):
         try:
             t = self.__q.get(block=True, timeout=1)
-        except Queue.Empty:
+        except queue.Empty:
             raise
         else:
             self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatusId = ? WHERE id = ?', [str(TransactionQueue.status_ids["processing"]), t.idno]) )
@@ -262,7 +262,7 @@ class TransactionQueue:
             srcId = -1
             if t[2] is not None:
                 srcId = t[2]
-            decoded = unicode(urllib.unquote(urllib.unquote(t[0])), 'utf-8')
+            decoded = str(urllib.parse.unquote(urllib.parse.unquote(t[0])), 'utf-8')
             self.__q.put(Transaction(decoded, t[1], srcId, t[3]))
         #load uris from transactions table for list of seen URIs
         self.__seen.update(self.__db.get_seen_uris())

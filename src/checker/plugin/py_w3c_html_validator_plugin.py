@@ -2,7 +2,7 @@ from common import PluginType
 from yapsy.IPlugin import IPlugin
 from py_w3c.validators.html.validator import HTMLValidator
 from py_w3c.exceptions import ValidationFault
-from urllib2 import HTTPError, URLError
+from urllib.error import HTTPError, URLError
 import time
 import logging
 

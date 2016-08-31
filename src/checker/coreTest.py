@@ -65,7 +65,7 @@ class TransactionTest(unittest.TestCase):
         content = 'foobar content'
         name = None
         with tempfile.NamedTemporaryFile(delete=False) as tmp:
-            tmp.write(content)
+            tmp.write(bytes(content, 'utf-8'))
             name = tmp.name
         t = core.createTransaction('moo')
         t.file = tmp.name
@@ -115,10 +115,10 @@ class TransactionTest(unittest.TestCase):
         r2 = ConfigLoader.reverse_dict_keys(r2)
 
         uri_map = ConfigLoader.create_uri_plugin_map(r1, r3, ua)
-        self.assertEqual(uri_map.keys(), ['fo', 'f'])
+        self.assertEqual(uri_map.keys(), set(['fo', 'f']))
 
         suffix_map = ConfigLoader.create_uri_plugin_map(r2, r3, sa)
-        self.assertEqual(suffix_map.keys(), ['oo'])
+        self.assertEqual(suffix_map.keys(), set(['oo']))
         
         conf = Configuration(None, ta, ua, sa, None, None, None, uri_map, suffix_map)
         t = core.createTransaction(uri)

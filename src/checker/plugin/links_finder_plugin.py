@@ -1,8 +1,8 @@
 from common import PluginType
 from bs4 import BeautifulSoup
 from yapsy.IPlugin import IPlugin
-from urlparse import urlparse, parse_qs, urljoin
-import urllib
+from urllib.parse import urlparse, parse_qs, urljoin
+import urllib.request, urllib.parse, urllib.error
 import marisa_trie
 
 
@@ -77,6 +77,6 @@ class LinksFinder(IPlugin):
 
                 urlNoAnchor = url.split('#')[0]
 
-                addr = urllib.quote(urlNoAnchor.encode('utf-8'))
+                addr = urllib.parse.quote(urlNoAnchor.encode('utf-8'))
                 self.queue.push_link(addr, transaction) #duplicates handled in queue
                 #TODO: scriptParams?

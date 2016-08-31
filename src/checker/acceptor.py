@@ -46,7 +46,7 @@ class Acceptor(object):
         return self.resolvePluginAcceptValue(pluginId, self.getMaxPrefix(value))
 
     def getMaxPrefix(self, value):
-       assert type(value) is unicode
+       assert type(value) is str
        # seznam prefixu, pro nas uri chceme nejdelsi prefix
        trie = marisa_trie.Trie(self.uris)
        prefList = trie.prefixes(value)

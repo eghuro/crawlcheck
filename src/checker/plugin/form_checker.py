@@ -2,7 +2,7 @@ from common import PluginType
 import core
 from yapsy.IPlugin import IPlugin
 from bs4 import BeautifulSoup
-import urlparse
+import urllib.parse
 
 class Form_Checker(IPlugin):
 
@@ -43,7 +43,7 @@ class Form_Checker(IPlugin):
     def get_action(self, form, transactionId): 
         base = self.database.getUri(transactionId)
         if 'action' in form.attrs:
-            return urlparse.urljoin(base, form['action'])
+            return urllib.parse.urljoin(base, form['action'])
         else:
             return base
 

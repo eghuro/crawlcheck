@@ -13,12 +13,12 @@ class AcceptorTest(unittest.TestCase):
     def testConstructorTrue(self):
         a = Acceptor(True)
         #t = core.createTransaction('foo', 0)
-        self.assertTrue(a.accept(unicode('foo'), 'bar'))
+        self.assertTrue(a.accept(str('foo'), 'bar'))
 
     def testConstructorFalse(self):
         a = Acceptor()
         #t = core.createTransaction('foo', 0)
-        self.assertFalse(a.accept(unicode('foo'), 'bar'))
+        self.assertFalse(a.accept(str('foo'), 'bar'))
 
     def testResolutiuonYes(self):
         self.assertEqual(Acceptor.getResolution(True), Resolution.yes)
@@ -108,36 +108,36 @@ class AcceptorTest(unittest.TestCase):
         a.setPluginAcceptValue('plug', 'goof.org', True)
 
         self.assertTrue('goof.org' in a.getValues())
-        self.assertEquals(a.pluginAcceptValue('plug', 'goof.org'), Resolution.yes)
+        self.assertEqual(a.pluginAcceptValue('plug', 'goof.org'), Resolution.yes)
 
     def testPluginAcceptValueYesMultipleValues(self):
         a = self.__getPreloadedAcceptor_pluginAcceptValue_multiple(False)
 
-        self.assertEquals(a.pluginAcceptValue('plug', 'goof.org'), Resolution.yes)
-        self.assertEquals(a.pluginAcceptValue('glup', 'meow.net'), Resolution.yes)
+        self.assertEqual(a.pluginAcceptValue('plug', 'goof.org'), Resolution.yes)
+        self.assertEqual(a.pluginAcceptValue('glup', 'meow.net'), Resolution.yes)
 
     def testPluginAcceptValueNoOneValue(self):
         a = Acceptor()
         a.setPluginAcceptValue('plug', 'meow.net', False)
 
         self.assertTrue('meow.net' in a.getValues())
-        self.assertEquals(a.pluginAcceptValue('plug', 'meow.net'), Resolution.no)
+        self.assertEqual(a.pluginAcceptValue('plug', 'meow.net'), Resolution.no)
 
     def testPluginAcceptValueNoMultipleValues(self):
         a = self.__getPreloadedAcceptor_pluginAcceptValue_multiple(False)
 
-        self.assertEquals(a.pluginAcceptValue('plug', 'meow.net'), Resolution.no)
-        self.assertEquals(a.pluginAcceptValue('glup', 'goof.org'), Resolution.no)
+        self.assertEqual(a.pluginAcceptValue('plug', 'meow.net'), Resolution.no)
+        self.assertEqual(a.pluginAcceptValue('glup', 'goof.org'), Resolution.no)
 
     def testPluginAcceptValueNoUri(self):
         a = self.__getPreloadedAcceptor_pluginAcceptValue_multiple(False)
 
-        self.assertEquals(a.pluginAcceptValue('plug', 'foo.baz.org'), Resolution.none)
+        self.assertEqual(a.pluginAcceptValue('plug', 'foo.baz.org'), Resolution.none)
 
     def testPluginAcceptValueNoPlugin(self):
         a = self.__getPreloadedAcceptor_pluginAcceptValue_multiple(False)
 
-        self.assertEquals(a.pluginAcceptValue('plugin', 'goof.org'), Resolution.none)
+        self.assertEqual(a.pluginAcceptValue('plugin', 'goof.org'), Resolution.none)
 
     def testResolvePluginAcceptValueYes(self):
         a = self.__getPreloadedAcceptor_pluginAcceptValue_multiple(False)
@@ -157,39 +157,39 @@ class AcceptorTest(unittest.TestCase):
 
     def testMaxPrefixExactValueTrue(self):
         a = self.__getPreloadedAcceptor_pluginAcceptValue_multiple(False)
-        self.assertEquals(a.getMaxPrefix(unicode('foo.bar.org')), 'foo.bar.org')
-        self.assertEquals(a.getMaxPrefix(unicode('goof.org')), 'goof.org')
-        self.assertEquals(a.getMaxPrefix(unicode('foog.com')), 'foog.com')
+        self.assertEqual(a.getMaxPrefix(str('foo.bar.org')), 'foo.bar.org')
+        self.assertEqual(a.getMaxPrefix(str('goof.org')), 'goof.org')
+        self.assertEqual(a.getMaxPrefix(str('foog.com')), 'foog.com')
 
     def testMaxPrefixExactValueFalse(self):
         a = self.__getPreloadedAcceptor_pluginAcceptValue_multiple(False)
-        self.assertEquals(a.getMaxPrefix(unicode('moo.baz.net')), 'moo.baz.net')
-        self.assertEquals(a.getMaxPrefix(unicode('meow.net')), 'meow.net')
-        self.assertEquals(a.getMaxPrefix(unicode('woem.edu')), 'woem.edu')
+        self.assertEqual(a.getMaxPrefix(str('moo.baz.net')), 'moo.baz.net')
+        self.assertEqual(a.getMaxPrefix(str('meow.net')), 'meow.net')
+        self.assertEqual(a.getMaxPrefix(str('woem.edu')), 'woem.edu')
 
     def testMaxPrefixOneValue(self):
         a = Acceptor()
         a.setPluginAcceptValue('plug', 'foo.bar.org', True)
-        self.assertEquals(a.getValues(), set(['foo.bar.org']))
+        self.assertEqual(a.getValues(), set(['foo.bar.org']))
 
-        self.assertEquals(a.getMaxPrefix(unicode('woem.edu')), 'woem.edu')
-        self.assertEquals(a.getMaxPrefix(unicode('woem.edu/about.html')), 'woem.edu/about.html')
-        self.assertEquals(a.getMaxPrefix(unicode('woem.edu/about/index.html')), 'woem.edu/about/index.html')
-        self.assertEquals(a.getMaxPrefix(unicode('woem.edu/contact.php')), 'woem.edu/contact.php')
-        self.assertEquals(a.getMaxPrefix(unicode('meow.net')), 'meow.net')
-        self.assertEquals(a.getMaxPrefix(unicode('meow.net/contact.php')), 'meow.net/contact.php')
+        self.assertEqual(a.getMaxPrefix(str('woem.edu')), 'woem.edu')
+        self.assertEqual(a.getMaxPrefix(str('woem.edu/about.html')), 'woem.edu/about.html')
+        self.assertEqual(a.getMaxPrefix(str('woem.edu/about/index.html')), 'woem.edu/about/index.html')
+        self.assertEqual(a.getMaxPrefix(str('woem.edu/contact.php')), 'woem.edu/contact.php')
+        self.assertEqual(a.getMaxPrefix(str('meow.net')), 'meow.net')
+        self.assertEqual(a.getMaxPrefix(str('meow.net/contact.php')), 'meow.net/contact.php')
 
     def testMaxPrefixOneCorrectValue(self):
         a = Acceptor()
         a.setPluginAcceptValue('plug', 'woem.edu', True)
-        self.assertEquals(a.getValues(), set(['woem.edu']))
+        self.assertEqual(a.getValues(), set(['woem.edu']))
 
-        self.assertEquals(a.getMaxPrefix(unicode('woem.edu')), 'woem.edu')
-        self.assertEquals(a.getMaxPrefix(unicode('woem.edu/about.html')), 'woem.edu')
-        self.assertEquals(a.getMaxPrefix(unicode('woem.edu/about/index.html')), 'woem.edu')
-        self.assertEquals(a.getMaxPrefix(unicode('woem.edu/contact.php')), 'woem.edu')
-        self.assertEquals(a.getMaxPrefix(unicode('meow.net')), 'meow.net')
-        self.assertEquals(a.getMaxPrefix(unicode('meow.net/contact.php')), 'meow.net/contact.php')
+        self.assertEqual(a.getMaxPrefix(str('woem.edu')), 'woem.edu')
+        self.assertEqual(a.getMaxPrefix(str('woem.edu/about.html')), 'woem.edu')
+        self.assertEqual(a.getMaxPrefix(str('woem.edu/about/index.html')), 'woem.edu')
+        self.assertEqual(a.getMaxPrefix(str('woem.edu/contact.php')), 'woem.edu')
+        self.assertEqual(a.getMaxPrefix(str('meow.net')), 'meow.net')
+        self.assertEqual(a.getMaxPrefix(str('meow.net/contact.php')), 'meow.net/contact.php')
 
     def testMaxPrefixSelectOfOne(self):
         a = Acceptor()
@@ -198,12 +198,12 @@ class AcceptorTest(unittest.TestCase):
         a.setPluginAcceptValue('plug', 'foog.com', True)
         a.setPluginAcceptValue('goof', 'moo.baz.net', False)
         
-        self.assertEquals(a.getMaxPrefix(unicode('woem.edu')), 'woem.edu')
-        self.assertEquals(a.getMaxPrefix(unicode('woem.edu/about.html')), 'woem.edu')
-        self.assertEquals(a.getMaxPrefix(unicode('woem.edu/about/index.html')), 'woem.edu')
-        self.assertEquals(a.getMaxPrefix(unicode('woem.edu/contact.php')), 'woem.edu')
-        self.assertEquals(a.getMaxPrefix(unicode('meow.net')), 'meow.net')
-        self.assertEquals(a.getMaxPrefix(unicode('meow.net/contact.php')), 'meow.net/contact.php')
+        self.assertEqual(a.getMaxPrefix(str('woem.edu')), 'woem.edu')
+        self.assertEqual(a.getMaxPrefix(str('woem.edu/about.html')), 'woem.edu')
+        self.assertEqual(a.getMaxPrefix(str('woem.edu/about/index.html')), 'woem.edu')
+        self.assertEqual(a.getMaxPrefix(str('woem.edu/contact.php')), 'woem.edu')
+        self.assertEqual(a.getMaxPrefix(str('meow.net')), 'meow.net')
+        self.assertEqual(a.getMaxPrefix(str('meow.net/contact.php')), 'meow.net/contact.php')
 
     def testMaxPrefixSelectOfMany(self):
         a = Acceptor()
@@ -213,16 +213,16 @@ class AcceptorTest(unittest.TestCase):
         a.setPluginAcceptValue('plug', 'foog.com', True)
         a.setPluginAcceptValue('goof', 'moo.baz.net', False)
         
-        self.assertEquals(a.getMaxPrefix(unicode('woem.edu')), 'woem.edu')
-        self.assertEquals(a.getMaxPrefix(unicode('woem.edu/about.html')), 'woem.edu/about')
-        self.assertEquals(a.getMaxPrefix(unicode('woem.edu/about/index.html')), 'woem.edu/about')
-        self.assertEquals(a.getMaxPrefix(unicode('woem.edu/contact.php')), 'woem.edu')
-        self.assertEquals(a.getMaxPrefix(unicode('meow.net')), 'meow.net')
-        self.assertEquals(a.getMaxPrefix(unicode('meow.net/contact.php')), 'meow.net/contact.php')
+        self.assertEqual(a.getMaxPrefix(str('woem.edu')), 'woem.edu')
+        self.assertEqual(a.getMaxPrefix(str('woem.edu/about.html')), 'woem.edu/about')
+        self.assertEqual(a.getMaxPrefix(str('woem.edu/about/index.html')), 'woem.edu/about')
+        self.assertEqual(a.getMaxPrefix(str('woem.edu/contact.php')), 'woem.edu')
+        self.assertEqual(a.getMaxPrefix(str('meow.net')), 'meow.net')
+        self.assertEqual(a.getMaxPrefix(str('meow.net/contact.php')), 'meow.net/contact.php')
 
     def testMaxPrefixValueEmpty(self):
         a = self.__getPreloadedAcceptor_pluginAcceptValue_multiple(False)
-        self.assertEquals(a.getMaxPrefix(unicode('')), '')
+        self.assertEqual(a.getMaxPrefix(str('')), '')
 
     #def testMaxPrefixValueNone(self):
     #    a = Acceptor()
@@ -236,36 +236,36 @@ class AcceptorTest(unittest.TestCase):
 
     def testMaxPrefixNoUris(self):
         a = Acceptor()
-        self.assertEquals(a.getMaxPrefix(unicode('woem.edu')), 'woem.edu')
-        self.assertEquals(a.getMaxPrefix(unicode('woem.edu/about.html')), 'woem.edu/about.html')
-        self.assertEquals(a.getMaxPrefix(unicode('woem.edu/about/index.html')), 'woem.edu/about/index.html')
-        self.assertEquals(a.getMaxPrefix(unicode('woem.edu/contact.php')), 'woem.edu/contact.php')
-        self.assertEquals(a.getMaxPrefix(unicode('meow.net')), 'meow.net')
-        self.assertEquals(a.getMaxPrefix(unicode('meow.net/contact.php')), 'meow.net/contact.php')
+        self.assertEqual(a.getMaxPrefix(str('woem.edu')), 'woem.edu')
+        self.assertEqual(a.getMaxPrefix(str('woem.edu/about.html')), 'woem.edu/about.html')
+        self.assertEqual(a.getMaxPrefix(str('woem.edu/about/index.html')), 'woem.edu/about/index.html')
+        self.assertEqual(a.getMaxPrefix(str('woem.edu/contact.php')), 'woem.edu/contact.php')
+        self.assertEqual(a.getMaxPrefix(str('meow.net')), 'meow.net')
+        self.assertEqual(a.getMaxPrefix(str('meow.net/contact.php')), 'meow.net/contact.php')
 
     def testAcceptTrue(self):
         a = self.__getPreloadedAcceptor_pluginAcceptValue_multiple(False)
-        t = unicode('goof.org/about/offices/')
+        t = str('goof.org/about/offices/')
         self.assertTrue(a.accept(t, 'plug'))
-        t = unicode('meow.net')
+        t = str('meow.net')
         self.assertTrue(a.accept(t, 'glup'))
-        t = unicode('foo.bar.org/foobar')
+        t = str('foo.bar.org/foobar')
         #self.assertTrue(a.accept(t, ''))
         #self.assertTrue(a.accept(t, None))
         #self.assertTrue(a.accept(t, 12345))
         #self.assertTrue(a.accept(t, -12.35))
-        t = unicode('foog.com/')
+        t = str('foog.com/')
         self.assertTrue(a.accept(t, 'plug'))
 
     def testAcceptFalse(self):
         a = self.__getPreloadedAcceptor_pluginAcceptValue_multiple(False)
-        t = unicode('meow.net/about/offices/')
+        t = str('meow.net/about/offices/')
         self.assertFalse(a.accept(t, 'plug'))
-        t = unicode('goof.org')
+        t = str('goof.org')
         self.assertFalse(a.accept(t, 'glup'))
-        t = unicode('woem.edu/about.html')
+        t = str('woem.edu/about.html')
         self.assertFalse(a.accept(t, 'plug'))
-        t = unicode('moo.baz.net/glory')
+        t = str('moo.baz.net/glory')
         self.assertFalse(a.accept(t, ''))
         self.assertFalse(a.accept(t, None))
         self.assertFalse(a.accept(t, 12345))
@@ -273,10 +273,10 @@ class AcceptorTest(unittest.TestCase):
 
     def testMightAccept(self):
         a = self.__getPreloadedAcceptor_pluginAcceptValue_multiple(False)
-        lst = [unicode('goof.org/about/offices/'), unicode('meow.net'), unicode('foo.bar.org/foobar'), unicode('foog.com/')]
+        lst = [str('goof.org/about/offices/'), str('meow.net'), str('foo.bar.org/foobar'), str('foog.com/')]
         for it in lst:
             self.assertTrue(a.mightAccept(it))
-        lst = [unicode('moo.baz.net/glory'), unicode('woem.edu/about.html')]
+        lst = [str('moo.baz.net/glory'), str('woem.edu/about.html')]
         for it in lst:
             self.assertFalse(a.mightAccept(it))
 
@@ -287,12 +287,12 @@ class AcceptorTest(unittest.TestCase):
         for it in lst:
             revList.append(it[::-1])
         a.reverseValues()
-        self.assertEquals(a.getValues(), set(revList))
+        self.assertEqual(a.getValues(), set(revList))
 
     def testReverseValuesNoUris(self):
         a = Acceptor(False)
         a.reverseValues()
-        self.assertEquals(a.getValues(), set())
+        self.assertEqual(a.getValues(), set())
 
 if __name__ == '__main__':
     unittest.main()

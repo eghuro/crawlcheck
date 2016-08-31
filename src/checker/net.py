@@ -1,6 +1,6 @@
 import requests
 from requests.exceptions import InvalidSchema, ConnectionError, MissingSchema
-from urlparse import urlparse
+from urllib.parse import urlparse
 import os
 import tempfile
 import magic
@@ -43,7 +43,7 @@ class Network(object):
         try:
             acc_header = Network.__create_accept_header(acceptedTypes)
 
-            ct = unicode(Network.__check_headers(srcTransaction, journal, conf.user_agent, acc_header))
+            ct = str(Network.__check_headers(srcTransaction, journal, conf.user_agent, acc_header))
             r = Network.__conditional_fetch(ct, srcTransaction, acc_header, conf)
             name = Network.__save_content(r.text)
             match, mime = Network.__test_content_type(ct, name)
@@ -73,9 +73,9 @@ class Network(object):
             journal.foundDefect(srcTransaction, "badlink", "Invalid link", srcTransaction.uri)
             raise StatusError(r.status_code)
 
-        if 'content-type' in r.headers.keys():
+        if 'content-type' in list(r.headers.keys()):
             ct = r.headers['content-type']
-        elif 'Content-Type' in r.headers.keys():
+        elif 'Content-Type' in list(r.headers.keys()):
             ct = r.headers['Content-Type']
         else:
             ct = ''
