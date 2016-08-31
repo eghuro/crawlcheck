@@ -9,6 +9,12 @@ class ConfigurationError(Exception):
     def __init__(self, msg):
         self.msg = msg
 
+class EPR(object):
+    def __init__(self, url, method='GET', data = None):
+        self.url = url
+        self.method = method
+        self.data = data
+
 class ConfigLoader(object):
     """ ConfigLoader loads configuration from file.
         Configuration is loaded through load()
@@ -75,7 +81,21 @@ class ConfigLoader(object):
         else:
             epSet = root['entryPoints']
             for ep in epSet:
-                self.entryPoints.append(ep)
+                if type(ep) is str:
+                    self.entryPoints.append(EPR(ep))
+                elif type(ep) is dict:
+                    data = dict()
+                    if 'data' in ep:
+                        for it in ep['data']:
+                            for k in it.keys():
+                                data[k] = it[k]
+                    method = 'GET'
+                    if 'method' in ep:
+                        if ep['method'].upper() in ['GET', 'POST']: # pro zacatek staci 
+                            method = ep['method'].upper()
+                    if 'url' not in ep:
+                        raise ConfigurationException("url not present in entryPoint")
+                    self.entryPoints.append(EPR(ep['url'], method, data))
 
     def __set_filters(self, root):
         if 'filters' in root:

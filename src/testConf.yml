@@ -1,8 +1,10 @@
 ---
-version: 1.02
+version: 1.03
 database: crawlcheck
+pluginDir: plugins  # defaults to 'plugins'
 maxDepth: 10
-agent: Googlebot/2.1
+maxContentLength: 2000000
+agent: "Googlebot/2.1"
     
 content-types:
  - 
@@ -36,5 +38,16 @@ suffixes:
     plugins:
        - linksFinder
 
+filters:
+ - depth
+ - robots
+ - contentLength
+
+
 entryPoints:
  - "http://mj.ucw.cz/vyuka/"
+ -
+    url: "http://www.mff.cuni.cz/"
+    method: GET
+    data:
+      - foo: bar
