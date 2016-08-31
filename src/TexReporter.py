@@ -56,7 +56,7 @@ class TexReporter(object):
                 continue
 
         with doc.create(Section('Other defects')):
-            query = ('select transactions.uri, defect.evidence, defectType.description, defect.severity from defect inner join defectType on defect.type = defectType.id inner join finding on finding.id = defect.findingId inner join transactions on transactions.id = finding.responseId where defectType.type != "badlink" order by defect.severity, defectType.type, transactions.uri')
+            query = ('select transactions.uri, defect.evidence, defectType.description, defect.severity from defect inner join defectType on defect.type = defectType.id inner join finding on finding.id = defect.findingId inner join transactions on transactions.id = finding.responseId where defectType.type != "badlink" order by defect.severity desc, defectType.type, transactions.uri')
             self.cursor.execute(query)
             row = self.cursor.fetchone()
             while row is not None:

@@ -43,7 +43,7 @@ class Tidy_HTML_Validator(IPlugin):
         self.codes[desc] = code
         return code
 
-    def __get_code_sev(self, cat, desc):
+    def __get_code(self, cat, desc):
         code = None
         if desc in self.codes:
             code = self.codes[desc]

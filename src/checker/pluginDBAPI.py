@@ -141,7 +141,7 @@ class DBAPI(object):
     def error(self, e):
         self.con.rollback()
         log = logging.getLogger()
-        log.debug("SQL Error: "+str(e))
+        log.error("SQL Error: "+str(e))
 
     def load_defect_types(self):
         query = 'SELECT type, id FROM defectType'
