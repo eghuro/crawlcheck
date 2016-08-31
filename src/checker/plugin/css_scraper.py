@@ -71,7 +71,7 @@ class CssScraper(IPlugin):
         size = len(style.encode('utf-8'))
         LIMIT = 1024
         if size > LIMIT:
-            self.journal.foundDefect(transaction, 'seo:huge_internal', "Internal CSS bigger than 1024", size)
+            self.journal.foundDefect(transaction.idno, 'seo:huge_internal', "Internal CSS bigger than 1024", size)
         return reqId
 
 
@@ -86,4 +86,4 @@ class CssScraper(IPlugin):
 
 
     def duplicit_inline(self, transaction, style):
-        self.journal.foundDefect(transaction, 'seo:duplicit_inline', "Duplicit inline CSS", style)
+        self.journal.foundDefect(transaction.idno, 'seo:duplicit_inline', "Duplicit inline CSS", style)

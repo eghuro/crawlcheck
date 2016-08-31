@@ -33,9 +33,9 @@ class Network(object):
     __allowed_schemas = ['http', 'https']
 
     @staticmethod
-    def getLink(srcTransaction, acceptedTypes, conf, journal):
+    def getLink(linkedTransaction, acceptedTypes, conf, journal):
     
-        s = urlparse(srcTransaction.uri).scheme
+        s = urlparse(linkedTransaction.uri).scheme
         if s not in Network.__allowed_schemas:
             raise UrlError(s)
 
@@ -43,12 +43,12 @@ class Network(object):
         try:
             acc_header = Network.__create_accept_header(acceptedTypes)
 
-            ct = str(Network.__check_headers(srcTransaction, journal, conf.user_agent, acc_header))
-            r = Network.__conditional_fetch(ct, srcTransaction, acc_header, conf)
+            ct = str(Network.__check_headers(linkedTransaction, journal, conf.user_agent, acc_header))
+            r = Network.__conditional_fetch(ct, linkedTransaction, acc_header, conf)
             name = Network.__save_content(r.text)
             match, mime = Network.__test_content_type(ct, name)
             if not match:
-                journal.foundDefect(srcTransaction, "type-mishmash", "Declared content-type doesn't match detected one", mime)
+                journal.foundDefect(linkedTransaction.idno, "type-mishmash", "Declared content-type doesn't match detected one", "Declared "+ct+", detected "+mime)
             return ct, name
             
         except ConnectionError as e:
@@ -66,11 +66,11 @@ class Network(object):
      
      
     @staticmethod
-    def __check_headers(srcTransaction, journal, agent, accept):
+    def __check_headers(linkedTransaction, journal, agent, accept):
         
-        r = requests.head(srcTransaction.uri, headers={ "user-agent": agent, "accept":  accept})
+        r = requests.head(linkedTransaction.uri, headers={ "user-agent": agent, "accept":  accept})
         if r.status_code >= 400:
-            journal.foundDefect(srcTransaction, "badlink", "Invalid link", srcTransaction.uri)
+            journal.foundDefect(linkedTransaction.srcId, "badlink", "Invalid link", linkedTransaction.uri)
             raise StatusError(r.status_code)
 
         if 'content-type' in list(r.headers.keys()):
@@ -81,7 +81,7 @@ class Network(object):
             ct = ''
 
         if not ct.strip():
-            journal.foundDefect(srcTransaction, "badtype", "Content-type empty")
+            journal.foundDefect(srcTransaction.idno, "badtype", "Content-type empty", None)
         return ct
     
     @staticmethod
@@ -122,6 +122,8 @@ class Network(object):
     def __test_content_type(ctype, fname):
 
         mime = magic.from_file(fname, mime=True)
+        if ';' in ctype:
+            ctype = ctype.split(';')[0]
         return (mime == ctype), mime
 
     @staticmethod

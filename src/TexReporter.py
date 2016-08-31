@@ -1,77 +1,8 @@
 import sqlite3 as mdb
-from pylatex import Document, Section, Tabular, Package
+from pylatex import Document, Section, Tabular, Package, NoEscape
 import pylatex.utils
 import sys
-import urllib
-
-
-class LinkPage(object):
-    def __init__(self):
-        self.__section_name = 'Invalid links'
-        self.__query = ('select defectType.description, transactions.uri, '
-                      'evidence from defect inner join finding on'
-                      ' finding.id = defect.findingId inner join defectType'
-                      ' on defect.type = defectType.id inner join '
-                      'transactions on transactions.id = finding.responseId '
-                      'where defectType.description = "Invalid link"'
-                      'order by defectType.type')
-
-    def section_name(self):
-        return self.__section_name
-
-    def query(self):
-        return self.__query
-
-    def page(self, doc, row):
-        with doc.create(Tabular('|l|l|l|')) as table:
-            table.add_hline()
-            table.add_row(('Decription', 'On page', 'To page'))
-            table.add_hline()
-  
-            count = 0
-            max_on_line = 47
-            while row is not None:
-                table.add_row((pylatex.utils.escape_latex(row[0].decode('utf-8')), pylatex.utils.escape_latex(urllib.unquote(row[1]).decode('utf-8')), pylatex.utils.escape_latex(urllib.unquote(row[3]).decode('utf-8'))))
-                table.add_hline()
-                count += 1
-                row = self.cursor.fetchone()
-                if count == max_on_line: break;
-        doc.append('\\newpage')
-        return row
-
-class DefectPage(object):
-    def __init__(self):
-        self.__section_name = 'Defects'
-        self.__query = ('select defectType.description, transactions.uri, '
-                      'evidence from defect inner join finding on'
-                      ' finding.id = defect.findingId inner join defectType'
-                      ' on defect.type = defectType.id inner join '
-                      'transactions on transactions.id = finding.responseId '
-                      'where defectType.description != "Invalid link"'
-                      'order by defectType.type')
-
-    def section_name(self):
-        return self.__section_name
-
-    def query(self):
-        return self.__query
-
-    def page(self, doc, row): 
-        with doc.create(Tabular('|l|l|')) as table:
-            table.add_hline()
-            table.add_row(('On Page', 'Description' 'Evidence'))
-            table.add_hline()
-
-            count = 0
-            max_on_line = 23
-            while row is not None:
-                table.add_row((pylatex.utils.escape_latex(str(row[1].decode('utf-8'))), pylatex.utils.escape_latex(row[0].decode('utf-8')), pylatex.utils.escape_latex(urllib.unquote(row[2]).decode('utf-8')) ))
-                table.add_hline()
-                count += 1
-                row = self.cursor.fetchone()
-                if count == max_on_line: break;
-        doc.append('\\newpage')
-        return row
+import urllib.parse
 
 class TexReporter(object):
     """ Generate PDF report via LaTex.
@@ -79,6 +10,7 @@ class TexReporter(object):
     """
 
     def __init__(self, dbname):
+        print("Create reporter")
         self.con = mdb.connect(dbname)
         self.cursor = self.con.cursor()
 
@@ -95,17 +27,64 @@ class TexReporter(object):
         """
         doc = Document()
         doc.packages.append(Package('geometry', options = ['top=1in', 'bottom=1.25in', 'left=0.25in', 'right=1.25in']))
-        self.section(doc, LinkPage())
-        self.section(doc, DefectPage())
-        doc.generate_pdf(out)
-
-    def section(self, doc, page):
-        with doc.create(Section(page.section_name())):
-            self.cursor.execute(page.query())
-            
+        
+        max_on_page = 47
+        with doc.create(Section('Invalid links')):
+            query = ('select transactions.uri, defect.evidence from defect inner join defectType on defect.type = defectType.id inner join finding on finding.id = defect.findingId inner join transactions on transactions.id = finding.responseId where defectType.type = "badlink"')
+            self.cursor.execute(query)
             row = self.cursor.fetchone()
             while row is not None:
-                row = page.page(doc, row)
+                with doc.create(Tabular('|l|l|')) as table:
+                    table.add_hline()
+                    table.add_row(('On page', 'To page'))
+                    table.add_hline()
+
+                    count = 0
+                    while row is not None:
+                        from_ = urllib.parse.unquote(row[0])
+                        to_ = urllib.parse.unquote(row[1])
+                        table.add_row((from_, to_))
+                        table.add_hline()
+                        count += 1
+
+                        row = self.cursor.fetchone()
+                        if count == max_on_page:
+                            break #vyskoci z vnitrniho while
+                #v kazdem pripade konec tabulky
+                if row is not None: #doslo misto na strance
+                    doc.append(NoEscape(r"\newpage"))
+                continue
+
+        with doc.create(Section('Other defects')):
+            query = ('select transactions.uri, defect.evidence, defectType.description from defect inner join defectType on defect.type = defectType.id inner join finding on finding.id = defect.findingId inner join transactions on transactions.id = finding.responseId where defectType.type != "badlink" order by defectType.type')
+            self.cursor.execute(query)
+            row = self.cursor.fetchone()
+            while row is not None:
+                with doc.create(Tabular('|l|l|l|')) as table:
+                    table.add_hline()
+                    table.add_row(('On page', 'Description', 'Evidence'))
+                    table.add_hline()
+
+                    count = 0
+                    max_on_page = 47
+                    while row is not None:
+                        page = urllib.parse.unquote(row[0])
+                        description = row[2]
+                        evidence = row[1]
+                        table.add_row((page, description, evidence))
+                        table.add_hline()
+                        count += 1
+
+                        row = self.cursor.fetchone()
+                        if count == max_on_page:
+                            break #vyskoci z vnitrniho while
+                #v kazdem pripade konec tabulky
+                if row is not None: #doslo misto na strance
+                    doc.append(NoEscape(r"\newpage"))
+                continue
+
+        doc.generate_pdf(out)                         
+
 
 def run():
     """ Entry point - load command line arguments and call printReport or show usage.

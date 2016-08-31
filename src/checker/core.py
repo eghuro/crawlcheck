@@ -112,6 +112,7 @@ class Transaction:
         self.type = None
         self.file = None
         self.idno = idno
+        self.srcId = srcId
         #self.log = logging.getLogger()
 
     def loadResponse(self, conf, journal):
@@ -173,10 +174,10 @@ class Transaction:
         return y
 
 transactionId = 0
-def createTransaction(uri, depth = 0, srcId = -1):
+def createTransaction(uri, depth = 0, parentId = -1):
     global transactionId
     decoded = str(urllib.parse.unquote(urllib.parse.unquote(uri)))
-    tr = Transaction(decoded, depth, srcId, transactionId)
+    tr = Transaction(decoded, depth, parentId, transactionId)
     transactionId = transactionId + 1
     return tr
 
@@ -253,7 +254,7 @@ class TransactionQueue:
             self.__db.log_link(parent.idno, transaction.uri, transaction.idno)
 
     def push_link(self, uri, parent):
-        self.push(createTransaction(uri,parent.depth+1), parent)
+        self.push(createTransaction(uri,parent.depth+1, parent.idno), parent)
 
     def load(self):
         #load transactions from DB to memory - only where status is requested
@@ -288,10 +289,11 @@ class Journal:
         self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatusId = ? WHERE id = ?', [str(status), transaction.idno]) )
 
     def foundDefect(self, transaction, defect, evidence):
-        self.foundDefect(transaction, defect.name, defect.additional, evidence)
+        self.foundDefect(transaction.idno, defect.name, defect.additional, evidence)
 
-    def foundDefect(self, transaction, name, additional, evidence):
-        self.__db.log_defect(transaction.idno, name, additional, evidence)
+    def foundDefect(self, trId, name, additional, evidence):
+        assert type(trId) == int
+        self.__db.log_defect(trId, name, additional, evidence)
 
 class Defect:
 

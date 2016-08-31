@@ -24,7 +24,7 @@ class CssValidator(IPlugin):
             data = str(transaction.getContent(), 'utf-8')
             stylesheet = parser.parse_stylesheet(data)
             for error in stylesheet.errors:
-                self.journal.foundDefect(transaction, "stylesheet", "Stylesheet error", [error.line, error.reason])
+                self.journal.foundDefect(transaction.idno, "stylesheet", "Stylesheet error", [error.line, error.reason])
         except UnicodeDecodeError as e:
             logging.getLogger().debug("Unicode decode error: "+format(e))
         return
