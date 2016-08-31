@@ -45,9 +45,7 @@ And of course Crawlcheck itself is open source with a [public repository](https:
 $ git clone https://github.com/eghuro/crawlcheck crawlcheck
 ```
 
-2) Set database location in ```crawlcheck/src/report/config/database.yml```
-
-3) Run install script
+2) Run install script
 ```sh
 cd crawlcheck
 ./install.sh [database-file-location]

@@ -1,7 +1,8 @@
 #!/bin/sh
-virtualenv env
-source env/bin/activate
-pip install marisa_trie yapsy py_w3c enum34 urllib3 requests tinycss beautifulsoup4 pyyaml
+virtualenv -p /usr/bin/python3 py3env
+source py3env/bin/activate
+
+pip install -r requirements.txt
 gem install bundler
 gem install rails
 
