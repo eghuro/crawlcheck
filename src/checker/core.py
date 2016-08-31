@@ -6,14 +6,14 @@ from urllib.parse import urlparse
 from pluginDBAPI import DBAPI, VerificationStatus, Table
 from common import PluginType, PluginTypeError
 from net import Network, NetworkError, ConditionError, StatusError
-from filter import FilterException, DepthFilter, RobotsFilter
+from filter import FilterException #, DepthFilter, RobotsFilter, ContentLengthFiler
 
 
 
 
 class Core:
 
-    def __init__(self, plugins, conf):           
+    def __init__(self, plugins, filters, headers, conf):           
         self.plugins = plugins
         self.log = logging.getLogger()
         self.conf = conf
@@ -22,7 +22,8 @@ class Core:
         self.db.load_finding_id()
         self.files = []
 
-        self.filters = [DepthFilter(conf), RobotsFilter(conf)]
+        self.filters = filters #[DepthFilter(conf), RobotsFilter(conf)]
+        self.header_filters = headers #[ContentLengthFiler(conf)]
 
         TransactionQueue.initialize()
         self.queue = TransactionQueue(self.db)
@@ -35,7 +36,7 @@ class Core:
             self.__initializePlugin(plugin)
 
         for entryPoint in self.conf.entry_points:
-            self.queue.push(createTransaction(entryPoint, 0))
+            self.queue.push(createTransaction(entryPoint.url, 0, entryPoint.method, entryPoint.data))
 
         self.rack = Rack(self.conf.uri_acceptor, self.conf.type_acceptor, self.conf.suffix_acceptor, plugins)
 
@@ -64,7 +65,7 @@ class Core:
 
             #Networking
             try:
-                transaction.loadResponse(self.conf, self.journal)           
+                transaction.loadResponse(self.conf, self.journal, self.header_filters)
             except TouchException: #nesmim se toho dotykat
                 self.log.debug("Forbidden to touch "+transaction.uri)
                 self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
@@ -73,6 +74,10 @@ class Core:
                self.log.debug("Condition failed")
                self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                continue
+            except FilterException: #header filters
+                self.log.debug(transaction.uri + " filtered out")
+                self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
+                continue
             except StatusError as e:
                self.log.debug("Status error: "+str(e))
                self.journal.stopChecking(transaction, VerificationStatus.done_ko)
@@ -121,7 +126,7 @@ class TouchException(Exception):
 
 class Transaction:
 
-    def __init__(self, uri, depth, srcId, idno):
+    def __init__(self, uri, depth, srcId, idno, method='GET', data=None):
         #Use the factory method below!!
         self.uri = uri
         self.depth = depth
@@ -129,13 +134,15 @@ class Transaction:
         self.file = None
         self.idno = idno
         self.srcId = srcId
+        self.method = method
+        self.data = data
         #self.log = logging.getLogger()
 
-    def loadResponse(self, conf, journal):
+    def loadResponse(self, conf, journal, filters):
         if self.isTouchable(conf.uri_acceptor, conf.suffix_acceptor):
             try:
                 acceptedTypes = self.getAcceptedTypes(conf)
-                self.type, self.file = Network.getLink(self, acceptedTypes, conf, journal)
+                self.type, self.file = Network.getLink(self, acceptedTypes, conf, journal, filters)
             except (NetworkError, ConditionError, StatusError):
                 raise
         else:
@@ -193,10 +200,11 @@ class Transaction:
         return y
 
 transactionId = 0
-def createTransaction(uri, depth = 0, parentId = -1):
+def createTransaction(uri, depth = 0, parentId = -1, method = 'GET', params=None):
+    assert params is dict
     global transactionId
     decoded = str(urllib.parse.unquote(urllib.parse.unquote(uri)))
-    tr = Transaction(decoded, depth, parentId, transactionId)
+    tr = Transaction(decoded, depth, parentId, transactionId, method, params)
     transactionId = transactionId + 1
     return tr
 

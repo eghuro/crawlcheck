@@ -6,6 +6,7 @@ from yapsy.PluginManager import PluginManager
 
 from configLoader import ConfigLoader
 from core import Core
+from common import PluginType
 
 import logging
 import signal
@@ -39,22 +40,37 @@ def main():
         # load configuration
         cl = ConfigLoader()
         cl.load(sys.argv[1])
+        conf = cl.get_configuration()
+
+        allowed_filters = set(cl.get_allowed_filters())
+
+        plugins = []
+        filters = []
+        headers = []
+
+        filter_categories = [PluginType.FILTER, PluginType.HEADER]
+        plugin_categories = [PluginType.CHECKER, PluginType.CRAWLER]
 
         # load plugins
         manager = PluginManager()
-        manager.setPluginPlaces(["checker/plugin"])
+        manager.setPluginPlaces( [x[0] for x in os.walk(conf.getProperty('pluginDir'))] ) #pluginDir and all subdirs
         manager.collectPlugins()
 
-        plugins = []
         for pluginInfo in manager.getAllPlugins():
             log.info(pluginInfo.name)
-            plugins.append(pluginInfo.plugin_object)
+            if pluginInfo.name in allowed_filters:
+                if pluginInfo.plugin_object.category is PluginType.FILTER:
+                    filters.append(pluginInfo.plugin_object)
+                elif pluginInfo.plugin_object.category is PluginType.HEADER:
+                    headers.append(pluginInfo.plugin_object)
+            else if pluginInfo.plugin_object.category in plugin_categories:
+                plugins.append(pluginInfo.plugin_object)
 
         if len(plugins) == 0:
             log.info("No plugins found")
 
         log.info("Running checker")
-        core_instance = Core(plugins, cl.get_configuration())
+        core_instance = Core(plugins, filters, headers, cl.get_configuration())
         try:
             core_instance.run()
         finally:

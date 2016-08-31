@@ -33,7 +33,7 @@ class Network(object):
     __allowed_schemas = ['http', 'https']
 
     @staticmethod
-    def getLink(linkedTransaction, acceptedTypes, conf, journal):
+    def getLink(linkedTransaction, acceptedTypes, conf, journal, filters):
     
         s = urlparse(linkedTransaction.uri).scheme
         if s not in Network.__allowed_schemas:
@@ -43,7 +43,7 @@ class Network(object):
         try:
             acc_header = Network.__create_accept_header(acceptedTypes)
 
-            ct = str(Network.__check_headers(linkedTransaction, journal, conf.user_agent, acc_header, conf.max_content))
+            ct = str(Network.__check_headers(linkedTransaction, journal, conf.getProperty("agent"), acc_header, filters))
             r = Network.__conditional_fetch(ct, linkedTransaction, acc_header, conf)
             name = Network.__save_content(r.text)
             match, mime = Network.__test_content_type(ct, name)
@@ -66,7 +66,7 @@ class Network(object):
      
      
     @staticmethod
-    def __check_headers(linkedTransaction, journal, agent, accept, max_content):
+    def __check_headers(linkedTransaction, journal, agent, accept, filters):
         
         r = requests.head(linkedTransaction.uri, headers={ "user-agent": agent, "accept":  accept})
         if r.status_code >= 400:
@@ -84,14 +84,9 @@ class Network(object):
         if not ct.strip():
             journal.foundDefect(srcTransaction.idno, "badtype", "Content-type empty", None, 0.5)
 
-        if 'Content-Length' in lst:
-            conlen = r.headers['Content-Length']
-            if max_content is not None:
-                if conlen > max_content:
-                    log.warning("Content length too large for "+linkedTransaction.uri+" (got: "+conlen+", limit: "+conf.max_content+") Skipping download.")
-                    raise ConditionError("Content length too large")
-
-        #TODO: custom HTTP header filters here?
+        #custom HTTP header filters
+        for hf in filters:
+            hf.filter(linkedTransaction, r) #muze vyletet FilterException
 
         return ct
     
@@ -103,12 +98,17 @@ class Network(object):
             raise ConditionError
         
         else:
-            return Network.fetch_response(transaction.uri, conf.user_agent, accept)
+            return Network.fetch_response(transaction, conf.getProperty("agent"), accept)
 
     @staticmethod
-    def fetch_response(url, agent, accept):
-        
-        r = requests.get(url, allow_redirects=False, headers = {"user-agent" : agent, "accept" : accept })
+    def fetch_response(transaction, agent, accept):
+
+        r = None
+        if transaction.method == 'GET':
+            r = requests.get(url, allow_redirects=False, headers = {"user-agent" : agent, "accept" : accept }, data = transaction.data)
+        elif transaction.method == 'POST':
+            r = requests.post(url, allow_redirects=False, headers = {"user-agent" : agent, "accept" : accept }, data = transaction.data)
+
         return r
 
     @staticmethod
