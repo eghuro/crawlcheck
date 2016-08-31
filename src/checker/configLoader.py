@@ -16,19 +16,22 @@ class ConfigLoader(object):
         retrieved through getters.
     """
 
-    __VERSION = 1.02
+    __VERSION = 1.03
 
     def __init__(self):
         self.__dbconf = DBAPIconfiguration()
         self.typeAcceptor = None
         self.uriAcceptor = None
         self.entryPoints = []
-        self.maxDepth = 0
+        self.filters = []
         self.loaded = False
-        self.agent = "Crawlcheck/"+str(ConfigLoader.__VERSION)
         self.uriMap = None
         self.suffixUriMap = None
-        self.maxContentLength = None
+        self.properties = dict()
+
+        #defaults
+        self.properties["pluginDir"] = "plugins"
+        self.properties["agent"] = "Crawlcheck/"+str(ConfigLoader.__VERSION)
 
     def load(self, fname):
         """Loads configuration from YAML file.
@@ -62,14 +65,9 @@ class ConfigLoader(object):
             print("Configuration version doesn't match (got "+str(root['version'])+", expected: "+str(ConfigLoader.__VERSION)+")")
         return version_check
 
-    def __set_max_depth(self, root):
-        if 'maxDepth' in root:
-            if root['maxDepth'] >= 0:
-                self.maxDepth = root['maxDepth']
-            else:
-                print("Max depth must be zero or positive! Setting to 0.")
-    
-    def __set_entry_points(self, root):
+    ###
+
+   def __set_entry_points(self, root):
         if 'entryPoints' not in root:
             print("Entry points should be specified")
         elif not root['entryPoints']:
@@ -79,22 +77,16 @@ class ConfigLoader(object):
             for ep in epSet:
                 self.entryPoints.append(ep)
 
-    def __set_user_agent(self, root):
-        if 'agent' in root:
-            self.agent = root['agent']
-
-    def __set_max_content_length(self, root):
-        if 'maxContentLength' in root:
-            self.maxContentLength = root['maxContentLength']
+    def __set_filters(self, root):
+        if 'filters' in root:
+            for f in root['filters']:
+                self.filters.append(f)
  
     def __set_up(self, root):
+        #Database is mandatory
         self.__dbconf.setDbname(root['database'])
 
-        self.__set_max_depth(root)
-        self.__set_entry_points(root)
-        self.__set_user_agent(root)
-        self.__set_max_content_length(root)
-
+        #Grab rules first
         cts = 'content-types'
         ct = 'content-type'
         ct_dsc = 'Content type'
@@ -121,6 +113,17 @@ class ConfigLoader(object):
         except ConfigurationError as e:
             print(e.msg)
             return False
+
+        #Grab lists
+        self.__set_entry_points(root)
+        self.__set_filters(root)
+
+        #Grab properties
+        used_keys = set(['database', cts, us, sus, 'version', 'entryPoints', 'filters'])
+        doc_keys = set(root.keys())
+        for key in (doc_keys - used_keys):
+            self.properties[key] = root[key]
+        
         return True
 
     @staticmethod
@@ -181,9 +184,15 @@ class ConfigLoader(object):
 
     def get_configuration(self):
         if self.loaded:
-            return Configuration(self.__dbconf, self.typeAcceptor, self.uriAcceptor, self.suffixAcceptor, self.entryPoints, self.maxDepth, self.agent, self.uriMap, self.suffixUriMap, self.maxContentLength)
+            return Configuration(self.__dbconf, self.typeAcceptor, self.uriAcceptor, self.suffixAcceptor, self.entryPoints, self.uriMap, self.suffixUriMap, self.properties)
         else:
             return None
+
+    def get_allowed_filters(self):
+        if self.loaded:
+            return self.filters
+         else:
+             return None
 
     @staticmethod
     def reverse_dict_keys(sufdict):
@@ -194,14 +203,18 @@ class ConfigLoader(object):
         return revdict
 
 class Configuration(object):
-    def __init__(self, db, ta, ua, sa, ep, md, ag, um, su, mc = None):
+    def __init__(self, db, ta, ua, sa, ep, md, ag, um, su, properties):
         self.dbconf = db
         self.type_acceptor = ta
         self.uri_acceptor = ua
         self.suffix_acceptor = sa
         self.entry_points = ep
-        self.max_depth = md
-        self.user_agent = ag
         self.uri_map = um
         self.suffix_uri_map = su
-        self.max_content = mc
+        self.properties = properties
+
+    def getProperty(self, key):
+        if key in self.properties:
+            return self.properties[key]
+        else:
+            return None
