@@ -30,7 +30,7 @@ class TexReporter(object):
         
         max_on_page = 47
         with doc.create(Section('Invalid links')):
-            query = ('select transactions.uri, defect.evidence from defect inner join defectType on defect.type = defectType.id inner join finding on finding.id = defect.findingId inner join transactions on transactions.id = finding.responseId where defectType.type = "badlink"')
+            query = ('select transactions.uri, defect.evidence from defect inner join defectType on defect.type = defectType.id inner join finding on finding.id = defect.findingId inner join transactions on transactions.id = finding.responseId where defectType.type = "badlink" order by transactions.uri')
             self.cursor.execute(query)
             row = self.cursor.fetchone()
             while row is not None:
@@ -56,7 +56,7 @@ class TexReporter(object):
                 continue
 
         with doc.create(Section('Other defects')):
-            query = ('select transactions.uri, defect.evidence, defectType.description from defect inner join defectType on defect.type = defectType.id inner join finding on finding.id = defect.findingId inner join transactions on transactions.id = finding.responseId where defectType.type != "badlink" order by defectType.type')
+            query = ('select transactions.uri, defect.evidence, defectType.description from defect inner join defectType on defect.type = defectType.id inner join finding on finding.id = defect.findingId inner join transactions on transactions.id = finding.responseId where defectType.type != "badlink" order by defectType.type, transactions.uri')
             self.cursor.execute(query)
             row = self.cursor.fetchone()
             while row is not None:
