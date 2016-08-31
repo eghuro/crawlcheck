@@ -52,14 +52,16 @@ $ git clone https://github.com/eghuro/crawlcheck crawlcheck
 cd crawlcheck
 ./install.sh [database-file-location]
 ```
-You will need python-2.7, python-pip and python, sqlite3, ruby and zlib installed. All dev or devel versions.
+You will need python3, python-pip and sqlite3, ruby, libmagic, libtidy and zlib installed. All dev or devel versions.
 
 ### Configuration
 Configuration file is a simple YAML file.
 ```sh
 ---
-version: 1.01        # configuration format version
+version: 1.02        # configuration format version
 database: crawlcheck # sqlite database file
+maxDepth: 10         # max amount of links followed from any entry point
+agent: Crawlcheck    # user agent used
 
 content-types:
  -
@@ -78,8 +80,10 @@ urls:
   url: "http://mj.ucw.cz/vyuka/"
   plugins: # which plugins are allowed for given URL
        - linksFinder
-       - htmlValidator
+       - tidyHtmlValidator
        - tinycss
+-
+    url: "http://mj.ucw.cz/" #forbid entry here
 
 entryPoints: # where to start
 # Note, that once URI get's to the database it's no longer being requested 
@@ -94,7 +98,7 @@ Assuming you have gone through set-up and configuration, now run checker:
 $ cd [root]/crawlcheck/src/
 $ python checker/ [config.yml]
 ```
-Note: ```[root]/crawlcheck``` is where repository was cloned to, ```[config.xml]``` stands for the configuration file path
+Note: ```[root]/crawlcheck``` is where repository was cloned to, ```[config.yml]``` stands for the configuration file path
 
 ### Running report website
 Assuming you have gone through set-up and configuration and checker either finished or is still running (otherwise there are just no data to display), now run report app:
