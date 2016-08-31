@@ -10,6 +10,7 @@ from multiprocessing import Pool, Process
 from pluginDBAPI import DBAPI, VerificationStatus, Table
 from common import PluginType, PluginTypeError
 from net import Network, NetworkError, ConditionError, StatusError
+from filter import FilterException, DepthFilter, RobotsFilter
 
 
 
@@ -24,6 +25,8 @@ class Core:
         self.db.load_defect_types()
         self.db.load_finding_id()
         self.files = []
+
+        self.filters = [DepthFilter(conf), RobotsFilter(conf)]
 
         TransactionQueue.initialize()
         self.queue = TransactionQueue(self.db)
@@ -41,32 +44,49 @@ class Core:
         self.rack = Rack(self.conf.uri_acceptor, self.conf.type_acceptor, self.conf.suffix_acceptor, plugins)
 
     def run(self):
+        #Queue
         while not self.queue.isEmpty():
             try:
                 transaction = self.queue.pop()
             except queue.Empty:
                 continue
 
-            if transaction.depth > self.conf.max_depth:
-                self.log.debug("Skipping "+transaction.uri+" as it's depth "+transaction.depth+" and max depth condition is "+self.conf.max_depth)
-                continue #skip
+            if not transaction.isWorthIt(self.conf):
+                self.log.debug(transaction.uri+" not worth my time")
+                self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
+                continue
 
+            #Filters ...
+            try:
+                for tf in self.filters:
+                    tf.filter(transaction)
+            except FilterException:
+                self.log.debug(transaction.uri + " filtered out")
+                self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
+                continue
             self.log.info("Processing "+transaction.uri)
+
+            #Networking
             try:
                 transaction.loadResponse(self.conf, self.journal)           
             except TouchException: #nesmim se toho dotykat
                 self.log.debug("Forbidden to touch "+transaction.uri)
+                self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                 continue
             except ConditionError:
                self.log.debug("Condition failed")
+               self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                continue
             except StatusError as e:
                self.log.debug("Status error: "+str(e))
+               self.journal.stopChecking(transaction, VerificationStatus.done_ko)
                continue
             except NetworkError as e:
                 self.log.error("Network error: "+str(e))
+                self.journal.stopChecking(transaction, VerificationStatus.done_ko)
                 continue
-            else:
+
+            else: #Plugins
                 self.files.append(transaction.file)
                 self.journal.startChecking(transaction)
                 self.rack.run(transaction)
@@ -165,6 +185,9 @@ class Transaction:
              acceptedTypes += Transaction.__set2list(self.__get_accepted_types(conf.suffix_uri_map, conf.suffix_acceptor))
         self.uri = bak
         return acceptedTypes
+
+    def isWorthIt(self, conf):
+        return conf.uri_acceptor.mightAccept(self.uri) or conf.suffix_acceptor.mightAccept(self.uri[::-1])
 
     @staticmethod
     def __set2list(x):

@@ -44,6 +44,7 @@ class VerificationStatus(Enum):
     requested = 1
     done_ok = 3
     done_ko = 4
+    done_ignored = 5
 
 class Table(Enum):
 

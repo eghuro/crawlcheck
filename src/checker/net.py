@@ -122,7 +122,7 @@ class Network(object):
     def __test_content_type(ctype, fname):
 
         mime = magic.from_file(fname, mime=True)
-        if ';' in ctype:
+        if ';' in ctype: #text/html;charset=utf-8 -> text/html
             ctype = ctype.split(';')[0]
         return (mime == ctype), mime
 
