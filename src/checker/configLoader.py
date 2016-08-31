@@ -28,6 +28,7 @@ class ConfigLoader(object):
         self.agent = "Crawlcheck/"+str(ConfigLoader.__VERSION)
         self.uriMap = None
         self.suffixUriMap = None
+        self.maxContentLength = None
 
     def load(self, fname):
         """Loads configuration from YAML file.
@@ -81,6 +82,10 @@ class ConfigLoader(object):
     def __set_user_agent(self, root):
         if 'agent' in root:
             self.agent = root['agent']
+
+    def __set_max_content_length(self, root):
+        if 'maxContentLength' in root:
+            self.maxContentLength = root['maxContentLength']
  
     def __set_up(self, root):
         self.__dbconf.setDbname(root['database'])
@@ -88,6 +93,7 @@ class ConfigLoader(object):
         self.__set_max_depth(root)
         self.__set_entry_points(root)
         self.__set_user_agent(root)
+        self.__set_max_content_length(root)
 
         cts = 'content-types'
         ct = 'content-type'
@@ -175,7 +181,7 @@ class ConfigLoader(object):
 
     def get_configuration(self):
         if self.loaded:
-            return Configuration(self.__dbconf, self.typeAcceptor, self.uriAcceptor, self.suffixAcceptor, self.entryPoints, self.maxDepth, self.agent, self.uriMap, self.suffixUriMap)
+            return Configuration(self.__dbconf, self.typeAcceptor, self.uriAcceptor, self.suffixAcceptor, self.entryPoints, self.maxDepth, self.agent, self.uriMap, self.suffixUriMap, self.maxContentLength)
         else:
             return None
 
@@ -188,7 +194,7 @@ class ConfigLoader(object):
         return revdict
 
 class Configuration(object):
-    def __init__(self, db, ta, ua, sa, ep, md, ag, um, su):
+    def __init__(self, db, ta, ua, sa, ep, md, ag, um, su, mc = None):
         self.dbconf = db
         self.type_acceptor = ta
         self.uri_acceptor = ua
@@ -198,3 +204,4 @@ class Configuration(object):
         self.user_agent = ag
         self.uri_map = um
         self.suffix_uri_map = su
+        self.max_content = mc

@@ -52,7 +52,7 @@ class Core:
                 self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                 continue
 
-            #Filters ...
+            #Custom filters
             try:
                 for tf in self.filters:
                     tf.filter(transaction)
