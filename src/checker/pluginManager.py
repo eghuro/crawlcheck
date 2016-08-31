@@ -27,7 +27,7 @@ def main():
 
     logging.getLogger("yapsy").addHandler(logging.StreamHandler())
         
-    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+    logging.basicConfig(stream=sys.stdout, level=logging.INFO)
     log = logging.getLogger()
     #ch = logging.StreamHandler(sys.stdout)
     #ch.setLevel(logging.DEBUG)

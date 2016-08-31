@@ -133,7 +133,7 @@ class Transaction:
     def isTouchable(self, uriAcceptor, suffixAcceptor):
         up = uriAcceptor.getMaxPrefix(self.uri)
         striped = self.getStripedUri()
-        sp = suffixAcceptor.getMaxPrefix(striped)
+        sp = suffixAcceptor.getMaxPrefix(striped[::-1])
         prefix = uriAcceptor.resolveDefaultAcceptValue(up)
         suffix = suffixAcceptor.resolveDefaultAcceptValue(sp)
         return prefix or suffix
@@ -240,6 +240,7 @@ class TransactionQueue:
             raise
         else:
             self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatusId = ? WHERE id = ?', [str(TransactionQueue.status_ids["processing"]), t.idno]) )
+            self.__db.log(Table.link_defect, ('UPDATE link SET processed = True WHERE toUri = ?', [str(t.uri)] )
             return t
 
     def push(self, transaction, parent=None):
@@ -291,9 +292,9 @@ class Journal:
     def foundDefect(self, transaction, defect, evidence):
         self.foundDefect(transaction.idno, defect.name, defect.additional, evidence)
 
-    def foundDefect(self, trId, name, additional, evidence):
+    def foundDefect(self, trId, name, additional, evidence, severity = 0.5):
         assert type(trId) == int
-        self.__db.log_defect(trId, name, additional, evidence)
+        self.__db.log_defect(trId, name, additional, evidence, severity)
 
 class Defect:
 

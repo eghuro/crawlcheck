@@ -56,13 +56,13 @@ class TexReporter(object):
                 continue
 
         with doc.create(Section('Other defects')):
-            query = ('select transactions.uri, defect.evidence, defectType.description from defect inner join defectType on defect.type = defectType.id inner join finding on finding.id = defect.findingId inner join transactions on transactions.id = finding.responseId where defectType.type != "badlink" order by defectType.type, transactions.uri')
+            query = ('select transactions.uri, defect.evidence, defectType.description, defect.severity from defect inner join defectType on defect.type = defectType.id inner join finding on finding.id = defect.findingId inner join transactions on transactions.id = finding.responseId where defectType.type != "badlink" order by defect.severity, defectType.type, transactions.uri')
             self.cursor.execute(query)
             row = self.cursor.fetchone()
             while row is not None:
-                with doc.create(Tabular('|l|l|l|')) as table:
+                with doc.create(Tabular('|l|l|l|l|')) as table:
                     table.add_hline()
-                    table.add_row(('On page', 'Description', 'Evidence'))
+                    table.add_row(('On page', 'Description', 'Evidence', 'Severity'))
                     table.add_hline()
 
                     count = 0
@@ -71,7 +71,8 @@ class TexReporter(object):
                         page = urllib.parse.unquote(row[0])
                         description = row[2]
                         evidence = row[1]
-                        table.add_row((page, description, evidence))
+                        severity = row[3]
+                        table.add_row((page, description, evidence, severity))
                         table.add_hline()
                         count += 1
 

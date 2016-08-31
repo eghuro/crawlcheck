@@ -53,12 +53,12 @@ class PyW3C_HTML_Validator(IPlugin):
         return self.id+":"+mtype+":"+mid
 
     def check_errors(self, transaction):
-        self.check_defects(transaction, self.validator.errors, "err")
+        self.check_defects(transaction, self.validator.errors, "err", 1.0)
 
     def check_warnings(self, transaction):
-        self.check_defects(transaction, self.validator.warnings, "warn")
+        self.check_defects(transaction, self.validator.warnings, "warn", 0.5)
 
-    def check_defects(self, transaction, defects, message):
+    def check_defects(self, transaction, defects, message, sev):
         for defect in defects:
             mid = self.transformMessageId(defect['messageid'], message)
-            self.journal.foundDefect(transaction.idno, mid, None, [defect['message'], defect['line'], defect['source']])
+            self.journal.foundDefect(transaction.idno, mid, None, [defect['message'], defect['line'], defect['source']], sev)

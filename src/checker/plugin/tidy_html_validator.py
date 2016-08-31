@@ -13,6 +13,9 @@ class Tidy_HTML_Validator(IPlugin):
         self.codes = dict() #TODO: preload existing error codes
         self.max_err = 0
         self.max_warn = 0
+        self.severity = dict()
+        self.severity['Warning'] = 0.5
+        self.severity['Error'] = 1.0
 
     def setJournal(self, journal):
         self.journal = journal
@@ -29,14 +32,18 @@ class Tidy_HTML_Validator(IPlugin):
 
     def __record(self, transaction, loc, cat, desc):
         code = self.__get_code(cat, desc)
-        self.journal.foundDefect(transaction.idno, code, desc, [cat, loc])
+        if cat in self.severity:
+            sev = self.severity[cat]
+        else:
+            sev = -1.0
+        self.journal.foundDefect(transaction.idno, code, desc, [cat, loc], sev)
 
     def __generate_code(self, letter, number, desc):
         code = letter+str(number)
         self.codes[desc] = code
         return code
 
-    def __get_code(self, cat, desc):
+    def __get_code_sev(self, cat, desc):
         code = None
         if desc in self.codes:
             code = self.codes[desc]

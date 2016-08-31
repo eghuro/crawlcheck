@@ -103,7 +103,7 @@ class DBAPI(object):
        self.log(Table.finding, ('INSERT INTO finding (id, responseId) VALUES (?, ?)', [str(self.findingId), str(parent_id)]) )
        self.log(Table.link_defect, ('INSERT INTO link (findingId, toUri, requestId) VALUES (?, ?, ?)', [str(self.findingId), uri, str(new_id)]) )
 
-    def log_defect(self, transactionId, name, additional, evidence):
+    def log_defect(self, transactionId, name, additional, evidence, severity = 0.5):
         self.findingId = self.findingId + 1
         self.log(Table.finding, ('INSERT INTO finding (id, responseId) VALUES (?, ?)', [str(self.findingId), str(transactionId)]))
         if name not in self.defect_types:
@@ -112,7 +112,7 @@ class DBAPI(object):
             self.defect_types.append(name)
             self.defectTypesWithId[name] = self.defectId
         defId = self.defectTypesWithId[name]
-        self.log(Table.link_defect, ('INSERT INTO defect (findingId, type, evidence) VALUES (?, ?, ?)', [str(self.findingId), str(defId), str(evidence)]))
+        self.log(Table.link_defect, ('INSERT INTO defect (findingId, type, evidence, severity) VALUES (?, ?, ?, ?)', [str(self.findingId), str(defId), str(evidence), str(severity)]))
         
     def sync(self):
         try:
