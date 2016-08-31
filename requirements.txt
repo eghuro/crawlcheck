@@ -2,8 +2,10 @@ beautifulsoup4==4.5.1
 enum34==1.1.6
 marisa-trie==0.7.2
 mock==2.0.0
+ordered-set==2.0.1
 pbr==1.10.0
 py-w3c==0.2.0
+PyLaTeX==1.0.0
 python-magic==0.4.12
 pytidylib==0.2.4
 PyYAML==3.12
