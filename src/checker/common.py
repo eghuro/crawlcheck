@@ -4,7 +4,9 @@ class PluginType(Enum):
     
     CRAWLER = 0
     CHECKER = 1
-    
+    FILTER = 2
+    HEADER = 3    
+
     
     
 class PluginTypeError(Exception):
