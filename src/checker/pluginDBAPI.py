@@ -198,3 +198,9 @@ class DBAPI(object):
             if row[0] is not None:
                 return row[0]
         return 0
+
+    def get_known_defect_types(self):
+        q = 'SELECT type, description FROM defectType'
+        c = self.con.get_cursor()
+        c.execute(q)
+        return c.fetchall()

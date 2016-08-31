@@ -315,6 +315,9 @@ class Journal:
         assert type(trId) == int
         self.__db.log_defect(trId, name, additional, evidence, severity)
 
+    def getKnownDefectTypes(self):
+        return self.__db.get_known_defect_types()
+
 class Defect:
 
 

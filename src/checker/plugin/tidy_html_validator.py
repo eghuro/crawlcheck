@@ -10,7 +10,7 @@ class Tidy_HTML_Validator(IPlugin):
 
     def __init__(self):
         self.journal = None
-        self.codes = dict() #TODO: preload existing error codes
+        self.codes = dict()
         self.max_err = 0
         self.max_warn = 0
         self.severity = dict()
@@ -19,6 +19,20 @@ class Tidy_HTML_Validator(IPlugin):
 
     def setJournal(self, journal):
         self.journal = journal
+
+        for dt in journal.getKnownDefectTypes(): #TODO: TESTME
+            #dt[0] type, dt[1] description
+            #parse codes of W{X} or E{Y} -> get max X or Y
+            letter = dt[0][0]
+            number = dt[0][1:]
+            if letter == 'W':
+                if number > self.max_warn:
+                    self.max_warn = number
+                self.codes[dt[1]] = dt[0]
+            elif letter == 'E':
+                if number > self.max_err:
+                    self.max_err = number
+                self.codes[dt[1]] = dt[0]
 
     def check(self, transaction):
         res = tidy_document(transaction.getContent(), keep_doc=True)
