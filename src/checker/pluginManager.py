@@ -100,6 +100,8 @@ def main():
         core_instance = Core(plugins, filters, headers, cl.get_configuration())
         try:
             core_instance.run()
+        except Exception as e:
+            log.exception("Unexpected exception")
         finally:
             core_instance.finalize()
     else:

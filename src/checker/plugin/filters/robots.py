@@ -32,5 +32,8 @@ class RobotsFilter(IPlugin):
             if not self.__robots.allowed(transaction.uri,agent):
                 self.__log.debug("Skipping "+transaction.uri+" as robots.txt prevent "+agent+" from fetching it")
                 raise FilterException()
+        except TypeError as e:
+            self.__log.warning("Error while handling robots.txt for "+transaction.uri)
+            self.__log.debug(str(e))
         except ReppyException as e:
             self.__log.debug("ReppyException: "+str(e))
