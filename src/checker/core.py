@@ -22,8 +22,16 @@ class Core:
         self.db.load_finding_id()
         self.files = []
 
-        self.filters = filters #[DepthFilter(conf), RobotsFilter(conf)]
-        self.header_filters = headers #[ContentLengthFiler(conf)]
+        self.filters = filters
+        self.header_filters = headers
+
+        self.log.debug("Filters:")
+        for f in filters:
+            self.log.debug(f.id)
+        self.log.debug("Headers:")
+        for f in headers:
+            self.log.debug(f.id)
+
 
         TransactionQueue.initialize()
         self.queue = TransactionQueue(self.db)
