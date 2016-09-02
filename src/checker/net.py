@@ -1,5 +1,5 @@
 import requests
-from requests.exceptions import InvalidSchema, ConnectionError, MissingSchema
+from requests.exceptions import InvalidSchema, ConnectionError, MissingSchema, Timeout
 from urllib.parse import urlparse
 import os
 import tempfile
@@ -43,7 +43,7 @@ class Network(object):
         try:
             acc_header = Network.__create_accept_header(acceptedTypes)
 
-            ct = str(Network.__check_headers(linkedTransaction, journal, conf.getProperty("agent"), acc_header, filters))
+            ct = str(Network.__check_headers(linkedTransaction, journal, conf.getProperty("agent"), acc_header, filters, conf.getProperty('timeout')))
             r = Network.__conditional_fetch(ct, linkedTransaction, acc_header, conf)
             name = Network.__save_content(r.text)
             match, mime = Network.__test_content_type(ct, name)
@@ -63,15 +63,22 @@ class Network(object):
         except InvalidSchema as e:
             log.debug("Invalid schema")
             raise NetworkError(e)
+        except Timeout as e:
+            log.error("Timeout")
+            raise NetworkError(e)
      
      
     @staticmethod
-    def __check_headers(linkedTransaction, journal, agent, accept, filters):
+    def __check_headers(linkedTransaction, journal, agent, accept, filters, time):
         
-        r = requests.head(linkedTransaction.uri, headers={ "user-agent": agent, "accept":  accept})
+        r = requests.head(linkedTransaction.uri, headers={ "user-agent": agent, "accept":  accept}, timeout = time)
         if r.status_code >= 400:
             journal.foundDefect(linkedTransaction.srcId, "badlink", "Invalid link", linkedTransaction.uri, 1.0)
             raise StatusError(r.status_code)
+
+        if linkedTransaction.uri != r.url:
+            logging.getLogger(__name__).debug("Redirection: "+linkedTransaction.uri+" -> "+r.url)
+            linkedTransaction.uri = r.url
 
         lst = list(r.headers.keys())
         if 'content-type' in lst:
@@ -96,21 +103,21 @@ class Network(object):
     @staticmethod
     def __conditional_fetch(ct, transaction, accept, conf):
         
-        if not conf.type_acceptor.mightAccept(ct): #zbyle podminky jiz overeny
+        if not conf.type_acceptor.mightAccept(ct):
             logging.getLogger(__name__).debug("Content-type not accepted: "+ct+" ("+transaction.uri+")")
             raise ConditionError
         
         else:
-            return Network.fetch_response(transaction, conf.getProperty("agent"), accept)
+            return Network.__fetch_response(transaction, conf.getProperty("agent"), accept, conf.getProperty('timeout'))
 
     @staticmethod
-    def fetch_response(transaction, agent, accept):
+    def __fetch_response(transaction, agent, accept, time):
 
         r = None
         if transaction.method == 'GET':
-            r = requests.get(transaction.uri, allow_redirects=False, headers = {"user-agent" : agent, "accept" : accept }, data = transaction.data)
+            r = requests.get(transaction.uri, allow_redirects=False, headers = {"user-agent" : agent, "accept" : accept }, data = transaction.data, timeout = time)
         elif transaction.method == 'POST':
-            r = requests.post(transaction.uri, allow_redirects=False, headers = {"user-agent" : agent, "accept" : accept }, data = transaction.data)
+            r = requests.post(transaction.uri, allow_redirects=False, headers = {"user-agent" : agent, "accept" : accept }, data = transaction.data, timeout = time)
 
         return r
 

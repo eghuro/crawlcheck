@@ -39,6 +39,7 @@ class ConfigLoader(object):
         self.properties["pluginDir"] = "plugin"
         self.properties["agent"] = "Crawlcheck/"+str(ConfigLoader.__VERSION)
         self.properties["maxDepth"] = 0
+        self.properties["timeout"] = 1
 
     def load(self, fname):
         """Loads configuration from YAML file.

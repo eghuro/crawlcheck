@@ -15,10 +15,11 @@ class RobotsFilter(IPlugin):
     def __init__(self):
         self.__log = logging.getLogger(__name__)
         self.__conf = None
-        self.__robots = RobotsCache()
+        self.__robots = None
 
     def setConf(self, conf):
         self.__conf = conf
+        self.__robots = RobotsCache(timeout=self.__conf.getProperty('timeout'))
 
     def setJournal(self, journal):
         pass

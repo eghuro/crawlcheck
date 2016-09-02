@@ -48,7 +48,7 @@ class Core:
             except queue.Empty:
                 continue
 
-            if not transaction.isWorthIt(self.conf):
+            if not transaction.isWorthIt(self.conf):##timto neotestujeme neplatny odkaz
                 self.log.debug(transaction.uri+" not worth my time")
                 self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                 continue
@@ -78,8 +78,7 @@ class Core:
                 self.log.debug(transaction.uri + " filtered out")
                 self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                 continue
-            except StatusError as e:
-               self.log.debug("Status error: "+str(e))
+            except StatusError as e: #already logged
                self.journal.stopChecking(transaction, VerificationStatus.done_ko)
                continue
             except NetworkError as e:
