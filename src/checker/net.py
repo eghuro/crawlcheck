@@ -84,6 +84,9 @@ class Network(object):
         if not ct.strip():
             journal.foundDefect(srcTransaction.idno, "badtype", "Content-type empty", None, 0.5)
 
+        if ';' in ct: #text/html;charset=utf-8 -> text/html
+            ct = ct.split(';')[0]
+
         #custom HTTP header filters
         for hf in filters:
             hf.filter(linkedTransaction, r) #muze vyletet FilterException
@@ -105,9 +108,9 @@ class Network(object):
 
         r = None
         if transaction.method == 'GET':
-            r = requests.get(url, allow_redirects=False, headers = {"user-agent" : agent, "accept" : accept }, data = transaction.data)
+            r = requests.get(transaction.uri, allow_redirects=False, headers = {"user-agent" : agent, "accept" : accept }, data = transaction.data)
         elif transaction.method == 'POST':
-            r = requests.post(url, allow_redirects=False, headers = {"user-agent" : agent, "accept" : accept }, data = transaction.data)
+            r = requests.post(transaction.uri, allow_redirects=False, headers = {"user-agent" : agent, "accept" : accept }, data = transaction.data)
 
         return r
 
@@ -123,8 +126,6 @@ class Network(object):
     def __test_content_type(ctype, fname):
 
         mime = magic.from_file(fname, mime=True)
-        if ';' in ctype: #text/html;charset=utf-8 -> text/html
-            ctype = ctype.split(';')[0]
         return (mime == ctype), mime
 
     @staticmethod

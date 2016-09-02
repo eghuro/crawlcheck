@@ -12,6 +12,7 @@ import logging
 import signal
 import sys
 import signal
+import os
 
 
 def handler(signum, frame):
@@ -53,7 +54,12 @@ def main():
 
         # load plugins
         manager = PluginManager()
-        manager.setPluginPlaces( [x[0] for x in os.walk(conf.getProperty('pluginDir'))] ) #pluginDir and all subdirs
+        path = os.path.join(os.path.abspath("checker/"), conf.getProperty('pluginDir'))
+        log.info("Plugin directory set to: "+path)
+        dirList = [x[0] for x in os.walk(path)]
+        for d in dirList:
+            log.info("Looking for plugins in "+d)
+        manager.setPluginPlaces(dirList) #pluginDir and all subdirs
         manager.collectPlugins()
 
         for pluginInfo in manager.getAllPlugins():
@@ -63,7 +69,7 @@ def main():
                     filters.append(pluginInfo.plugin_object)
                 elif pluginInfo.plugin_object.category is PluginType.HEADER:
                     headers.append(pluginInfo.plugin_object)
-            else if pluginInfo.plugin_object.category in plugin_categories:
+            elif pluginInfo.plugin_object.category in plugin_categories:
                 plugins.append(pluginInfo.plugin_object)
 
         if len(plugins) == 0:

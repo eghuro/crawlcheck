@@ -36,7 +36,7 @@ class Core:
             self.__initializePlugin(plugin)
 
         for entryPoint in self.conf.entry_points:
-            self.queue.push(createTransaction(entryPoint.url, 0, entryPoint.method, entryPoint.data))
+            self.queue.push(createTransaction(entryPoint.url, 0, -1, entryPoint.method, entryPoint.data))
 
         self.rack = Rack(self.conf.uri_acceptor, self.conf.type_acceptor, self.conf.suffix_acceptor, plugins)
 
@@ -126,7 +126,7 @@ class TouchException(Exception):
 
 class Transaction:
 
-    def __init__(self, uri, depth, srcId, idno, method='GET', data=None):
+    def __init__(self, uri, depth, srcId, idno, method="GET", data=None):
         #Use the factory method below!!
         self.uri = uri
         self.depth = depth

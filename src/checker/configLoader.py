@@ -10,7 +10,7 @@ class ConfigurationError(Exception):
         self.msg = msg
 
 class EPR(object):
-    def __init__(self, url, method='GET', data = None):
+    def __init__(self, url, method='GET', data = dict()):
         self.url = url
         self.method = method
         self.data = data
@@ -36,7 +36,7 @@ class ConfigLoader(object):
         self.properties = dict()
 
         #defaults
-        self.properties["pluginDir"] = "plugins"
+        self.properties["pluginDir"] = "plugin"
         self.properties["agent"] = "Crawlcheck/"+str(ConfigLoader.__VERSION)
         self.properties["maxDepth"] = 0
 
