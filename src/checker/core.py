@@ -40,7 +40,8 @@ class Core:
         Journal.initialize()
         self.journal = Journal(self.db)
 
-        for plugin in self.plugins:
+        for plugin in self.plugins+headers+filters:
+            self.log.debug("Initializing "+plugin.id)
             self.__initializePlugin(plugin)
 
         for entryPoint in self.conf.entry_points:
@@ -123,6 +124,10 @@ class Core:
             plugin.setQueue(self.queue)
         elif plugin.category == PluginType.CHECKER:
             pass
+        elif plugin.category == PluginType.FILTER:
+            plugin.setConf(self.conf)
+        elif plugin.category == PluginType.HEADER:
+            plugin.setConf(self.conf)
         else:
             raise PluginTypeError
 
@@ -209,7 +214,7 @@ class Transaction:
 
 transactionId = 0
 def createTransaction(uri, depth = 0, parentId = -1, method = 'GET', params=None):
-    assert (params is dict) or (params is None)
+    assert (type(params) is dict) or (params is None)
     global transactionId
     decoded = str(urllib.parse.unquote(urllib.parse.unquote(uri)))
     tr = Transaction(decoded, depth, parentId, transactionId, method, params)

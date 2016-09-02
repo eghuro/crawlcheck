@@ -1,0 +1,8 @@
+[Core]
+Name = Robots.txt filter
+Module = robots
+
+[Documentation]
+Author = Alexandr Mansurov
+Version = 0.0
+Description = Check robots.txt if we can access given URI

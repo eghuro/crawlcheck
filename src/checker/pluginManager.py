@@ -52,6 +52,10 @@ def main():
         filter_categories = [PluginType.FILTER, PluginType.HEADER]
         plugin_categories = [PluginType.CHECKER, PluginType.CRAWLER]
 
+        log.info("Allowed filters")
+        for x in allowed_filters:
+            log.info(x)
+
         # load plugins
         manager = PluginManager()
         path = os.path.join(os.path.abspath("checker/"), conf.getProperty('pluginDir'))
@@ -64,12 +68,15 @@ def main():
 
         for pluginInfo in manager.getAllPlugins():
             log.info(pluginInfo.name)
-            if pluginInfo.name in allowed_filters:
+            if pluginInfo.plugin_object.id in allowed_filters:
                 if pluginInfo.plugin_object.category is PluginType.FILTER:
+                    log.debug("Filter: "+pluginInfo.name)
                     filters.append(pluginInfo.plugin_object)
                 elif pluginInfo.plugin_object.category is PluginType.HEADER:
+                    log.debug("Header: "+pluginInfo.name)
                     headers.append(pluginInfo.plugin_object)
             elif pluginInfo.plugin_object.category in plugin_categories:
+                log.debug("General plugin: "+pluginInfo.name)
                 plugins.append(pluginInfo.plugin_object)
 
         if len(plugins) == 0:
