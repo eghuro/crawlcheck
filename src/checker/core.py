@@ -15,7 +15,7 @@ class Core:
 
     def __init__(self, plugins, filters, headers, conf):           
         self.plugins = plugins
-        self.log = logging.getLogger()
+        self.log = logging.getLogger(__name__)
         self.conf = conf
         self.db = DBAPI(conf.dbconf)
         self.db.load_defect_types()
@@ -219,7 +219,7 @@ class Rack:
         self.prefixAcceptor = uriAcceptor
         self.typeAcceptor = typeAcceptor
         self.suffixAcceptor = suffixAcceptor
-        self.log = logging.getLogger()
+        self.log = logging.getLogger(__name__)
 
     def run(self, transaction):
  

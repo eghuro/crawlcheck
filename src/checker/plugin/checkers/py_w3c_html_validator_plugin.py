@@ -27,7 +27,7 @@ class PyW3C_HTML_Validator(IPlugin):
         """ Pusti validator, ulozi chyby a varovani.
         """
         content = transaction.getContent()
-        log = logging.getLogger()
+        log = logging.getLogger(__name__)
         try:
             self.validator.validate_fragment(content) ##this takes too long
             self.check_errors(transaction)

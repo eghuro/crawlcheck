@@ -10,7 +10,7 @@ class ContentLengthFilter(IPlugin):
     id = "contentLength"
 
     def __init__(self):
-        self.__log = logging.getLogger()
+        self.__log = logging.getLogger(__name__)
         self.__conf = None
 
     def setConf(self, conf):

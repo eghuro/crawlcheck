@@ -5,6 +5,7 @@ pluginDir: plugin  # defaults to 'plugin'
 maxDepth: 10
 maxContentLength: 2000000
 agent: "Googlebot/2.1"
+logfile: cc.log
     
 content-types:
  - 

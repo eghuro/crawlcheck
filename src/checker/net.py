@@ -39,7 +39,7 @@ class Network(object):
         if s not in Network.__allowed_schemata:
             raise UrlError(s+" is not an allowed schema")
 
-        log = logging.getLogger()
+        log = logging.getLogger(__name__)
         try:
             acc_header = Network.__create_accept_header(acceptedTypes)
 
@@ -97,7 +97,7 @@ class Network(object):
     def __conditional_fetch(ct, transaction, accept, conf):
         
         if not conf.type_acceptor.mightAccept(ct): #zbyle podminky jiz overeny
-            logging.getLogger().debug("Content-type not accepted: "+ct+" ("+transaction.uri+")")
+            logging.getLogger(__name__).debug("Content-type not accepted: "+ct+" ("+transaction.uri+")")
             raise ConditionError
         
         else:

@@ -13,7 +13,7 @@ class RobotsFilter(IPlugin):
     id = "robots"
 
     def __init__(self):
-        self.__log = logging.getLogger()
+        self.__log = logging.getLogger(__name__)
         self.__conf = None
         self.__robots = RobotsCache()
 
