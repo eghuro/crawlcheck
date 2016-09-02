@@ -115,7 +115,7 @@ class Core:
             plugin.setQueue(self.queue)
         elif plugin.category == PluginType.CHECKER:
             pass
-        elif (plugin.category == PluginType.FILTER) or (plugin.category == PluginType.HEADER)
+        elif (plugin.category == PluginType.FILTER) or (plugin.category == PluginType.HEADER):
             plugin.setConf(self.conf)
         else:
             raise PluginTypeError
