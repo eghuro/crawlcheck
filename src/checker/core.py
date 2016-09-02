@@ -25,14 +25,6 @@ class Core:
         self.filters = filters
         self.header_filters = headers
 
-        self.log.debug("Filters:")
-        for f in filters:
-            self.log.debug(f.id)
-        self.log.debug("Headers:")
-        for f in headers:
-            self.log.debug(f.id)
-
-
         TransactionQueue.initialize()
         self.queue = TransactionQueue(self.db)
         self.queue.load()
@@ -41,7 +33,6 @@ class Core:
         self.journal = Journal(self.db)
 
         for plugin in self.plugins+headers+filters:
-            self.log.debug("Initializing "+plugin.id)
             self.__initializePlugin(plugin)
 
         for entryPoint in self.conf.entry_points:
@@ -124,9 +115,7 @@ class Core:
             plugin.setQueue(self.queue)
         elif plugin.category == PluginType.CHECKER:
             pass
-        elif plugin.category == PluginType.FILTER:
-            plugin.setConf(self.conf)
-        elif plugin.category == PluginType.HEADER:
+        elif (plugin.category == PluginType.FILTER) or (plugin.category == PluginType.HEADER)
             plugin.setConf(self.conf)
         else:
             raise PluginTypeError
