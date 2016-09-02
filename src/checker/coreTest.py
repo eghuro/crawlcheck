@@ -138,7 +138,8 @@ class TransactionTest(unittest.TestCase):
         self.assertTrue('oo' in set(['oo']))
         self.assertTrue(conf.suffix_acceptor.getMaxPrefix(t.uri[::-1]) in conf.suffix_uri_map.keys())
         self.assertEqual(conf.suffix_uri_map[conf.suffix_acceptor.getMaxPrefix(t.uri[::-1])], {'two', 'three'})
-        self.assertEqual(t.getAcceptedTypes(conf), types)
+        self.assertEqual(set(t.getAcceptedTypes(conf)), set(types))
+
 
 
 class FakePlugin():
