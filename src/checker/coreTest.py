@@ -4,6 +4,7 @@
 import os
 import tempfile
 import unittest
+import marisa_trie
 from mock import patch
 import core
 from core import TouchException, Rack
@@ -25,12 +26,12 @@ class TransactionTest(unittest.TestCase):
     @patch('net.Network.getLink')
     def testLoad(self, mock_get_link):
         mock_get_link.return_value = 'text/html', '/tmp/foobar'
-        conf = Configuration(None, Acceptor(True), Acceptor(True), Acceptor(True), None, None, None, None, None)
+        conf = Configuration(None, Acceptor(True), Acceptor(True), Acceptor(True), None, None, None, None)
         t = core.createTransaction('foobar')
-        t.loadResponse(conf, None)
+        t.loadResponse(conf, None, [])
         self.assertEqual(t.type, 'text/html')
         self.assertEqual(t.file, '/tmp/foobar')
-        mock_get_link.assert_called_with(t, [], conf, None)
+        mock_get_link.assert_called_with(t, [], conf, None, [])
 
     @patch('net.Network.getLink')
     def testLoadNotTouchable(self, mock):
@@ -41,8 +42,8 @@ class TransactionTest(unittest.TestCase):
         sa.setDefaultAcceptValue('raboof', False)
         try:
             t = core.createTransaction('foobar')
-            conf = Configuration(None, Acceptor(True), ua, sa, None, None, None, None, None)
-            t.loadResponse(conf, None)
+            conf = Configuration(None, Acceptor(True), ua, sa, None, None, None, None)
+            t.loadResponse(conf, None, [])
         except TouchException:#TODO: expected exception
             return
         self.assertFalse(True)
@@ -53,9 +54,9 @@ class TransactionTest(unittest.TestCase):
         #set mock to raise NetworkException
         mock_get_link.side_effect = StatusError(404)
         try:
-            conf = Configuration(None, Acceptor(True), Acceptor(True), Acceptor(True), None, None, None, None, None)
+            conf = Configuration(None, Acceptor(True), Acceptor(True), Acceptor(True), None, None, None, None)
             t = core.createTransaction('foobar')
-            t.loadResponse(conf, None)
+            t.loadResponse(conf, None, [])
         except StatusError:#TODO: expected exception
             return
         self.assertFalse(True)
@@ -120,9 +121,23 @@ class TransactionTest(unittest.TestCase):
         suffix_map = ConfigLoader.create_uri_plugin_map(r2, r3, sa)
         self.assertEqual(suffix_map.keys(), set(['oo']))
         
-        conf = Configuration(None, ta, ua, sa, None, None, None, uri_map, suffix_map)
+        conf = Configuration(None, ta, ua, sa, None, uri_map, suffix_map, None)
         t = core.createTransaction(uri)
+        self.assertFalse(conf is None)
         self.assertFalse(conf.suffix_uri_map is None)
+        self.assertFalse(conf.suffix_acceptor is None)
+        self.assertTrue(len(sa.uris) > 0)
+        self.assertEqual(list(sa.uris), ['oo'])
+        trie = marisa_trie.Trie(sa.uris)
+        prefList = trie.prefixes(uri[::-1])
+        self.assertTrue(len(prefList) > 0)
+        self.assertEqual(suffix_map.keys(), set(['oo']))
+        self.assertEqual(conf.suffix_uri_map.keys(), set(['oo']))
+        self.assertEqual(conf.suffix_acceptor.getMaxPrefix(t.uri[::-1]), 'oo')
+        self.assertTrue('oo' in ['oo'])
+        self.assertTrue('oo' in set(['oo']))
+        self.assertTrue(conf.suffix_acceptor.getMaxPrefix(t.uri[::-1]) in conf.suffix_uri_map.keys())
+        self.assertEqual(conf.suffix_uri_map[conf.suffix_acceptor.getMaxPrefix(t.uri[::-1])], {'two', 'three'})
         self.assertEqual(t.getAcceptedTypes(conf), types)
 
 

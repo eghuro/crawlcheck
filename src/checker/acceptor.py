@@ -48,7 +48,7 @@ class Acceptor(object):
     def getMaxPrefix(self, value):
        assert type(value) is str
        # seznam prefixu, pro nas uri chceme nejdelsi prefix
-       trie = marisa_trie.Trie(self.uris)
+       trie = marisa_trie.Trie(list(self.uris))
        prefList = trie.prefixes(value)
         
        if len(prefList) > 0:

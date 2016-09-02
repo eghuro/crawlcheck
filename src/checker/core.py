@@ -201,7 +201,7 @@ class Transaction:
 
 transactionId = 0
 def createTransaction(uri, depth = 0, parentId = -1, method = 'GET', params=None):
-    assert params is dict
+    assert (params is dict) or (params is None)
     global transactionId
     decoded = str(urllib.parse.unquote(urllib.parse.unquote(uri)))
     tr = Transaction(decoded, depth, parentId, transactionId, method, params)
@@ -275,8 +275,8 @@ class TransactionQueue:
             self.__seen.add(transaction.uri)
             self.__q.put(transaction)
             self.__db.log(Table.transactions,
-                          ('INSERT INTO transactions (id, method, uri, origin, verificationStatusId, depth) VALUES (?, \'GET\', ?, \'CHECKER\', ?, ?)', 
-                          [str(transaction.idno), transaction.uri, str(TransactionQueue.status_ids["requested"]), str(transaction.depth)]) )
+                          ('INSERT INTO transactions (id, method, uri, origin, verificationStatusId, depth) VALUES (?, ?, ?, \'CHECKER\', ?, ?)', 
+                          [str(transaction.idno), transaction.method, transaction.uri, str(TransactionQueue.status_ids["requested"]), str(transaction.depth)]) )
 
         if parent is not None:
             self.__db.log_link(parent.idno, transaction.uri, transaction.idno)

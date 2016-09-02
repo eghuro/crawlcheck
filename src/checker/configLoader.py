@@ -38,6 +38,7 @@ class ConfigLoader(object):
         #defaults
         self.properties["pluginDir"] = "plugins"
         self.properties["agent"] = "Crawlcheck/"+str(ConfigLoader.__VERSION)
+        self.properties["maxDepth"] = 0
 
     def load(self, fname):
         """Loads configuration from YAML file.
@@ -73,7 +74,7 @@ class ConfigLoader(object):
 
     ###
 
-   def __set_entry_points(self, root):
+    def __set_entry_points(self, root):
         if 'entryPoints' not in root:
             print("Entry points should be specified")
         elif not root['entryPoints']:
@@ -211,8 +212,8 @@ class ConfigLoader(object):
     def get_allowed_filters(self):
         if self.loaded:
             return self.filters
-         else:
-             return None
+        else:
+            return None
 
     @staticmethod
     def reverse_dict_keys(sufdict):
@@ -223,7 +224,7 @@ class ConfigLoader(object):
         return revdict
 
 class Configuration(object):
-    def __init__(self, db, ta, ua, sa, ep, md, ag, um, su, properties):
+    def __init__(self, db, ta, ua, sa, ep, um, su, properties):
         self.dbconf = db
         self.type_acceptor = ta
         self.uri_acceptor = ua

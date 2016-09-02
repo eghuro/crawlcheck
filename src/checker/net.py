@@ -11,11 +11,11 @@ class NetworkError(Exception):
     pass
 
 
-class UrlError(Exception):
+class ConditionError(Exception):
     pass
 
 
-class ConditionError(Exception):
+class UrlError(ConditionError):
     pass
 
 
@@ -30,14 +30,14 @@ class StatusError(Exception):
 
 class Network(object):
 
-    __allowed_schemas = ['http', 'https']
+    __allowed_schemata = ['http', 'https']
 
     @staticmethod
     def getLink(linkedTransaction, acceptedTypes, conf, journal, filters):
     
         s = urlparse(linkedTransaction.uri).scheme
-        if s not in Network.__allowed_schemas:
-            raise UrlError(s)
+        if s not in Network.__allowed_schemata:
+            raise UrlError(s+" is not an allowed schema")
 
         log = logging.getLogger()
         try:
