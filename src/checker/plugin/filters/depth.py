@@ -20,6 +20,8 @@ class DepthFilter(IPlugin):
 
     def filter(self, transaction):
         maxDepth = self.__conf.getProperty("maxDepth")
+        if maxDepth == 0:
+            return #unlimited
         if transaction.depth > maxDepth:
             self.__log.debug("Skipping "+transaction.uri+" as it's depth "+transaction.depth+" and max depth condition is "+maxDepth)
             raise FilterException()
