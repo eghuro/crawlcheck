@@ -116,18 +116,22 @@ class Network(object):
     def __fetch_response(transaction, agent, accept, time):
 
         r = None
+        head = {"user-agent" : agent, "accept" : accept }
         if transaction.method == 'GET':
-            if transaction.data is not None:
-                param = "?"+urlencode(transaction.data)
-            else: 
-                param = ""
-
-            r = requests.get(transaction.uri+param, allow_redirects=False, headers = {"user-agent" : agent, "accept" : accept }, data = transaction.data, timeout = time)
+            r = requests.get(transaction.uri+Network.__gen_param(transaction), allow_redirects=False, headers = head, data = transaction.data, timeout = time)
         elif transaction.method == 'POST':
-            r = requests.post(transaction.uri, allow_redirects=False, headers = {"user-agent" : agent, "accept" : accept }, data = transaction.data, timeout = time)
+            r = requests.post(transaction.uri, allow_redirects=False, headers = head, data = transaction.data, timeout = time)
 
         transaction.status = r.status_code
         return r
+
+    @staticmethod
+    def __gen_param(transaction):
+        if transaction.data is not None:
+            param = "?"+urlencode(transaction.data)
+        else: 
+            param = ""
+        return param
 
     @staticmethod
     def __save_content(content):
