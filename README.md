@@ -32,38 +32,72 @@ You will need python3, python-pip and sqlite3, ruby, libmagic, libtidy and zlib 
 Configuration file is a simple YAML file.
 ```sh
 ---
-version: 1.02        # configuration format version
+version: 1.03        # configuration format version
 database: crawlcheck # sqlite database file
-maxDepth: 10         # max amount of links followed from any entry point
-agent: Crawlcheck    # user agent used
+maxDepth: 10         # max amount of links followed from any entry point (default: unlimited)
+agent: Crawlcheck/1.03 # user agent used (default: Crawlcheck/1.03)
+logfile: cc.log      # where to store logs
+maxContentLength: 2000000 # max file size to download
+pluginDir: plugin    # where to look for plugins (including subfolders, default: 'plugin')
+timeout: 1           # timeout for networking
+
+# other parameters used by plugins written as ```key: value```
 
 content-types:
  -
-   "content-type": "text/html"
-   plugins: # plugins to use for given content-type
-     - linksFinder
-     - htmlValidator
+    "content-type": "text/html"
+    plugins: # plugins to use for given content-type
+       - linksFinder
+       - htmlValidator
      
  -
-   "content-type": "text/css"
-   plugins:
-     - tinycss
+    "content-type": "text/css"
+    plugins:
+       - tinycss
 
 urls:
--
-  url: "http://mj.ucw.cz/vyuka/"
-  plugins: # which plugins are allowed for given URL
+ -
+    url: "http://mj.ucw.cz/vyuka/"
+    plugins: # which plugins are allowed for given URL
        - linksFinder
        - tidyHtmlValidator
        - tinycss
--
+ -
     url: "http://mj.ucw.cz/" #forbid entry here
+
+suffixes:
+ -
+    suffix: "ucw.cz/"
+    plugins:
+       - linksFinder
+
+filters: #Filters (plugins of category header and filter) that can be used
+ - depth
+ - robots
+ - contentLength
+
+
+payload: 
+#if following URL is reached (exactly, no prefix or suffix) 
+#and request is to be made with a method specified, add provided
+#parameters into request
+ -
+    url: "https://stackoverflow.com/search"
+    method: GET
+    data:
+        q: x
+
 
 entryPoints: # where to start
 # Note, that once URI get's to the database it's no longer being requested 
 # (beware of repeated starts, if entry point remains in the database execution won't 
 # start from this entry point)
  - "http://mj.ucw.cz/vyuka/"
+ -
+    url: "http://www.mff.cuni.cz/" #here we specify additional parameters to be added
+    method: GET                    #into request
+    data:
+      - foo: bar
 ```
 
 ### Running crawlcheck
