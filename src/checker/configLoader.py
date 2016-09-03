@@ -4,6 +4,7 @@
 import yaml
 from pluginDBAPI import DBAPIconfiguration
 from acceptor import Acceptor
+import logging
 
 class ConfigurationError(Exception):
     def __init__(self, msg):
@@ -36,6 +37,7 @@ class ConfigLoader(object):
         self.suffixUriMap = None
         self.properties = dict()
         self.payloads = dict()
+        self.__log = logging.getLogger(__name__)
 
         #defaults
         self.properties["pluginDir"] = "plugin"
@@ -59,7 +61,7 @@ class ConfigLoader(object):
     @staticmethod
     def __db_check(root):
         if 'database' not in root:
-            print("Database not specified")
+            self.__log.error("Database not specified")
             return False
         else:
             return True
@@ -68,20 +70,20 @@ class ConfigLoader(object):
     def __version_check(root):
         version_check = False
         if 'version' not in root:
-            print("Version not specified")
+            self.__log.error("Version not specified")
         elif str(root['version']) == str(ConfigLoader.__VERSION):
             version_check = True
         else:
-            print("Configuration version doesn't match (got "+str(root['version'])+", expected: "+str(ConfigLoader.__VERSION)+")")
+            self.__log.error("Configuration version doesn't match (got "+str(root['version'])+", expected: "+str(ConfigLoader.__VERSION)+")")
         return version_check
 
     ###
 
     def __set_entry_points(self, root):
         if 'entryPoints' not in root:
-            print("Entry points should be specified")
+            self.__log.warning("Entry points should be specified")
         elif not root['entryPoints']:
-            print("At least one entry point should be specified")
+            self.__log.warning("At least one entry point should be specified")
         else:
             epSet = root['entryPoints']
             for ep in epSet:
@@ -149,7 +151,7 @@ class ConfigLoader(object):
             self.uriMap = ConfigLoader.create_uri_plugin_map(uriPlugins, pluginTypes, self.uriAcceptor)
             self.suffixMap = ConfigLoader.create_uri_plugin_map(suffixUriPlugins, pluginTypes, self.suffixAcceptor)
         except ConfigurationError as e:
-            print(e.msg)
+            self.__log.error(e.msg)
             return False
 
         #Grab lists
@@ -183,7 +185,7 @@ class ConfigLoader(object):
                 ConfigLoader.__set_plugin_accept_tag_value(tag, tag_string, acceptor, record, drocer)
                 acceptor.setDefaultAcceptValue(tag[tag_string], True)
             else:
-                print("Forbid "+tag[tag_string])
+                self.__log.info("Forbidden: "+tag[tag_string])
                 acceptor.setDefaultAcceptValue(tag[tag_string], False)
 
     @staticmethod
@@ -218,7 +220,7 @@ class ConfigLoader(object):
                         uriMap[uri] = set()
                     uriMap[uri].update(pluginTypes[plugin])
             else:
-                print("Uri not in uriPlugin: "+uri)
+                self.__log.debug("Uri not in uriPlugin: "+uri)
         return uriMap
 
     def get_configuration(self):
