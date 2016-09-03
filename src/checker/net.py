@@ -1,6 +1,6 @@
 import requests
 from requests.exceptions import InvalidSchema, ConnectionError, MissingSchema, Timeout
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlencode
 import os
 import tempfile
 import magic
@@ -73,6 +73,8 @@ class Network(object):
             journal.foundDefect(linkedTransaction.srcId, "badlink", "Invalid link", linkedTransaction.uri, 1.0)
             raise NetworkError(e) from e
 
+        linkedTransaction.status = r.status_code
+
         if r.status_code >= 400:
             journal.foundDefect(linkedTransaction.srcId, "badlink", "Invalid link", linkedTransaction.uri, 1.0)
             raise StatusError(r.status_code)
@@ -115,10 +117,16 @@ class Network(object):
 
         r = None
         if transaction.method == 'GET':
-            r = requests.get(transaction.uri, allow_redirects=False, headers = {"user-agent" : agent, "accept" : accept }, data = transaction.data, timeout = time)
+            if transaction.data is not None:
+                param = "?"+urlencode(transaction.data)
+            else: 
+                param = ""
+
+            r = requests.get(transaction.uri+param, allow_redirects=False, headers = {"user-agent" : agent, "accept" : accept }, data = transaction.data, timeout = time)
         elif transaction.method == 'POST':
             r = requests.post(transaction.uri, allow_redirects=False, headers = {"user-agent" : agent, "accept" : accept }, data = transaction.data, timeout = time)
 
+        transaction.status = r.status_code
         return r
 
     @staticmethod

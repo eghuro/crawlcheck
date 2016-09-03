@@ -42,7 +42,7 @@ class LinksFinder(IPlugin):
         
         if attr == 'href':
             self.make_links_absolute(soup, transaction.uri, tagL)
-        else:
+        elif attr == 'src':
             self.make_sources_absolute(soup, transaction.uri, tagL)
 
         images = soup.find_all(tagL)
@@ -62,7 +62,8 @@ class LinksFinder(IPlugin):
     def make_sources_absolute(self, soup, url, tagL):
         
         for tag in soup.findAll(tagL):
-            tag['src'] = urljoin(url, tag['src'])
+            if 'src' in tag.attrs:
+                tag['src'] = urljoin(url, tag['src'])
 
 
     def check_links(self, links, transaction, tag):

@@ -2,7 +2,7 @@ import logging
 import queue
 import urllib.parse
 import os
-from urllib.parse import urlparse
+from urllib.parse import urlparse, ParseResult
 from pluginDBAPI import DBAPI, VerificationStatus, Table
 from common import PluginType, PluginTypeError
 from net import Network, NetworkError, ConditionError, StatusError
@@ -139,6 +139,7 @@ class Transaction:
         self.srcId = srcId
         self.method = method
         self.data = data
+        self.status = None
 
     def testLink(self, conf, journal):
         if conf.uri_acceptor.canTouch(self.uri) or conf.suffix_acceptor.canTouch(self.getStripedUri()[::-1]):
@@ -167,8 +168,8 @@ class Transaction:
         p = uriAcceptor.getMaxPrefix(self.uri)
         if p in uriMap:
             if uriMap[p]:
-                return uriMap[p]
-        return []
+                return set(uriMap[p])
+        return {}
  
 
     def getAcceptedTypes(self, conf):
@@ -176,16 +177,16 @@ class Transaction:
             return []
         
         if conf.uri_map is None:
-            acceptedTypes = []
+            acceptedTypes = {}
         else:
-            acceptedTypes = Transaction.__set2list(self.__get_accepted_types(conf.uri_map, conf.uri_acceptor))
+            acceptedTypes = self.__get_accepted_types(conf.uri_map, conf.uri_acceptor)
         
         bak = self.uri
         self.uri = self.uri[::-1]
         if conf.suffix_uri_map is not None:
-             acceptedTypes += Transaction.__set2list(self.__get_accepted_types(conf.suffix_uri_map, conf.suffix_acceptor))
+             acceptedTypes += self.__get_accepted_types(conf.suffix_uri_map, conf.suffix_acceptor)
         self.uri = bak
-        return acceptedTypes
+        return self.__set2list(acceptedTypes)
 
     def isWorthIt(self, conf):
         return conf.uri_acceptor.mightAccept(self.uri) or conf.suffix_acceptor.mightAccept(self.getStripedUri()[::-1])
@@ -269,12 +270,22 @@ class TransactionQueue:
             return t
 
     def push(self, transaction, parent=None):
+
+        p = urlparse(transaction.uri)
+        params = urllib.parse.parse_qs(p.query)
+        p_ = ParseResult(p.scheme, p.netloc, p.path, p.params, None, None)
+        uri = p_.geturl()
+
+        transaction.uri = uri
+        transaction.data.update(params)
+
         if transaction.uri not in self.__seen:
             self.__seen.add(transaction.uri)
             self.__q.put(transaction)
             self.__db.log(Table.transactions,
                           ('INSERT INTO transactions (id, method, uri, origin, verificationStatusId, depth) VALUES (?, ?, ?, \'CHECKER\', ?, ?)', 
                           [str(transaction.idno), transaction.method, transaction.uri, str(TransactionQueue.status_ids["requested"]), str(transaction.depth)]) )
+        #TODO: co kdyz jsme pristupovali: (a) jinou metodou OR (b) s jinymi parametry?
 
         if parent is not None:
             self.__db.log_link(parent.idno, transaction.uri, transaction.idno)
@@ -309,7 +320,7 @@ class Journal:
         self.__db = db
        
     def startChecking(self, transaction):
-        self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatusId = ? WHERE id = ?', [str(Journal.status_ids["verifying"]), transaction.idno]) )
+        self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatusId = ?, uri = ?, contentType = ?, responseStatus = ? WHERE id = ?', [str(Journal.status_ids["verifying"]), transaction.uri, transaction.type, transaction.status, transaction.idno]) )
 
     def stopChecking(self, transaction, status):
         self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatusId = ? WHERE id = ?', [str(status), transaction.idno]) )
