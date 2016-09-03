@@ -48,33 +48,35 @@ class Core:
             except queue.Empty:
                 continue
 
-            if not transaction.isWorthIt(self.conf):##timto neotestujeme neplatny odkaz
-                self.log.debug(transaction.uri+" not worth my time")
-                self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
-                continue
-
-            #Custom filters
             try:
+                self.log.info("Processing "+transaction.uri)
+
+                #test link
+                r = transaction.testLink(self.conf, self.journal) #HEAD, pokud neni zakazan
+
+                if not transaction.isWorthIt(self.conf): #neni zadny plugin, ktery by prijal
+                    self.log.debug(transaction.uri+" not worth my time")
+                    self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
+                    continue
+
+                #Custom filters
                 for tf in self.filters:
                     tf.filter(transaction)
-            except FilterException:
-                self.log.debug(transaction.uri + " filtered out")
-                self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
-                continue
-            self.log.info("Processing "+transaction.uri)
 
-            #Networking
-            try:
-                transaction.loadResponse(self.conf, self.journal, self.header_filters)
+                #custom HTTP header filters
+                for hf in self.header_filters:
+                   hf.filter(transaction, r)
+
+                transaction.loadResponse(self.conf, self.journal)
             except TouchException: #nesmim se toho dotykat
                 self.log.debug("Forbidden to touch "+transaction.uri)
                 self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                 continue
-            except ConditionError:
+            except ConditionError: #URI nebo content-type dle konfigurace
                self.log.debug("Condition failed")
                self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                continue
-            except FilterException: #header filters
+            except FilterException: #filters
                 self.log.debug(transaction.uri + " filtered out")
                 self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                 continue
@@ -82,7 +84,7 @@ class Core:
                self.journal.stopChecking(transaction, VerificationStatus.done_ko)
                continue
             except NetworkError as e:
-                self.log.error("Network error: "+str(e))
+                self.log.error("Network error: "+format(e))
                 self.journal.stopChecking(transaction, VerificationStatus.done_ko)
                 continue
 
@@ -93,11 +95,11 @@ class Core:
                 self.journal.stopChecking(transaction, VerificationStatus.done_ok)
 
     def finalize(self):
-        self.rack.stop()
+        #self.rack.stop()
         try:
             self.db.sync()
         except:
-            self.rack.stop()
+            pass
         finally:
             self.clean_tmps()
 
@@ -137,30 +139,25 @@ class Transaction:
         self.srcId = srcId
         self.method = method
         self.data = data
-        #self.log = logging.getLogger()
 
-    def loadResponse(self, conf, journal, filters):
-        if self.isTouchable(conf.uri_acceptor, conf.suffix_acceptor):
-            try:
-                acceptedTypes = self.getAcceptedTypes(conf)
-                self.type, self.file = Network.getLink(self, acceptedTypes, conf, journal, filters)
-            except (NetworkError, ConditionError, StatusError):
-                raise
+    def testLink(self, conf, journal):
+        if conf.uri_acceptor.canTouch(self.uri) or conf.suffix_acceptor.canTouch(self.getStripedUri()[::-1]):
+            self.type, r = Network.check_link(self, journal, conf)
+            return r
         else:
             raise TouchException()
+
+    def loadResponse(self, conf, journal):
+        try:
+            acceptedTypes = self.getAcceptedTypes(conf)
+            self.file = Network.getLink(self, acceptedTypes, conf, journal)
+        except (NetworkError, ConditionError, StatusError):
+            raise
 
     def getContent(self):
         with open(self.file, 'r') as f:
             data = f.read()
             return data
-
-    def isTouchable(self, uriAcceptor, suffixAcceptor):
-        up = uriAcceptor.getMaxPrefix(self.uri)
-        striped = self.getStripedUri()
-        sp = suffixAcceptor.getMaxPrefix(striped[::-1])
-        prefix = uriAcceptor.resolveDefaultAcceptValue(up)
-        suffix = suffixAcceptor.resolveDefaultAcceptValue(sp)
-        return prefix or suffix
 
     def getStripedUri(self):
         pr = urlparse(self.uri)

@@ -35,15 +35,18 @@ class Acceptor(object):
     """
 
     def __init__(self, defaultUri=False):
-        self.defaultUri = defaultUri
+        #self.defaultUri = defaultUri
         self.pluginUri = dict()
         self.uriDefault = dict()
         self.uris = set()
         self.positive_uris = set()
 
+    def canTouch(self, value):
+        return self.__resolveDefaultAcceptValue(self.getMaxPrefix(value))
+
     def accept(self, value, pluginId):
         #value je rovnou adresa, nikoliv Transaction
-        return self.resolvePluginAcceptValue(pluginId, self.getMaxPrefix(value))
+        return self.__resolvePluginAcceptValue(pluginId, self.getMaxPrefix(value))
 
     def getMaxPrefix(self, value):
        assert type(value) is str
@@ -60,25 +63,21 @@ class Acceptor(object):
     def mightAccept(self, value):
         return self.getMaxPrefix(value) in self.positive_uris
 
-    def resolvePluginAcceptValue(self, pluginId, uri):
-        res = self.pluginAcceptValue(pluginId, uri)
-        if res == Resolution.yes:
+    def __resolvePluginAcceptValue(self, pluginId, uri):
+        res = self.__pluginAcceptValue(pluginId, uri)
+        if res == Resolution.yes:    #accept -> pokud neni explicitni match, zakazano
             return True
-        elif res == Resolution.no:
+        else:
+            return False
+
+    def __resolveDefaultAcceptValue(self, uri):    #canTouch -> pokud neni explicitni zakaz, povoleno
+        res = self.__resolveFromDefault(uri, self.uriDefault)
+        if res == Resolution.no:
             return False
         else:
-            return self.defaultUri #self.resolveDefaultAcceptValue(uri) #TODO: fix in tests?
-
-    def resolveDefaultAcceptValue(self, uri): #used in Transaction.isTouchable
-        res = self.resolveFromDefault(uri, self.uriDefault)
-        if res == Resolution.yes:
             return True
-        elif res == Resolution.no:
-            return False
-        else:
-            return self.defaultUri
 
-    def pluginAcceptValue(self, pluginId, uri):
+    def __pluginAcceptValue(self, pluginId, uri): #existuje pravidlo (plugin, value, X)?
         if pluginId in self.pluginUri:
             uris = self.pluginUri[pluginId]
             if uri in uris:
@@ -89,7 +88,7 @@ class Acceptor(object):
             return Resolution.none
 
     @staticmethod
-    def resolveFromDefault(identifier, default): #from resolveDefaultAcceptValue
+    def __resolveFromDefault(identifier, default):  #existuje pravidlo (value, X)?
         if identifier in default:
             return Acceptor.getResolution(default[identifier])
         else:
