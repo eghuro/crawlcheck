@@ -26,7 +26,7 @@ class Core:
         self.header_filters = headers
 
         TransactionQueue.initialize()
-        self.queue = TransactionQueue(self.db)
+        self.queue = TransactionQueue(self.db, self.conf)
         self.queue.load()
 
         Journal.initialize()
@@ -251,8 +251,9 @@ class TransactionQueue:
         TransactionQueue.status_ids["requested"] = 1
         TransactionQueue.status_ids["processing"] = 2
 
-    def __init__(self, db):
+    def __init__(self, db, conf):
         self.__db = db
+        self.__conf = conf
         self.__seen = set()
         self.__q = queue.Queue()
         
@@ -279,13 +280,16 @@ class TransactionQueue:
         transaction.uri = uri
         transaction.data.update(params)
 
-        if transaction.uri not in self.__seen:
-            self.__seen.add(transaction.uri)
+        if (transaction.uri, transaction.method) in self.__conf.payloads: #update params with payload
+            transaction.data.update(self.__conf.payloads[(transaction.uri, transaction.method)])
+
+        if (transaction.uri, transaction.method) not in self.__seen:
+            self.__seen.add( (transaction.uri, transaction.method) )
             self.__q.put(transaction)
             self.__db.log(Table.transactions,
                           ('INSERT INTO transactions (id, method, uri, origin, verificationStatusId, depth) VALUES (?, ?, ?, \'CHECKER\', ?, ?)', 
                           [str(transaction.idno), transaction.method, transaction.uri, str(TransactionQueue.status_ids["requested"]), str(transaction.depth)]) )
-        #TODO: co kdyz jsme pristupovali: (a) jinou metodou OR (b) s jinymi parametry?
+        #TODO: co kdyz jsme pristupovali s jinymi parametry?
 
         if parent is not None:
             self.__db.log_link(parent.idno, transaction.uri, transaction.idno)

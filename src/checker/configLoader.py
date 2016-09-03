@@ -23,6 +23,7 @@ class ConfigLoader(object):
     """
 
     __VERSION = 1.03
+    __METHODS = ['GET', 'POST']
 
     def __init__(self):
         self.__dbconf = DBAPIconfiguration()
@@ -34,6 +35,7 @@ class ConfigLoader(object):
         self.uriMap = None
         self.suffixUriMap = None
         self.properties = dict()
+        self.payloads = dict()
 
         #defaults
         self.properties["pluginDir"] = "plugin"
@@ -93,7 +95,7 @@ class ConfigLoader(object):
                                 data[k] = it[k]
                     method = 'GET'
                     if 'method' in ep:
-                        if ep['method'].upper() in ['GET', 'POST']: # pro zacatek staci 
+                        if ep['method'].upper() in ConfigLoader.__METHODS:
                             method = ep['method'].upper()
                     if 'url' not in ep:
                         raise ConfigurationException("url not present in entryPoint")
@@ -103,6 +105,20 @@ class ConfigLoader(object):
         if 'filters' in root:
             for f in root['filters']:
                 self.filters.append(f)
+
+    def __set_payloads(self, root):
+        if 'payload' in root:
+            for p in root['payload']:
+                if 'url' not in p:
+                    raise ConfigurationException("url not present in payload")
+                if 'method' not in p:
+                    raise ConfigurationException("method not present in payload")
+                if p['method'].upper() not in ConfigLoader.__METHODS:
+                    raise ConfigurationException("Invalid method: "+p['method'])
+                if 'data' not in p:
+                    raise ConfigurationException("data not present in payload")
+
+                self.payloads[ (p['url'], p['method'].upper()) ] = p['data']
  
     def __set_up(self, root):
         #Database is mandatory
@@ -139,6 +155,7 @@ class ConfigLoader(object):
         #Grab lists
         self.__set_entry_points(root)
         self.__set_filters(root)
+        self.__set_payloads(root)
 
         #Grab properties
         used_keys = set(['database', cts, us, sus, 'version', 'entryPoints', 'filters'])
@@ -206,7 +223,7 @@ class ConfigLoader(object):
 
     def get_configuration(self):
         if self.loaded:
-            return Configuration(self.__dbconf, self.typeAcceptor, self.uriAcceptor, self.suffixAcceptor, self.entryPoints, self.uriMap, self.suffixUriMap, self.properties)
+            return Configuration(self.__dbconf, self.typeAcceptor, self.uriAcceptor, self.suffixAcceptor, self.entryPoints, self.uriMap, self.suffixUriMap, self.properties, self.payloads)
         else:
             return None
 
@@ -225,7 +242,7 @@ class ConfigLoader(object):
         return revdict
 
 class Configuration(object):
-    def __init__(self, db, ta, ua, sa, ep, um, su, properties):
+    def __init__(self, db, ta, ua, sa, ep, um, su, properties, pl):
         self.dbconf = db
         self.type_acceptor = ta
         self.uri_acceptor = ua
@@ -234,6 +251,7 @@ class Configuration(object):
         self.uri_map = um
         self.suffix_uri_map = su
         self.properties = properties
+        self.payloads = pl
 
     def getProperty(self, key):
         if key in self.properties:

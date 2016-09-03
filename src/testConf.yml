@@ -44,6 +44,13 @@ filters:
  - robots
  - contentLength
 
+payload:
+ -
+    url: "https://stackoverflow.com/search"
+    method: 'GET'
+    data:
+        q: x
+
 
 entryPoints:
  - "http://mj.ucw.cz/vyuka/"
