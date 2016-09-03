@@ -1,9 +1,8 @@
 from common import PluginType
 from bs4 import BeautifulSoup
 from yapsy.IPlugin import IPlugin
-from urllib.parse import urlparse, parse_qs, urljoin
-import urllib.request, urllib.parse, urllib.error
-import marisa_trie
+from urllib.parse import urlparse, urljoin
+import urllib.parse
 
 
 

@@ -118,6 +118,8 @@ class Core:
             pass
         elif (plugin.category == PluginType.FILTER) or (plugin.category == PluginType.HEADER):
             plugin.setConf(self.conf)
+            if plugin.id == 'robots': #TODO: refactor
+                plugin.setQueue(self.queue)
         else:
             raise PluginTypeError
 
@@ -292,8 +294,11 @@ class TransactionQueue:
 
         self.__bake_cookies(transaction, parent)
 
-    def push_link(self, uri, parent, expectedType):
-        self.push(createTransaction(uri,parent.depth+1, parent.idno), parent, expectedType)
+    def push_link(self, uri, parent, expectedType = None):
+        if parent is None:
+            self.push(createTransaction(uri, 0), -1), None, expectedType)
+        else:
+            self.push(createTransaction(uri,parent.depth+1, parent.idno), parent, expectedType)
 
     @staticmethod
     def __strip_parse_query(uri):
