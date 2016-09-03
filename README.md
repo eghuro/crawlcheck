@@ -9,32 +9,8 @@ Crawlcheck is a web crawler invoking plugins on received content. It's intended 
 
 ### Tech
 
-Crawlcheck's engine currently runs on Python 2.7 and uses SQLite3 as a database backend. Report website is using Ruby on Rails and Bootstrap.
-Crawlcheck uses a number of open source projects to work properly:
-* [Yapsy] - plugin framework
-* [sqlite3] - data storage
-* [pyyaml] - configuration 
-* [marisa_trie] - Trie implementation
-* [py_w3c] - for html validation plugin
-* [tinycss] - for css validation plugin
-* [beautifulsoup4] - for links finder plugin
-* [requests], [urllib3] - for networking
-* [enum34] - enum compatible with Python 3
-
-Following gems are needed for report
-* rails
-* sqlite3
-* sass-rails
-* uglifier
-* coffee-rails
-* jquery-rails
-* turbolinks
-* jbuilder
-* sdoc
-* will_paginate-bootstrap
-* bootstrap-sass
-* autoprefixer-rails
-
+Crawlcheck's engine currently runs on Python 3.5 and uses SQLite3 as a database backend. Report website is using Ruby on Rails and Bootstrap.
+Crawlcheck uses a number of open source projects to work properly. Python dependencies are listed in [[requirements.txt]], Ruby dependencies are listed in [[src/report/Gemfile]]
 
 And of course Crawlcheck itself is open source with a [public repository](https://github.com/eghuro/crawlcheck) on GitHub.
 
@@ -125,12 +101,17 @@ For output file ``.pdf`` is added automatically.
 
 ### Plugins
 
+There are currently 4 types of plugins: crawlers, checkers, headers and filters. Crawlers are specializing in discovering new links. Checkers check syntax of various files. Headers check HTTP headers and together with filters serve to customize the crawling process itself.
+
 Crawlcheck is currently extended with the following plugins:
 
 * linksFinder
-* htmlValidator
+* tidyHtmlValidator
 * tinycss
 * css_scraper
+* contentLength
+* depth
+* robots
 
 ### How to write a plugin
 
@@ -150,19 +131,32 @@ Description = My New Plugin
 For plugin itself you need to implement following:
 ```sh
 from yapsy.IPlugin import IPlugin
+from common import PluginType
+from filter import FilterException  # for headers and filters
 class MyPlugin(IPlugin):
 
-    def setDb(self, DB):
-        # record DB somewhere
+    category = PluginType.CHECKER
+    id = myPlugin
 
-    def getId(self):
-        """ The id is used in configuration - in this case <plugin id = "myPlugin"/>
-        """
+    def setJournal(self, journal):
+        # record journal somewhere - all categories
 
-        return "myPlugin"
+    def setQueue(self, queue):
+        # record queue somewhere - only crawlers
 
-    def check(self, transactionId, content):
-        # implement the logic here
+    def setConf(self, conf):
+        # record configuration - only headers and filters
+
+    def check(self, transaction):
+        # implement the checking logic here for crawlers and checkers
+
+    def filter(self, transaction, r):
+        # implement the filtering logic here for headers (r is response from HEAD request)
+        raise FilterException() # to forbid processing this transaction
+
+    def filter(self, transaction):
+        # implement the filtering logic here for filters
+        raise FilterException() # to forbid processing this transaction
 ```
 
 See http://yapsy.sourceforge.net/IPlugin.html and http://yapsy.sourceforge.net/PluginManager.html#plugin-info-file-format for more details.
@@ -170,12 +164,14 @@ See http://yapsy.sourceforge.net/IPlugin.html and http://yapsy.sourceforge.net/P
 ### TODOs
 
  - Improve Tests and Documentation
+ - Parallelization
+ - Report - get full path from entry point to invalid link
+ - More runtime rules in configuration - cookies related
  - Report - manual annotations of findings
  - Filters and search in report
- - Regular expressions in configuration for plugins (URLs)
- - Dockerize
+ - Detect sitemap.xml (from robots.txt), validate it, note the links from sitemap
+ - Generate sitemap.xml
  - Detect forms and Javascript actions
- - Event based parallel processing
 
 License
 ----

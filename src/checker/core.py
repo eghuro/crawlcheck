@@ -272,11 +272,13 @@ class TransactionQueue:
 
     def push(self, transaction, parent=None):
 
+        #stripe query off uri and parse it into separate dict
         p = urlparse(transaction.uri)
         params = urllib.parse.parse_qs(p.query)
         p_ = ParseResult(p.scheme, p.netloc, p.path, p.params, None, None)
         uri = p_.geturl()
 
+        #update uri with one without query and update query params with parsed ones
         transaction.uri = uri
         transaction.data.update(params)
 

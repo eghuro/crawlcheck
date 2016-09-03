@@ -47,7 +47,7 @@ filters:
 payload:
  -
     url: "https://stackoverflow.com/search"
-    method: 'GET'
+    method: GET
     data:
         q: x
 
