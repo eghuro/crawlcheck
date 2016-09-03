@@ -79,5 +79,7 @@ class LinksFinder(IPlugin):
                 urlNoAnchor = url.split('#')[0]
 
                 addr = urllib.parse.quote(urlNoAnchor.encode('utf-8'))
-                self.queue.push_link(addr, transaction) #duplicates handled in queue
-                #TODO: scriptParams?
+                et = None
+                if tag.name == "img":
+                    et = "image/"
+                self.queue.push_link(addr, transaction, et) #duplicates handled in queue

@@ -140,10 +140,14 @@ class Transaction:
         self.method = method
         self.data = data
         self.status = None
+        self.expected = None
 
     def testLink(self, conf, journal):
         if conf.uri_acceptor.canTouch(self.uri) or conf.suffix_acceptor.canTouch(self.getStripedUri()[::-1]):
             self.type, r = Network.check_link(self, journal, conf)
+            if not self.type.startsWith(self.expected):
+                logging.getLogger(__name__).debug("Got content type: "+self.type+", expected content type starting with "+self.expected + "(Could be CSRF with fake img?)")
+                journal.foundDefect(self, Defect("mistyped", "Content-type not expected"), self.expected, 0.8)
             return r
         else:
             raise TouchException()
@@ -199,7 +203,7 @@ class Transaction:
         return y
 
 transactionId = 0
-def createTransaction(uri, depth = 0, parentId = -1, method = 'GET', params=None):
+def createTransaction(uri, depth = 0, parentId = -1, method = 'GET', params=dict()):
     assert (type(params) is dict) or (params is None)
     global transactionId
     decoded = str(urllib.parse.unquote(urllib.parse.unquote(uri)))
@@ -270,13 +274,9 @@ class TransactionQueue:
             self.__db.log(Table.link_defect, ('UPDATE link SET processed = ? WHERE toUri = ?', [str("true"), str(t.uri)] ))
             return t
 
-    def push(self, transaction, parent=None):
+    def push(self, transaction, parent=None, expectedType = None):
 
-        #stripe query off uri and parse it into separate dict
-        p = urlparse(transaction.uri)
-        params = urllib.parse.parse_qs(p.query)
-        p_ = ParseResult(p.scheme, p.netloc, p.path, p.params, None, None)
-        uri = p_.geturl()
+        uri, params = TransactionQueue.__strip_parse_query()
 
         #update uri with one without query and update query params with parsed ones
         transaction.uri = uri
@@ -285,6 +285,28 @@ class TransactionQueue:
         if (transaction.uri, transaction.method) in self.__conf.payloads: #update params with payload
             transaction.data.update(self.__conf.payloads[(transaction.uri, transaction.method)])
 
+        transaction.expected = expectedType
+
+        self.__mark_seen(transaction)
+
+        if parent is not None:
+            self.__db.log_link(parent.idno, transaction.uri, transaction.idno)
+
+    def push_link(self, uri, parent, expectedType):
+        self.push(createTransaction(uri,parent.depth+1, parent.idno), parent, expectedType)
+
+    @staticmethod
+    def __strip_parse_query(uri):
+
+         #strip query off uri and parse it into separate dict
+        p = urlparse(transaction.uri)
+        params = urllib.parse.parse_qs(p.query)
+        p_ = ParseResult(p.scheme, p.netloc, p.path, p.params, None, None)
+        uri = p_.geturl()
+
+        return uri, params
+
+    def __mark_seen(self, transaction):
         if (transaction.uri, transaction.method) not in self.__seen:
             self.__seen.add( (transaction.uri, transaction.method) )
             self.__q.put(transaction)
@@ -292,12 +314,6 @@ class TransactionQueue:
                           ('INSERT INTO transactions (id, method, uri, origin, verificationStatusId, depth) VALUES (?, ?, ?, \'CHECKER\', ?, ?)', 
                           [str(transaction.idno), transaction.method, transaction.uri, str(TransactionQueue.status_ids["requested"]), str(transaction.depth)]) )
         #TODO: co kdyz jsme pristupovali s jinymi parametry?
-
-        if parent is not None:
-            self.__db.log_link(parent.idno, transaction.uri, transaction.idno)
-
-    def push_link(self, uri, parent):
-        self.push(createTransaction(uri,parent.depth+1, parent.idno), parent)
 
     def load(self):
         #load transactions from DB to memory - only where status is requested
@@ -331,8 +347,8 @@ class Journal:
     def stopChecking(self, transaction, status):
         self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatusId = ? WHERE id = ?', [str(status), transaction.idno]) )
 
-    def foundDefect(self, transaction, defect, evidence):
-        self.foundDefect(transaction.idno, defect.name, defect.additional, evidence)
+    def foundDefect(self, transaction, defect, evidence, severity=0.5):
+        self.foundDefect(transaction.idno, defect.name, defect.additional, evidence, severity)
 
     def foundDefect(self, trId, name, additional, evidence, severity = 0.5):
         assert type(trId) == int
