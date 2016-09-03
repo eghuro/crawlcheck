@@ -10,7 +10,7 @@ Crawlcheck is a web crawler invoking plugins on received content. It's intended 
 ### Tech
 
 Crawlcheck's engine currently runs on Python 3.5 and uses SQLite3 as a database backend. Report website is using Ruby on Rails and Bootstrap.
-Crawlcheck uses a number of open source projects to work properly. Python dependencies are listed in [[requirements.txt]], Ruby dependencies are listed in [[src/report/Gemfile]]
+Crawlcheck uses a number of open source projects to work properly. Python dependencies are listed in [requirements.txt](https://github.com/eghuro/crawlcheck/blob/architecture-refactoring/requirements.txt), Ruby dependencies are listed in [Gemfile](https://github.com/eghuro/crawlcheck/blob/architecture-refactoring/src/report/Gemfile)
 
 And of course Crawlcheck itself is open source with a [public repository](https://github.com/eghuro/crawlcheck) on GitHub.
 
