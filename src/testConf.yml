@@ -43,6 +43,7 @@ filters:
  - depth
  - robots
  - contentLength
+ - expectedType
 
 payload:
  -

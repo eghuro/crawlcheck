@@ -6,7 +6,7 @@ from urllib.parse import urlparse, ParseResult
 from pluginDBAPI import DBAPI, VerificationStatus, Table
 from common import PluginType, PluginTypeError
 from net import Network, NetworkError, ConditionError, StatusError
-from filter import FilterException #, DepthFilter, RobotsFilter, ContentLengthFiler
+from filter import FilterException
 
 
 
@@ -145,9 +145,6 @@ class Transaction:
     def testLink(self, conf, journal):
         if conf.uri_acceptor.canTouch(self.uri) or conf.suffix_acceptor.canTouch(self.getStripedUri()[::-1]):
             self.type, r = Network.check_link(self, journal, conf)
-            if not self.type.startsWith(self.expected):
-                logging.getLogger(__name__).debug("Got content type: "+self.type+", expected content type starting with "+self.expected + "(Could be CSRF with fake img?)")
-                journal.foundDefect(self, Defect("mistyped", "Content-type not expected"), self.expected, 0.8)
             return r
         else:
             raise TouchException()
