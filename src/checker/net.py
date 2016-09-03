@@ -46,7 +46,8 @@ class Network(object):
             return name
             
         except ConnectionError as e:
-            log.error("Connection error: "+format(e))
+            log.debug("Connection error: "+format(e))
+            journal.foundDefect(linkedTransaction.srcId, "badlink", "Invalid link", linkedTransaction.uri, 1.0)
             raise NetworkError(e)
         except Timeout as e:
             log.error("Timeout")
@@ -68,7 +69,8 @@ class Network(object):
             journal.foundDefect(linkedTransaction.srcId, "timeout", "Link timed out", linkedTransaction.uri, 0.9)
             raise NetworkError() from e
         except ConnectionError as e:
-            log.error("Connection error: "+format(e))
+            log.debug("Connection error: "+format(e))
+            journal.foundDefect(linkedTransaction.srcId, "badlink", "Invalid link", linkedTransaction.uri, 1.0)
             raise NetworkError(e) from e
 
         if r.status_code >= 400:
