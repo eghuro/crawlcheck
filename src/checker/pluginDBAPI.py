@@ -114,6 +114,11 @@ class DBAPI(object):
             self.defectTypesWithId[name] = self.defectId
         defId = self.defectTypesWithId[name]
         self.log(Table.link_defect, ('INSERT INTO defect (findingId, type, evidence, severity) VALUES (?, ?, ?, ?)', [str(self.findingId), str(defId), str(evidence), str(severity)]))
+
+    def log_cookie(self, transactionId, name, value):
+        self.findingId = self.findingId + 1
+        self.log(Table.finding, ('INSERT INTO finding (id, responseId) VALUES (?,?)', [str(self.findingId), str(transactionId)]))
+        self.log(Table.link_defect, ('INSERT INTO cookies (findingId, name, value) VALUES (?, ?, ?)', [str(self.findingId), str(name), str(value)]))
         
     def sync(self):
         try:

@@ -74,6 +74,15 @@ CREATE TABLE IF NOT EXISTS defect (
     ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS cookies (
+  findingId INTEGER PRIMARY KEY NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  value VARCHAR(255) NOT NULL,
+  FOREIGN KEY (findingId)
+    REFERENCES finding(id)
+    ON DELETE CASCADE
+);
+
 INSERT INTO verificationStatus(id, status) VALUES (1, "REQUESTED");
 INSERT INTO verificationStatus(id, status) VALUES (2, "PROCESSING");
 INSERT INTO verificationStatus(id, status) VALUES (3, "VERIFYING");

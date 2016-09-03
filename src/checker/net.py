@@ -39,6 +39,7 @@ class Network(object):
         try:
             acc_header = Network.__create_accept_header(acceptedTypes)
             r = Network.__conditional_fetch(linkedTransaction, acc_header, conf)
+            Network.__store_cookies(linkedTransaction, r.cookies, journal)
             name = Network.__save_content(r.text)
             match, mime = Network.__test_content_type(linkedTransaction.type, name)
             if not match:
@@ -79,10 +80,6 @@ class Network(object):
             journal.foundDefect(linkedTransaction.srcId, "badlink", "Invalid link", linkedTransaction.uri, 1.0)
             raise StatusError(r.status_code)
 
-        if linkedTransaction.uri != r.url:
-            log.debug("Redirection: "+linkedTransaction.uri+" -> "+r.url)
-            linkedTransaction.uri = r.url
-
         lst = list(r.headers.keys())
         if 'content-type' in lst:
             ct = r.headers['content-type']
@@ -117,12 +114,18 @@ class Network(object):
 
         r = None
         head = {"user-agent" : agent, "accept" : accept }
+        #if not allowed to send cookies or don't have any, then cookies are None -> should be safe to use them; maybe filter which to use?
         if transaction.method == 'GET':
-            r = requests.get(transaction.uri+Network.__gen_param(transaction), allow_redirects=False, headers = head, data = transaction.data, timeout = time)
+            r = requests.get(transaction.uri+Network.__gen_param(transaction), allow_redirects=False, headers = head, data = transaction.data, timeout = time, cookies = transaction.cookies)
         elif transaction.method == 'POST':
-            r = requests.post(transaction.uri, allow_redirects=False, headers = head, data = transaction.data, timeout = time)
+            r = requests.post(transaction.uri, allow_redirects=False, headers = head, data = transaction.data, timeout = time, cookies = transaction.cookies)
 
         transaction.status = r.status_code
+
+        if transaction.uri != r.url:
+            log.debug("Redirection: "+transaction.uri+" -> "+r.url)
+            transaction.uri = r.url
+
         return r
 
     @staticmethod
@@ -158,3 +161,11 @@ class Network(object):
             return string
         else:
             return ""
+
+    @staticmethod
+    def __store_cookies(transaction, cookies, journal):
+
+        for name, value in cookies.items():
+            journal.gotCookie(transaction, name, value)
+        transaction.cookies = cookies
+            

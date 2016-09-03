@@ -141,6 +141,7 @@ class Transaction:
         self.data = data
         self.status = None
         self.expected = None
+        self.cookies = None
 
     def testLink(self, conf, journal):
         if conf.uri_acceptor.canTouch(self.uri) or conf.suffix_acceptor.canTouch(self.getStripedUri()[::-1]):
@@ -289,6 +290,8 @@ class TransactionQueue:
         if parent is not None:
             self.__db.log_link(parent.idno, transaction.uri, transaction.idno)
 
+        self.__bake_cookies(transaction, parent)
+
     def push_link(self, uri, parent, expectedType):
         self.push(createTransaction(uri,parent.depth+1, parent.idno), parent, expectedType)
 
@@ -311,6 +314,18 @@ class TransactionQueue:
                           ('INSERT INTO transactions (id, method, uri, origin, verificationStatusId, depth) VALUES (?, ?, ?, \'CHECKER\', ?, ?)', 
                           [str(transaction.idno), transaction.method, transaction.uri, str(TransactionQueue.status_ids["requested"]), str(transaction.depth)]) )
         #TODO: co kdyz jsme pristupovali s jinymi parametry?
+
+    def __bake_cookies(self, transaction, parent):
+        if self.__conf.uri_acceptor.getMaxPrefix(transaction.uri) in self.__conf.cookies: #sending cookies allowed
+            if parent is not None:
+                if parent.cookies is not None:
+                    #volano pri objeveni odkazu, stazeni probehne "za dlouho"
+                    transaction.cookies = parent.cookies #.copy()? TODO: TESTME
+            if self.__conf.uri_acceptor.getMaxPrefix(transaction.uri) in self.__conf.custom_cookies: #got custom cookies to send
+                if transaction.cookies is None: #no parent cookies, only pull custom
+                    transaction.cookies = self.__conf.custom_cookies[self.__conf.uri_acceptor.getMaxPrefix(transaction.uri)]
+                else: #got parent cookies, update them with custom, possibly overwriting some, leaving some and adding some more
+                    transaction.cookies.update(self.__conf.custom_cookies[self.__conf.uri_acceptor.getMaxPrefix(transaction.uri)])
 
     def load(self):
         #load transactions from DB to memory - only where status is requested
@@ -353,6 +368,9 @@ class Journal:
 
     def getKnownDefectTypes(self):
         return self.__db.get_known_defect_types()
+
+    def gotCookie(self, transaction, name, value):
+        self.__db.log_cookie(transaction.idno, name, value)
 
 class Defect:
 

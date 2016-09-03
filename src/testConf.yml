@@ -29,6 +29,15 @@ urls:
        - tinycss
        - css_scraper
        - formChecker
+    cookie: True #posli zpet cookies, pokud jsi nejake ziskal
+
+ -
+    url: "http://mj.ucw.cz/"
+    plugins:
+    cookie:
+        reply: true
+        custom:
+            key: value
 
  -
     url: "http://mj.ucw.cz/" # Zakaz

@@ -37,6 +37,8 @@ class ConfigLoader(object):
         self.suffixUriMap = None
         self.properties = dict()
         self.payloads = dict()
+        self.cookieFriendlyPrefixes = set()
+        self.customCookies = dict()
         self.__log = logging.getLogger(__name__)
 
         #defaults
@@ -121,6 +123,26 @@ class ConfigLoader(object):
                     raise ConfigurationException("data not present in payload")
 
                 self.payloads[ (p['url'], p['method'].upper()) ] = p['data']
+
+    def __set_cookies(self, root, u, us):
+        #Go through urls again, grab cookie friendly prefixes
+        for url in root[us]:
+            if ('cookie' in url) and (u in url):
+                # can be cookie: True/False parameter or structure
+                if 'reply' in url['cookie']:
+                    #structure
+                    if url['cookie']['reply']:
+                        self.cookieFriendlyPrefixes.add(url[u])
+                        if 'custom' in url['cookie']:
+                            self.customCookies[url[u]] = url['cookie']['custom']
+                            #self.customCookies[prefix] = dict(key:value of cookies)
+                        #else: no cookies to send
+                    #else: forbidden to reply cookies and also send custom ones
+                elif url['cookie']: #cookie: True/False parameter
+                    self.cookieFriendlyPrefixes.add(url[u])
+                else:
+                    raise ConfigurationError("Wrong format of cookie record for "+url[u])
+            #else: no cookie record or wrong url record -> raised earlier
  
     def __set_up(self, root):
         #Database is mandatory
@@ -153,6 +175,8 @@ class ConfigLoader(object):
         except ConfigurationError as e:
             self.__log.error(e.msg)
             return False
+
+        self.__set_cookies(root, u, us)
 
         #Grab lists
         self.__set_entry_points(root)
@@ -225,7 +249,7 @@ class ConfigLoader(object):
 
     def get_configuration(self):
         if self.loaded:
-            return Configuration(self.__dbconf, self.typeAcceptor, self.uriAcceptor, self.suffixAcceptor, self.entryPoints, self.uriMap, self.suffixUriMap, self.properties, self.payloads)
+            return Configuration(self.__dbconf, self.typeAcceptor, self.uriAcceptor, self.suffixAcceptor, self.entryPoints, self.uriMap, self.suffixUriMap, self.properties, self.payloads, self.cookieFriendlyPrefixes, self.customCookies)
         else:
             return None
 
@@ -244,7 +268,7 @@ class ConfigLoader(object):
         return revdict
 
 class Configuration(object):
-    def __init__(self, db, ta, ua, sa, ep, um, su, properties, pl):
+    def __init__(self, db, ta, ua, sa, ep, um, su, properties, pl, cfp, cc):
         self.dbconf = db
         self.type_acceptor = ta
         self.uri_acceptor = ua
@@ -254,6 +278,8 @@ class Configuration(object):
         self.suffix_uri_map = su
         self.properties = properties
         self.payloads = pl
+        self.cookies = cfp #cookie friendly prefixes -> eg. on these prefixes we send cookies back
+        self.custom_cookies = cc
 
     def getProperty(self, key):
         if key in self.properties:
