@@ -99,6 +99,7 @@ class Core:
 
     def finalize(self):
         #self.rack.stop()
+        self.log.debug("Finalizing")
         try:
             self.db.sync()
         except:
@@ -322,6 +323,7 @@ class TransactionQueue:
     def __bake_cookies(self, transaction, parent):
         if self.__conf.uri_acceptor.getMaxPrefix(transaction.uri) in self.__conf.cookies: #sending cookies allowed
             cookies = dict()
+            #najit vsechna cookies pro danou adresu
             if parent is not None:
                 if parent.cookies is not None:
                     cookies = parent.cookies.copy()

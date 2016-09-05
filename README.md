@@ -26,7 +26,7 @@ $ git clone https://github.com/eghuro/crawlcheck crawlcheck
 cd crawlcheck
 ./install.sh [database-file-location]
 ```
-You will need python3, python-pip and sqlite3, ruby, libmagic, libtidy and zlib installed. All dev or devel versions.
+You will need python3, python-pip and sqlite3, virtualenv, ruby, libmagic, libtidy and zlib installed. All dev or devel versions.
 
 ### Configuration
 Configuration file is a simple YAML file.
