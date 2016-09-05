@@ -18,4 +18,6 @@ bin/bundle install
 cp ../checker/mysql_tables.sql db/structure.sql
 bin/rake db:migrate
 bin/rake db:migrate RAILS_ENV=development
-sqlite3 $1 < src/checker/sql_values.sql
+
+#cd ../../
+#sqlite3 $1 < src/checker/sql_values.sql
