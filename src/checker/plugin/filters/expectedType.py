@@ -20,6 +20,8 @@ class ExpectedType(IPlugin):
         self.__journal = journal
 
     def filter(self, transaction):
-        if not transaction.type.startsWith(transaction.expected):
+        if transaction.expected is None:
+            return
+        if not transaction.type.startswith(transaction.expected):
             self.__log.debug("Got content type: "+transaction.type+", expected content type starting with "+transaction.expected + "(Could be CSRF with fake img?)")
             self.__journal.foundDefect(transaction.idno, "mistyped", "Content-type not expected", transaction.expected, 0.8)

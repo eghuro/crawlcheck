@@ -19,6 +19,14 @@ content-types:
    "content-type": "text/css"
    plugins:
      - tinycss
+ -
+   "content-type": "text/xml"
+   plugins:
+     - sitemapScanner
+ -
+   "content-type": "application/xml"
+   plugins:
+     - sitemapScanner
 
 urls:
  -
@@ -47,12 +55,12 @@ suffixes:
     suffix: "ucw.cz/"
     plugins:
        - linksFinder
+       - sitemapScanner
 
 filters:
  - depth
  - robots
  - contentLength
- - expectedType
 
 payload:
  -

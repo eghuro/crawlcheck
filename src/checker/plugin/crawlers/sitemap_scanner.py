@@ -33,8 +33,8 @@ class SitemapScanner(IPlugin):
         for u in urls:
             loc = u.find('loc').string
             p = urlparse(loc)
-                if p.scheme not in ['http', 'https']:
-                    continue
+            if p.scheme not in ['http', 'https']:
+                continue
             log.debug("Link from sitemap ("+transaction.uri+") to "+loc)
             self.queue.push_link(loc, transaction) #duplicates handled in queue
 

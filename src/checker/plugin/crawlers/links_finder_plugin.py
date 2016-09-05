@@ -66,7 +66,7 @@ class LinksFinder(IPlugin):
 
 
     def check_links(self, links, transaction, tag):
-        
+
         for link in links:
             url = link.get(tag)
             
@@ -78,7 +78,8 @@ class LinksFinder(IPlugin):
                 urlNoAnchor = url.split('#')[0]
 
                 addr = urllib.parse.quote(urlNoAnchor.encode('utf-8'))
-                et = None
-                if tag.name == "img":
-                    et = "image/"
-                self.queue.push_link(addr, transaction, et) #duplicates handled in queue
+                #et = None
+                #log.debug("Tag: "+tag+"; looking for img here")
+                #if tag == "img":
+                #    et = "image/"
+                self.queue.push_link(addr, transaction) #duplicates handled in queue

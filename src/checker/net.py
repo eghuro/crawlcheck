@@ -38,6 +38,7 @@ class Network(object):
         log = logging.getLogger(__name__)
         try:
             acc_header = Network.__create_accept_header(acceptedTypes)
+            log.debug("Accept header: "+acc_header)
             r = Network.__conditional_fetch(linkedTransaction, acc_header, conf)
             Network.__store_cookies(linkedTransaction, r.cookies, journal)
             name = Network.__save_content(r.text)
@@ -114,6 +115,9 @@ class Network(object):
 
         r = None
         head = {"user-agent" : agent, "accept" : accept }
+        log = logging.getLogger(__name__)
+        log.debug("Fetching "+transaction.uri)
+        log.debug("Data: "+str(transaction.data))
         #if not allowed to send cookies or don't have any, then cookies are None -> should be safe to use them; maybe filter which to use?
         if transaction.method == 'GET':
             r = requests.get(transaction.uri+Network.__gen_param(transaction), allow_redirects=False, headers = head, data = transaction.data, timeout = time, cookies = transaction.cookies)
@@ -123,7 +127,7 @@ class Network(object):
         transaction.status = r.status_code
 
         if transaction.uri != r.url:
-            log.debug("Redirection: "+transaction.uri+" -> "+r.url)
+            logging.getLogger(__name__).debug("Redirection: "+transaction.uri+" -> "+r.url)
             transaction.uri = r.url
 
         return r

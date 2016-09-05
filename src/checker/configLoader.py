@@ -129,7 +129,7 @@ class ConfigLoader(object):
         for url in root[us]:
             if ('cookie' in url) and (u in url):
                 # can be cookie: True/False parameter or structure
-                if 'reply' in url['cookie']:
+                if type(url['cookie']) is not bool:
                     #structure
                     if url['cookie']['reply']:
                         self.cookieFriendlyPrefixes.add(url[u])
@@ -165,13 +165,13 @@ class ConfigLoader(object):
             uriPlugins = dict()
             suffixUriPlugins = dict()
             pluginTypes = dict()
-            self.typeAcceptor = ConfigLoader.__get_acceptor(cts, ct, ct_dsc, root, None, pluginTypes)
-            self.uriAcceptor = ConfigLoader.__get_acceptor(us, u, u_dsc, root, uriPlugins, None)
-            self.suffixAcceptor = ConfigLoader.__get_acceptor(sus, su, su_dsc, root, suffixUriPlugins, None)
+            self.typeAcceptor = self.__get_acceptor(cts, ct, ct_dsc, root, None, pluginTypes)
+            self.uriAcceptor = self.__get_acceptor(us, u, u_dsc, root, uriPlugins, None)
+            self.suffixAcceptor = self.__get_acceptor(sus, su, su_dsc, root, suffixUriPlugins, None)
             self.suffixAcceptor.reverseValues()
             suffixUriPlugins = ConfigLoader.reverse_dict_keys(suffixUriPlugins)
-            self.uriMap = ConfigLoader.create_uri_plugin_map(uriPlugins, pluginTypes, self.uriAcceptor)
-            self.suffixMap = ConfigLoader.create_uri_plugin_map(suffixUriPlugins, pluginTypes, self.suffixAcceptor)
+            self.uriMap = self.create_uri_plugin_map(uriPlugins, pluginTypes, self.uriAcceptor)
+            self.suffixMap = self.create_uri_plugin_map(suffixUriPlugins, pluginTypes, self.suffixAcceptor)
         except ConfigurationError as e:
             self.__log.error(e.msg)
             return False
@@ -191,17 +191,15 @@ class ConfigLoader(object):
         
         return True
 
-    @staticmethod
-    def __get_acceptor(tags_string, tag_string, description, root, record, drocer):
+    def __get_acceptor(self, tags_string, tag_string, description, root, record, drocer):
         acceptor = Acceptor()
         if tags_string in root:
             tags = root[tags_string]
             if tags:
-                ConfigLoader.__run_tags(tags, description, acceptor, tag_string, record, drocer)
+                self.__run_tags(tags, description, acceptor, tag_string, record, drocer)
         return acceptor
 
-    @staticmethod
-    def __run_tags(tags, description, acceptor, tag_string, record, drocer):
+    def __run_tags(self, tags, description, acceptor, tag_string, record, drocer):
         for tag in tags:
             if tag_string not in tag:
                 raise ConfigurationError(description+" not specified")
@@ -230,19 +228,20 @@ class ConfigLoader(object):
                     elif tag[tag_string] not in drocer[plugin]:
                         drocer[plugin].add(tag[tag_string])
 
-    @staticmethod
-    def create_uri_plugin_map(uriPlugin, pluginTypes, uriAcceptor):
+    def create_uri_plugin_map(self, uriPlugin, pluginTypes, uriAcceptor):
         uriMap = dict()
         #create mapping of accepted content types for URI:
 
         for uri in uriAcceptor.getPositiveValues(): #accepted prefixes
             if uri in uriPlugin: #any plugin accepting this prefix? (careful!!)
                 for plugin in uriPlugin[uri]:
-                    assert plugin in pluginTypes #content types accepted by the plugin (should always pass)
-                    #put list of types for plugin into a dict for uri; join sets together
-                    if uri not in uriMap:
-                        uriMap[uri] = set()
-                    uriMap[uri].update(pluginTypes[plugin])
+                    if not plugin in pluginTypes:
+                        self.__log.warn(plugin+" doesn't have any content type associated")
+                    else:
+                        #put list of types for plugin into a dict for uri; join sets together
+                        if uri not in uriMap:
+                            uriMap[uri] = set()
+                        uriMap[uri].update(pluginTypes[plugin])
             else:
                 self.__log.debug("Uri not in uriPlugin: "+uri)
         return uriMap

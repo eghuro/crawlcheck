@@ -2,6 +2,7 @@ import logging
 import queue
 import urllib.parse
 import os
+import time
 from urllib.parse import urlparse, ParseResult
 from pluginDBAPI import DBAPI, VerificationStatus, Table
 from common import PluginType, PluginTypeError
@@ -36,6 +37,7 @@ class Core:
             self.__initializePlugin(plugin)
 
         for entryPoint in self.conf.entry_points:
+            self.log.debug("Pushing to queue: "+entryPoint.url+", data: "+str(entryPoint.data))
             self.queue.push(createTransaction(entryPoint.url, 0, -1, entryPoint.method, entryPoint.data))
 
         self.rack = Rack(self.conf.uri_acceptor, self.conf.type_acceptor, self.conf.suffix_acceptor, plugins)
@@ -142,7 +144,6 @@ class Transaction:
         self.method = method
         self.data = data
         self.status = None
-        self.expected = None
         self.cookies = None
 
     def testLink(self, conf, journal):
@@ -274,34 +275,41 @@ class TransactionQueue:
             self.__db.log(Table.link_defect, ('UPDATE link SET processed = ? WHERE toUri = ?', [str("true"), str(t.uri)] ))
             return t
 
-    def push(self, transaction, parent=None, expectedType = None):
+    def push(self, transaction, parent=None):
 
-        uri, params = TransactionQueue.__strip_parse_query()
+        logging.getLogger(__name__).debug("Push link to "+transaction.uri)
+        start = time.clock()
+        #chci prevest vsechny parametry URL do dictu
+        #rozdelime adresu na dve casti - adresu a parametry
+        uri, params = TransactionQueue.__strip_parse_query(transaction)
+        merger = dict()
+        merger.update(transaction.data)
+        merger.update(params)
 
-        #update uri with one without query and update query params with parsed ones
         transaction.uri = uri
-        transaction.data.update(params)
+        transaction.data = merger
 
         if (transaction.uri, transaction.method) in self.__conf.payloads: #update params with payload
             transaction.data.update(self.__conf.payloads[(transaction.uri, transaction.method)])
-
-        transaction.expected = expectedType
 
         self.__mark_seen(transaction)
 
         if parent is not None:
             self.__db.log_link(parent.idno, transaction.uri, transaction.idno)
 
-        self.__bake_cookies(transaction, parent)
+        #self.__bake_cookies(transaction, parent)
+        end = time.clock()
 
-    def push_link(self, uri, parent, expectedType = None):
+        logging.getLogger(__name__).debug("Execution taken "+str(end - start))
+
+    def push_link(self, uri, parent):
         if parent is None:
-            self.push(createTransaction(uri, 0), -1), None, expectedType)
+            self.push(createTransaction(uri, 0, -1), None)
         else:
-            self.push(createTransaction(uri,parent.depth+1, parent.idno), parent, expectedType)
+            self.push(createTransaction(uri,parent.depth+1, parent.idno), parent)
 
     @staticmethod
-    def __strip_parse_query(uri):
+    def __strip_parse_query(transaction):
 
          #strip query off uri and parse it into separate dict
         p = urlparse(transaction.uri)
@@ -324,13 +332,15 @@ class TransactionQueue:
         if self.__conf.uri_acceptor.getMaxPrefix(transaction.uri) in self.__conf.cookies: #sending cookies allowed
             if parent is not None:
                 if parent.cookies is not None:
-                    #volano pri objeveni odkazu, stazeni probehne "za dlouho"
-                    transaction.cookies = parent.cookies #.copy()? TODO: TESTME
+                    logging.getLogger(__name__).debug("Setting cookies of "+transaction.uri+" to "+str(parent.cookies))
+                    transaction.cookies = copy.deepcopy(parent.cookies)
             if self.__conf.uri_acceptor.getMaxPrefix(transaction.uri) in self.__conf.custom_cookies: #got custom cookies to send
                 if transaction.cookies is None: #no parent cookies, only pull custom
+                    logging.getLogger(__name__).debug("Setting cookies of "+transaction.uri+" to "+self.__conf.custom_cookies[self.__conf.uri_acceptor.getMaxPrefix(transaction.uri)])
                     transaction.cookies = self.__conf.custom_cookies[self.__conf.uri_acceptor.getMaxPrefix(transaction.uri)]
                 else: #got parent cookies, update them with custom, possibly overwriting some, leaving some and adding some more
                     transaction.cookies.update(self.__conf.custom_cookies[self.__conf.uri_acceptor.getMaxPrefix(transaction.uri)])
+                    logging.getLogger(__name__).debug("Cookies of "+transaction.uri+" updated to "+str(transaction.cookies))
 
     def load(self):
         #load transactions from DB to memory - only where status is requested
