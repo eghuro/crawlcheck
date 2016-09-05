@@ -4,6 +4,7 @@
 import unittest
 from configLoader import ConfigLoader
 from acceptor import Resolution
+import core
 
 
 class ConfigLoaderTest(unittest.TestCase):
@@ -12,19 +13,21 @@ class ConfigLoaderTest(unittest.TestCase):
         self.cl.load('testConf.yml')
 
     def testLoadDbConf(self):
-        dbconf = self.cl.getDbconf()
-        self.assertEqual(dbconf.getDbname(), 'test.sqlite')
+        dbconf = self.cl.get_configuration().dbconf
+        self.assertEqual(dbconf.getDbname(), 'crawlcheck')
 
     def testTypeAcceptor(self):
-        ta = self.cl.getTypeAcceptor()
-        self.assertFalse(ta.accept('boo', 'text/javascript'))
+        ta = self.cl.get_configuration().type_acceptor
+        t = core.createTransaction('boo')
+        self.assertEqual(type(t.uri), str)
+        self.assertFalse(ta.accept(t.uri, 'text/javascript'))
 
     def testUriAcceptor(self):
-        ua = self.cl.getUriAcceptor()
+        ua = self.cl.get_configuration().uri_acceptor
         # self.assertTrue(ua.accept('moo',  'http://www.mff.cuni.cz/'))
 
     def testLFPUriAcceptor(self):
-        ua = self.cl.getUriAcceptor()
+        ua = self.cl.get_configuration().uri_acceptor
         for val in ua.getValues():
             print(val)
         self.assertTrue('http://mj.ucw.cz/vyuka/' in ua.getValues())
@@ -35,41 +38,35 @@ class ConfigLoaderTestInvalid(unittest.TestCase):
 
     def testLoad(self):
         self.cl.load('invalidTestConf0.yml')
-        self.assertAllNone()
+        self.assertNone(self.cl.get_configuration())
 
     def testConfigurationVersion(self):
         self.cl.load('invalidTestConf1.yml')
-        self.assertAllNone()
+        self.assertNone(self.cl.get_configuration())
 
     def maxDepthEntryPoints(self, config, depth, entry):
         self.cl.load(config)
-        self.assertEqual(depth, self.cl.getMaxDepth())
-        self.assertEqual(entry, self.cl.getEntryPoints())
+        self.assertEqual(depth, self.cl.get_configuration().properties["maxDepth"])
+        self.assertEqual(entry, self.cl.get_configuration().entry_points)
 
     def testMaxDepthEmptyEntryPoints(self):
         self.maxDepthEntryPoints('testConf0.yml', 5, [])
 
-    def testNegativeMaxDepthNoEntryPoints(self):
-        self.maxDepthEntryPoints('testConf1.yml', 0, [])
+    #def testNegativeMaxDepthNoEntryPoints(self):
+    #    self.maxDepthEntryPoints('testConf1.yml', 0, [])
 
     def testUrlNoPlugins(self):
         self.cl.load('testConf2.yml')
-        acceptor = self.cl.getUriAcceptor()
-        accept = acceptor.accept('foobar', 'http://mj.ucw.cz/vyuka/rp/')
+        acceptor = self.cl.get_configuration().uri_acceptor
+        accept = acceptor.accept(core.createTransaction('http://mj.ucw.cz/vyuka/rp/').uri, 'foobar')
         self.assertFalse(accept)
 
     def testPluginsNoContentType(self):
         self.cl.load('invalidTestConf2.yml')
-        self.assertAllNone()
+        self.assertNone(self.cl.get_configuration())
 
     def assertNone(self, obj):
         self.assertEqual(obj, None)
 
-    def assertAllNone(self):
-        self.assertNone(self.cl.getDbconf())
-        self.assertNone(self.cl.getTypeAcceptor())
-        self.assertNone(self.cl.getUriAcceptor())
-        self.assertNone(self.cl.getEntryPoints())
-        self.assertNone(self.cl.getMaxDepth())
 if __name__ == '__main__':
     unittest.main()

@@ -1,0 +1,8 @@
+[Core]
+Name = Depth condition filter
+Module = depth
+
+[Documentation]
+Author = Alexandr Mansurov
+Version = 0.0
+Description = Check depth of transaction, filter out based on maxDepth property in conf

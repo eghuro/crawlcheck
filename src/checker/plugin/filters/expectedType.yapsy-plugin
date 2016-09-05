@@ -1,0 +1,8 @@
+[Core]
+Name = Test content type for expected one
+Module = expectedType
+
+[Documentation]
+Author = Alexandr Mansurov
+Version = 0.0
+Description = We might expect transaction to have a specific content type (for example image/* for URL's referenced from img tag)

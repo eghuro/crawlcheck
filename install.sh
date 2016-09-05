@@ -1,14 +1,23 @@
 #!/bin/sh
+virtualenv -p /usr/bin/python3 py3env
+source py3env/bin/activate
 
-sudo pip install marisa_trie yapsy py_w3c enum34 urllib3 requests tinycss beautifulsoup4 pyyaml
-sudo gem install bundler
-sudo gem install rails
+pip install -r requirements.txt
+gem install bundler
+gem install rails
+
+python ./patch-cfgs.py $1 #TODO: hardend
+
+sqlite3 $1 < src/checker/mysql_tables.sql
+sqlite3 $1 < src/checker/sql_values.sql
 
 cd src/report
+
 bin/bundle install
 
 cp ../checker/mysql_tables.sql db/structure.sql
-sqlite3 ../crawlcheck < ../checker/mysql_tables.sql 2>/dev/null
 bin/rake db:migrate
 bin/rake db:migrate RAILS_ENV=development
-sqlite3 ../crawlcheck < ../checker/mysql_tables.sql 2>/dev/null
+
+#cd ../../
+#sqlite3 $1 < src/checker/sql_values.sql

@@ -4,10 +4,17 @@
 import yaml
 from pluginDBAPI import DBAPIconfiguration
 from acceptor import Acceptor
+import logging
 
 class ConfigurationError(Exception):
     def __init__(self, msg):
         self.msg = msg
+
+class EPR(object):
+    def __init__(self, url, method='GET', data = dict()):
+        self.url = url
+        self.method = method
+        self.data = data
 
 class ConfigLoader(object):
     """ ConfigLoader loads configuration from file.
@@ -16,15 +23,29 @@ class ConfigLoader(object):
         retrieved through getters.
     """
 
-    _VERSION = 1.01
+    __VERSION = 1.03
+    __METHODS = ['GET', 'POST']
 
     def __init__(self):
-        self._dbconf = DBAPIconfiguration()
+        self.__dbconf = DBAPIconfiguration()
         self.typeAcceptor = None
         self.uriAcceptor = None
         self.entryPoints = []
-        self.maxDepth = 0
+        self.filters = []
         self.loaded = False
+        self.uriMap = None
+        self.suffixUriMap = None
+        self.properties = dict()
+        self.payloads = dict()
+        self.cookieFriendlyPrefixes = set()
+        self.customCookies = dict()
+        self.__log = logging.getLogger(__name__)
+
+        #defaults
+        self.properties["pluginDir"] = "plugin"
+        self.properties["agent"] = "Crawlcheck/"+str(ConfigLoader.__VERSION)
+        self.properties["maxDepth"] = 0
+        self.properties["timeout"] = 1
 
     def load(self, fname):
         """Loads configuration from YAML file.
@@ -32,54 +53,102 @@ class ConfigLoader(object):
         cfile = open(fname)
         root = yaml.safe_load(cfile)
 
-        db_check = ConfigLoader._db_check(root)
-        version_check = self._version_check(root)
+        db_check = ConfigLoader.__db_check(root)
+        version_check = ConfigLoader.__version_check(root)
         if db_check and version_check:
-            self.loaded = self._set_up(root)
+            self.loaded = self.__set_up(root)
         
         cfile.close()
 
     @staticmethod
-    def _db_check(root):
+    def __db_check(root):
         if 'database' not in root:
-            print("Database not specified")
+            self.__log.error("Database not specified")
             return False
         else:
             return True
 
-    def _version_check(self, root):
+    @staticmethod
+    def __version_check(root):
         version_check = False
         if 'version' not in root:
-            print("Version not specified")
-        elif root['version'] == ConfigLoader._VERSION:
+            self.__log.error("Version not specified")
+        elif str(root['version']) == str(ConfigLoader.__VERSION):
             version_check = True
         else:
-            print("Configuration version doesn't match")
+            self.__log.error("Configuration version doesn't match (got "+str(root['version'])+", expected: "+str(ConfigLoader.__VERSION)+")")
         return version_check
 
-    def _set_max_depth(self, root):
-        if 'maxDepth' in root:
-            if root['maxDepth'] >= 0:
-                self.maxDepth = root['maxDepth']
-            else:
-                print("Max depth must be zero or positive! Setting to 0.")
-    
-    def _set_entry_points(self, root):
+    ###
+
+    def __set_entry_points(self, root):
         if 'entryPoints' not in root:
-            print("Entry points should be specified")
+            self.__log.warning("Entry points should be specified")
         elif not root['entryPoints']:
-            print("At least one entry point should be specified")
+            self.__log.warning("At least one entry point should be specified")
         else:
             epSet = root['entryPoints']
             for ep in epSet:
-                self.entryPoints.append(ep)
+                if type(ep) is str:
+                    self.entryPoints.append(EPR(ep))
+                elif type(ep) is dict:
+                    data = dict()
+                    if 'data' in ep:
+                        for it in ep['data']:
+                            for k in it.keys():
+                                data[k] = it[k]
+                    method = 'GET'
+                    if 'method' in ep:
+                        if ep['method'].upper() in ConfigLoader.__METHODS:
+                            method = ep['method'].upper()
+                    if 'url' not in ep:
+                        raise ConfigurationException("url not present in entryPoint")
+                    self.entryPoints.append(EPR(ep['url'], method, data))
+
+    def __set_filters(self, root):
+        if 'filters' in root:
+            for f in root['filters']:
+                self.filters.append(f)
+
+    def __set_payloads(self, root):
+        if 'payload' in root:
+            for p in root['payload']:
+                if 'url' not in p:
+                    raise ConfigurationException("url not present in payload")
+                if 'method' not in p:
+                    raise ConfigurationException("method not present in payload")
+                if p['method'].upper() not in ConfigLoader.__METHODS:
+                    raise ConfigurationException("Invalid method: "+p['method'])
+                if 'data' not in p:
+                    raise ConfigurationException("data not present in payload")
+
+                self.payloads[ (p['url'], p['method'].upper()) ] = p['data']
+
+    def __set_cookies(self, root, u, us):
+        #Go through urls again, grab cookie friendly prefixes
+        for url in root[us]:
+            if ('cookie' in url) and (u in url):
+                # can be cookie: True/False parameter or structure
+                if type(url['cookie']) is not bool:
+                    #structure
+                    if url['cookie']['reply']:
+                        self.cookieFriendlyPrefixes.add(url[u])
+                        if 'custom' in url['cookie']:
+                            self.customCookies[url[u]] = url['cookie']['custom']
+                            #self.customCookies[prefix] = dict(key:value of cookies)
+                        #else: no cookies to send
+                    #else: forbidden to reply cookies and also send custom ones
+                elif url['cookie']: #cookie: True/False parameter
+                    self.cookieFriendlyPrefixes.add(url[u])
+                else:
+                    raise ConfigurationError("Wrong format of cookie record for "+url[u])
+            #else: no cookie record or wrong url record -> raised earlier
  
-    def _set_up(self, root):
-        self._dbconf.setDbname(root['database'])
+    def __set_up(self, root):
+        #Database is mandatory
+        self.__dbconf.setDbname(root['database'])
 
-        self._set_max_depth(root)
-        self._set_entry_points(root)
-
+        #Grab rules first
         cts = 'content-types'
         ct = 'content-type'
         ct_dsc = 'Content type'
@@ -88,76 +157,131 @@ class ConfigLoader(object):
         u = 'url'
         u_dsc = 'URL'
 
+        sus = 'suffixes'
+        su = 'suffix'
+        su_dsc = 'Suffix'
+
         try:
-            self.typeAcceptor = ConfigLoader._get_acceptor(cts, ct, ct_dsc, root)
-            self.uriAcceptor = ConfigLoader._get_acceptor(us, u, u_dsc, root)
+            uriPlugins = dict()
+            suffixUriPlugins = dict()
+            pluginTypes = dict()
+            self.typeAcceptor = self.__get_acceptor(cts, ct, ct_dsc, root, None, pluginTypes)
+            self.uriAcceptor = self.__get_acceptor(us, u, u_dsc, root, uriPlugins, None)
+            self.suffixAcceptor = self.__get_acceptor(sus, su, su_dsc, root, suffixUriPlugins, None)
+            self.suffixAcceptor.reverseValues()
+            suffixUriPlugins = ConfigLoader.reverse_dict_keys(suffixUriPlugins)
+            self.uriMap = self.create_uri_plugin_map(uriPlugins, pluginTypes, self.uriAcceptor)
+            self.suffixMap = self.create_uri_plugin_map(suffixUriPlugins, pluginTypes, self.suffixAcceptor)
         except ConfigurationError as e:
-            print(e.msg)
+            self.__log.error(e.msg)
             return False
+
+        self.__set_cookies(root, u, us)
+
+        #Grab lists
+        self.__set_entry_points(root)
+        self.__set_filters(root)
+        self.__set_payloads(root)
+
+        #Grab properties
+        used_keys = set(['database', cts, us, sus, 'version', 'entryPoints', 'filters'])
+        doc_keys = set(root.keys())
+        for key in (doc_keys - used_keys):
+            self.properties[key] = root[key]
+        
         return True
 
-    @staticmethod
-    def _get_acceptor(tags_string, tag_string, description, root):
-        acceptor = Acceptor(False)
+    def __get_acceptor(self, tags_string, tag_string, description, root, record, drocer):
+        acceptor = Acceptor()
         if tags_string in root:
             tags = root[tags_string]
             if tags:
-                ConfigLoader._run_tags(tags, description, acceptor, tag_string)
+                self.__run_tags(tags, description, acceptor, tag_string, record, drocer)
         return acceptor
 
-    @staticmethod
-    def _run_tags(tags, description, acceptor, tag_string):
+    def __run_tags(self, tags, description, acceptor, tag_string, record, drocer):
         for tag in tags:
             if tag_string not in tag:
                 raise ConfigurationError(description+" not specified")
             if 'plugins' in tag:
-                ConfigLoader._set_plugin_accept_tag_value(tag, tag_string, acceptor)
+                ConfigLoader.__set_plugin_accept_tag_value(tag, tag_string, acceptor, record, drocer)
+                acceptor.setDefaultAcceptValue(tag[tag_string], True)
             else:
-                print("Forbid "+tag[tag_string])
+                self.__log.info("Forbidden: "+tag[tag_string])
                 acceptor.setDefaultAcceptValue(tag[tag_string], False)
 
     @staticmethod
-    def _set_plugin_accept_tag_value(tag, tag_string, acceptor):
+    def __set_plugin_accept_tag_value(tag, tag_string, acceptor, record, drocer):
         if tag['plugins']:
             for plugin in tag['plugins']:
                 acceptor.setPluginAcceptValue(plugin, tag[tag_string], True)
 
-    def getDbconf(self):
-        """ Retrieve DB configuration.
-        """
+                #TODO: refactor hard #TODO: TESTME!!
+                if record is not None:
+                    if tag[tag_string] not in record:
+                        record[tag[tag_string]] = set([plugin])
+                    else:
+                        record[tag[tag_string]].add(plugin)
+                elif drocer is not None:
+                    if plugin not in drocer:
+                        drocer[plugin] = set([tag[tag_string]])
+                    elif tag[tag_string] not in drocer[plugin]:
+                        drocer[plugin].add(tag[tag_string])
+
+    def create_uri_plugin_map(self, uriPlugin, pluginTypes, uriAcceptor):
+        uriMap = dict()
+        #create mapping of accepted content types for URI:
+
+        for uri in uriAcceptor.getPositiveValues(): #accepted prefixes
+            if uri in uriPlugin: #any plugin accepting this prefix? (careful!!)
+                for plugin in uriPlugin[uri]:
+                    if not plugin in pluginTypes:
+                        self.__log.warn(plugin+" doesn't have any content type associated")
+                    else:
+                        #put list of types for plugin into a dict for uri; join sets together
+                        if uri not in uriMap:
+                            uriMap[uri] = set()
+                        uriMap[uri].update(pluginTypes[plugin])
+            else:
+                self.__log.debug("Uri not in uriPlugin: "+uri)
+        return uriMap
+
+    def get_configuration(self):
         if self.loaded:
-            return self._dbconf
+            return Configuration(self.__dbconf, self.typeAcceptor, self.uriAcceptor, self.suffixAcceptor, self.entryPoints, self.uriMap, self.suffixUriMap, self.properties, self.payloads, self.cookieFriendlyPrefixes, self.customCookies)
         else:
             return None
 
-    def getTypeAcceptor(self):
-        """ Retrieve Acceptor instance for Content-Type.
-        """
+    def get_allowed_filters(self):
         if self.loaded:
-            return self.typeAcceptor
+            return self.filters
         else:
             return None
 
-    def getUriAcceptor(self):
-        """ Retrieve Acceptor instance for URI.
-        """
-        if self.loaded:
-            return self.uriAcceptor
-        else:
-            return None
+    @staticmethod
+    def reverse_dict_keys(sufdict):
+        revdict = dict()
+        for key in sufdict.keys():
+            revkey = key[::-1]
+            revdict[revkey] = sufdict[key]
+        return revdict
 
-    def getEntryPoints(self):
-        """ Retrieve list of URIs for initial requests.
-        """
-        if self.loaded:
-            return self.entryPoints
-        else:
-            return None
+class Configuration(object):
+    def __init__(self, db, ta, ua, sa, ep, um, su, properties, pl, cfp, cc):
+        self.dbconf = db
+        self.type_acceptor = ta
+        self.uri_acceptor = ua
+        self.suffix_acceptor = sa
+        self.entry_points = ep
+        self.uri_map = um
+        self.suffix_uri_map = su
+        self.properties = properties
+        self.payloads = pl
+        self.cookies = cfp #cookie friendly prefixes -> eg. on these prefixes we send cookies back
+        self.custom_cookies = cc
 
-    def getMaxDepth(self):
-        """ Get maximum depth for crawling (0 for no limit)
-        """
-        if self.loaded:
-            return self.maxDepth
+    def getProperty(self, key):
+        if key in self.properties:
+            return self.properties[key]
         else:
             return None

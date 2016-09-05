@@ -5,38 +5,35 @@ from yapsy.IPlugin import IPlugin
 
 class CssScraper(IPlugin):
     
-    type = PluginType.CHECKER
+    category = PluginType.CHECKER
+    id = "css_scraper"
     
     
     def __init__(self):
-        self.database = None
+        self.journal = None
 
 
-    def setDb(self, DB):
-        self.database = DB
+    def setJournal(self, journal):
+        self.journal = journal
 
 
-    def getId(self):
-        return "css_scraper"
+    def check(self, transaction):
+        soup = BeautifulSoup(transaction.getContent(), 'html.parser')
+        self.internal(soup, transaction)
+        self.inlines(soup, transaction)
 
 
-    def check(self, transactionId, content):
-        soup = BeautifulSoup(content, 'html.parser')
-        self.internal(soup, transactionId)
-        self.inlines(soup, transactionId)
-
-
-    def internal(self, soup, transactionId):
+    def internal(self, soup, transaction):
         data = self.scan_internal(soup)
         if data is not None:
-            self.process_internal(transactionId, data)
+            self.process_internal(transaction, data)
 
 
-    def inlines(self, soup, transactionId):
+    def inlines(self, soup, transaction):
         data = self.scan_inline(soup)
         self.inlines_seen = set()
         for inline in data:
-            self.process_inline(transactionId, inline)
+            self.process_inline(transaction, inline)
 
 
     def scan_internal(self, soup):
@@ -67,26 +64,26 @@ class CssScraper(IPlugin):
         #    print("Error inserting " + comment +" CSS for transaction "+str(transactionId))
 
 
-    def process_internal(self, transactionId, style):
+    def process_internal(self, transaction, style):
         #self.push_db(transactionId, style , "internal")
 
         # zkontroluje velikost vlozeneho CSS, pokud presahuje vybranou mez, oznacime jako chybu
         size = len(style.encode('utf-8'))
         LIMIT = 1024
         if size > LIMIT:
-            self.database.setDefect(transactionId, 'seo:huge_internal', 0, size)
+            self.journal.foundDefect(transaction.idno, 'seo:huge_internal', "Internal CSS bigger than 1024", size, 0.5)
         return reqId
 
 
-    def process_inline(self, transactionId, style):
+    def process_inline(self, transaction, style):
         #self.push_db(transactionId, style, "inline")
         if style in self.inlines_seen:
-            self.duplicit_inline(transactionId, style)
+            self.duplicit_inline(transaction, style)
         else:
             self.inlines_seen.add(style)
         # TODO: testovat na podretezec 
         # TODO: zkoumat id/classy, zda tam neni podretezec inline css
 
 
-    def duplicit_inline(self, transactionId, style):
-        self.database.setDefect(transactionId, 'seo:duplicit_inline', 0, style)
+    def duplicit_inline(self, transaction, style):
+        self.journal.foundDefect(transaction.idno, 'seo:duplicit_inline', "Duplicit inline CSS", style, 0.1)
