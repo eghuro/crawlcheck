@@ -32,7 +32,6 @@ class RobotsFilter(IPlugin):
     def filter(self, transaction):
 
         #grab sitemaps
-        self.__log.debug("Robots.txt filter for "+transaction.uri+" started")
         maps = self.__robots.sitemaps(transaction.uri)
         for new_map in self.__known_maps - set(maps):
             self.__log.debug("Discovered sitemap: "+new_map)
@@ -53,7 +52,6 @@ class RobotsFilter(IPlugin):
             self.__log.debug(str(e))
         except ReppyException as e:
             self.__log.debug("ReppyException: "+str(e))
-        self.__log.debug("Robots.txt filter out")
 
 #Reppy references:
 #http://pythonhackers.com/p/mt3/reppy

@@ -120,7 +120,7 @@ class Network(object):
         log.debug("Data: "+str(transaction.data))
         #if not allowed to send cookies or don't have any, then cookies are None -> should be safe to use them; maybe filter which to use?
         if transaction.method == 'GET':
-            r = requests.get(transaction.uri+Network.__gen_param(transaction), allow_redirects=False, headers = head, data = transaction.data, timeout = time, cookies = transaction.cookies)
+            r = requests.get(transaction.uri+Network.__gen_param(transaction), allow_redirects=False, headers = head, timeout = time, cookies = transaction.cookies)
         elif transaction.method == 'POST':
             r = requests.post(transaction.uri, allow_redirects=False, headers = head, data = transaction.data, timeout = time, cookies = transaction.cookies)
 
@@ -160,7 +160,7 @@ class Network(object):
         #see RFC 2616, section 14.1
         if len(acceptedTypes) > 0:
             string = acceptedTypes[0]
-            for aType in acceptedTypes:
+            for aType in acceptedTypes[2:]:
                 string += ", "+aType
             return string
         else:

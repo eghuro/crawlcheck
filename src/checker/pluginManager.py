@@ -22,6 +22,7 @@ def handler(signum, frame):
 
 def configure_logger(conf):
     log = logging.getLogger()
+    log.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     if conf.getProperty('logfile') is not None:
         fh = logging.FileHandler(conf.getProperty('logfile'))
@@ -82,8 +83,7 @@ def main():
     global core_instance
     core_instance = None
     signal.signal(signal.SIGINT, handler)
-
-    logging.basicConfig(level=logging.DEBUG)    
+    
     log = logging.getLogger(__name__)
 
     if len(sys.argv) == 2:

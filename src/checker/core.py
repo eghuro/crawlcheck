@@ -3,6 +3,7 @@ import queue
 import urllib.parse
 import os
 import time
+import copy
 from urllib.parse import urlparse, ParseResult
 from pluginDBAPI import DBAPI, VerificationStatus, Table
 from common import PluginType, PluginTypeError
@@ -277,30 +278,20 @@ class TransactionQueue:
 
     def push(self, transaction, parent=None):
 
-        logging.getLogger(__name__).debug("Push link to "+transaction.uri)
-        start = time.clock()
-        #chci prevest vsechny parametry URL do dictu
-        #rozdelime adresu na dve casti - adresu a parametry
+        #logging.getLogger(__name__).debug("Push link to "+transaction.uri)
+
         uri, params = TransactionQueue.__strip_parse_query(transaction)
-        merger = dict()
-        merger.update(transaction.data)
-        merger.update(params)
-
-        transaction.uri = uri
-        transaction.data = merger
-
-        if (transaction.uri, transaction.method) in self.__conf.payloads: #update params with payload
-            transaction.data.update(self.__conf.payloads[(transaction.uri, transaction.method)])
+        if (transaction.uri, transaction.method) in self.__conf.payloads: #chceme sem neco poslat
+            params.update(self.__conf.payloads[(transaction.uri, transaction.method)])
+            transaction.data = params
+            transaction.uri = uri
 
         self.__mark_seen(transaction)
 
         if parent is not None:
             self.__db.log_link(parent.idno, transaction.uri, transaction.idno)
 
-        #self.__bake_cookies(transaction, parent)
-        end = time.clock()
-
-        logging.getLogger(__name__).debug("Execution taken "+str(end - start))
+        self.__bake_cookies(transaction, parent)
 
     def push_link(self, uri, parent):
         if parent is None:
@@ -330,17 +321,15 @@ class TransactionQueue:
 
     def __bake_cookies(self, transaction, parent):
         if self.__conf.uri_acceptor.getMaxPrefix(transaction.uri) in self.__conf.cookies: #sending cookies allowed
+            cookies = dict()
             if parent is not None:
                 if parent.cookies is not None:
-                    logging.getLogger(__name__).debug("Setting cookies of "+transaction.uri+" to "+str(parent.cookies))
-                    transaction.cookies = copy.deepcopy(parent.cookies)
+                    cookies = parent.cookies.copy()
             if self.__conf.uri_acceptor.getMaxPrefix(transaction.uri) in self.__conf.custom_cookies: #got custom cookies to send
-                if transaction.cookies is None: #no parent cookies, only pull custom
-                    logging.getLogger(__name__).debug("Setting cookies of "+transaction.uri+" to "+self.__conf.custom_cookies[self.__conf.uri_acceptor.getMaxPrefix(transaction.uri)])
-                    transaction.cookies = self.__conf.custom_cookies[self.__conf.uri_acceptor.getMaxPrefix(transaction.uri)]
-                else: #got parent cookies, update them with custom, possibly overwriting some, leaving some and adding some more
-                    transaction.cookies.update(self.__conf.custom_cookies[self.__conf.uri_acceptor.getMaxPrefix(transaction.uri)])
-                    logging.getLogger(__name__).debug("Cookies of "+transaction.uri+" updated to "+str(transaction.cookies))
+                cookies.update(self.__conf.custom_cookies[self.__conf.uri_acceptor.getMaxPrefix(transaction.uri)])
+            if len(cookies.keys()) > 0:
+                logging.getLogger(__name__).debug("Cookies of "+transaction.uri+" updated to "+str(cookies))
+                transaction.cookies = cookies
 
     def load(self):
         #load transactions from DB to memory - only where status is requested
