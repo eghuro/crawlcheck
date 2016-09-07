@@ -90,8 +90,35 @@ class TexReporter(object):
                     doc.append(NoEscape(r"\newpage"))
                 continue
 
-        doc.generate_pdf(out)                         
+        with doc.create(Section('Cookies')):
+            query = ('select transactions.uri, cookies.name, cookies.value from cookies inner join finding on finding.id = cookies.findingId inner join transactions on finding.responseId = transaction.id')
+            self.cursor.execute(query)
+            row = self.cursor.fetchone()
+            while row is not None:
+                with doc.create(Tabular('|l|l|l|')) as table:
+                    table.add_hline()
+                    table.add_row(('On page', 'Name', 'Value'))
+                    table.add_hline()
 
+                    count = 0
+                    max_on_page = 47
+                    while row is not None:
+                        page = urllib.parse.unquote(row[0])
+                        name = row[1]
+                        value = row[2]
+
+                        table.add_row((page, name, value))
+                        table.add_hline()
+                        count += 1
+
+                        row = self.cursor.fetchone()
+                        if count == max_on_page:
+                            break #vyskoci z vnitrniho while
+                #v kazdem pripade konec tabulky
+                if row is not None: #doslo misto na strance
+                    doc.append(NoEscape(r"\newpage"))
+                continue
+        doc.generate_pdf(out)
 
 def run():
     """ Entry point - load command line arguments and call printReport or show usage.
