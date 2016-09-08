@@ -1,0 +1,8 @@
+[Core]
+Name = Open graph links finder
+Module = opengraph
+
+[Documentation]
+Author = Alexandr Mansurov
+Version = 0.1
+Description = Discover links in open graph meta tags
