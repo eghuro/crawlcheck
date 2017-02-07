@@ -57,7 +57,7 @@ class Core:
                 try:
                     self.log.info("Processing "+transaction.uri)
                 except UnicodeDecodeError:
-                    self.log.info("Processing "+transaction.uri.encode('ascii', 'ignore')
+                    self.log.info("Processing "+transaction.uri.encode('ascii', 'ignore'))
 
                 #test link
                 r = transaction.testLink(self.conf, self.journal) #HEAD, pokud neni zakazan
