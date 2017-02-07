@@ -2,7 +2,7 @@
 virtualenv -p /usr/bin/python3 py3env
 source py3env/bin/activate
 
-pip install -r reqiuirements.txt
+pip install -r requirements.txt
 
 rvm install 2.2.2
 rvm use 2.2.2
