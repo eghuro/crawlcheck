@@ -59,7 +59,10 @@ class Core:
                 r = transaction.testLink(self.conf, self.journal) #HEAD, pokud neni zakazan
 
                 if not transaction.isWorthIt(self.conf): #neni zadny plugin, ktery by prijal
-                    self.log.debug(transaction.uri+" not worth my time")
+                    try:
+                        self.log.debug(transaction.uri+" not worth my time")
+                    except UnicodeDecodeError:
+                        pass
                     self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                     continue
 
