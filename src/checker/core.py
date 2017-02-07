@@ -59,7 +59,7 @@ class Core:
                 r = transaction.testLink(self.conf, self.journal) #HEAD, pokud neni zakazan
 
                 if not transaction.isWorthIt(self.conf): #neni zadny plugin, ktery by prijal
-                    self.log.debug(transaction.uri+" not worth my time")
+                    self.log.debug(transaction.uri.encode('utf-8')+" not worth my time")
                     self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                     continue
 
@@ -73,7 +73,7 @@ class Core:
 
                 transaction.loadResponse(self.conf, self.journal)
             except TouchException: #nesmim se toho dotykat
-                self.log.debug("Forbidden to touch "+transaction.uri)
+                self.log.debug("Forbidden to touch "+transaction.uri.encode('utf-8'))
                 self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                 continue
             except ConditionError: #URI nebo content-type dle konfigurace
@@ -81,7 +81,7 @@ class Core:
                self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                continue
             except FilterException: #filters
-                self.log.debug(transaction.uri + " filtered out")
+                self.log.debug(transaction.uri.encode('utf-8') + " filtered out")
                 self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                 continue
             except StatusError as e: #already logged
@@ -138,7 +138,7 @@ class Transaction:
 
     def __init__(self, uri, depth, srcId, idno, method="GET", data=None):
         #Use the factory method below!!
-        self.uri = uri.encode('utf-8')
+        self.uri = uri
         self.depth = depth
         self.type = None
         self.file = None
