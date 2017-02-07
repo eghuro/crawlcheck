@@ -32,13 +32,13 @@ class RobotsFilter(IPlugin):
     def filter(self, transaction):
 
         #grab sitemaps
-        maps = self.__robots.sitemaps #(transaction.uri)
-        for new_map in self.__known_maps - set(maps):
-            self.__log.debug("Discovered sitemap: "+new_map)
-            self.__queue.push_link(new_map, None)
+        #maps = self.__robots.sitemaps(transaction.uri)
+        #for new_map in self.__known_maps - set(maps):
+        #    self.__log.debug("Discovered sitemap: "+new_map)
+        #    self.__queue.push_link(new_map, None)
             #TODO: maybe better get robots.txt URI, put it into DB and link sitemaps from there
             #anyway there are loose nodes in the tree ... but we are then able to discover orphaned pages
-        self.__known_maps.update(maps)
+        #self.__known_maps.update(maps)
 
         #crawl delay?
         agent = self.__conf.getProperty("agent")
