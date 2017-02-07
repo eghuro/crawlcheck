@@ -53,6 +53,9 @@ class Core:
                 continue
 
             try:
+                if type(transaction.uri) != str:
+                    transaction.uri = str(transaction.uri)
+
                 self.log.info("Processing " + transaction.uri)
     
                 #test link
