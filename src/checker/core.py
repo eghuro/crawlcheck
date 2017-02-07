@@ -53,22 +53,14 @@ class Core:
                 continue
 
             try:
-                if type(transaction.uri) != str:
-                    transaction.uri = str(transaction.uri)
-
-                try:
-                    self.log.info("Processing " + transaction.uri)
-                except (UnicodeEncodeError, UnicodeDecodeError) as e:
-                    self.log.info("Processing "+transaction.uri.encode('ascii', 'ignore'))
-
+                self.log.info("Processing " + transaction.uri)
+    
                 #test link
                 r = transaction.testLink(self.conf, self.journal) #HEAD, pokud neni zakazan
 
                 if not transaction.isWorthIt(self.conf): #neni zadny plugin, ktery by prijal
-                    try:
-                        self.log.debug(transaction.uri+" not worth my time")
-                    except (UnicodeEncodeError, UnicodeDecodeError) as e:
-                        pass
+                    self.log.debug(transaction.uri+" not worth my time")
+                    
                     self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                     continue
 
@@ -82,10 +74,7 @@ class Core:
 
                 transaction.loadResponse(self.conf, self.journal)
             except TouchException: #nesmim se toho dotykat
-                try:
-                    self.log.debug("Forbidden to touch "+transaction.uri)
-                except (UnicodeEncodeError, UnicodeDecodeError) as e:
-                    pass
+                self.log.debug("Forbidden to touch "+transaction.uri)
                 self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                 continue
             except ConditionError: #URI nebo content-type dle konfigurace
@@ -93,10 +82,7 @@ class Core:
                self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                continue
             except FilterException: #filters
-                try:
-                    self.log.debug(transaction.uri + " filtered out")
-                except (UnicodeEncodeError, UnicodeDecodeError) as e:
-                    pass
+                self.log.debug(transaction.uri + " filtered out")
                 self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                 continue
             except StatusError as e: #already logged

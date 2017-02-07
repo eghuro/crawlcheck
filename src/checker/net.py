@@ -144,7 +144,7 @@ class Network(object):
     def __save_content(content):
 
         with tempfile.NamedTemporaryFile(delete=False) as tmp:
-            tmp.write(content.encode("utf-8"))
+            tmp.write(content)
             name = tmp.name
         return name
 
