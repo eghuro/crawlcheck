@@ -53,9 +53,10 @@ class Core:
                 continue
 
             try:
+                transaction.uri = str(transaction.uri)
 
                 try:
-                    self.log.info("Processing "+transaction.uri)
+                    self.log.info("Processing " + transaction.uri)
                 except (UnicodeEncodeError, UnicodeDecodeError) as e:
                     self.log.info("Processing "+transaction.uri.encode('ascii', 'ignore'))
 
