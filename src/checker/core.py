@@ -53,9 +53,7 @@ class Core:
                 continue
 
             try:
-                if type(transaction.uri) == str:
-                    transaction.uri = str(transaction.uri.encode("utf-8", errors="ignore"))
-                else:
+                if type(transaction.uri) != str:
                     transaction.uri = str(transaction.uri)
 
                 try:
