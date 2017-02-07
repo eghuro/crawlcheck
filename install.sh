@@ -1,13 +1,14 @@
 #!/bin/bash
-virtualenv -p /usr/bin/python3 py3env
-source py3env/bin/activate
-
-pip install -r requirements.txt
 
 rvm install 2.2.2
 rvm use 2.2.2
 gem install bundler
 gem install rails 
+
+virtualenv -p /usr/bin/python3 py3env
+source py3env/bin/activate
+
+pip install -r requirements.txt
 
 python ./patch-cfgs.py $1 #TODO: hardend
 
