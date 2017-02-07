@@ -4,6 +4,7 @@ import urllib.parse
 import os
 import time
 import copy
+import codecs
 from urllib.parse import urlparse, ParseResult
 from pluginDBAPI import DBAPI, VerificationStatus, Table
 from common import PluginType, PluginTypeError
@@ -163,9 +164,9 @@ class Transaction:
             raise
 
     def getContent(self):
-        with open(self.file, 'r') as f:
+        with codecs.open(self.file, 'r', 'utf-8') as f:
             data = f.read()
-            return data.encode('utf-8')
+            return data
 
     def getStripedUri(self):
         pr = urlparse(self.uri)
