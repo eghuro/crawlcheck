@@ -53,7 +53,10 @@ class Core:
                 continue
 
             try:
-                transaction.uri = str(transaction.uri)
+                if type(transaction.uri) == str:
+                    transaction.uri = unicode(transaction.uri, "utf-8", errors="ignore")
+                else:
+                    transaction.uri = unicode(transaction.uri)
 
                 try:
                     self.log.info("Processing " + transaction.uri)
