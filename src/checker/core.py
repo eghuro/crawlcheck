@@ -53,16 +53,14 @@ class Core:
                 continue
 
             try:
-                self.log.info("Processing "+transaction.uri)
+
+                self.log.info("Processing "+transaction.uri.encode('ascii', 'ignore')
 
                 #test link
                 r = transaction.testLink(self.conf, self.journal) #HEAD, pokud neni zakazan
 
                 if not transaction.isWorthIt(self.conf): #neni zadny plugin, ktery by prijal
-                    try:
-                        self.log.debug(transaction.uri+" not worth my time")
-                    except UnicodeDecodeError:
-                        pass
+                    self.log.debug(transaction.uri.encode('ascii', 'ignore')+" not worth my time")
                     self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                     continue
 
@@ -76,7 +74,7 @@ class Core:
 
                 transaction.loadResponse(self.conf, self.journal)
             except TouchException: #nesmim se toho dotykat
-                self.log.debug("Forbidden to touch "+transaction.uri)
+                self.log.debug("Forbidden to touch "+transaction.uri.encode('ascii', 'ignore')
                 self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                 continue
             except ConditionError: #URI nebo content-type dle konfigurace
@@ -84,7 +82,7 @@ class Core:
                self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                continue
             except FilterException: #filters
-                self.log.debug(transaction.uri + " filtered out")
+                self.log.debug(transaction.uri.encode('ascii', 'ignore') + " filtered out")
                 self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                 continue
             except StatusError as e: #already logged
