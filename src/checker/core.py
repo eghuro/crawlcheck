@@ -54,13 +54,19 @@ class Core:
 
             try:
 
-                self.log.info("Processing "+transaction.uri.encode('ascii', 'ignore'))
+                try:
+                    self.log.info("Processing "+transaction.uri)
+                except UnicodeDecodeError:
+                    self.log.info("Processing "+transaction.uri.encode('ascii', 'ignore')
 
                 #test link
                 r = transaction.testLink(self.conf, self.journal) #HEAD, pokud neni zakazan
 
                 if not transaction.isWorthIt(self.conf): #neni zadny plugin, ktery by prijal
-                    self.log.debug(transaction.uri.encode('ascii', 'ignore')+" not worth my time")
+                    try:
+                        self.log.debug(transaction.uri+" not worth my time")
+                    except UnicodeDecodeError:
+                        pass
                     self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                     continue
 
@@ -74,7 +80,10 @@ class Core:
 
                 transaction.loadResponse(self.conf, self.journal)
             except TouchException: #nesmim se toho dotykat
-                self.log.debug("Forbidden to touch "+transaction.uri.encode('ascii', 'ignore'))
+                try:
+                    self.log.debug("Forbidden to touch "+transaction.uri)
+                except UnicodeDecodeError:
+                    pass
                 self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                 continue
             except ConditionError: #URI nebo content-type dle konfigurace
@@ -82,7 +91,10 @@ class Core:
                self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                continue
             except FilterException: #filters
-                self.log.debug(transaction.uri.encode('ascii', 'ignore') + " filtered out")
+                try:
+                    self.log.debug(transaction.uri + " filtered out")
+                except UnicodeDecodeError:
+                    pass
                 self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                 continue
             except StatusError as e: #already logged
