@@ -19,7 +19,7 @@ class Form_Checker(IPlugin):
         self.queue = queue
 
     def check(self, transaction):
-        soup = BeautifulSoup(transaction.getContent(), 'html.parser')
+        soup = BeautifulSoup(transaction.getContent().encode('utf-8'), 'html.parser')
         forms = soup.find_all('form')
         for form in forms:
             self.check_form(form, transactionId)
