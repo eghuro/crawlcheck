@@ -74,7 +74,7 @@ class Core:
 
                 transaction.loadResponse(self.conf, self.journal)
             except TouchException: #nesmim se toho dotykat
-                self.log.debug("Forbidden to touch "+transaction.uri.encode('ascii', 'ignore')
+                self.log.debug("Forbidden to touch "+transaction.uri.encode('ascii', 'ignore'))
                 self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                 continue
             except ConditionError: #URI nebo content-type dle konfigurace
