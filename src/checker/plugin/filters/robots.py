@@ -32,7 +32,7 @@ class RobotsFilter(IPlugin):
     def filter(self, transaction):
 
         #grab sitemaps
-        maps = self.__robots.sitemaps(transaction.uri)
+        maps = self.__robots.sitemaps #(transaction.uri)
         for new_map in self.__known_maps - set(maps):
             self.__log.debug("Discovered sitemap: "+new_map)
             self.__queue.push_link(new_map, None)
