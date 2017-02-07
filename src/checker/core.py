@@ -56,7 +56,7 @@ class Core:
 
                 try:
                     self.log.info("Processing "+transaction.uri)
-                except UnicodeEncodeError, UnicodeDecodeError:
+                except (UnicodeEncodeError, UnicodeDecodeError):
                     self.log.info("Processing "+transaction.uri.encode('ascii', 'ignore'))
 
                 #test link
@@ -65,7 +65,7 @@ class Core:
                 if not transaction.isWorthIt(self.conf): #neni zadny plugin, ktery by prijal
                     try:
                         self.log.debug(transaction.uri+" not worth my time")
-                    except UnicodeEncodeError, UnicodeDecodeError:
+                    except (UnicodeEncodeError, UnicodeDecodeError):
                         pass
                     self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                     continue
@@ -82,7 +82,7 @@ class Core:
             except TouchException: #nesmim se toho dotykat
                 try:
                     self.log.debug("Forbidden to touch "+transaction.uri)
-                except UnicodeEncodeError, UnicodeDecodeError:
+                except (UnicodeEncodeError, UnicodeDecodeError):
                     pass
                 self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                 continue
@@ -93,7 +93,7 @@ class Core:
             except FilterException: #filters
                 try:
                     self.log.debug(transaction.uri + " filtered out")
-                except UnicodeEncodeError, UnicodeDecodeError:
+                except (UnicodeEncodeError, UnicodeDecodeError):
                     pass
                 self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                 continue
