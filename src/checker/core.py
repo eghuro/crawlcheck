@@ -271,6 +271,7 @@ class TransactionQueue:
     def pop(self):
         try:
             t = self.__q.get(block=True, timeout=1)
+            #t.uri.decode('utf-8')
         except queue.Empty:
             raise
         else:
