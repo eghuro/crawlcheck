@@ -165,7 +165,7 @@ class Transaction:
     def getContent(self):
         with open(self.file, 'r') as f:
             data = f.read()
-            return data
+            return data.encode('utf-8')
 
     def getStripedUri(self):
         pr = urlparse(self.uri)
