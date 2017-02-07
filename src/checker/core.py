@@ -138,7 +138,7 @@ class Transaction:
 
     def __init__(self, uri, depth, srcId, idno, method="GET", data=None):
         #Use the factory method below!!
-        self.uri = uri
+        self.uri = uri.encode('utf-8')
         self.depth = depth
         self.type = None
         self.file = None
