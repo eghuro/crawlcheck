@@ -36,7 +36,6 @@ class RegexAcceptor(object):
 
 
     def canTouch(self, value):
-        log = logging.getLogger(__name__)
         for plugin in self.regexes.keys():
             for p in self.regexes[plugin]:
                 if p.match(value) != None:
