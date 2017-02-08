@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
 import os
@@ -42,8 +42,8 @@ class TransactionTest(unittest.TestCase):
         sa.setDefaultAcceptValue('raboof', False)
         try:
             t = core.createTransaction('foobar')
-            conf = Configuration(None, Acceptor(True), ua, sa, None, None, None, None)
-            t.loadResponse(conf, None, [])
+            conf = Configuration(None, Acceptor(True), ua, sa, None, None, None, None, None, None, None)
+            t.loadResponse(conf, None)
         except TouchException:#TODO: expected exception
             return
         self.assertFalse(True)

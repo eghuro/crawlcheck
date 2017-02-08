@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+
 import unittest
 import sqlite3 as mdb
 from pluginDBAPI import DBAPI

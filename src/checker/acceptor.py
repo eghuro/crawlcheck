@@ -14,8 +14,9 @@ configuration. Global configuration is similar to a plugin-local configuration,
 there are URI and content type specific rules and a default fallback. The only
 exception is that the default fallback must be set.
 """
-from enum import Enum
+
 import marisa_trie
+from enum import Enum
 
 
 class Resolution(Enum):
