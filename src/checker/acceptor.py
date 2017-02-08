@@ -16,6 +16,7 @@ exception is that the default fallback must be set.
 """
 
 import marisa_trie
+import re
 from enum import Enum
 
 
@@ -27,6 +28,43 @@ class Resolution(Enum):
     yes = 1
     no = 2
     none = 3
+
+
+class RegexAcceptor(object):
+    def __init__(self):
+        self.regexes = dict()
+
+
+    def canTouch(self, value):
+        log = logging.getLogger(__name__)
+        for plugin in self.regexes.keys():
+            for p in self.regexes[plugin]:
+                if p.match(value) != None:
+                    return True
+        return False
+
+
+    def mightAccept(self, value):
+        return self.canTouch(value)
+
+
+    def accept(self, value, plugin):
+        if plugin in self.regexes.keys():
+            for p in self.regexes[plugin]:
+                if p.match(value) != None:
+                    return True
+        return False
+
+
+    def setRegex(self, value, plugin):
+        p = re.compile(value)
+
+        if plugin in self.regexes.keys():
+            self.regexes[plugin].append(p)
+        else:
+            self.regexes[plugin] = [p]
+
+
 
 
 class Acceptor(object):

@@ -42,7 +42,7 @@ class Core:
             self.log.debug("Pushing to queue: "+entryPoint.url+", data: "+str(entryPoint.data))
             self.queue.push(createTransaction(entryPoint.url, 0, -1, entryPoint.method, entryPoint.data))
 
-        self.rack = Rack(self.conf.uri_acceptor, self.conf.type_acceptor, self.conf.suffix_acceptor, plugins)
+        self.rack = Rack(self.conf.uri_acceptor, self.conf.type_acceptor, self.conf.suffix_acceptor, self.conf.regex_acceptor, plugins)
 
     def run(self):
         #Queue
@@ -154,7 +154,7 @@ class Transaction:
         self.cookies = None
 
     def testLink(self, conf, journal):
-        if conf.uri_acceptor.canTouch(self.uri) or conf.suffix_acceptor.canTouch(self.getStripedUri()[::-1]):
+        if conf.uri_acceptor.canTouch(self.uri) or conf.suffix_acceptor.canTouch(self.getStripedUri()[::-1]) or conf.regex_acceptor.canTouch(self.uri):
             self.type, r = Network.check_link(self, journal, conf)
             return r
         else:
@@ -201,7 +201,10 @@ class Transaction:
         return self.__set2list(acceptedTypes)
 
     def isWorthIt(self, conf):
-        return conf.uri_acceptor.mightAccept(self.uri) or conf.suffix_acceptor.mightAccept(self.getStripedUri()[::-1])
+        ua = conf.uri_acceptor.mightAccept(self.uri)
+        sa = conf.suffix_acceptor.mightAccept(self.getStripedUri()[::-1])
+        ra = conf.regex_acceptor.mightAccept(self.uri)
+        return ua or sa or ra
 
     @staticmethod
     def __set2list(x):
@@ -222,12 +225,13 @@ def createTransaction(uri, depth = 0, parentId = -1, method = 'GET', params=dict
 
 class Rack:
 
-    def __init__(self, uriAcceptor, typeAcceptor, suffixAcceptor, plugins = []):
+    def __init__(self, uriAcceptor, typeAcceptor, suffixAcceptor, regexAcceptor, plugins = []):
 
         self.plugins = plugins
         self.prefixAcceptor = uriAcceptor
         self.typeAcceptor = typeAcceptor
         self.suffixAcceptor = suffixAcceptor
+        self.regexAcceptor = regexAcceptor
         self.log = logging.getLogger(__name__)
 
     def run(self, transaction):
@@ -248,7 +252,8 @@ class Rack:
         type_cond = self.typeAcceptor.accept(str(transaction.type), plugin.id)
         prefix_cond = self.prefixAcceptor.accept(transaction.uri, plugin.id)
         suffix_cond = self.suffixAcceptor.accept(rot, plugin.id)
-        return type_cond and ( prefix_cond or suffix_cond )
+        regex_cond = self.regexAcceptor.accept(transaction.uri, plugin.id)
+        return type_cond and ( prefix_cond or suffix_cond or regex_cond )
 
     def stop(self):
         pass
@@ -366,9 +371,11 @@ class Journal:
         self.__db = db
        
     def startChecking(self, transaction):
+        logging.getLogger(__name__).debug("Starting checking " + transaction.uri)
         self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatusId = ?, uri = ?, contentType = ?, responseStatus = ? WHERE id = ?', [str(Journal.status_ids["verifying"]), transaction.uri, transaction.type, transaction.status, transaction.idno]) )
 
     def stopChecking(self, transaction, status):
+        logging.getLogger(__name__).debug("Stopped checking " + transaction.uri)
         self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatusId = ? WHERE id = ?', [str(status), transaction.idno]) )
 
     def foundDefect(self, transaction, defect, evidence, severity=0.5):

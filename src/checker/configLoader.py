@@ -3,7 +3,7 @@
 """
 import yaml
 from pluginDBAPI import DBAPIconfiguration
-from acceptor import Acceptor
+from acceptor import Acceptor, RegexAcceptor
 import logging
 
 class ConfigurationError(Exception):
@@ -30,6 +30,7 @@ class ConfigLoader(object):
         self.__dbconf = DBAPIconfiguration()
         self.typeAcceptor = None
         self.uriAcceptor = None
+        self.uriRegexAcceptor = None
         self.entryPoints = []
         self.filters = []
         self.loaded = False
@@ -51,13 +52,16 @@ class ConfigLoader(object):
         """Loads configuration from YAML file.
         """
         cfile = open(fname)
-        root = yaml.safe_load(cfile)
+        try:
+            root = yaml.safe_load(cfile)
 
-        db_check = ConfigLoader.__db_check(root)
-        version_check = ConfigLoader.__version_check(root)
-        if db_check and version_check:
-            self.loaded = self.__set_up(root)
-        
+            db_check = ConfigLoader.__db_check(root)
+            version_check = ConfigLoader.__version_check(root)
+            if db_check and version_check:
+                self.loaded = self.__set_up(root)
+        except yaml.scanner.ScannerError as e:
+            self.__log.error("Configuration file error: " + e)
+
         cfile.close()
 
     @staticmethod
@@ -126,7 +130,8 @@ class ConfigLoader(object):
 
     def __set_cookies(self, root, u, us):
         #Go through urls again, grab cookie friendly prefixes
-        for url in root[us]:
+        if us in root:
+          for url in root[us]:
             if ('cookie' in url) and (u in url):
                 # can be cookie: True/False parameter or structure
                 if type(url['cookie']) is not bool:
@@ -172,6 +177,7 @@ class ConfigLoader(object):
             suffixUriPlugins = ConfigLoader.reverse_dict_keys(suffixUriPlugins)
             self.uriMap = self.create_uri_plugin_map(uriPlugins, pluginTypes, self.uriAcceptor)
             self.suffixMap = self.create_uri_plugin_map(suffixUriPlugins, pluginTypes, self.suffixAcceptor)
+            self.uriRegexAcceptor = self.__create_uri_regex_acceptor(root)
         except ConfigurationError as e:
             self.__log.error(e.msg)
             return False
@@ -209,6 +215,20 @@ class ConfigLoader(object):
             else:
                 self.__log.info("Forbidden: "+tag[tag_string])
                 acceptor.setDefaultAcceptValue(tag[tag_string], False)
+
+    def __create_uri_regex_acceptor(self, root):
+       acceptor = RegexAcceptor()
+       if 'regexes' in root:
+           regexes = root['regexes']
+           if regexes:
+               for regex in regexes:
+                   if 'regex' not in regex:
+                       raise ConfigurationError("Regex not specified")
+                   if 'plugins' in regex:
+                       for plugin in regex['plugins']:
+                           acceptor.setRegex(regex['regex'], plugin)
+       return acceptor
+
 
     @staticmethod
     def __set_plugin_accept_tag_value(tag, tag_string, acceptor, record, drocer):
@@ -248,7 +268,7 @@ class ConfigLoader(object):
 
     def get_configuration(self):
         if self.loaded:
-            return Configuration(self.__dbconf, self.typeAcceptor, self.uriAcceptor, self.suffixAcceptor, self.entryPoints, self.uriMap, self.suffixUriMap, self.properties, self.payloads, self.cookieFriendlyPrefixes, self.customCookies)
+            return Configuration(self.__dbconf, self.typeAcceptor, self.uriAcceptor, self.suffixAcceptor, self.uriRegexAcceptor, self.entryPoints, self.uriMap, self.suffixUriMap, self.properties, self.payloads, self.cookieFriendlyPrefixes, self.customCookies)
         else:
             return None
 
@@ -267,11 +287,12 @@ class ConfigLoader(object):
         return revdict
 
 class Configuration(object):
-    def __init__(self, db, ta, ua, sa, ep, um, su, properties, pl, cfp, cc):
+    def __init__(self, db, ta, ua, sa, ra, ep, um, su, properties, pl, cfp, cc):
         self.dbconf = db
         self.type_acceptor = ta
         self.uri_acceptor = ua
         self.suffix_acceptor = sa
+        self.regex_acceptor = ra
         self.entry_points = ep
         self.uri_map = um
         self.suffix_uri_map = su
