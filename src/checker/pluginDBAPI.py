@@ -85,7 +85,7 @@ class DBAPI(object):
     def __init__(self, conf):
         self.con = Connector(conf)
         self.findingId = -1
-        self.tables = [Table.defect_types, Table.transactions, Table.finding, Table.link_defect]
+        self.tables = [Table.defect_types, Table.transactions, Table.finding]
         self.logs = dict()
         for table in self.tables:
             self.logs[table] = []
@@ -100,25 +100,43 @@ class DBAPI(object):
             raise TableError()
 
     def log_link(self, parent_id, uri, new_id):
-       self.findingId = self.findingId + 1
-       self.log(Table.finding, ('INSERT INTO finding (id, responseId) VALUES (?, ?)', [str(self.findingId), str(parent_id)]) )
-       self.log(Table.link_defect, ('INSERT INTO link (findingId, toUri, requestId) VALUES (?, ?, ?)', [str(self.findingId), uri, str(new_id)]) )
+        self.findingId = self.findingId + 1
+        self.log(Table.finding,
+                ("INSERT INTO finding (id, responseId, findingType, " +
+                 "link_toUri, link_requestId, link_processed) VALUES (?,?,?,?,?,?)",
+                 [str(self.findingId), str(parent_id), "L", uri, str(new_id), "false"]
+                )
+               )
 
     def log_defect(self, transactionId, name, additional, evidence, severity = 0.5):
-        self.findingId = self.findingId + 1
-        self.log(Table.finding, ('INSERT INTO finding (id, responseId) VALUES (?, ?)', [str(self.findingId), str(transactionId)]))
         if name not in self.defect_types:
             self.defectId = self.defectId + 1
-            self.log(Table.defect_types, ('INSERT INTO defectType (id, type, description) VALUES (?, ?, ?)', [str(self.defectId), str(name), str(additional)]))
+            self.log(Table.defect_types,
+                     ("INSERT INTO defectType (id, type, description) " +
+                      "VALUES (?, ?, ?)",
+                      [str(self.defectId), str(name), str(additional)]
+                     )
+                    )
             self.defect_types.append(name)
             self.defectTypesWithId[name] = self.defectId
+
+        self.findingId = self.findingId + 1
         defId = self.defectTypesWithId[name]
-        self.log(Table.link_defect, ('INSERT INTO defect (findingId, type, evidence, severity) VALUES (?, ?, ?, ?)', [str(self.findingId), str(defId), str(evidence), str(severity)]))
+        self.log(Table.finding,
+                 ("INSERT INTO finding (id, responseId, findingType, " +
+                  "defect_type, defect_evidence, defect_severity) " +
+                  "VALUES (?, ?, ?, ?, ?, ?)",
+                  [str(self.findingId), str(transactionId), "D", str(defId),
+                   str(evidence), str(severity)]
+                 )
+                )
 
     def log_cookie(self, transactionId, name, value):
         self.findingId = self.findingId + 1
-        self.log(Table.finding, ('INSERT INTO finding (id, responseId) VALUES (?,?)', [str(self.findingId), str(transactionId)]))
-        self.log(Table.link_defect, ('INSERT INTO cookies (findingId, name, value) VALUES (?, ?, ?)', [str(self.findingId), str(name), str(value)]))
+        self.log(Table.finding,
+                 ("INSERT INTO finding (id, responseId, findingType, cookie_name, " +
+                  "cookie_value) VALUES (?,?,?,?,?)",
+                  [str(self.findingId), str(transactionId), 'C', str(name), str(value)]))
         
     def sync(self):
         try:
@@ -132,8 +150,7 @@ class DBAPI(object):
 
             for table in self.tables:
                 self.__sync_table(cursor, table)
-
-            self.con.commit()
+                self.con.commit()
 
         except mdb.Error as e:
             self.error(e)
@@ -177,7 +194,7 @@ class DBAPI(object):
                 self.findingId = row[0]
 
     def get_requested_transactions(self):
-        q = 'CREATE TEMPORARY VIEW linkedUris AS SELECT link.toUri, transactions.id FROM link INNER JOIN finding ON link.findingId = finding.id INNER JOIN transactions ON finding.responseId = transactions.id'
+        q = 'CREATE TEMPORARY VIEW linkedUris AS SELECT finding.link_toUri as toUri, transactions.id FROM finding INNER JOIN transactions ON finding.responseId = transactions.id'
         query = ('SELECT linkedUris.toUri AS uri, transactions.depth AS depth, linkedUris.id AS srcId, transactions.id AS idno'
                  ' FROM transactions LEFT JOIN linkedUris ON transactions.uri = linkedUris.toUri WHERE transactions.verificationStatusId = ?')
 

@@ -285,7 +285,7 @@ class TransactionQueue:
             raise
         else:
             self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatusId = ? WHERE id = ?', [str(TransactionQueue.status_ids["processing"]), t.idno]) )
-            self.__db.log(Table.link_defect, ('UPDATE link SET processed = ? WHERE toUri = ?', [str("true"), str(t.uri)] ))
+            self.__db.log(Table.finding, ('UPDATE finding SET link_processed = ? WHERE link_toUri = ?', [str("true"), str(t.uri)] ))
             return t
 
     def push(self, transaction, parent=None):

@@ -26,51 +26,36 @@ CREATE TABLE IF NOT EXISTS transactions (
     ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS finding (
-  id INTEGER PRIMARY KEY NOT NULL,
-  responseId INT UNSIGNED NOT NULL,
-  FOREIGN KEY(responseId)
-    REFERENCES transactions(id)
-    ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS link (
-  findingId INTEGER PRIMARY KEY NOT NULL,
-  toUri VARCHAR(255) NOT NULL,
-  processed BOOLEAN NOT NULL DEFAULT false,
-  requestId INT UNSIGNED,
-  FOREIGN KEY (findingId)
-    REFERENCES finding(id)
-    ON DELETE CASCADE,
-  FOREIGN KEY (requestId)
-    REFERENCES transactions(id)
-    ON DELETE CASCADE
-);
-
 CREATE TABLE IF NOT EXISTS defectType (
   id INTEGER PRIMARY KEY NOT NULL,
   type VARCHAR(255) NOT NULL,
   description TEXT
 );
 
-CREATE TABLE IF NOT EXISTS defect (
-  findingId INTEGER PRIMARY KEY NOT NULL,
-  type INT UNSIGNED NOT NULL,
-  evidence TEXT NOT NULL,
-  severity REAL NOT NULL DEFAULT 0.5, 
-  FOREIGN KEY (findingId)
-    REFERENCES finding(id)
-    ON DELETE CASCADE,
-  FOREIGN KEY (type)
-    REFERENCES defectType(id)
-    ON DELETE CASCADE
-);
+CREATE TABLE IF NOT EXISTS finding (
+  id INTEGER PRIMARY KEY NOT NULL,
+  responseId INT UNSIGNED NOT NULL,
+  findingType VARCHAR(1) NOT NULL,
 
-CREATE TABLE IF NOT EXISTS cookies (
-  findingId INTEGER PRIMARY KEY NOT NULL,
-  name VARCHAR(255) NOT NULL,
-  value VARCHAR(255) NOT NULL,
-  FOREIGN KEY (findingId)
-    REFERENCES finding(id)
+  link_toUri INTEGER NULL,
+  link_processed BOOLEAN NULL DEFAULT false,
+  link_requestId INT UNSIGNED,
+
+  defect_type INT UNSIGNED NULL,
+  defect_evidence TEXT NULL,
+  defect_severity REAL NULL DEFAULT 0.5,
+
+  cookie_name VARCHAR(255) NULL,
+  cookie_value VARCHAR(255) NULL,
+
+  FOREIGN KEY(responseId)
+    REFERENCES transactions(id)
+    ON DELETE CASCADE,
+
+  FOREIGN KEY (link_requestId)
+    REFERENCES transactions(id)
+    ON DELETE CASCADE,
+  FOREIGN KEY (defect_type)
+    REFERENCES decectType(id)
     ON DELETE CASCADE
 );
