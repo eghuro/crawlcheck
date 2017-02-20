@@ -215,6 +215,7 @@ class Transaction:
 
 transactionId = 0
 def createTransaction(uri, depth = 0, parentId = -1, method = 'GET', params=dict()):
+    log = logging.getLogger()
     assert (type(params) is dict) or (params is None)
     global transactionId
     decoded = str(urllib.parse.unquote(urllib.parse.unquote(uri)))
@@ -328,7 +329,8 @@ class TransactionQueue:
             self.__q.put(transaction)
             self.__db.log(Table.transactions,
                           ('INSERT INTO transactions (id, method, uri, origin, verificationStatusId, depth) VALUES (?, ?, ?, \'CHECKER\', ?, ?)', 
-                          [str(transaction.idno), transaction.method, transaction.uri, str(TransactionQueue.status_ids["requested"]), str(transaction.depth)]) )
+                          [transaction.idno, transaction.method, transaction.uri, TransactionQueue.status_ids["requested"], transaction.depth]) )
+            self.__db.sync()
         #TODO: co kdyz jsme pristupovali s jinymi parametry?
 
     def __bake_cookies(self, transaction, parent):
@@ -372,11 +374,13 @@ class Journal:
        
     def startChecking(self, transaction):
         logging.getLogger(__name__).debug("Starting checking " + transaction.uri)
-        self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatusId = ?, uri = ?, contentType = ?, responseStatus = ? WHERE id = ?', [str(Journal.status_ids["verifying"]), transaction.uri, transaction.type, transaction.status, transaction.idno]) )
+        self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatusId = ?, uri = ?, contentType = ?, responseStatus = ? WHERE id = ?', [Journal.status_ids["verifying"], transaction.uri, transaction.type, transaction.status, transaction.idno]) )
+        self.__db.sync()
 
     def stopChecking(self, transaction, status):
         logging.getLogger(__name__).debug("Stopped checking " + transaction.uri)
-        self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatusId = ? WHERE id = ?', [str(status), transaction.idno]) )
+        self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatusId = ? WHERE id = ?', [status.value, transaction.idno]) )
+        self.__db.sync()
 
     def foundDefect(self, transaction, defect, evidence, severity=0.5):
         self.foundDefect(transaction.idno, defect.name, defect.additional, evidence, severity)
