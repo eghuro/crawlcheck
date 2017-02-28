@@ -301,8 +301,8 @@ class Configuration(object):
         self.cookies = cfp #cookie friendly prefixes -> eg. on these prefixes we send cookies back
         self.custom_cookies = cc
 
-    def getProperty(self, key):
+    def getProperty(self, key, default=None):
         if key in self.properties:
             return self.properties[key]
         else:
-            return None
+            return default
