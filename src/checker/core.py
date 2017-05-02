@@ -5,6 +5,8 @@ import os
 import time
 import copy
 import codecs
+import requests
+import yaml
 from urllib.parse import urlparse, ParseResult
 from pluginDBAPI import DBAPI, VerificationStatus, Table
 from common import PluginType, PluginTypeError
@@ -106,10 +108,15 @@ class Core:
         #self.rack.stop()
         self.log.debug("Finalizing")
         try:
+            #write to database
             self.db.sync()
         except:
             pass
         finally:
+            # write to report
+            self.populate_report()
+
+            #clean tmp files
             self.clean_tmps()
 
     def clean_tmps(self):
@@ -118,6 +125,19 @@ class Core:
                 os.remove(filename)
             except OSError:
                 continue
+
+    def populate_report(self):
+        self.log.info("Preparing report")
+        #DELETE request on /data
+        if self.conf.getProperty('cleanreport'):
+            url = self.conf.getProperty('report') + '/data'
+            requests.delete(url)
+
+        #prepare YAML payload
+        payload = self.db.create_report_payload()
+
+        #POST request on /data
+        requests.post(url, data={'payload' : yaml.dump(payload)})
 
     def __initializePlugin(self, plugin):
         plugin.setJournal(self.journal)

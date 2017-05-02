@@ -209,3 +209,59 @@ class DBAPI(object):
         c = self.con.get_cursor()
         c.execute(q)
         return c.fetchall()
+
+    def create_report_payload(self):
+        payload = dict()
+
+        payload['transactions'] = []
+        q = ('SELECT id, method, responseStatus, contentType, '
+             'verificationStatusId, depth, uri FROM transactions')
+        c = self.con.get_cursor()
+        c.execute(q)
+        for row in c.fetchall(): #type(row): tuple
+            transaction = dict()
+            transaction['id'] = row[0]
+            transaction['method'] = row[1]
+            transaction['responseStatus'] = row[2]
+            transaction['contentType'] = row[3]
+            transaction['verificationStatusId'] = row[4]
+            transaction['depth'] = row[5]
+            transaction['uri'] = row[6]
+            payload['transactions'].append(transaction)
+
+        payload['link'] = []
+        q = ('SELECT link.findingId, transactions.uri, link.toUri, '
+             'link.processed, link.requestId, finding.responseId FROM '
+             'link INNER JOIN finding ON link.findingId = finding.id '
+             'INNER JOIN transactions ON finding.responseId = transactions.id')
+        c.execute(q)
+        for row in c.fetchall():
+            link = dict()
+            link['findingId'] = row[0]
+            link['fromUri'] = row[1]
+            link['toUri'] = row[2]
+            link['processed'] = row[3]
+            link['requestId'] = row[4]
+            link['responseId'] = row[5]
+            payload['link'].append(link)
+
+        payload['defect'] = []
+        q = ('SELECT defect.findingId, defectType.type, '
+             'defectType.description, defect.evidence, defect.severity, '
+             'finding.responseId, transactions.uri FROM defect '
+             'INNER JOIN defectType ON defect.type = defectType.id '
+             'INNER JOIN finding on defect.findingId = finding.id '
+             'INNER JOIN transactions ON finding.responseId = transactions.id')
+        c.execute(q)
+        for row in c.fetchall():
+            defect = dict()
+            defect['findingId'] = row[0]
+            defect['type'] = row[1]
+            defect['description'] = row[2]
+            defect['evidence'] = row[3]
+            defect['severity'] = row[4]
+            defect['responseId'] = row[5]
+            defect['uri'] = row[6]
+            payload['defect'].append(defect)
+
+        return payload

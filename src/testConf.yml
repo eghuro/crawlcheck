@@ -6,6 +6,7 @@ maxDepth: 10
 maxContentLength: 2000000
 agent: "Googlebot/2.1"
 logfile: cc.log
+report: "http://localhost:5000"
     
 content-types:
  - 
