@@ -13,6 +13,8 @@ import signal
 import sys
 import signal
 import os
+import os.path
+import sqlite3
 
 
 def handler(signum, frame):
@@ -93,6 +95,35 @@ def main():
         conf = cl.get_configuration()
 
         configure_logger(conf)
+
+        #if database file exists and user wanted to clean it, remove it
+        cleaned = False
+
+        if os.path.isfile(conf.dbconf.getDbname()) and conf.getProperty('cleandb'):
+            log.info("Removing database file " + conf.dbconf.getDbname() + " as configured")
+            os.remove(conf.dbconf.getDbname())
+            cleaned = True
+        #if database file doesn't exist, create & initialize it - or warn use
+        if not os.path.isfile(conf.dbconf.getDbname()):
+            if not cleaned:
+                log.warn("Database file " + conf.dbconf.getDbname() + " doesn't exist")
+            if conf.getProperty('initdb') or cleaned:
+                log.info('Initializing database file ' + conf.dbconf.getDbname())
+                try:
+                    with open('checker/mysql_tables.sql', 'r') as tables, open('checker/sql_values.sql', 'r') as values, sqlite3.connect(conf.dbconf.getDbname()) as conn:
+                        qry0 = tables.read().split(';')
+                        qry1 = values.read().split(';')
+                        c = conn.cursor()
+                        for q in qry0:
+                            c.execute(q)
+                        for q in qry1:
+                            c.execute(q)
+                        conn.commit()
+                        c.close()
+                        log.info("Successfully initialized database: " + conf.dbconf.getDbname())
+                except:
+                    log.error("Failed to initialize database")
+                    raise
         
         plugins, headers, filters = load_plugins(cl, log, conf)
 
