@@ -232,13 +232,19 @@ class DBAPI(object):
                 transaction['parentId'] = transaction['id']
             payload['transactions'].append(transaction)
 
-        for t in payload['transactions']:
-            if t['depth'] > 0:
-                q = ('SELECT finding.responseId FROM link '
-                     'INNER JOIN finding ON link.findingId = finding.id '
-                     'WHERE link.requestId = ? AND link.processed = "true"')
-                c.execute(q, [t['id']])
-                t['parentId'] = c.fetchone()[0]
+        try:
+            for t in payload['transactions']:
+                if t['depth'] > 0:
+                    q = ('SELECT finding.responseId FROM link '
+                         'INNER JOIN finding ON link.findingId = finding.id '
+                         'WHERE link.requestId = ? '
+                         'AND link.processed = "true"')
+                    c.execute(q, [t['id']])
+                    t['parentId'] = c.fetchone()[0]
+        except TypeError:
+            #'NoneType' object is not subscriptable for c.fetchone()[0]
+            #means error in computation
+            return None
 
         payload['link'] = []
         q = ('SELECT link.findingId, transactions.uri, link.toUri, '

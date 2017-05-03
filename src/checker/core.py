@@ -132,13 +132,16 @@ class Core:
         #prepare YAML payload
         payload = self.db.create_report_payload()
 
-        #DELETE request on /data
-        if self.conf.getProperty('cleanreport'):
-            url = self.conf.getProperty('report') + '/data'
-            requests.delete(url)
+        if payload is not None:
+            #DELETE request on /data
+            if self.conf.getProperty('cleanreport'):
+                url = self.conf.getProperty('report') + '/data'
+                requests.delete(url)
 
-        #POST request on /data
-        requests.post(url, data={'payload' : yaml.dump(payload)})
+            #POST request on /data
+            requests.post(url, data={'payload' : yaml.dump(payload)})
+        else:
+            self.log.error("Reporting failed")
 
     def __initializePlugin(self, plugin):
         plugin.setJournal(self.journal)
