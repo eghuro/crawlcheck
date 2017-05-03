@@ -1,0 +1,8 @@
+[Core]
+Name = Canonical URL header detection
+Module = canonical
+
+[Documentation]
+Author = Alexandr Mansurov
+Version = 0.0
+Description = Check link header to detect canonical URL
