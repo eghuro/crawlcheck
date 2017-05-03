@@ -41,7 +41,7 @@ class Network(object):
             log.debug("Accept header: "+acc_header)
             r = Network.__conditional_fetch(linkedTransaction, acc_header, conf, session)
             Network.__store_cookies(linkedTransaction, r.cookies, journal)
-            name = Network.__save_content(r.text)
+            name = Network.__save_content(r.text, conf.getProperty("tmpPrefix"), conf.getProperty("tmpSuffix"))
             match, mime = Network.__test_content_type(linkedTransaction.type, name)
             if not match:
                 journal.foundDefect(linkedTransaction.idno, "type-mishmash", "Declared content-type doesn't match detected one", "Declared "+linkedTransaction.type+", detected "+mime, 0.5)
@@ -145,7 +145,7 @@ class Network(object):
 
                 if transaction.uri != r.url:
                     logging.getLogger(__name__).debug("Redirection: "+transaction.uri+" -> "+r.url)
-                    transaction.uri = r.url
+                    transaction.changePrimaryUri(r.url)
 
                 return r
             return None 
@@ -159,9 +159,9 @@ class Network(object):
         return param
 
     @staticmethod
-    def __save_content(content):
+    def __save_content(content, prefix=None, suffix=None):
 
-        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+        with tempfile.NamedTemporaryFile(delete=False, prefix=prefix, suffix=suffix) as tmp:
             tmp.write(content.encode('utf-8'))
             name = tmp.name
         return name
