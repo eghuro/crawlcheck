@@ -23,6 +23,7 @@ class DBAPIconfiguration(object):
         """
 
         self.dbname = ""
+        self.limit = 0
 
     def getDbname(self):
         """ Database name getter.
@@ -38,6 +39,12 @@ class DBAPIconfiguration(object):
         """
 
         self.dbname = dbname
+
+    def getLimit(self):
+        return self.limit
+
+    def setLimit(self, limit):
+        self.limit = limit
 
 class VerificationStatus(Enum):
 
@@ -84,7 +91,7 @@ class DBAPI(object):
     """
     def __init__(self, conf):
         self.con = Connector(conf)
-        self.limit = conf.getProperty("dbCacheLimit")
+        self.limit = conf.getLimit()
         self.findingId = -1
         self.tables = [Table.defect_types, Table.transactions, Table.finding, Table.link_defect]
         self.logs = dict()

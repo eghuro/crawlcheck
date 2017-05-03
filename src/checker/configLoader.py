@@ -291,7 +291,9 @@ class ConfigLoader(object):
 
 class Configuration(object):
     def __init__(self, db, ta, ua, sa, ra, ep, um, su, properties, pl, cfp, cc):
+        self.properties = properties
         self.dbconf = db
+        self.dbconf.setLimit(self.getProperty("dbCacheLimit"))
         self.type_acceptor = ta
         self.uri_acceptor = ua
         self.suffix_acceptor = sa
@@ -299,7 +301,6 @@ class Configuration(object):
         self.entry_points = ep
         self.uri_map = um
         self.suffix_uri_map = su
-        self.properties = properties
         self.payloads = pl
         self.cookies = cfp #cookie friendly prefixes -> eg. on these prefixes we send cookies back
         self.custom_cookies = cc

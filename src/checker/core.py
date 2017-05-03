@@ -105,8 +105,8 @@ class Core:
                 self.journal.startChecking(transaction)
                 self.rack.run(transaction)
                 self.journal.stopChecking(transaction, VerificationStatus.done_ok)
-                while self.volume > conf.getProperty("maxVolume"):
-                    self.log.debug("CLEANUP ... Size of tmps: " + self.volume + ", limit: " + conf.getProperty("maxVolume"))
+                while self.volume > self.conf.getProperty("maxVolume"):
+                    self.log.debug("CLEANUP ... Size of tmps: " + self.volume + ", limit: " + self.conf.getProperty("maxVolume"))
                     f = self.files[0]
                     l = os.path.getsize(f)
                     os.remove(f)
