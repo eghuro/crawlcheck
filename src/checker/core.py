@@ -48,6 +48,10 @@ class Core:
         self.rack = Rack(self.conf.uri_acceptor, self.conf.type_acceptor, self.conf.suffix_acceptor, self.conf.regex_acceptor, plugins)
 
     def run(self):
+        with requests.Session() as session:
+            self.__run(session)
+
+    def __run(self, session):
         #Queue
         while not self.queue.isEmpty():
             try:
@@ -62,7 +66,7 @@ class Core:
                 self.log.info("Processing " + transaction.uri)
     
                 #test link
-                r = transaction.testLink(self.conf, self.journal) #HEAD, pokud neni zakazan
+                r = transaction.testLink(self.conf, self.journal, session) #HEAD, pokud neni zakazan
 
                 if not transaction.isWorthIt(self.conf): #neni zadny plugin, ktery by prijal
                     self.log.debug(transaction.uri+" not worth my time")
@@ -78,7 +82,7 @@ class Core:
                 for hf in self.header_filters:
                    hf.filter(transaction, r)
 
-                transaction.loadResponse(self.conf, self.journal)
+                transaction.loadResponse(self.conf, self.journal, session)
             except TouchException: #nesmim se toho dotykat
                 self.log.debug("Forbidden to touch "+transaction.uri)
                 self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
@@ -187,17 +191,17 @@ class Transaction:
         self.status = None
         self.cookies = None
 
-    def testLink(self, conf, journal):
+    def testLink(self, conf, journal, session):
         if conf.uri_acceptor.canTouch(self.uri) or conf.suffix_acceptor.canTouch(self.getStripedUri()[::-1]) or conf.regex_acceptor.canTouch(self.uri):
-            self.type, r = Network.check_link(self, journal, conf)
+            self.type, r = Network.check_link(self, journal, conf, session)
             return r
         else:
             raise TouchException()
 
-    def loadResponse(self, conf, journal):
+    def loadResponse(self, conf, journal, session):
         try:
             acceptedTypes = self.getAcceptedTypes(conf)
-            self.file = Network.getLink(self, acceptedTypes, conf, journal)
+            self.file = Network.getLink(self, acceptedTypes, conf, journal, session)
         except (NetworkError, ConditionError, StatusError):
             raise
 

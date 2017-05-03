@@ -33,13 +33,13 @@ class Network(object):
     __allowed_schemata = ['http', 'https']
 
     @staticmethod
-    def getLink(linkedTransaction, acceptedTypes, conf, journal):
+    def getLink(linkedTransaction, acceptedTypes, conf, journal, session):
 
         log = logging.getLogger(__name__)
         try:
             acc_header = Network.__create_accept_header(acceptedTypes)
             log.debug("Accept header: "+acc_header)
-            r = Network.__conditional_fetch(linkedTransaction, acc_header, conf)
+            r = Network.__conditional_fetch(linkedTransaction, acc_header, conf, session)
             Network.__store_cookies(linkedTransaction, r.cookies, journal)
             name = Network.__save_content(r.text)
             match, mime = Network.__test_content_type(linkedTransaction.type, name)
@@ -57,7 +57,7 @@ class Network(object):
             raise NetworkError() from e
 
     @staticmethod
-    def check_link(linkedTransaction, journal, conf):
+    def check_link(linkedTransaction, journal, conf, session, verify=False):
 
         log = logging.getLogger(__name__)
         s = urlparse(linkedTransaction.uri).scheme
@@ -65,7 +65,7 @@ class Network(object):
             raise UrlError(s+" is not an allowed schema")
 
         try:
-            r = requests.head(linkedTransaction.uri, headers={ "user-agent": conf.getProperty("agent") }, timeout = conf.getProperty("time")) #TODO: accept
+            r = session.head(linkedTransaction.uri, headers={ "user-agent": conf.getProperty("agent") }, timeout = conf.getProperty("time"), verify=verify) #TODO: accept
         except Timeout as e:
             log.error("Timeout")
             journal.foundDefect(linkedTransaction.srcId, "timeout", "Link timed out", linkedTransaction.uri, 0.9)
@@ -98,7 +98,7 @@ class Network(object):
         return ct, r
     
     @staticmethod
-    def __conditional_fetch(transaction, accept, conf):
+    def __conditional_fetch(transaction, accept, conf, session):
         
         if not transaction.isWorthIt(conf):
             logging.getLogger(__name__).debug("Uri not accepted: "+transaction.uri) 
@@ -108,10 +108,10 @@ class Network(object):
             raise ConditionError
         
         else:
-            return Network.__fetch_response(transaction, conf.getProperty("agent"), accept, conf.getProperty('timeout'))
+            return Network.__fetch_response(transaction, conf.getProperty("agent"), accept, conf.getProperty('timeout'), session, conf.getProperty("verifyHttps"))
 
     @staticmethod
-    def __fetch_response(transaction, agent, accept, time):
+    def __fetch_response(transaction, agent, accept, time, session, verify=False):
 
         r = None
         head = {"user-agent" : agent, "accept" : accept }
@@ -120,9 +120,9 @@ class Network(object):
         log.debug("Data: "+str(transaction.data))
         #if not allowed to send cookies or don't have any, then cookies are None -> should be safe to use them; maybe filter which to use?
         if transaction.method == 'GET':
-            r = requests.get(transaction.uri+Network.__gen_param(transaction), allow_redirects=False, headers = head, timeout = time, cookies = transaction.cookies)
+            r = session.get(transaction.uri+Network.__gen_param(transaction), allow_redirects=False, headers = head, timeout = time, cookies = transaction.cookies, verify=verify)
         elif transaction.method == 'POST':
-            r = requests.post(transaction.uri, allow_redirects=False, headers = head, data = transaction.data, timeout = time, cookies = transaction.cookies)
+            r = session.post(transaction.uri, allow_redirects=False, headers = head, data = transaction.data, timeout = time, cookies = transaction.cookies, verify=verify)
 
         transaction.status = r.status_code
 
