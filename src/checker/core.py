@@ -128,13 +128,14 @@ class Core:
 
     def populate_report(self):
         self.log.info("Preparing report")
+
+        #prepare YAML payload
+        payload = self.db.create_report_payload()
+
         #DELETE request on /data
         if self.conf.getProperty('cleanreport'):
             url = self.conf.getProperty('report') + '/data'
             requests.delete(url)
-
-        #prepare YAML payload
-        payload = self.db.create_report_payload()
 
         #POST request on /data
         requests.post(url, data={'payload' : yaml.dump(payload)})
