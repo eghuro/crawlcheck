@@ -31,11 +31,19 @@ class LinksFinder(IPlugin):
 
         soup = BeautifulSoup(transaction.getContent(), 'html.parser')
 
+        self.updateCanonical(soup, transaction)
+
         self.checkType(soup, ['a', 'link'], 'href', transaction)
         self.checkType(soup, ['img', 'iframe', 'frame'], 'src', transaction)
 
         return
 
+    def updateCanonical(self, soup, transaction):
+       for link in soup.find_all('link'):
+            if ('rel' in link.attrs) and ('href' in link.attrs):
+                if link['rel'] == 'canonical':
+                    transaction.changePrimaryUri(link['href'])
+                    return
 
     def checkType(self, soup, tagL, attr, transaction):
         
