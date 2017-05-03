@@ -6,7 +6,6 @@ import time
 import copy
 import codecs
 import requests
-import yaml
 from urllib.parse import urlparse, ParseResult
 from pluginDBAPI import DBAPI, VerificationStatus, Table
 from common import PluginType, PluginTypeError
@@ -18,7 +17,7 @@ from filter import FilterException
 
 class Core:
 
-    def __init__(self, plugins, filters, headers, conf):           
+    def __init__(self, plugins, filters, headers, postprocess, conf):
         self.plugins = plugins
         self.log = logging.getLogger(__name__)
         self.conf = conf
@@ -30,13 +29,14 @@ class Core:
 
         self.filters = filters
         self.header_filters = headers
+        self.postprocessers = postprocess
 
         self.queue = TransactionQueue(self.db, self.conf)
         self.queue.load()
 
         self.journal = Journal(self.db)
 
-        for plugin in self.plugins+headers+filters:
+        for plugin in self.plugins+headers+filters+postprocess:
             self.__initializePlugin(plugin)
 
         for entryPoint in self.conf.entry_points:
@@ -125,11 +125,12 @@ class Core:
         except:
             pass
         finally:
-            # write to report
-            self.populate_report()
-
             #clean tmp files
             self.clean_tmps()
+
+            #run postprocessing
+            for pp in self.postprocessers:
+                pp.process()
 
     def clean_tmps(self):
         for filename in self.files:
@@ -137,23 +138,6 @@ class Core:
                 os.remove(filename)
             except OSError:
                 continue
-
-    def populate_report(self):
-        self.log.info("Preparing report")
-
-        #prepare YAML payload
-        payload = self.db.create_report_payload()
-
-        if payload is not None:
-            #DELETE request on /data
-            if self.conf.getProperty('cleanreport'):
-                url = self.conf.getProperty('report') + '/data'
-                requests.delete(url)
-
-            #POST request on /data
-            requests.post(url, data={'payload' : yaml.dump(payload)})
-        else:
-            self.log.error("Reporting failed")
 
     def __initializePlugin(self, plugin):
         plugin.setJournal(self.journal)
@@ -165,6 +149,9 @@ class Core:
             plugin.setConf(self.conf)
             if plugin.id == 'robots': #TODO: refactor
                 plugin.setQueue(self.queue)
+        elif plugin.category == PluginType.POSTPROCESS:
+            plugin.setConf(self.conf)
+            plugin.setDb(self.db)
         else:
             raise PluginTypeError
 

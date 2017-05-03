@@ -43,6 +43,7 @@ def load_plugins(cl, log, conf):
     plugins = []
     filters = []
     headers = []
+    postprocess = []
 
     filter_categories = [PluginType.FILTER, PluginType.HEADER]
     plugin_categories = [PluginType.CHECKER, PluginType.CRAWLER]
@@ -75,9 +76,12 @@ def load_plugins(cl, log, conf):
             elif pluginInfo.plugin_object.category in plugin_categories:
                 log.debug("General plugin")
                 plugins.append(pluginInfo.plugin_object)
+            elif pluginInfo.plugin_object.category == PluginType.POSTPROCESS:
+                log.debug("Postprocessor")
+                postprocess.append(pluginInfo.plugin_object)
     else:
         log.info("No plugins found")
-    return plugins, headers, filters
+    return plugins, headers, filters, postprocess
 
 def main():
     """ Load configuration, find plugins, run core.
@@ -126,10 +130,10 @@ def main():
                     log.error("Failed to initialize database")
                     raise
         
-        plugins, headers, filters = load_plugins(cl, log, conf)
+        plugins, headers, filters, pps = load_plugins(cl, log, conf)
 
         log.info("Running checker")
-        core_instance = Core(plugins, filters, headers, cl.get_configuration())
+        core_instance = Core(plugins, filters, headers, pps, cl.get_configuration())
         try:
             core_instance.run()
         except Exception as e:

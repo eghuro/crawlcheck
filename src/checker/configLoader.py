@@ -24,7 +24,7 @@ class ConfigLoader(object):
         retrieved through getters.
     """
 
-    __VERSION = 1.03
+    __VERSION = 1.04
     __METHODS = ['GET', 'POST']
 
     def __init__(self):
@@ -34,6 +34,7 @@ class ConfigLoader(object):
         self.uriRegexAcceptor = None
         self.entryPoints = []
         self.filters = []
+        self.postprocess = []
         self.loaded = False
         self.uriMap = None
         self.suffixUriMap = None
@@ -120,6 +121,11 @@ class ConfigLoader(object):
         if 'filters' in root:
             for f in root['filters']:
                 self.filters.append(f)
+
+    def __set_postprocessors(self, root):
+        if 'postprocess' in root:
+            for pp in root['postprocess']:
+                self.postprocess.append(pp)
 
     def __set_payloads(self, root):
         if 'payload' in root:
@@ -275,7 +281,7 @@ class ConfigLoader(object):
 
     def get_configuration(self):
         if self.loaded:
-            return Configuration(self.__dbconf, self.typeAcceptor, self.uriAcceptor, self.suffixAcceptor, self.uriRegexAcceptor, self.entryPoints, self.uriMap, self.suffixUriMap, self.properties, self.payloads, self.cookieFriendlyPrefixes, self.customCookies)
+            return Configuration(self.__dbconf, self.typeAcceptor, self.uriAcceptor, self.suffixAcceptor, self.uriRegexAcceptor, self.entryPoints, self.uriMap, self.suffixUriMap, self.properties, self.payloads, self.cookieFriendlyPrefixes, self.customCookies, self.postprocess)
         else:
             return None
 
@@ -294,7 +300,7 @@ class ConfigLoader(object):
         return revdict
 
 class Configuration(object):
-    def __init__(self, db, ta, ua, sa, ra, ep, um, su, properties, pl, cfp, cc):
+    def __init__(self, db, ta, ua, sa, ra, ep, um, su, properties, pl, cfp, cc, pp):
         self.properties = properties
         self.dbconf = db
         self.dbconf.setLimit(self.getProperty("dbCacheLimit"))
@@ -308,6 +314,7 @@ class Configuration(object):
         self.payloads = pl
         self.cookies = cfp #cookie friendly prefixes -> eg. on these prefixes we send cookies back
         self.custom_cookies = cc
+        self.postprocess = pp
 
     def getProperty(self, key):
         if key in self.properties:
