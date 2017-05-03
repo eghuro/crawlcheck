@@ -18,20 +18,11 @@ CREATE TABLE IF NOT EXISTS transactions (
   verificationStatusId INTEGER,
   origin VARCHAR(255),
   depth INTEGER NOT NULL,
-  FOREIGN KEY (verificationStatusId) 
-    REFERENCES verificationStatus(id)
-    ON DELETE CASCADE,
-  FOREIGN KEY (method)
-    REFERENCES HTTPmethods(method)
-    ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS finding (
   id INTEGER PRIMARY KEY NOT NULL,
   responseId INT UNSIGNED NOT NULL,
-  FOREIGN KEY(responseId)
-    REFERENCES transactions(id)
-    ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS link (
@@ -39,12 +30,6 @@ CREATE TABLE IF NOT EXISTS link (
   toUri VARCHAR(255) NOT NULL,
   processed BOOLEAN NOT NULL DEFAULT false,
   requestId INT UNSIGNED,
-  FOREIGN KEY (findingId)
-    REFERENCES finding(id)
-    ON DELETE CASCADE,
-  FOREIGN KEY (requestId)
-    REFERENCES transactions(id)
-    ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS defectType (
@@ -58,12 +43,6 @@ CREATE TABLE IF NOT EXISTS defect (
   type INT UNSIGNED NOT NULL,
   evidence TEXT NOT NULL,
   severity REAL NOT NULL DEFAULT 0.5, 
-  FOREIGN KEY (findingId)
-    REFERENCES finding(id)
-    ON DELETE CASCADE,
-  FOREIGN KEY (type)
-    REFERENCES defectType(id)
-    ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS cookies (
