@@ -22,11 +22,11 @@ class Form_Checker(IPlugin):
         soup = BeautifulSoup(transaction.getContent(), 'html.parser')
         forms = soup.find_all('form')
         for form in forms:
-            self.check_form(form, transactionId)
+            self.check_form(form, transaction)
 
-    def check_form(self, form, transactionId):
+    def check_form(self, form, transaction):
         method = self.get_method(form)
-        action = self.get_action(form, transactionId)
+        action = self.get_action(form, transaction)
         params = self.get_params(form)
 
         self.queue.push(core.createTransaction(action, transaction.depth+1), transaction)
@@ -36,12 +36,12 @@ class Form_Checker(IPlugin):
 
     def get_method(self, form):
         if 'method' in form.attrs:
-            return form['method'].to_upper()
+            return form['method'].upper()
         else:
             return 'GET'
 
-    def get_action(self, form, transactionId): 
-        base = self.database.getUri(transactionId)
+    def get_action(self, form, transaction):
+        base = transaction.uri
         if 'action' in form.attrs:
             return urllib.parse.urljoin(base, form['action'])
         else:
@@ -51,7 +51,7 @@ class Form_Checker(IPlugin):
         params = []
         inputs = form.find_all('input')
         for field in inputs:
-            if name in field.attrs:
-                params.insert(field['name'])
+            if 'name' in field.attrs:
+                params.append(field['name'])
         # TODO: zachytavat i mozne hodnoty
         return params
