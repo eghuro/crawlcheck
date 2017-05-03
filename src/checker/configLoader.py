@@ -5,6 +5,7 @@ import yaml
 from pluginDBAPI import DBAPIconfiguration
 from acceptor import Acceptor, RegexAcceptor
 import logging
+import sys
 
 class ConfigurationError(Exception):
     def __init__(self, msg):
@@ -47,6 +48,7 @@ class ConfigLoader(object):
         self.properties["agent"] = "Crawlcheck/"+str(ConfigLoader.__VERSION)
         self.properties["maxDepth"] = 0
         self.properties["timeout"] = 1
+        self.properties["maxVolume"] = sys.maxsize
 
     def load(self, fname):
         """Loads configuration from YAML file.

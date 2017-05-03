@@ -26,6 +26,7 @@ class Core:
         self.db.load_defect_types()
         self.db.load_finding_id()
         self.files = []
+        self.volume = 0
 
         self.filters = filters
         self.header_filters = headers
@@ -100,9 +101,18 @@ class Core:
 
             else: #Plugins
                 self.files.append(transaction.file)
+                self.volume = self.volume + os.path.getsize(transaction.file) 
                 self.journal.startChecking(transaction)
                 self.rack.run(transaction)
                 self.journal.stopChecking(transaction, VerificationStatus.done_ok)
+                while self.volume > conf.getProperty("maxVolume"):
+                    self.log.debug("CLEANUP ... Size of tmps: " + self.volume + ", limit: " + conf.getProperty("maxVolume"))
+                    f = self.files[0]
+                    l = os.path.getsize(f)
+                    os.remove(f)
+                    self.volume = self.volume - l
+                    self.files.pop(0)
+                    self.log.debug("Size of tmps after cleanup: " + self.volume)
 
     def finalize(self):
         #self.rack.stop()
