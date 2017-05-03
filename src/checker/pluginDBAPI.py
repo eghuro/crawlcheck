@@ -263,7 +263,7 @@ class DBAPI(object):
                     t['parentId'] = c.fetchone()[0]
                 except TypeError:
                     t['parentId'] = -1
-                    logging.getLogger().error("No parent for link with requestId: " + t['id'] + " (depth: " + t['depth'] + ")")
+                    logging.getLogger().error("No parent for link with requestId: " + str(t['id']) + " (depth: " + str(t['depth']) + ")")
 
         payload['link'] = []
         q = ('SELECT link.findingId, transactions.uri, link.toUri, '
