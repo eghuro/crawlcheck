@@ -90,6 +90,10 @@ def main():
 
     if len(sys.argv) == 2:
         # load configuration
+        if not os.path.isfile(sys.argv[1]):
+            print("Invalid configuration file: " + sys.argv[1])
+            return
+
         cl = ConfigLoader()
         cl.load(sys.argv[1])
         conf = cl.get_configuration()

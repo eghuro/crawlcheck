@@ -108,10 +108,10 @@ class Network(object):
             raise ConditionError
         
         else:
-            return Network.__fetch_response(transaction, conf.getProperty("agent"), accept, conf.getProperty('timeout'), session, conf.getProperty("verifyHttps"))
+            return Network.__fetch_response(transaction, conf.getProperty("agent"), accept, conf.getProperty('timeout'), session, conf.getProperty("verifyHttps"), conf.getProperty("maxAttempts"))
 
     @staticmethod
-    def __fetch_response(transaction, agent, accept, time, session, verify=False):
+    def __fetch_response(transaction, agent, accept, time, session, verify=False, max_attempts=3):
 
         r = None
         head = {"user-agent" : agent, "accept" : accept }
@@ -119,18 +119,36 @@ class Network(object):
         log.debug("Fetching "+transaction.uri)
         log.debug("Data: "+str(transaction.data))
         #if not allowed to send cookies or don't have any, then cookies are None -> should be safe to use them; maybe filter which to use?
-        if transaction.method == 'GET':
-            r = session.get(transaction.uri+Network.__gen_param(transaction), allow_redirects=False, headers = head, timeout = time, cookies = transaction.cookies, verify=verify)
-        elif transaction.method == 'POST':
-            r = session.post(transaction.uri, allow_redirects=False, headers = head, data = transaction.data, timeout = time, cookies = transaction.cookies, verify=verify)
+        attempt = 0
+        while attempt < max_attempts:
+            try:
+                if transaction.method == 'GET':
+                    r = session.get(transaction.uri+Network.__gen_param(transaction), allow_redirects=False, headers = head, timeout = time, cookies = transaction.cookies, verify=verify)
+                elif transaction.method == 'POST':
+                    r = session.post(transaction.uri, allow_redirects=False, headers = head, data = transaction.data, timeout = time, cookies = transaction.cookies, verify=verify)
+            except ConnectionError as e:
+                if (attempt + 1) < max_attempts:
+                    wait = math.pow(10, attempt)
+                    time.sleep(wait)
+                else:
+                    raise
+                attempt = attempt + 1
+            except Timeout as e:
+                if (attempt + 1) < max_attempts:
+                    wait = math.pow(10, attempt)
+                    time.sleep(wait)
+                else:
+                    raise
+                attempt = attempt + 1
+            else:
+                transaction.status = r.status_code
 
-        transaction.status = r.status_code
+                if transaction.uri != r.url:
+                    logging.getLogger(__name__).debug("Redirection: "+transaction.uri+" -> "+r.url)
+                    transaction.uri = r.url
 
-        if transaction.uri != r.url:
-            logging.getLogger(__name__).debug("Redirection: "+transaction.uri+" -> "+r.url)
-            transaction.uri = r.url
-
-        return r
+                return r
+            return None 
 
     @staticmethod
     def __gen_param(transaction):
