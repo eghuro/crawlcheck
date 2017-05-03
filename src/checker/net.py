@@ -5,6 +5,8 @@ import os
 import tempfile
 import magic
 import logging
+import math
+import time
 
 
 class NetworkError(Exception):
@@ -111,7 +113,7 @@ class Network(object):
             return Network.__fetch_response(transaction, conf.getProperty("agent"), accept, conf.getProperty('timeout'), session, conf.getProperty("verifyHttps"), conf.getProperty("maxAttempts"))
 
     @staticmethod
-    def __fetch_response(transaction, agent, accept, time, session, verify=False, max_attempts=3):
+    def __fetch_response(transaction, agent, accept, timeout, session, verify=False, max_attempts=3):
 
         r = None
         head = {"user-agent" : agent, "accept" : accept }
@@ -123,9 +125,9 @@ class Network(object):
         while attempt < max_attempts:
             try:
                 if transaction.method == 'GET':
-                    r = session.get(transaction.uri+Network.__gen_param(transaction), allow_redirects=False, headers = head, timeout = time, cookies = transaction.cookies, verify=verify)
+                    r = session.get(transaction.uri+Network.__gen_param(transaction), allow_redirects=False, headers = head, timeout = timeout, cookies = transaction.cookies, verify=verify)
                 elif transaction.method == 'POST':
-                    r = session.post(transaction.uri, allow_redirects=False, headers = head, data = transaction.data, timeout = time, cookies = transaction.cookies, verify=verify)
+                    r = session.post(transaction.uri, allow_redirects=False, headers = head, data = transaction.data, timeout = timeout, cookies = transaction.cookies, verify=verify)
             except ConnectionError as e:
                 if (attempt + 1) < max_attempts:
                     wait = math.pow(10, attempt)
