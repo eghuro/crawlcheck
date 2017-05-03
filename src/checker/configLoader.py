@@ -63,8 +63,8 @@ class ConfigLoader(object):
         try:
             root = yaml.safe_load(cfile)
 
-            db_check = ConfigLoader.__db_check(root)
-            version_check = ConfigLoader.__version_check(root)
+            db_check = self.__db_check(root)
+            version_check = self.__version_check(root)
             if db_check and version_check:
                 self.loaded = self.__set_up(root)
         except yaml.scanner.ScannerError as e:
@@ -72,16 +72,14 @@ class ConfigLoader(object):
 
         cfile.close()
 
-    @staticmethod
-    def __db_check(root):
+    def __db_check(self, root):
         if 'database' not in root:
             self.__log.error("Database not specified")
             return False
         else:
             return True
 
-    @staticmethod
-    def __version_check(root):
+    def __version_check(self, root):
         version_check = False
         if 'version' not in root:
             self.__log.error("Version not specified")

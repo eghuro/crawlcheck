@@ -26,7 +26,8 @@ class ReportExporter(IPlugin):
         self.__log.info("Preparing report")
 
         #prepare YAML payload
-        payload = self.__db.create_report_payload()
+        payload = yaml.dump(self.__db.create_report_payload())
+        self.__log.info("Payload size: " + str(len(payload)))
 
         if payload is not None:
             #DELETE request on /data
