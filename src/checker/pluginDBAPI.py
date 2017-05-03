@@ -153,6 +153,7 @@ class DBAPI(object):
         else:
             for table in self.tables:
                 self.logs[table] = []
+            self.bufferedQueries = 0
 
     def __sync_table(self, cursor, table):
         #log.info("Imagine I execute all the SQL commands now ...")
