@@ -36,6 +36,6 @@ class ReportExporter(IPlugin):
                 requests.delete(url)
 
             #POST request on /data
-            requests.post(url, data={'payload' : yaml.dump(payload)})
+            requests.post(url, data={'payload' : payload})
         else:
             self.__log.error("Reporting failed")
