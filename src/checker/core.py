@@ -110,7 +110,7 @@ class Core:
                 self.rack.run(transaction)
                 self.journal.stopChecking(transaction, VerificationStatus.done_ok)
                 while self.volume > self.conf.getProperty("maxVolume"):
-                    self.log.debug("CLEANUP ... Size of tmps: " + self.volume + ", limit: " + self.conf.getProperty("maxVolume"))
+                    self.log.debug("CLEANUP ... Size of tmps: " + str(self.volume) + ", limit: " + (self.conf.getProperty("maxVolume")))
                     f = self.files[0]
                     l = os.path.getsize(f)
                     os.remove(f)
@@ -181,6 +181,7 @@ class Transaction:
     def __init__(self, uri, depth, srcId, idno, method="GET", data=None):
         #Use the factory method below!!
         self.uri = uri
+        self.aliases = [uri]
         self.depth = depth
         self.type = None
         self.file = None
@@ -190,6 +191,10 @@ class Transaction:
         self.data = data
         self.status = None
         self.cookies = None
+
+    def changePrimaryUri(self, new_uri):
+        self.aliases.append(new_uri)
+        self.uri = new_uri
 
     def testLink(self, conf, journal, session):
         if conf.uri_acceptor.canTouch(self.uri) or conf.suffix_acceptor.canTouch(self.getStripedUri()[::-1]) or conf.regex_acceptor.canTouch(self.uri):
@@ -362,12 +367,16 @@ class TransactionQueue:
 
     def __mark_seen(self, transaction):
         if (transaction.uri, transaction.method) not in self.__seen:
-            self.__seen.add( (transaction.uri, transaction.method) )
             self.__q.put(transaction)
             self.__db.log(Table.transactions,
                           ('INSERT INTO transactions (id, method, uri, origin, verificationStatusId, depth) VALUES (?, ?, ?, \'CHECKER\', ?, ?)', 
                           [str(transaction.idno), transaction.method, transaction.uri, str(TransactionQueue.status_ids["requested"]), str(transaction.depth)]) )
         #TODO: co kdyz jsme pristupovali s jinymi parametry?
+        #mark all known aliases as seen
+        for uri in transaction.aliases:
+            if (uri, transaction.method) not in self.__seen:
+                self.__seen.add( (transaction.uri, transaction.method) )
+
 
     def __bake_cookies(self, transaction, parent):
         if self.__conf.uri_acceptor.getMaxPrefix(transaction.uri) in self.__conf.cookies: #sending cookies allowed
