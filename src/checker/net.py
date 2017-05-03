@@ -67,7 +67,8 @@ class Network(object):
             raise UrlError(s+" is not an allowed schema")
 
         try:
-            r = session.head(linkedTransaction.uri, headers={ "user-agent": conf.getProperty("agent") }, timeout = conf.getProperty("time"), verify=verify) #TODO: accept
+            log.debug("Timeout set to: " + str(conf.getProperty("timeout")))
+            r = session.head(linkedTransaction.uri, headers={ "user-agent": conf.getProperty("agent") }, timeout=conf.getProperty("timeout"), verify=verify) #TODO: accept
         except Timeout as e:
             log.error("Timeout")
             journal.foundDefect(linkedTransaction.srcId, "timeout", "Link timed out", linkedTransaction.uri, 0.9)
