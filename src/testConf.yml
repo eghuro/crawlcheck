@@ -1,5 +1,5 @@
 ---
-version: 1.04
+version: 1.05
 database: crawlcheck
 cleandb: True
 initdb: True
@@ -34,9 +34,9 @@ content-types:
    plugins:
      - sitemapScanner
 
-urls:
+regexes:
  -
-    url: "http://ksp.mff.cuni.cz/"
+    regex: "https?://ksp.mff.cuni.cz/(?!(sksp|forum)).*"
     plugins:
        - linksFinder
        - tidyHtmlValidator
@@ -44,15 +44,6 @@ urls:
        - css_scraper
        - formChecker
     cookie: True #posli zpet cookies, pokud jsi nejake ziskal
- -
-    url: "http://ksp.mff.cuni.cz/sksp/" #zakaz
-
-suffixes:
- -
-    suffix: "ucw.cz/"
-    plugins:
-       - linksFinder
-       - sitemapScanner
 
 filters:
  - depth

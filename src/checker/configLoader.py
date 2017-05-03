@@ -24,20 +24,17 @@ class ConfigLoader(object):
         retrieved through getters.
     """
 
-    __VERSION = 1.04
+    __VERSION = 1.05
     __METHODS = ['GET', 'POST']
 
     def __init__(self):
         self.__dbconf = DBAPIconfiguration()
         self.typeAcceptor = None
-        self.uriAcceptor = None
         self.uriRegexAcceptor = None
         self.entryPoints = []
         self.filters = []
         self.postprocess = []
         self.loaded = False
-        self.uriMap = None
-        self.suffixUriMap = None
         self.properties = dict()
         self.payloads = dict()
         self.cookieFriendlyPrefixes = set()
@@ -56,6 +53,7 @@ class ConfigLoader(object):
         self.properties["tmpPrefix"] = "Crawlcheck"
         self.properties["tmpSuffix"] = "content"
 
+
     def load(self, fname):
         """Loads configuration from YAML file.
         """
@@ -72,12 +70,14 @@ class ConfigLoader(object):
 
         cfile.close()
 
+
     def __db_check(self, root):
         if 'database' not in root:
             self.__log.error("Database not specified")
             return False
         else:
             return True
+
 
     def __version_check(self, root):
         version_check = False
@@ -89,7 +89,6 @@ class ConfigLoader(object):
             self.__log.error("Configuration version doesn't match (got "+str(root['version'])+", expected: "+str(ConfigLoader.__VERSION)+")")
         return version_check
 
-    ###
 
     def __set_entry_points(self, root):
         if 'entryPoints' not in root:
@@ -115,15 +114,18 @@ class ConfigLoader(object):
                         raise ConfigurationException("url not present in entryPoint")
                     self.entryPoints.append(EPR(ep['url'], method, data))
 
+
     def __set_filters(self, root):
         if 'filters' in root:
             for f in root['filters']:
                 self.filters.append(f)
 
+
     def __set_postprocessors(self, root):
         if 'postprocess' in root:
             for pp in root['postprocess']:
                 self.postprocess.append(pp)
+
 
     def __set_payloads(self, root):
         if 'payload' in root:
@@ -138,6 +140,7 @@ class ConfigLoader(object):
                     raise ConfigurationException("data not present in payload")
 
                 self.payloads[ (p['url'], p['method'].upper()) ] = p['data']
+
 
     def __set_cookies(self, root, u, us):
         #Go through urls again, grab cookie friendly prefixes
@@ -159,6 +162,7 @@ class ConfigLoader(object):
                 else:
                     raise ConfigurationError("Wrong format of cookie record for "+url[u])
             #else: no cookie record or wrong url record -> raised earlier
+
  
     def __set_up(self, root):
         #Database is mandatory
@@ -169,31 +173,15 @@ class ConfigLoader(object):
         ct = 'content-type'
         ct_dsc = 'Content type'
 
-        us = 'urls'
-        u = 'url'
-        u_dsc = 'URL'
-
-        sus = 'suffixes'
-        su = 'suffix'
-        su_dsc = 'Suffix'
-
         try:
-            uriPlugins = dict()
-            suffixUriPlugins = dict()
             pluginTypes = dict()
             self.typeAcceptor = self.__get_acceptor(cts, ct, ct_dsc, root, None, pluginTypes)
-            self.uriAcceptor = self.__get_acceptor(us, u, u_dsc, root, uriPlugins, None)
-            self.suffixAcceptor = self.__get_acceptor(sus, su, su_dsc, root, suffixUriPlugins, None)
-            self.suffixAcceptor.reverseValues()
-            suffixUriPlugins = ConfigLoader.reverse_dict_keys(suffixUriPlugins)
-            self.uriMap = self.create_uri_plugin_map(uriPlugins, pluginTypes, self.uriAcceptor)
-            self.suffixMap = self.create_uri_plugin_map(suffixUriPlugins, pluginTypes, self.suffixAcceptor)
             self.uriRegexAcceptor = self.__create_uri_regex_acceptor(root)
         except ConfigurationError as e:
             self.__log.error(e.msg)
             return False
 
-        self.__set_cookies(root, u, us)
+        #self.__set_cookies(root, u, us)
 
         #Grab lists
         self.__set_entry_points(root)
@@ -201,12 +189,13 @@ class ConfigLoader(object):
         self.__set_payloads(root)
 
         #Grab properties
-        used_keys = set(['database', cts, us, sus, 'version', 'entryPoints', 'filters'])
+        used_keys = set(['database', cts, 'regexes', 'version', 'entryPoints', 'filters', 'postprocess'])
         doc_keys = set(root.keys())
         for key in (doc_keys - used_keys):
             self.properties[key] = root[key]
         
         return True
+
 
     def __get_acceptor(self, tags_string, tag_string, description, root, record, drocer):
         acceptor = Acceptor()
@@ -215,6 +204,7 @@ class ConfigLoader(object):
             if tags:
                 self.__run_tags(tags, description, acceptor, tag_string, record, drocer)
         return acceptor
+
 
     def __run_tags(self, tags, description, acceptor, tag_string, record, drocer):
         for tag in tags:
@@ -226,6 +216,7 @@ class ConfigLoader(object):
             else:
                 self.__log.info("Forbidden: "+tag[tag_string])
                 acceptor.setDefaultAcceptValue(tag[tag_string], False)
+
 
     def __create_uri_regex_acceptor(self, root):
        acceptor = RegexAcceptor()
@@ -259,27 +250,10 @@ class ConfigLoader(object):
                     elif tag[tag_string] not in drocer[plugin]:
                         drocer[plugin].add(tag[tag_string])
 
-    def create_uri_plugin_map(self, uriPlugin, pluginTypes, uriAcceptor):
-        uriMap = dict()
-        #create mapping of accepted content types for URI:
-
-        for uri in uriAcceptor.getPositiveValues(): #accepted prefixes
-            if uri in uriPlugin: #any plugin accepting this prefix? (careful!!)
-                for plugin in uriPlugin[uri]:
-                    if not plugin in pluginTypes:
-                        self.__log.warn(plugin+" doesn't have any content type associated")
-                    else:
-                        #put list of types for plugin into a dict for uri; join sets together
-                        if uri not in uriMap:
-                            uriMap[uri] = set()
-                        uriMap[uri].update(pluginTypes[plugin])
-            else:
-                self.__log.debug("Uri not in uriPlugin: "+uri)
-        return uriMap
 
     def get_configuration(self):
         if self.loaded:
-            return Configuration(self.__dbconf, self.typeAcceptor, self.uriAcceptor, self.suffixAcceptor, self.uriRegexAcceptor, self.entryPoints, self.uriMap, self.suffixUriMap, self.properties, self.payloads, self.cookieFriendlyPrefixes, self.customCookies, self.postprocess)
+            return Configuration(self.__dbconf, self.typeAcceptor, self.uriRegexAcceptor, self.entryPoints, self.uriMap, self.suffixUriMap, self.properties, self.payloads, self.cookieFriendlyPrefixes, self.customCookies, self.postprocess)
         else:
             return None
 
@@ -289,22 +263,12 @@ class ConfigLoader(object):
         else:
             return None
 
-    @staticmethod
-    def reverse_dict_keys(sufdict):
-        revdict = dict()
-        for key in sufdict.keys():
-            revkey = key[::-1]
-            revdict[revkey] = sufdict[key]
-        return revdict
 
 class Configuration(object):
-    def __init__(self, db, ta, ua, sa, ra, ep, um, su, properties, pl, cfp, cc, pp):
+    def __init__(self, db, ta, ra, ep, um, su, properties, pl, cfp, cc, pp):
         self.properties = properties
         self.dbconf = db
         self.dbconf.setLimit(self.getProperty("dbCacheLimit"))
-        self.type_acceptor = ta
-        self.uri_acceptor = ua
-        self.suffix_acceptor = sa
         self.regex_acceptor = ra
         self.entry_points = ep
         self.uri_map = um

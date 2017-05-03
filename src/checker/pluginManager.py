@@ -26,11 +26,12 @@ def configure_logger(conf):
     log = logging.getLogger()
     log.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    if conf.getProperty('logfile') is not None:
-        fh = logging.FileHandler(conf.getProperty('logfile'))
-        fh.setLevel(logging.DEBUG)
-        fh.setFormatter(formatter)
-        log.addHandler(fh)
+    if conf:
+        if conf.getProperty('logfile') is not None:
+            fh = logging.FileHandler(conf.getProperty('logfile'))
+            fh.setLevel(logging.DEBUG)
+            fh.setFormatter(formatter)
+            log.addHandler(fh)
 
     sh = logging.StreamHandler()
     sh.setLevel(logging.INFO)
@@ -91,6 +92,7 @@ def main():
     signal.signal(signal.SIGINT, handler)
     
     log = logging.getLogger(__name__)
+    log.info("Crawlcheck started")
 
     if len(sys.argv) == 2:
         # load configuration
@@ -98,6 +100,7 @@ def main():
             log.error("Invalid configuration file: " + sys.argv[1])
             return
 
+        log.info("Loading configuration file: " + sys.argv[1])
         cl = ConfigLoader()
         cl.load(sys.argv[1])
         conf = cl.get_configuration()

@@ -37,8 +37,8 @@ class RegexAcceptor(object):
 
     def canTouch(self, value):
         for plugin in self.regexes.keys():
-            for p in self.regexes[plugin]:
-                if p.match(value) != None:
+            for regex in self.regexes[plugin]:
+                if regex.match(value):
                     return True
         return False
 
@@ -55,8 +55,8 @@ class RegexAcceptor(object):
         return False
 
 
-    def setRegex(self, value, plugin):
-        p = re.compile(value)
+    def setRegex(self, regex, plugin):
+        p = re.compile(regex)
 
         if plugin in self.regexes.keys():
             self.regexes[plugin].append(p)
@@ -145,6 +145,9 @@ class Acceptor(object):
     def setDefaultAcceptValue(self, uri, value):
         #config loader nastavi True, pokud nekdy videl danou hodnotu v konfiguraci a nebyla zakazana
         #config loader nastavi False, pokud je zakazano se danych hodnot dotykat
+        if uri in self.uriDefault:
+            if not self.uriDefault[uri]:
+                return
         self.uriDefault[uri] = value
         self.uris.add(uri)
         if value:

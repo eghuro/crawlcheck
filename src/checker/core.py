@@ -43,7 +43,7 @@ class Core:
             self.log.debug("Pushing to queue: "+entryPoint.url+", data: "+str(entryPoint.data))
             self.queue.push(createTransaction(entryPoint.url, 0, -1, entryPoint.method, entryPoint.data))
 
-        self.rack = Rack(self.conf.uri_acceptor, self.conf.type_acceptor, self.conf.suffix_acceptor, self.conf.regex_acceptor, plugins)
+        self.rack = Rack(self.conf.type_acceptor, self.conf.regex_acceptor, plugins)
 
     def run(self):
         with requests.Session() as session:
@@ -182,7 +182,8 @@ class Transaction:
         self.uri = new_uri
 
     def testLink(self, conf, journal, session):
-        if conf.uri_acceptor.canTouch(self.uri) or conf.suffix_acceptor.canTouch(self.getStripedUri()[::-1]) or conf.regex_acceptor.canTouch(self.uri):
+        can = conf.regex_acceptor.canTouch(self.uri)
+        if can:
             self.type, r = Network.check_link(self, journal, conf, session)
             return r
         else:
@@ -229,10 +230,8 @@ class Transaction:
         return self.__set2list(acceptedTypes)
 
     def isWorthIt(self, conf):
-        ua = conf.uri_acceptor.mightAccept(self.uri)
-        sa = conf.suffix_acceptor.mightAccept(self.getStripedUri()[::-1])
         ra = conf.regex_acceptor.mightAccept(self.uri)
-        return ua or sa or ra
+        return ra
 
     @staticmethod
     def __set2list(x):
@@ -253,12 +252,10 @@ def createTransaction(uri, depth = 0, parentId = -1, method = 'GET', params=dict
 
 class Rack:
 
-    def __init__(self, uriAcceptor, typeAcceptor, suffixAcceptor, regexAcceptor, plugins = []):
+    def __init__(self, typeAcceptor,regexAcceptor, plugins = []):
 
         self.plugins = plugins
-        self.prefixAcceptor = uriAcceptor
         self.typeAcceptor = typeAcceptor
-        self.suffixAcceptor = suffixAcceptor
         self.regexAcceptor = regexAcceptor
         self.log = logging.getLogger(__name__)
 
@@ -278,10 +275,8 @@ class Rack:
 
         rot = transaction.getStripedUri()[::-1]
         type_cond = self.typeAcceptor.accept(str(transaction.type), plugin.id)
-        prefix_cond = self.prefixAcceptor.accept(transaction.uri, plugin.id)
-        suffix_cond = self.suffixAcceptor.accept(rot, plugin.id)
         regex_cond = self.regexAcceptor.accept(transaction.uri, plugin.id)
-        return type_cond and ( prefix_cond or suffix_cond or regex_cond )
+        return type_cond and regex_cond
 
     def stop(self):
         pass
@@ -357,17 +352,18 @@ class TransactionQueue:
 
 
     def __bake_cookies(self, transaction, parent):
-        if self.__conf.uri_acceptor.getMaxPrefix(transaction.uri) in self.__conf.cookies: #sending cookies allowed
-            cookies = dict()
-            #najit vsechna cookies pro danou adresu
-            if parent is not None:
-                if parent.cookies is not None:
-                    cookies = parent.cookies.copy()
-            if self.__conf.uri_acceptor.getMaxPrefix(transaction.uri) in self.__conf.custom_cookies: #got custom cookies to send
-                cookies.update(self.__conf.custom_cookies[self.__conf.uri_acceptor.getMaxPrefix(transaction.uri)])
-            if len(cookies.keys()) > 0:
-                logging.getLogger(__name__).debug("Cookies of "+transaction.uri+" updated to "+str(cookies))
-                transaction.cookies = cookies
+        pass
+        #if self.__conf.uri_acceptor.getMaxPrefix(transaction.uri) in self.__conf.cookies: #sending cookies allowed
+        #    cookies = dict()
+        #    #najit vsechna cookies pro danou adresu
+        #    if parent is not None:
+        #        if parent.cookies is not None:
+        #            cookies = parent.cookies.copy()
+        #    if self.__conf.uri_acceptor.getMaxPrefix(transaction.uri) in self.__conf.custom_cookies: #got custom cookies to send
+        #        cookies.update(self.__conf.custom_cookies[self.__conf.uri_acceptor.getMaxPrefix(transaction.uri)])
+        #    if len(cookies.keys()) > 0:
+        #        logging.getLogger(__name__).debug("Cookies of "+transaction.uri+" updated to "+str(cookies))
+        #    transaction.cookies = cookies
 
     def load(self):
         #load transactions from DB to memory - only where status is requested
