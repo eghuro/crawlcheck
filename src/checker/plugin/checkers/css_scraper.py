@@ -72,7 +72,7 @@ class CssScraper(IPlugin):
         LIMIT = 1024
         if size > LIMIT:
             self.journal.foundDefect(transaction.idno, 'seo:huge_internal', "Internal CSS bigger than 1024", size, 0.5)
-        return reqId
+        #return reqId
 
 
     def process_inline(self, transaction, style):
