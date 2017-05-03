@@ -21,7 +21,11 @@ class CssValidator(IPlugin):
         """
         try:
             parser = tinycss.make_parser('page3')
-            data = str(transaction.getContent(), 'utf-8')
+            c = transaction.getContent()
+            if type(c) == str:
+                data = c
+            else:
+                data = str(transaction.getContent(), 'utf-8')
             stylesheet = parser.parse_stylesheet(data)
             for error in stylesheet.errors:
                 self.journal.foundDefect(transaction.idno, "stylesheet", "Stylesheet error", [error.line, error.reason], 0.7)
