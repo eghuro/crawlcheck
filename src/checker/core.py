@@ -31,11 +31,9 @@ class Core:
         self.filters = filters
         self.header_filters = headers
 
-        TransactionQueue.initialize()
         self.queue = TransactionQueue(self.db, self.conf)
         self.queue.load()
 
-        Journal.initialize()
         self.journal = Journal(self.db)
 
         for plugin in self.plugins+headers+filters:
@@ -304,13 +302,6 @@ class Rack:
 class TransactionQueue:
 
 
-    status_ids = dict()
-    
-    @staticmethod
-    def initialize():
-        TransactionQueue.status_ids["requested"] = 1
-        TransactionQueue.status_ids["processing"] = 2
-
     def __init__(self, db, conf):
         self.__db = db
         self.__conf = conf
@@ -327,7 +318,7 @@ class TransactionQueue:
         except queue.Empty:
             raise
         else:
-            self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatusId = ? WHERE id = ?', [str(TransactionQueue.status_ids["processing"]), t.idno]) )
+            self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatus = ? WHERE id = ?', ["PROCESSING", t.idno]) )
             self.__db.log(Table.link_defect, ('UPDATE link SET processed = ? WHERE toUri = ?', [str("true"), str(t.uri)] ))
             return t
 
@@ -369,8 +360,8 @@ class TransactionQueue:
         if (transaction.uri, transaction.method) not in self.__seen:
             self.__q.put(transaction)
             self.__db.log(Table.transactions,
-                          ('INSERT INTO transactions (id, method, uri, origin, verificationStatusId, depth) VALUES (?, ?, ?, \'CHECKER\', ?, ?)', 
-                          [str(transaction.idno), transaction.method, transaction.uri, str(TransactionQueue.status_ids["requested"]), str(transaction.depth)]) )
+                          ('INSERT INTO transactions (id, method, uri, origin, verificationStatus, depth) VALUES (?, ?, ?, \'CHECKER\', ?, ?)', 
+                          [str(transaction.idno), transaction.method, transaction.uri, "REQUESTED", str(transaction.depth)]) )
         #TODO: co kdyz jsme pristupovali s jinymi parametry?
         #mark all known aliases as seen
         for uri in transaction.aliases:
@@ -408,22 +399,16 @@ class TransactionQueue:
 class Journal:
 
 
-    status_ids = dict()
-    
-    @staticmethod
-    def initialize():
-        Journal.status_ids["verifying"] = 3
-
     def __init__(self, db):
         self.__db = db
        
     def startChecking(self, transaction):
         logging.getLogger(__name__).debug("Starting checking " + transaction.uri)
-        self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatusId = ?, uri = ?, contentType = ?, responseStatus = ? WHERE id = ?', [str(Journal.status_ids["verifying"]), transaction.uri, transaction.type, transaction.status, transaction.idno]) )
+        self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatus = ?, uri = ?, contentType = ?, responseStatus = ? WHERE id = ?', ["VERIFYING", transaction.uri, transaction.type, transaction.status, transaction.idno]) )
 
     def stopChecking(self, transaction, status):
         logging.getLogger(__name__).debug("Stopped checking " + transaction.uri)
-        self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatusId = ? WHERE id = ?', [str(status), transaction.idno]) )
+        self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatus = ? WHERE id = ?', [str(status), transaction.idno]) )
 
     def foundDefect(self, transaction, defect, evidence, severity=0.5):
         self.foundDefect(transaction.idno, defect.name, defect.additional, evidence, severity)

@@ -114,13 +114,10 @@ def main():
             if conf.getProperty('initdb') or cleaned:
                 log.info('Initializing database file ' + conf.dbconf.getDbname())
                 try:
-                    with open('checker/mysql_tables.sql', 'r') as tables, open('checker/sql_values.sql', 'r') as values, sqlite3.connect(conf.dbconf.getDbname()) as conn:
+                    with open('checker/mysql_tables.sql', 'r') as tables, sqlite3.connect(conf.dbconf.getDbname()) as conn:
                         qry0 = tables.read().split(';')
-                        qry1 = values.read().split(';')
                         c = conn.cursor()
                         for q in qry0:
-                            c.execute(q)
-                        for q in qry1:
                             c.execute(q)
                         conn.commit()
                         c.close()

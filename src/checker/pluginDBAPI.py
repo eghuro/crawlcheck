@@ -48,17 +48,16 @@ class DBAPIconfiguration(object):
 
 class VerificationStatus(Enum):
 
-    requested = 1
-    done_ok = 3
-    done_ko = 4
-    done_ignored = 5
+    requested = "REQUESTED"
+    done_ok = "DONE - OK"
+    done_ko = "DONE - KO"
+    done_ignored = "DONE - IGNORED"
 
 class Table(Enum):
 
     transactions = 1
-    finding = 2
-    link_defect = 3
-    defect_types = 4
+    link_defect = 2
+    defect_types = 3
 
 class TableError(LookupError):
 
@@ -93,7 +92,7 @@ class DBAPI(object):
         self.con = Connector(conf)
         self.limit = conf.getLimit()
         self.findingId = -1
-        self.tables = [Table.defect_types, Table.transactions, Table.finding, Table.link_defect]
+        self.tables = [Table.defect_types, Table.transactions, Table.link_defect]
         self.logs = dict()
         for table in self.tables:
             self.logs[table] = []
@@ -113,24 +112,21 @@ class DBAPI(object):
 
     def log_link(self, parent_id, uri, new_id):
        self.findingId = self.findingId + 1
-       self.log(Table.finding, ('INSERT INTO finding (id, responseId) VALUES (?, ?)', [str(self.findingId), str(parent_id)]) )
-       self.log(Table.link_defect, ('INSERT INTO link (findingId, toUri, requestId) VALUES (?, ?, ?)', [str(self.findingId), uri, str(new_id)]) )
+       self.log(Table.link_defect, ('INSERT INTO link (findingId, toUri, requestId, responseId) VALUES (?, ?, ?, ?)', [str(self.findingId), uri, str(new_id), str(parent_id)]) )
 
     def log_defect(self, transactionId, name, additional, evidence, severity = 0.5):
         self.findingId = self.findingId + 1
-        self.log(Table.finding, ('INSERT INTO finding (id, responseId) VALUES (?, ?)', [str(self.findingId), str(transactionId)]))
         if name not in self.defect_types:
             self.defectId = self.defectId + 1
             self.log(Table.defect_types, ('INSERT INTO defectType (id, type, description) VALUES (?, ?, ?)', [str(self.defectId), str(name), str(additional)]))
             self.defect_types.append(name)
             self.defectTypesWithId[name] = self.defectId
         defId = self.defectTypesWithId[name]
-        self.log(Table.link_defect, ('INSERT INTO defect (findingId, type, evidence, severity) VALUES (?, ?, ?, ?)', [str(self.findingId), str(defId), str(evidence), str(severity)]))
+        self.log(Table.link_defect, ('INSERT INTO defect (findingId, type, evidence, severity, responseId) VALUES (?, ?, ?, ?, ?)', [str(self.findingId), str(defId), str(evidence), str(severity), str(transactionId)]))
 
     def log_cookie(self, transactionId, name, value):
         self.findingId = self.findingId + 1
-        self.log(Table.finding, ('INSERT INTO finding (id, responseId) VALUES (?,?)', [str(self.findingId), str(transactionId)]))
-        self.log(Table.link_defect, ('INSERT INTO cookies (findingId, name, value) VALUES (?, ?, ?)', [str(self.findingId), str(name), str(value)]))
+        self.log(Table.link_defect, ('INSERT INTO cookies (findingId, name, value, responseId) VALUES (?, ?, ?, ?)', [str(self.findingId), str(name), str(value), str(transactionId)]))
         
     def sync(self):
         try:
@@ -185,18 +181,25 @@ class DBAPI(object):
                 self.defectId = row[0]
 
     def load_finding_id(self):
-        query = 'SELECT MAX(id) FROM finding'
+        maxs = []
+        for t in ['link', 'defect', 'cookies']:
+            maxs.append(self.__load_max_finding_id(t))
+        self.findingId =  max(maxs)
+
+    def __load_max_finding_id(self, table):
+        query = 'SELECT MAX(findingId) FROM ' + table
         cursor = self.con.get_cursor()
         cursor.execute(query)
         row = cursor.fetchone()
         if row is not None:
             if row[0] is not None:
-                self.findingId = row[0]
+                return int(row[0])
+        return 0
 
     def get_requested_transactions(self):
-        q = 'CREATE TEMPORARY VIEW linkedUris AS SELECT link.toUri, transactions.id FROM link INNER JOIN finding ON link.findingId = finding.id INNER JOIN transactions ON finding.responseId = transactions.id'
+        q = 'CREATE TEMPORARY VIEW linkedUris AS SELECT link.toUri, transactions.id FROM link INNER JOIN transactions ON link.responseId = transactions.id'
         query = ('SELECT linkedUris.toUri AS uri, transactions.depth AS depth, linkedUris.id AS srcId, transactions.id AS idno'
-                 ' FROM transactions LEFT JOIN linkedUris ON transactions.uri = linkedUris.toUri WHERE transactions.verificationStatusId = ?')
+                 ' FROM transactions LEFT JOIN linkedUris ON transactions.uri = linkedUris.toUri WHERE transactions.verificationStatus = ?')
 
         cursor = self.con.get_cursor()
         cursor.execute(q)
@@ -230,9 +233,10 @@ class DBAPI(object):
     def create_report_payload(self):
         payload = dict()
 
+        #TODO: 3 parallel processes
         payload['transactions'] = []
         q = ('SELECT id, method, responseStatus, contentType, '
-             'verificationStatusId, depth, uri FROM transactions')
+             'verificationStatus, depth, uri FROM transactions')
 
         c = self.con.get_cursor()
         c.execute(q)
@@ -242,32 +246,29 @@ class DBAPI(object):
             transaction['method'] = row[1]
             transaction['responseStatus'] = row[2]
             transaction['contentType'] = row[3]
-            transaction['verificationStatusId'] = row[4]
+            transaction['verificationStatus'] = row[4]
             transaction['depth'] = row[5]
             transaction['uri'] = row[6]
             if row[5] == 0:
                 transaction['parentId'] = transaction['id']
             payload['transactions'].append(transaction)
 
-        try:
-            for t in payload['transactions']:
-                if t['depth'] > 0:
-                    q = ('SELECT finding.responseId FROM link '
-                         'INNER JOIN finding ON link.findingId = finding.id '
-                         'WHERE link.requestId = ? '
-                         'AND link.processed = "true"')
-                    c.execute(q, [t['id']])
+        for t in payload['transactions']:
+            if t['depth'] > 0:
+                q = ('SELECT link.responseId FROM link '
+                     'WHERE link.requestId = ? '
+                     'AND link.processed = "true"')
+                c.execute(q, [t['id']])
+                try:
                     t['parentId'] = c.fetchone()[0]
-        except TypeError:
-            #'NoneType' object is not subscriptable for c.fetchone()[0]
-            #means error in computation
-            return None
+                except TypeError:
+                    t['parentId'] = -1
+                    logging.getLogger().error("No parent for link with requestId: " + t['id'] + " (depth: " + t['depth'] + ")")
 
         payload['link'] = []
         q = ('SELECT link.findingId, transactions.uri, link.toUri, '
-             'link.processed, link.requestId, finding.responseId FROM '
-             'link INNER JOIN finding ON link.findingId = finding.id '
-             'INNER JOIN transactions ON finding.responseId = transactions.id')
+             'link.processed, link.requestId, link.responseId FROM '
+             'link INNER JOIN transactions ON link.responseId = transactions.id')
         c.execute(q)
         for row in c.fetchall():
             link = dict()
@@ -282,10 +283,9 @@ class DBAPI(object):
         payload['defect'] = []
         q = ('SELECT defect.findingId, defectType.type, '
              'defectType.description, defect.evidence, defect.severity, '
-             'finding.responseId, transactions.uri FROM defect '
+             'defect.responseId, transactions.uri FROM defect '
              'INNER JOIN defectType ON defect.type = defectType.id '
-             'INNER JOIN finding on defect.findingId = finding.id '
-             'INNER JOIN transactions ON finding.responseId = transactions.id')
+             'INNER JOIN transactions ON defect.responseId = transactions.id')
         c.execute(q)
         for row in c.fetchall():
             defect = dict()

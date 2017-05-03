@@ -10,6 +10,8 @@ agent: "Crawlcheck/0.05"
 logfile: cc.log
 report: "http://localhost:5000"
 cleanreport: True
+maxVolume: 100000000 #max 100MB of tmp files
+dbCacheLimit: 1000000 #cache up to 1M of DB queries
     
 content-types:
  - 
@@ -34,7 +36,7 @@ content-types:
 
 urls:
  -
-    url: "http://mj.ucw.cz/vyuka/"
+    url: "http://ksp.mff.cuni.cz/"
     plugins:
        - linksFinder
        - tidyHtmlValidator
@@ -42,17 +44,8 @@ urls:
        - css_scraper
        - formChecker
     cookie: True #posli zpet cookies, pokud jsi nejake ziskal
-
  -
-    url: "http://mj.ucw.cz/"
-    plugins:
-    cookie:
-        reply: true
-        custom:
-            key: value
-
- -
-    url: "http://mj.ucw.cz/" # Zakaz
+    url: "http://ksp.mff.cuni.cz/sksp/" #zakaz
 
 suffixes:
  -
@@ -65,20 +58,7 @@ filters:
  - depth
  - robots
  - contentLength
-
-payload:
- -
-    url: "https://stackoverflow.com/search"
-    method: GET
-    data:
-        q: x
-
+ - canonical
 
 entryPoints:
- - "http://mj.ucw.cz/vyuka/"
- -
-    url: "http://www.mff.cuni.cz/"
-    method: GET
-    data:
-      - foo: bar
-
+ - "http://ksp.mff.cuni.cz/"
