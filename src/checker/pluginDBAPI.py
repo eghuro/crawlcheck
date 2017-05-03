@@ -216,6 +216,7 @@ class DBAPI(object):
         payload['transactions'] = []
         q = ('SELECT id, method, responseStatus, contentType, '
              'verificationStatusId, depth, uri FROM transactions')
+
         c = self.con.get_cursor()
         c.execute(q)
         for row in c.fetchall(): #type(row): tuple
@@ -227,7 +228,17 @@ class DBAPI(object):
             transaction['verificationStatusId'] = row[4]
             transaction['depth'] = row[5]
             transaction['uri'] = row[6]
+            if row[5] == 0:
+                transaction['parentId'] = transaction['id']
             payload['transactions'].append(transaction)
+
+        for t in payload['transactions']:
+            if t['depth'] > 0:
+                q = ('SELECT finding.responseId FROM link '
+                     'INNER JOIN finding ON link.findingId = finding.id '
+                     'WHERE link.requestId = ? AND link.processed = "true"')
+                c.execute(q, [t['id']])
+                t['parentId'] = c.fetchone()[0]
 
         payload['link'] = []
         q = ('SELECT link.findingId, transactions.uri, link.toUri, '
