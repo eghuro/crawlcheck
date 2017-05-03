@@ -49,6 +49,7 @@ class ConfigLoader(object):
         self.properties["maxDepth"] = 0
         self.properties["timeout"] = 1
         self.properties["maxVolume"] = sys.maxsize
+        self.properties["dbCacheLimit"] = sys.maxsize
 
     def load(self, fname):
         """Loads configuration from YAML file.

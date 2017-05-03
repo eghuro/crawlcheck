@@ -84,6 +84,7 @@ class DBAPI(object):
     """
     def __init__(self, conf):
         self.con = Connector(conf)
+        self.limit = conf.getProperty("dbCacheLimit")
         self.findingId = -1
         self.tables = [Table.defect_types, Table.transactions, Table.finding, Table.link_defect]
         self.logs = dict()
@@ -92,10 +93,14 @@ class DBAPI(object):
         self.defect_types = []
         self.defectId = -1
         self.defectTypesWithId = dict()
+        self.bufferedQueries = 0
 
     def log(self, table, query_pair):
         if table in self.logs:
             self.logs[table].append(query_pair)
+            self.bufferedQueries = self.bufferedQueries + 1
+            if self.bufferedQueries > self.limit:
+               self.sync()
         else:
             raise TableError()
 
@@ -137,6 +142,10 @@ class DBAPI(object):
 
         except mdb.Error as e:
             self.error(e)
+
+        else:
+            for table in self.tables:
+                self.logs[table] = []
 
     def __sync_table(self, cursor, table):
         #log.info("Imagine I execute all the SQL commands now ...")
