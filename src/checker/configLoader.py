@@ -253,7 +253,7 @@ class ConfigLoader(object):
 
     def get_configuration(self):
         if self.loaded:
-            return Configuration(self.__dbconf, self.typeAcceptor, self.uriRegexAcceptor, self.entryPoints, self.uriMap, self.suffixUriMap, self.properties, self.payloads, self.cookieFriendlyPrefixes, self.customCookies, self.postprocess)
+            return Configuration(self.__dbconf, self.typeAcceptor, self.uriRegexAcceptor, self.entryPoints, self.properties, self.payloads, self.cookieFriendlyPrefixes, self.customCookies, self.postprocess)
         else:
             return None
 
@@ -265,14 +265,13 @@ class ConfigLoader(object):
 
 
 class Configuration(object):
-    def __init__(self, db, ta, ra, ep, um, su, properties, pl, cfp, cc, pp):
+    def __init__(self, db, ta, ra, ep, properties, pl, cfp, cc, pp):
         self.properties = properties
         self.dbconf = db
         self.dbconf.setLimit(self.getProperty("dbCacheLimit"))
+        self.type_acceptor = ta
         self.regex_acceptor = ra
         self.entry_points = ep
-        self.uri_map = um
-        self.suffix_uri_map = su
         self.payloads = pl
         self.cookies = cfp #cookie friendly prefixes -> eg. on these prefixes we send cookies back
         self.custom_cookies = cc

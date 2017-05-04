@@ -62,21 +62,20 @@ class Core:
                     transaction.uri = str(transaction.uri)
 
                 self.log.info("Processing " + transaction.uri)
-    
-                #test link
-                r = transaction.testLink(self.conf, self.journal, session) #HEAD, pokud neni zakazan
 
                 if not transaction.isWorthIt(self.conf): #neni zadny plugin, ktery by prijal
                     self.log.debug(transaction.uri+" not worth my time")
-                    
+
                     self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                     continue
 
-                #Custom filters
+                #Custom filters: depth, robots.txt
                 for tf in self.filters:
                     tf.filter(transaction)
 
-                #custom HTTP header filters
+                r = transaction.testLink(self.conf, self.journal, session) #HEAD, pokud neni zakazan
+
+                #custom HTTP header filters, incl. test if ct matches expectation
                 for hf in self.header_filters:
                    hf.filter(transaction, r)
 
@@ -211,22 +210,22 @@ class Transaction:
             if uriMap[p]:
                 return set(uriMap[p])
         return {}
- 
+
 
     def getAcceptedTypes(self, conf):
         if conf is None:
             return []
+
+        #if conf.uri_map is None:
+        acceptedTypes = {}
+        #else:
+        #    acceptedTypes = self.__get_accepted_types(conf.uri_map, conf.uri_acceptor)
         
-        if conf.uri_map is None:
-            acceptedTypes = {}
-        else:
-            acceptedTypes = self.__get_accepted_types(conf.uri_map, conf.uri_acceptor)
-        
-        bak = self.uri
-        self.uri = self.uri[::-1]
-        if conf.suffix_uri_map is not None:
-             acceptedTypes += self.__get_accepted_types(conf.suffix_uri_map, conf.suffix_acceptor)
-        self.uri = bak
+        #bak = self.uri
+        #self.uri = self.uri[::-1]
+        #if conf.suffix_uri_map is not None:
+        #     acceptedTypes += self.__get_accepted_types(conf.suffix_uri_map, conf.suffix_acceptor)
+        #self.uri = bak
         return self.__set2list(acceptedTypes)
 
     def isWorthIt(self, conf):
