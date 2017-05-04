@@ -324,7 +324,13 @@ class TransactionQueue:
         if parent is None:
             self.push(createTransaction(uri, 0, -1), None)
         else:
-            self.push(createTransaction(uri,parent.depth+1, parent.idno), parent)
+            self.push(createTransaction(uri, parent.depth + 1, parent.idno), parent)
+
+    def push_virtual_link(self, uri, parent):
+        t = createTransaction(uri, parent.depth + 1, parent.idno)
+        self.__mark_seen(t)
+        self.__db.log_link(parent.idno, transaction.uri, transaction.idno)
+        return t
 
     @staticmethod
     def __strip_parse_query(transaction):
