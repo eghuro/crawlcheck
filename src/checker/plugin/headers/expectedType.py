@@ -5,7 +5,7 @@ import logging
 
 class ExpectedType(IPlugin):
 
-    category = PluginType.FILTER
+    category = PluginType.HEADER
     id = "expectedType"
 
     def __init__(self):
@@ -19,7 +19,7 @@ class ExpectedType(IPlugin):
     def setJournal(self, journal):
         self.__journal = journal
 
-    def filter(self, transaction):
+    def filter(self, transaction, r):
         if transaction.expected is None:
             return
         if not transaction.type.startswith(transaction.expected):
