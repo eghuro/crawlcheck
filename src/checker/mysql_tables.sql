@@ -10,6 +10,13 @@ CREATE TABLE IF NOT EXISTS transactions (
   depth INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS aliases (
+    transactionId INTEGER NOT NULL,
+    uri VARCHAR(255) PRIMARY KEY NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS aliases_transaction_id ON aliases (transactionId);
+
 CREATE TABLE IF NOT EXISTS link (
   findingId INTEGER PRIMARY KEY NOT NULL,
   toUri VARCHAR(255) NOT NULL,

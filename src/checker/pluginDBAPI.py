@@ -58,6 +58,7 @@ class Table(Enum):
     transactions = 1
     link_defect = 2
     defect_types = 3
+    aliases = 4
 
 class TableError(LookupError):
 
@@ -92,7 +93,7 @@ class DBAPI(object):
         self.con = Connector(conf)
         self.limit = conf.getLimit()
         self.findingId = -1
-        self.tables = [Table.defect_types, Table.transactions, Table.link_defect]
+        self.tables = [Table.defect_types, Table.transactions, Table.aliases,  Table.link_defect]
         self.logs = dict()
         for table in self.tables:
             self.logs[table] = []
@@ -209,7 +210,7 @@ class DBAPI(object):
         return data
 
     def get_seen_uris(self):
-        query = 'SELECT uri FROM transactions'
+        query = 'SELECT uri FROM aliases'
         c = self.con.get_cursor()
         c.execute(query)
         return c.fetchall()
@@ -264,6 +265,9 @@ class DBAPI(object):
                 except TypeError:
                     t['parentId'] = -1
                     logging.getLogger().error("No parent for link with requestId: " + str(t['id']) + " (depth: " + str(t['depth']) + ")")
+            q = ('SELECT uri FROM aliases WHERE transactionId = ?')
+            c.execute(q, [t['id']])
+            t['aliases'] = [row[0] for row in c.fetchall()]
 
         payload['link'] = []
         q = ('SELECT link.findingId, transactions.uri, link.toUri, '

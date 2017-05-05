@@ -332,6 +332,9 @@ class TransactionQueue:
             self.__db.log(Table.transactions,
                           ('INSERT INTO transactions (id, method, uri, origin, verificationStatus, depth) VALUES (?, ?, ?, \'CHECKER\', ?, ?)', 
                           [str(transaction.idno), transaction.method, transaction.uri, "REQUESTED", str(transaction.depth)]) )
+            for uri in transaction.aliases:
+                self.__db.log(Table.aliases,
+                              ('INSERT INTO aliases (transactionId, uri) VALUES (?, ?)', [str(transaction.idno), uri]))
         #TODO: co kdyz jsme pristupovali s jinymi parametry?
         #mark all known aliases as seen
         for uri in transaction.aliases:
