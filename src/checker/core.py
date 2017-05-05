@@ -343,18 +343,21 @@ class TransactionQueue:
 
 
     def __bake_cookies(self, transaction, parent):
-        pass
-        #if self.__conf.uri_acceptor.getMaxPrefix(transaction.uri) in self.__conf.cookies: #sending cookies allowed
-        #    cookies = dict()
-        #    #najit vsechna cookies pro danou adresu
-        #    if parent is not None:
-        #        if parent.cookies is not None:
-        #            cookies = parent.cookies.copy()
-        #    if self.__conf.uri_acceptor.getMaxPrefix(transaction.uri) in self.__conf.custom_cookies: #got custom cookies to send
-        #        cookies.update(self.__conf.custom_cookies[self.__conf.uri_acceptor.getMaxPrefix(transaction.uri)])
-        #    if len(cookies.keys()) > 0:
-        #        logging.getLogger(__name__).debug("Cookies of "+transaction.uri+" updated to "+str(cookies))
-        #    transaction.cookies = cookies
+        cookies = dict()
+        if parent is not None:
+            cookies = parent.cookies.copy()
+        allowed = False
+        for reg in self.__conf.cookies:
+            if reg.match(transaction.uri): #sending cookies allowed #TODO: aliases
+                allowed = True
+                # najit vsechna cookies pro danou adresu
+                if reg in self.__conf.custom_cookies: #got custom cookies to send
+                    cookies.update(self.__conf.custom_cookies[reg])
+        if allowed:
+            if len(cookies.keys()) > 0:
+                logging.getLoggier(__name__).debug("Cookies of "+transaction.uri + " updated to " + str(cookies))
+            transaction.cookies = cookies
+
 
     def load(self):
         #load transactions from DB to memory - only where status is requested

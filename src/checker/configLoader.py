@@ -6,6 +6,7 @@ from pluginDBAPI import DBAPIconfiguration
 from acceptor import Acceptor, RegexAcceptor
 import logging
 import sys
+import re
 
 class ConfigurationError(Exception):
     def __init__(self, msg):
@@ -37,7 +38,7 @@ class ConfigLoader(object):
         self.loaded = False
         self.properties = dict()
         self.payloads = dict()
-        self.cookieFriendlyPrefixes = set()
+        self.cookieFriendlyRegexes = set()
         self.customCookies = dict()
         self.__log = logging.getLogger(__name__)
 
@@ -151,14 +152,15 @@ class ConfigLoader(object):
                 if type(url['cookie']) is not bool:
                     #structure
                     if url['cookie']['reply']:
-                        self.cookieFriendlyPrefixes.add(url[u])
+                        reg = re.compile(url[u])
+                        self.cookieFriendlyRegexes.add(reg)
                         if 'custom' in url['cookie']:
-                            self.customCookies[url[u]] = url['cookie']['custom']
-                            #self.customCookies[prefix] = dict(key:value of cookies)
+                            self.customCookies[reg] = url['cookie']['custom']
+                            #self.customCookies[regex] = dict(key:value of cookies)
                         #else: no cookies to send
                     #else: forbidden to reply cookies and also send custom ones
                 elif url['cookie']: #cookie: True/False parameter
-                    self.cookieFriendlyPrefixes.add(url[u])
+                    self.cookieFriendlyRegexes.add(re.compile(url[u]))
                 else:
                     raise ConfigurationError("Wrong format of cookie record for "+url[u])
             #else: no cookie record or wrong url record -> raised earlier
@@ -240,7 +242,7 @@ class ConfigLoader(object):
 
     def get_configuration(self):
         if self.loaded:
-            return Configuration(self.__dbconf, self.typeAcceptor, self.uriRegexAcceptor, self.entryPoints, self.properties, self.payloads, self.cookieFriendlyPrefixes, self.customCookies, self.postprocess)
+            return Configuration(self.__dbconf, self.typeAcceptor, self.uriRegexAcceptor, self.entryPoints, self.properties, self.payloads, self.cookieFriendlyRegexes, self.customCookies, self.postprocess)
         else:
             return None
 
@@ -252,7 +254,7 @@ class ConfigLoader(object):
 
 
 class Configuration(object):
-    def __init__(self, db, ta, ra, ep, properties, pl, cfp, cc, pp):
+    def __init__(self, db, ta, ra, ep, properties, pl, cfr, cc, pp):
         self.properties = properties
         self.dbconf = db
         self.dbconf.setLimit(self.getProperty("dbCacheLimit"))
@@ -260,7 +262,7 @@ class Configuration(object):
         self.regex_acceptor = ra
         self.entry_points = ep
         self.payloads = pl
-        self.cookies = cfp #cookie friendly prefixes -> eg. on these prefixes we send cookies back
+        self.cookies = cfr #cookie friendly regexes -> eg. on these regexes we send cookies back
         self.custom_cookies = cc
         self.postprocess = pp
 
