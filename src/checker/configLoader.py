@@ -175,8 +175,9 @@ class ConfigLoader(object):
 
         try:
             pluginTypes = dict()
+            regexPlugin = dict()
             self.typeAcceptor = self.__get_acceptor(cts, ct, ct_dsc, root, None, pluginTypes)
-            self.uriRegexAcceptor = self.__create_uri_regex_acceptor(root)
+            self.uriRegexAcceptor = self.__create_uri_regex_acceptor(root, regexPlugin, pluginTypes)
         except ConfigurationError as e:
             self.__log.error(e.msg)
             return False
@@ -218,8 +219,8 @@ class ConfigLoader(object):
                 acceptor.setDefaultAcceptValue(tag[tag_string], False)
 
 
-    def __create_uri_regex_acceptor(self, root):
-       acceptor = RegexAcceptor()
+    def __create_uri_regex_acceptor(self, root, regexPlugin, pluginTypes):
+       acceptor = RegexAcceptor(pluginTypes)
        if 'regexes' in root:
            regexes = root['regexes']
            if regexes:
@@ -227,8 +228,12 @@ class ConfigLoader(object):
                    if 'regex' not in regex:
                        raise ConfigurationError("Regex not specified")
                    if 'plugins' in regex:
+                       if regex['regex'] not in regexPlugin:
+                           regexPlugin[regex['regex']] = []
                        for plugin in regex['plugins']:
                            acceptor.setRegex(regex['regex'], plugin)
+                           regexPlugin[regex['regex']].append(plugin)
+       acceptor.setRegexPlugin(regexPlugin)
        return acceptor
 
 

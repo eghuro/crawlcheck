@@ -31,8 +31,26 @@ class Resolution(Enum):
 
 
 class RegexAcceptor(object):
-    def __init__(self):
+    def __init__(self, pluginType):
         self.regexes = dict()
+        self.pluginType = pluginType
+        self.regexPlugin = None
+        self.accTypesCache = dict()
+
+
+    def setRegexPlugin(self, regexPlugin):
+        self.regexPlugin = regexPlugin
+
+
+    def getAcceptedTypes(self, uri):
+        accTypes = []
+        for regex in self.regexPlugin.keys():
+            if regex.match(uri) != None:
+                if regex not in accTypesCache:
+                    accTypesCache[regex] = []
+                    for plugin in self.regexPlugin[regex]:
+                        accTypesCache[regex] += self.pluginType[plugin]
+                accTypes += accTypesCache[regex]
 
 
     def canTouch(self, value):

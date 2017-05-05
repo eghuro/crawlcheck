@@ -204,29 +204,12 @@ class Transaction:
         pr = urlparse(self.uri)
         return str(pr.scheme+'://'+pr.netloc)
 
-    def __get_accepted_types(self, uriMap, uriAcceptor):
-        p = uriAcceptor.getMaxPrefix(self.uri)
-        if p in uriMap:
-            if uriMap[p]:
-                return set(uriMap[p])
-        return {}
-
-
     def getAcceptedTypes(self, conf):
         if conf is None:
             return []
+        else:
+            return conf.regex_acceptor.getAcceptedTypes(self.uri)
 
-        #if conf.uri_map is None:
-        acceptedTypes = {}
-        #else:
-        #    acceptedTypes = self.__get_accepted_types(conf.uri_map, conf.uri_acceptor)
-        
-        #bak = self.uri
-        #self.uri = self.uri[::-1]
-        #if conf.suffix_uri_map is not None:
-        #     acceptedTypes += self.__get_accepted_types(conf.suffix_uri_map, conf.suffix_acceptor)
-        #self.uri = bak
-        return self.__set2list(acceptedTypes)
 
     def isWorthIt(self, conf):
         ra = conf.regex_acceptor.mightAccept(self.uri)
