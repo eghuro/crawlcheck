@@ -39,12 +39,13 @@ class RobotsFilter(IPlugin):
 
         #link robots.txt from transaction, but mark transaction as visited
         robots_url = Robots.robots_url(transaction.uri)
-        robots_transaction = self.__queue.push_virtual_link(robots_url, transaction)
 
-        for new_map in self.__known_maps - set(maps):
-            self.__log.debug("Discovered sitemap: "+new_map)
-            self.__queue.push_link(new_map, robots_transaction)
-        self.__known_maps.update(maps)
+        if self.__known_maps - set(maps):
+            robots_transaction = self.__queue.push_virtual_link(robots_url, transaction)
+            for new_map in self.__known_maps - set(maps):
+                self.__log.debug("Discovered sitemap: "+new_map)
+                self.__queue.push_link(new_map, robots_transaction)
+            self.__known_maps.update(maps)
 
         self.__log.debug("Testing robots.txt for " + transaction.uri)
         agent = self.__conf.getProperty("agent")
