@@ -15,6 +15,7 @@ import signal
 import os
 import os.path
 import sqlite3
+import time
 
 
 def handler(signum, frame):
@@ -141,11 +142,14 @@ def main():
         log.info("Running checker")
         core_instance = Core(plugins, filters, headers, pps, cl.get_configuration())
         try:
+            t = time.time()
             core_instance.run()
+            log.debug("Execution lasted: " + str(time.time() - t))
         except Exception as e:
             log.exception("Unexpected exception")
         finally:
             core_instance.finalize()
+            log.info("The End.")
     else:
         print("Usage: "+sys.argv[0]+" <configuration YAML file>")
 

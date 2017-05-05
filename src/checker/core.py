@@ -128,6 +128,7 @@ class Core:
             self.clean_tmps()
 
             #run postprocessing
+            self.log.info("Postprocessing")
             for pp in self.postprocessers:
                 pp.process()
 
