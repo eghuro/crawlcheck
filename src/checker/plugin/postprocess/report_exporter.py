@@ -30,12 +30,12 @@ class ReportExporter(IPlugin):
         self.__log.info("Payload size: " + str(len(payload)))
 
         if payload is not None:
-            #DELETE request on /data
-            if self.__conf.getProperty('cleanreport'):
+            if self.__conf.getProperty('report') is not None
                 url = self.__conf.getProperty('report') + '/data'
-                requests.delete(url)
-
-            #POST request on /data
-            requests.post(url, data={'payload' : payload})
+                #DELETE request on /data
+                if self.__conf.getProperty('cleanreport'):
+                    requests.delete(url)
+                #POST request on /data
+                requests.post(url, data={'payload' : payload})
         else:
             self.__log.error("Reporting failed")
