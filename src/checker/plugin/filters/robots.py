@@ -3,7 +3,7 @@ from common import PluginType
 from yapsy.IPlugin import IPlugin
 import reppy
 from reppy.robots import Robots
-from reppy.cache import AgentCache
+from reppy.cache import RobotsCache
 from reppy.exceptions import ReppyException
 from yapsy.IPlugin import IPlugin
 import logging
@@ -24,8 +24,7 @@ class RobotsFilter(IPlugin):
 
     def setConf(self, conf):
         self.__conf = conf
-        self.__robots = AgentCache(timeout=self.__conf.getProperty('timeout'), capacity=100,
-                                    agent=conf.getProperty('agent'))
+        self.__robots = RobotsCache(timeout=self.__conf.getProperty('timeout'), capacity=100)
 
     def setJournal(self, journal):
         pass
@@ -36,25 +35,26 @@ class RobotsFilter(IPlugin):
     def filter(self, transaction):
 
         #grab sitemaps
-        maps = self.__robots.sitemaps(transaction.uri)
-        if len(maps) > 0:
-            #link robots.txt from transaction, but mark transaction as visited
-            robots_url = Robots.robots_url(transaction.uri)
-            robots_transaction = self.__queue.push_virtual_link(robots_url, transaction)
+        maps = self.__robots.get(transaction.uri).sitemaps
 
-            for new_map in self.__known_maps - set(maps):
-                self.__log.debug("Discovered sitemap: "+new_map)
-                self.__queue.push_link(new_map, robots_transaction)
-            self.__known_maps.update(maps)
+        #link robots.txt from transaction, but mark transaction as visited
+        robots_url = Robots.robots_url(transaction.uri)
+        robots_transaction = self.__queue.push_virtual_link(robots_url, transaction)
+
+        for new_map in self.__known_maps - set(maps):
+            self.__log.debug("Discovered sitemap: "+new_map)
+            self.__queue.push_link(new_map, robots_transaction)
+        self.__known_maps.update(maps)
 
         self.__log.debug("Testing robots.txt for " + transaction.uri)
+        agent = self.__conf.getProperty("agent")
         try:
-            if not self.__robots.allowed(transaction.uri):
+            if not self.__robots.allowed(transaction.uri, agent):
                 self.__log.debug("Skipping " + transaction.uri + " as robots.txt prevent " +
-                                 conf.getProperty("agent") + " from fetching it")
+                                 agent + " from fetching it")
                 raise FilterException()
             else:
-                delay = self.__robots.get(transaction.uri).delay
+                delay = self.__robots.get(transaction.uri).agent(agent).delay
                 if delay is not None:
                     robots_url = Robots.robots_url(transaction.uri)
                     if robots_url in self.__visit_times:
