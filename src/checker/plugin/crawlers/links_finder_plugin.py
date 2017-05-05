@@ -39,11 +39,13 @@ class LinksFinder(IPlugin):
         return
 
     def updateCanonical(self, soup, transaction):
-       for link in soup.find_all('link'):
-            if ('rel' in link.attrs) and ('href' in link.attrs):
-                if link['rel'] == 'canonical':
-                    transaction.changePrimaryUri(link['href'])
-                    return
+       for html in soup.find_all('html', limit=1):
+            for head in html.find_all('head', limit=1):
+                for link in head.find_all('link'):
+                    if ('rel' in link.attrs) and ('href' in link.attrs):
+                        if link['rel'] == 'canonical':
+                            transaction.changePrimaryUri(link['href'])
+                            return
 
     def checkType(self, soup, tagL, attr, transaction):
         
