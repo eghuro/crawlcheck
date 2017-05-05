@@ -77,7 +77,7 @@ def load_plugins(cl, log, conf):
             elif pluginInfo.plugin_object.category in plugin_categories:
                 log.debug("General plugin")
                 plugins.append(pluginInfo.plugin_object)
-            elif pluginInfo.plugin_object.category == PluginType.POSTPROCESS:
+            elif pluginInfo.plugin_object.category in conf.postprocess and pluginInfo.plugin_object.category == PluginType.POSTPROCESS:
                 log.debug("Postprocessor")
                 postprocess.append(pluginInfo.plugin_object)
     else:
