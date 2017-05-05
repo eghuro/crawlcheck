@@ -208,7 +208,7 @@ class Transaction:
         if conf is None:
             return []
         else:
-            return conf.regex_acceptor.getAcceptedTypes(self.uri)
+            return Transaction.__set2list(conf.type_acceptor.uris)
 
 
     def isWorthIt(self, conf):
@@ -312,7 +312,7 @@ class TransactionQueue:
     def push_virtual_link(self, uri, parent):
         t = createTransaction(uri, parent.depth + 1, parent.idno)
         self.__mark_seen(t)
-        self.__db.log_link(parent.idno, transaction.uri, transaction.idno)
+        self.__db.log_link(parent.idno, uri, t.idno)
         return t
 
     @staticmethod

@@ -174,10 +174,8 @@ class ConfigLoader(object):
         ct_dsc = 'Content type'
 
         try:
-            pluginTypes = dict()
-            regexPlugin = dict()
-            self.typeAcceptor = self.__get_acceptor(cts, ct, ct_dsc, root, None, pluginTypes)
-            self.uriRegexAcceptor = self.__create_uri_regex_acceptor(root, regexPlugin, pluginTypes)
+            self.typeAcceptor = self.__get_acceptor(cts, ct, ct_dsc, root)
+            self.uriRegexAcceptor = self.__create_uri_regex_acceptor(root)
         except ConfigurationError as e:
             self.__log.error(e.msg)
             return False
@@ -198,29 +196,29 @@ class ConfigLoader(object):
         return True
 
 
-    def __get_acceptor(self, tags_string, tag_string, description, root, record, drocer):
+    def __get_acceptor(self, tags_string, tag_string, description, root):
         acceptor = Acceptor()
         if tags_string in root:
             tags = root[tags_string]
             if tags:
-                self.__run_tags(tags, description, acceptor, tag_string, record, drocer)
+                self.__run_tags(tags, description, acceptor, tag_string)
         return acceptor
 
 
-    def __run_tags(self, tags, description, acceptor, tag_string, record, drocer):
+    def __run_tags(self, tags, description, acceptor, tag_string):
         for tag in tags:
             if tag_string not in tag:
                 raise ConfigurationError(description+" not specified")
             if 'plugins' in tag:
-                ConfigLoader.__set_plugin_accept_tag_value(tag, tag_string, acceptor, record, drocer)
+                ConfigLoader.__set_plugin_accept_tag_value(tag, tag_string, acceptor)
                 acceptor.setDefaultAcceptValue(tag[tag_string], True)
             else:
                 self.__log.info("Forbidden: "+tag[tag_string])
                 acceptor.setDefaultAcceptValue(tag[tag_string], False)
 
 
-    def __create_uri_regex_acceptor(self, root, regexPlugin, pluginTypes):
-       acceptor = RegexAcceptor(pluginTypes)
+    def __create_uri_regex_acceptor(self, root):
+       acceptor = RegexAcceptor()
        if 'regexes' in root:
            regexes = root['regexes']
            if regexes:
@@ -228,32 +226,16 @@ class ConfigLoader(object):
                    if 'regex' not in regex:
                        raise ConfigurationError("Regex not specified")
                    if 'plugins' in regex:
-                       if regex['regex'] not in regexPlugin:
-                           regexPlugin[regex['regex']] = []
                        for plugin in regex['plugins']:
                            acceptor.setRegex(regex['regex'], plugin)
-                           regexPlugin[regex['regex']].append(plugin)
-       acceptor.setRegexPlugin(regexPlugin)
        return acceptor
 
 
     @staticmethod
-    def __set_plugin_accept_tag_value(tag, tag_string, acceptor, record, drocer):
+    def __set_plugin_accept_tag_value(tag, tag_string, acceptor):
         if tag['plugins']:
             for plugin in tag['plugins']:
                 acceptor.setPluginAcceptValue(plugin, tag[tag_string], True)
-
-                #TODO: refactor hard #TODO: TESTME!!
-                if record is not None:
-                    if tag[tag_string] not in record:
-                        record[tag[tag_string]] = set([plugin])
-                    else:
-                        record[tag[tag_string]].add(plugin)
-                elif drocer is not None:
-                    if plugin not in drocer:
-                        drocer[plugin] = set([tag[tag_string]])
-                    elif tag[tag_string] not in drocer[plugin]:
-                        drocer[plugin].add(tag[tag_string])
 
 
     def get_configuration(self):
