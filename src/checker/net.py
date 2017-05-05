@@ -46,7 +46,7 @@ class Network(object):
             name = Network.__save_content(r.text, conf.getProperty("tmpPrefix"), conf.getProperty("tmpSuffix"))
             match, mime = Network.__test_content_type(linkedTransaction.type, name)
             if not match:
-                journal.foundDefect(linkedTransaction.idno, "type-mishmash", "Declared content-type doesn't match detected one", "Declared "+linkedTransaction.type+", detected "+mime, 0.5)
+                journal.foundDefect(linkedTransaction.idno, "type-mishmash", "Declared content-type doesn't match detected one", "Declared "+linkedTransaction.type+", detected "+mime, 0.3)
             return name
             
         except ConnectionError as e:
