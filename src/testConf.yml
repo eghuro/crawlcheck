@@ -36,20 +36,20 @@ content-types:
 
 regexes:
  -
-    regex: "https?://ksp.mff.cuni.cz/(?!(sksp|forum)).*"
+    regex: "https?://ksp.mff.cuni.cz/(?!sksp).*"
     plugins:
        - linksFinder
        - tidyHtmlValidator
        - tinycss
        - css_scraper
        - formChecker
-    cookie: True #posli zpet cookies, pokud jsi nejake ziskal
 
 filters:
  - depth
  - robots
  - contentLength
  - canonical
+ - acceptedType
 
 postprocess:
  - report_exporter

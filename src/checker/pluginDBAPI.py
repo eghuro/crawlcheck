@@ -233,6 +233,7 @@ class DBAPI(object):
 
     def create_report_payload(self):
         payload = dict()
+        payload['visual-data'] = dict()
 
         #TODO: 3 parallel processes
         payload['transactions'] = []
@@ -270,7 +271,10 @@ class DBAPI(object):
             t['aliases'] = [row[0] for row in c.fetchall()]
 
         payload['link'] = []
-        q = ('SELECT link.findingId, transactions.uri, link.toUri, '
+        proc = 0
+        total = 0
+        good = 0
+        q = ('SELECT link.findingId, transactions.uri, transactions.responseStatus, link.toUri, '
              'link.processed, link.requestId, link.responseId FROM '
              'link INNER JOIN transactions ON link.responseId = transactions.id')
         c.execute(q)
@@ -278,13 +282,32 @@ class DBAPI(object):
             link = dict()
             link['findingId'] = row[0]
             link['fromUri'] = row[1]
-            link['toUri'] = row[2]
-            link['processed'] = row[3]
-            link['requestId'] = row[4]
-            link['responseId'] = row[5]
+            link['good'] = (row[2] < 400)
+            link['toUri'] = row[3]
+            link['processed'] = row[4]
+            link['requestId'] = row[5]
+            link['responseId'] = row[6]
             payload['link'].append(link)
+            if row[4]:
+                proc = proc + 1
+            total = total + 1
+            if link['good']:
+                good = good + 1
+        if total == 0.0:
+            perc = 0.0
+        else:
+            perc = proc / total * 100.0
+        payload['visual-data']['processed-pie'] = [[0, perc, "black"], [perc, 100, "gray"]]
+        if proc == 0.0:
+            perc = 0.0
+        else:
+            perc = good / proc * 100.0
+        payload['visual-data']['processed-pie'] = [[0, perc, "good"], [perc, 100, "red"]]
 
         payload['defect'] = []
+        payload['visual-data']['defect-type-count'] = dict()
+        payload['visual-data']['defect-type-severity'] = dict()
+
         q = ('SELECT defect.findingId, defectType.type, '
              'defectType.description, defect.evidence, defect.severity, '
              'defect.responseId, transactions.uri FROM defect '
@@ -301,5 +324,12 @@ class DBAPI(object):
             defect['responseId'] = row[5]
             defect['uri'] = row[6]
             payload['defect'].append(defect)
+            if row[1] not in payload['visual-data']['defect-type-count']:
+                payload['visual-data']['defect-type-count'][row[1]] = 0
+            payload['visual-data']['defect-type-count'][row[1]] = payload['visual-data']['defect-type-count'][row[1]] + 1
+            payload['visual-data']['defect-type-severity'][row[1]] = row[4]
+        payload['visual-data']['defect-type-count-array'] = [payload['visual-data']['defect-type-count'][key] for key in payload['visual-data']['defect-type-count'].keys()]
+        payload['visual-data']['defect-type-label-array'] = [key for key in payload['visual-data']['defect-type-count'].keys()]
+        payload['visual-data']['severity-values'] = list(set([payload['visual-data']['defect-type-severity'][t] for t in payload['visual-data']['defect-type-severity'].keys()]))
 
         return payload

@@ -23,14 +23,20 @@ def handler(signum, frame):
         core_instance.finalize()
     sys.exit(0)
 
-def configure_logger(conf):
+def configure_logger(conf, debug=False):
     log = logging.getLogger()
-    log.setLevel(logging.DEBUG)
+    if debug:
+        log.setLevel(logging.DEBUG)
+    else:
+        log.setLevel(logging.INFO)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     if conf:
         if conf.getProperty('logfile') is not None:
             fh = logging.FileHandler(conf.getProperty('logfile'))
-            fh.setLevel(logging.DEBUG)
+            if debug:
+                fh.setLevel(logging.DEBUG)
+            else:
+                fh.setLevel(logging.INFO)
             fh.setFormatter(formatter)
             log.addHandler(fh)
 
@@ -78,9 +84,11 @@ def load_plugins(cl, log, conf):
             elif pluginInfo.plugin_object.category in plugin_categories:
                 log.debug("General plugin")
                 plugins.append(pluginInfo.plugin_object)
-            elif pluginInfo.plugin_object.category in conf.postprocess and pluginInfo.plugin_object.category == PluginType.POSTPROCESS:
+            elif pluginInfo.plugin_object.id in conf.postprocess and pluginInfo.plugin_object.category is PluginType.POSTPROCESS:
                 log.debug("Postprocessor")
                 postprocess.append(pluginInfo.plugin_object)
+            else:
+                log.error("Unknown category for " + pluginInfo.name)
     else:
         log.info("No plugins found")
     return plugins, headers, filters, postprocess
@@ -95,7 +103,7 @@ def main():
     log = logging.getLogger(__name__)
     log.info("Crawlcheck started")
 
-    if len(sys.argv) == 2:
+    if len(sys.argv) >= 2:
         # load configuration
         if not os.path.isfile(sys.argv[1]):
             log.error("Invalid configuration file: " + sys.argv[1])
@@ -109,7 +117,14 @@ def main():
             log.error("Failed to load configuration file")
             return
 
-        configure_logger(conf)
+        if len(sys.argv) == 3:
+            if sys.argv[2] == '-d':
+                configure_logger(conf, debug=True)
+            else:
+                log.error("Input error: " + sys.argv[2])
+                return
+        else:
+            configure_logger(conf)
 
         #if database file exists and user wanted to clean it, remove it
         cleaned = False

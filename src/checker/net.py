@@ -8,6 +8,7 @@ import logging
 import math
 import time
 
+requests.packages.urllib3.disable_warnings()
 
 class NetworkError(Exception):
     pass

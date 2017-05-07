@@ -187,6 +187,7 @@ class ConfigLoader(object):
         #Grab lists
         self.__set_entry_points(root)
         self.__set_filters(root)
+        self.__set_postprocessors(root)
         self.__set_payloads(root)
 
         #Grab properties

@@ -130,6 +130,7 @@ class Core:
             #run postprocessing
             self.log.info("Postprocessing")
             for pp in self.postprocessers:
+                self.log.debug(pp.id)
                 pp.process()
 
     def clean_tmps(self):
