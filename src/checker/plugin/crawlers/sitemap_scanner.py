@@ -25,7 +25,7 @@ class SitemapScanner(IPlugin):
 
     def check(self, transaction):
 
-        soup = BeautifulSoup(transaction.getContent())
+        soup = BeautifulSoup(transaction.getContent(), 'html.parser')
         urls = soup.findAll('url')
         log = logging.getLogger(__name__)
         if not urls:
