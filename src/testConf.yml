@@ -44,7 +44,7 @@ regexes:
        - css_scraper
        - formChecker
  -
-    regex: "https?://.+"
+    regex: "https?://(?!ksp.mff.cuni.cz/(sksp|profil)).+" #test links (HEAD request) only
     plugins:
 
 filters:

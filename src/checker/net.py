@@ -42,7 +42,7 @@ class Network(object):
         try:
             acc_header = Network.__create_accept_header(acceptedTypes)
             log.debug("Accept header: "+acc_header)
-            r = Network.__conditional_fetch(linkedTransaction, acc_header, conf, session)
+            r = Network.__conditional_fetch(linkedTransaction, acc_header, conf, session, journal)
             Network.__store_cookies(linkedTransaction, r.cookies, journal)
             name = Network.__save_content(r.text, conf.getProperty("tmpPrefix"), conf.getProperty("tmpSuffix"))
             match, mime = Network.__test_content_type(linkedTransaction.type, name)
@@ -102,7 +102,7 @@ class Network(object):
         return ct, r
     
     @staticmethod
-    def __conditional_fetch(transaction, accept, conf, session):
+    def __conditional_fetch(transaction, accept, conf, session, journal):
         
         if not transaction.isWorthIt(conf):
             logging.getLogger(__name__).debug("Uri not accepted: "+transaction.uri) 
@@ -112,10 +112,10 @@ class Network(object):
             raise ConditionError
         
         else:
-            return Network.__fetch_response(transaction, conf.getProperty("agent"), accept, conf.getProperty('timeout'), session, conf.getProperty("verifyHttps"), conf.getProperty("maxAttempts"))
+            return Network.__fetch_response(transaction, conf.getProperty("agent"), accept, conf.getProperty('timeout'), session, journal, conf.getProperty("verifyHttps"), conf.getProperty("maxAttempts"))
 
     @staticmethod
-    def __fetch_response(transaction, agent, accept, timeout, session, verify=False, max_attempts=3):
+    def __fetch_response(transaction, agent, accept, timeout, session, journal, verify=False, max_attempts=3):
 
         r = None
         head = {"user-agent" : agent, "accept" : accept }

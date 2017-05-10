@@ -34,22 +34,23 @@ class RobotsFilter(IPlugin):
 
     def filter(self, transaction):
 
-        #grab sitemaps
-        maps = self.__robots.get(transaction.uri).sitemaps
-
-        #link robots.txt from transaction, but mark transaction as visited
-        robots_url = Robots.robots_url(transaction.uri)
-
-        if self.__known_maps - set(maps):
-            robots_transaction = self.__queue.push_virtual_link(robots_url, transaction)
-            for new_map in self.__known_maps - set(maps):
-                self.__log.debug("Discovered sitemap: "+new_map)
-                self.__queue.push_link(new_map, robots_transaction)
-            self.__known_maps.update(maps)
-
-        self.__log.debug("Testing robots.txt for " + transaction.uri)
-        agent = self.__conf.getProperty("agent")
         try:
+            #grab sitemaps
+            maps = self.__robots.get(transaction.uri).sitemaps
+
+            #link robots.txt from transaction, but mark transaction as visited
+            robots_url = Robots.robots_url(transaction.uri)
+
+            if self.__known_maps - set(maps):
+                robots_transaction = self.__queue.push_virtual_link(robots_url, transaction)
+                for new_map in self.__known_maps - set(maps):
+                    self.__log.debug("Discovered sitemap: "+new_map)
+                    self.__queue.push_link(new_map, robots_transaction)
+                self.__known_maps.update(maps)
+
+            self.__log.debug("Testing robots.txt for " + transaction.uri)
+            agent = self.__conf.getProperty("agent")
+
             if not self.__robots.allowed(transaction.uri, agent):
                 self.__log.debug("Skipping " + transaction.uri + " as robots.txt prevent " +
                                  agent + " from fetching it")
@@ -59,14 +60,20 @@ class RobotsFilter(IPlugin):
                 if delay is not None:
                     robots_url = Robots.robots_url(transaction.uri)
                     if robots_url in self.__visit_times:
+                        self.__log.debug("Got timestamp for robots.txt file " + robots_url + ": " + self.__visit_times[robots_url])
                         sleep_time = time.time() - self.__visit_times[robots_url] - delay
                         if sleep_time > 0:
                             self.__log.info("Sleep for " + str(sleep_time) + " due to crawl delay")
+                            self.__log.debug("Robots.txt: " + robots_url)
                             time.sleep(sleep_time)
+                    else:
+                        self.__log.debug("New robots.txt with crawl delay: " + robots_url)
                     self.__visit_times[robots_url] = time.time()
         except TypeError as e:
             self.__log.warning("Error while handling robots.txt for "+transaction.uri + ", not rejecting")
             self.__log.debug(str(e))
+        except ValueError as e:
+            self.__log.debug("Value error while parsing robots.txt for " + transaction.uri +": " + str(e))
         except ReppyException as e:
             self.__log.debug("ReppyException: "+str(e))
 
