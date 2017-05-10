@@ -229,8 +229,11 @@ class ConfigLoader(object):
                    if 'regex' not in regex:
                        raise ConfigurationError("Regex not specified")
                    if 'plugins' in regex:
-                       for plugin in regex['plugins']:
-                           acceptor.setRegex(regex['regex'], plugin)
+                       if regex['plugins'] is not None:
+                           for plugin in regex['plugins']:
+                               acceptor.setRegex(regex['regex'], plugin)
+                       else:
+                           acceptor.setRegex(regex['regex'], None)
        return acceptor
 
 

@@ -1,0 +1,8 @@
+[Core]
+Name = Test that URI might be accepted
+Module = acceptedUri
+
+[Documentation]
+Author = Alexandr Mansurov
+Version = 0.0
+Description = Filter out transactions with URI that won't be matched by any available rule

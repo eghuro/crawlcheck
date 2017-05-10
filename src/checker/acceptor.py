@@ -54,6 +54,15 @@ class RegexAcceptor(object):
                     return True
         return False
 
+    def getAcceptingPlugins(self, value):
+        accepting = set()
+        for plugin in self.regexes.keys():
+            if plugin is not None:
+                for r in self.regexes[plugin]:
+                    if r.match(value) != None:
+                        accepting.add(plugin)
+                        break
+        return accepting
 
     def setRegex(self, regex, plugin):
         p = re.compile(regex)
