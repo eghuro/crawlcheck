@@ -61,7 +61,7 @@ class RobotsFilter(IPlugin):
                     if robots_url in self.__visit_times:
                         sleep_time = time.time() - self.__visit_times[robots_url] - delay
                         if sleep_time > 0:
-                            self.__log.info("Sleep for " + sleep_time + " due to crawl delay")
+                            self.__log.info("Sleep for " + str(sleep_time) + " due to crawl delay")
                             time.sleep(sleep_time)
                     self.__visit_times[robots_url] = time.time()
         except TypeError as e:

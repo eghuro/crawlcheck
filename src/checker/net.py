@@ -152,7 +152,9 @@ class Network(object):
                     transaction.changePrimaryUri(r.url)
 
                 return r
-            raise NetworkError("All " + str(max_attempts) + " attempts to get " + transaction.uri + " failed.")
+            msg = "All " + str(max_attempts) + " attempts to get " + transaction.uri + " failed."
+            journal.foundDefect(transaction.idno, "neterr", "Network error", msg, 0.9)
+            raise NetworkError(msg)
 
     @staticmethod
     def __gen_param(transaction):
