@@ -9,7 +9,7 @@ maxContentLength: 2000000
 agent: "Crawlcheck/0.05"
 logfile: cc.log
 report: "http://localhost:5000"
-cleanreport: True
+cleanreport: False
 maxVolume: 100000000 #max 100MB of tmp files
 dbCacheLimit: 1000000 #cache up to 1M of DB queries
     
@@ -36,13 +36,16 @@ content-types:
 
 regexes:
  -
-    regex: "https?://ksp.mff.cuni.cz/(?!sksp).*"
+    regex: "https?://ksp.mff.cuni.cz/(?!sksp|profil).*"
     plugins:
        - linksFinder
        - tidyHtmlValidator
        - tinycss
        - css_scraper
        - formChecker
+ -
+    regex: "https?://.+"
+    plugins:
 
 filters:
  - depth
@@ -50,9 +53,7 @@ filters:
  - contentLength
  - canonical
  - acceptedType
-
-postprocess:
- - report_exporter
+ - acceptedUri
 
 entryPoints:
  - "http://ksp.mff.cuni.cz/"

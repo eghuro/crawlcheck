@@ -9,6 +9,7 @@ from core import Core
 from common import PluginType
 
 import logging
+import logging.handlers
 import signal
 import sys
 import signal
@@ -32,13 +33,24 @@ def configure_logger(conf, debug=False):
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     if conf:
         if conf.getProperty('logfile') is not None:
-            fh = logging.FileHandler(conf.getProperty('logfile'))
+            need_roll = os.path.isfile(conf.getProperty('logfile'))
+            fh = logging.handlers.RotatingFileHandler(conf.getProperty('logfile'), backupCount=50)
             if debug:
                 fh.setLevel(logging.DEBUG)
             else:
                 fh.setLevel(logging.INFO)
             fh.setFormatter(formatter)
             log.addHandler(fh)
+
+            if need_roll:
+                # Add timestamp
+                log.debug('\n---------\nLog closed on %s.\n---------\n' % time.asctime())
+
+                # Roll over on application start
+                fh.doRollover()
+            # Add timestamp
+            log.debug('\n---------\nLog started on %s.\n---------\n' % time.asctime())
+
 
     sh = logging.StreamHandler()
     sh.setLevel(logging.INFO)
@@ -74,13 +86,14 @@ def load_plugins(cl, log, conf):
         log.info("Loaded plugins:")
         for pluginInfo in manager.getAllPlugins():
             log.info(pluginInfo.name)
-            if pluginInfo.plugin_object.id in allowed_filters:
-                if pluginInfo.plugin_object.category is PluginType.FILTER:
-                    log.debug("Filter")
-                    filters.append(pluginInfo.plugin_object)
-                elif pluginInfo.plugin_object.category is PluginType.HEADER:
-                    log.debug("Header")
-                    headers.append(pluginInfo.plugin_object)
+            if pluginInfo.plugin_object.category is PluginType.FILTER or pluginInfo.plugin_object.category is PluginType.HEADER:
+                if pluginInfo.plugin_object.id in allowed_filters:
+                    if pluginInfo.plugin_object.category is PluginType.FILTER:
+                        log.debug("Filter")
+                        filters.append(pluginInfo.plugin_object)
+                    elif pluginInfo.plugin_object.category is PluginType.HEADER:
+                        log.debug("Header")
+                        headers.append(pluginInfo.plugin_object)
             elif pluginInfo.plugin_object.category in plugin_categories:
                 log.debug("General plugin")
                 plugins.append(pluginInfo.plugin_object)
@@ -117,24 +130,35 @@ def main():
             log.error("Failed to load configuration file")
             return
 
-        if len(sys.argv) == 3:
+        export_only = False
+        debug = False
+        if len(sys.argv) >= 3:
             if sys.argv[2] == '-d':
-                configure_logger(conf, debug=True)
+                debug = True
+                if len(sys.argv) == 4:
+                    if sys.argv[3] == '-e':
+                        export_only = True
+            elif sys.argv[2] == '-e': #TODO: properly
+                export_only = True
+                if len(sys.argv) == 4:
+                    if sys.argv[3] == '-d':
+                        debug=True
             else:
                 log.error("Input error: " + sys.argv[2])
                 return
-        else:
-            configure_logger(conf)
+        print("Debug: " + str(debug))
+        print("Export only: " + str(export_only))
+        configure_logger(conf, debug=debug)
 
         #if database file exists and user wanted to clean it, remove it
         cleaned = False
 
-        if os.path.isfile(conf.dbconf.getDbname()) and conf.getProperty('cleandb'):
+        if os.path.isfile(conf.dbconf.getDbname()) and conf.getProperty('cleandb') and not export_only:
             log.info("Removing database file " + conf.dbconf.getDbname() + " as configured")
             os.remove(conf.dbconf.getDbname())
             cleaned = True
         #if database file doesn't exist, create & initialize it - or warn use
-        if not os.path.isfile(conf.dbconf.getDbname()):
+        if not os.path.isfile(conf.dbconf.getDbname()) and not export_only:
             if not cleaned:
                 log.warn("Database file " + conf.dbconf.getDbname() + " doesn't exist")
             if conf.getProperty('initdb') or cleaned:
@@ -156,15 +180,18 @@ def main():
 
         log.info("Running checker")
         core_instance = Core(plugins, filters, headers, pps, cl.get_configuration())
-        try:
-            t = time.time()
-            core_instance.run()
-            log.debug("Execution lasted: " + str(time.time() - t))
-        except Exception as e:
-            log.exception("Unexpected exception")
-        finally:
-            core_instance.finalize()
-            log.info("The End.")
+        if not export_only:
+            try:
+                t = time.time()
+                core_instance.run()
+                log.debug("Execution lasted: " + str(time.time() - t))
+            except Exception as e:
+                log.exception("Unexpected exception")
+            finally:
+                core_instance.finalize()
+                log.info("The End.")
+        else:
+           core_instance.postprocess() 
     else:
         print("Usage: "+sys.argv[0]+" <configuration YAML file>")
 
