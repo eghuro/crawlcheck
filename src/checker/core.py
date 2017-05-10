@@ -107,13 +107,13 @@ class Core:
                 self.rack.run(transaction)
                 self.journal.stopChecking(transaction, VerificationStatus.done_ok)
                 while self.volume > self.conf.getProperty("maxVolume"):
-                    self.log.debug("CLEANUP ... Size of tmps: " + str(self.volume) + ", limit: " + (self.conf.getProperty("maxVolume")))
+                    self.log.debug("CLEANUP ... Size of tmps: " + str(self.volume) + ", limit: " + str(self.conf.getProperty("maxVolume")))
                     f = self.files[0]
                     l = os.path.getsize(f)
                     os.remove(f)
                     self.volume = self.volume - l
                     self.files.pop(0)
-                    self.log.debug("Size of tmps after cleanup: " + self.volume)
+                    self.log.debug("Size of tmps after cleanup: " + str(self.volume))
 
     def finalize(self):
         #self.rack.stop()
