@@ -60,7 +60,7 @@ class RobotsFilter(IPlugin):
                 if delay is not None:
                     robots_url = Robots.robots_url(transaction.uri)
                     if robots_url in self.__visit_times:
-                        self.__log.debug("Got timestamp for robots.txt file " + robots_url + ": " + self.__visit_times[robots_url])
+                        self.__log.debug("Got timestamp for robots.txt file " + robots_url + ": " + str(self.__visit_times[robots_url]))
                         sleep_time = time.time() - self.__visit_times[robots_url] - delay
                         if sleep_time > 0:
                             self.__log.info("Sleep for " + str(sleep_time) + " due to crawl delay")
