@@ -54,6 +54,7 @@ filters:
  - canonical
  - acceptedType
  - acceptedUri
+ - uri_normalizer
 
 entryPoints:
  - "http://ksp.mff.cuni.cz/"

@@ -65,7 +65,7 @@ class RobotsFilter(IPlugin):
                             time.sleep(sleep_time)
                     self.__visit_times[robots_url] = time.time()
         except TypeError as e:
-            self.__log.warning("Error while handling robots.txt for "+transaction.uri)
+            self.__log.warning("Error while handling robots.txt for "+transaction.uri + ", not rejecting")
             self.__log.debug(str(e))
         except ReppyException as e:
             self.__log.debug("ReppyException: "+str(e))

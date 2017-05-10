@@ -1,0 +1,8 @@
+[Core]
+Name = URI normalizer filter
+Module = uri_normalizer
+
+[Documentation]
+Author = Alexandr Mansurov
+Version = 0.1
+Description = Normalize URI
