@@ -25,9 +25,15 @@ class Core:
         self.db.load_defect_types()
         self.db.load_finding_id()
         self.files = []
+        self.__time_subscribers = []
         self.volume = 0
 
         self.filters = filters
+        for f in filters:
+            try:
+                self.__time_subscribers.append(f.getTimeSubscriber())
+            except AttributeError:
+                pass
         self.header_filters = headers
         self.postprocessers = postprocess
 
@@ -79,6 +85,7 @@ class Core:
                 for hf in self.header_filters:
                    hf.filter(transaction, r)
 
+                start = time.time()
                 transaction.loadResponse(self.conf, self.journal, session)
             except TouchException: #nesmim se toho dotykat
                 self.log.debug("Forbidden to touch "+transaction.uri)
@@ -101,6 +108,8 @@ class Core:
                 continue
 
             else: #Plugins
+                for sub in self.__time_subscribers:
+                    sub.markStart(start, transaction.uri)
                 self.files.append(transaction.file)
                 self.volume = self.volume + os.path.getsize(transaction.file) 
                 self.journal.startChecking(transaction)

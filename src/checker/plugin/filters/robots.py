@@ -68,7 +68,7 @@ class RobotsFilter(IPlugin):
                             time.sleep(sleep_time)
                     else:
                         self.__log.debug("New robots.txt with crawl delay: " + robots_url)
-                    self.__visit_times[robots_url] = time.time()
+                    #self.__visit_times[robots_url] = time.time()
         except TypeError as e:
             self.__log.warning("Error while handling robots.txt for "+transaction.uri + ", not rejecting")
             self.__log.debug(str(e))
@@ -77,8 +77,24 @@ class RobotsFilter(IPlugin):
         except ReppyException as e:
             self.__log.debug("ReppyException: "+str(e))
 
+    def getTimeSubscriber(self):
+        return TimeSubscriber(self)
+
+    def markVisit(self, url, t):
+        robots_url = Robots.robots_url(url)
+        self.__visit_times[robots_url] = t
+        
 #Reppy references:
 #http://pythonhackers.com/p/mt3/reppy
 #https://github.com/seomoz/reppy
 #http://pythonhackers.com/p/mt3/reppy
 
+
+
+class TimeSubscriber(object):
+
+    def __init__(self, rfilter):
+        self.__plugin = rfilter
+
+    def markStart(self, t, url):
+        self.__plugin.markVisit(url, t)
