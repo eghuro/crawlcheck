@@ -226,15 +226,12 @@ class DBAPI(object):
         log.info("Creating report")
         qt = Queue()
         tproc = Process(target=DBAPI.__create_transactions, args=(self.conf.getDbname(), qt, 4))
-        #payload['transactions'] = DBAPI.__create_transactions(self.conf.getDbname())
 
         ql = Queue()
         lproc = Process(target=DBAPI.__create_links, args=(self.conf.getDbname(), ql))
-        #payload['link'] = DBAPI.__create_links(self.conf.getDbname())
 
         qd = Queue()
         dproc = Process(target=DBAPI.__create_defects, args=(self.conf.getDbname(), qd))
-        #payload['defect'] = DBAPI.__create_defects(self.conf.getDbname())
 
         log.debug("Starting report worker processes")
         tproc.start()
