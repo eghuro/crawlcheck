@@ -190,7 +190,7 @@ class DBAPI(object):
         self.findingId =  max(maxs)
 
     def __load_max_finding_id(self, table):
-        query = 'SELECT MAX(findingId) FROM ' + table
+        query = 'SELECT MAX(findingId) FROM %s' % (table)
         cursor = self.con.get_cursor()
         cursor.execute(query)
         row = cursor.fetchone()
@@ -267,7 +267,7 @@ class DBAPI(object):
                     t['parentId'] = c.fetchone()[0]
                 except TypeError:
                     t['parentId'] = -1
-                    logging.getLogger().error("No parent for link with requestId: " + str(t['id']) + " (depth: " + str(t['depth']) + ")")
+                    logging.getLogger().error("No parent for link with requestId: %s (depth: %s)" % (str(t['id'), str(t['depth'])))
             q = ('SELECT uri FROM aliases WHERE transactionId = ?')
             c.execute(q, [t['id']])
             t['aliases'] = [row[0] for row in c.fetchall()]

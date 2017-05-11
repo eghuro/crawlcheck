@@ -46,7 +46,7 @@ class Core:
             self.__initializePlugin(plugin)
 
         for entryPoint in self.conf.entry_points:
-            self.log.debug("Pushing to queue: "+entryPoint.url+", data: "+str(entryPoint.data))
+            self.log.debug("Pushing to queue: %s, data: %s" % (entryPoint.url, str(entryPoint.data)))
             self.queue.push(createTransaction(entryPoint.url, 0, -1, entryPoint.method, entryPoint.data))
 
         self.rack = Rack(self.conf.type_acceptor, self.conf.regex_acceptor, plugins)
@@ -67,10 +67,10 @@ class Core:
                 if type(transaction.uri) != str:
                     transaction.uri = str(transaction.uri)
 
-                self.log.info("Processing " + transaction.uri)
+                self.log.info("Processing %s" % (transaction.uri))
 
                 if not transaction.isWorthIt(self.conf): #neni zadny plugin, ktery by prijal
-                    self.log.debug(transaction.uri+" not worth my time")
+                    self.log.debug("%s not worth my time" % (transaction.uri))
 
                     self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                     continue
@@ -88,7 +88,7 @@ class Core:
                 start = time.time()
                 transaction.loadResponse(self.conf, self.journal, session)
             except TouchException: #nesmim se toho dotykat
-                self.log.debug("Forbidden to touch "+transaction.uri)
+                self.log.debug("Forbidden to touch %s" % (transaction.uri))
                 self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                 continue
             except ConditionError: #URI nebo content-type dle konfigurace
@@ -96,14 +96,14 @@ class Core:
                self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                continue
             except FilterException: #filters
-                self.log.debug(transaction.uri + " filtered out")
+                self.log.debug("%s filtered out" % (transaction.uri))
                 self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                 continue
             except StatusError as e: #already logged
                self.journal.stopChecking(transaction, VerificationStatus.done_ko)
                continue
             except NetworkError as e:
-                self.log.error("Network error: "+format(e))
+                self.log.error("Network error: %s" % (format(e)))
                 self.journal.stopChecking(transaction, VerificationStatus.done_ko)
                 continue
 
@@ -116,13 +116,13 @@ class Core:
                 self.rack.run(transaction)
                 self.journal.stopChecking(transaction, VerificationStatus.done_ok)
                 while self.volume > self.conf.getProperty("maxVolume"):
-                    self.log.debug("CLEANUP ... Size of tmps: " + str(self.volume) + ", limit: " + str(self.conf.getProperty("maxVolume")))
+                    self.log.debug("CLEANUP ... Size of tmps: %s, limit: %s" % (str(self.volume), str(self.conf.getProperty("maxVolume"))))
                     f = self.files[0]
                     l = os.path.getsize(f)
                     os.remove(f)
                     self.volume = self.volume - l
                     self.files.pop(0)
-                    self.log.debug("Size of tmps after cleanup: " + str(self.volume))
+                    self.log.debug("Size of tmps after cleanup: %s" % (str(self.volume)))
                     gc.collect()
 
     def finalize(self):
@@ -264,9 +264,9 @@ class Rack:
     def __run_one(self, transaction, plugin):
 
         if self.accept(transaction, plugin):
-            self.log.info(plugin.id + " started checking " + transaction.uri)
+            self.log.info("%s started checking %s" % (plugin.id, transaction.uri))
             plugin.check(transaction)
-            self.log.info(plugin.id + " stopped checking " + transaction.uri)
+            self.log.info("%s stopped checking %s" % (plugin.id, transaction.uri))
 
     def accept(self, transaction, plugin):
 
@@ -370,7 +370,7 @@ class TransactionQueue:
                     cookies.update(self.__conf.custom_cookies[reg])
         if allowed:
             if len(cookies.keys()) > 0:
-                logging.getLoggier(__name__).debug("Cookies of "+transaction.uri + " updated to " + str(cookies))
+                logging.getLoggier(__name__).debug("Cookies of %s updated to %s" % (transaction.uri, str(cookies)))
             transaction.cookies = cookies
 
 
@@ -395,11 +395,11 @@ class Journal:
         self.__db = db
        
     def startChecking(self, transaction):
-        logging.getLogger(__name__).debug("Starting checking " + transaction.uri)
+        logging.getLogger(__name__).debug("Starting checking %s" % (transaction.uri))
         self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatus = ?, uri = ?, contentType = ?, responseStatus = ? WHERE id = ?', ["VERIFYING", transaction.uri, transaction.type, transaction.status, transaction.idno]) )
 
     def stopChecking(self, transaction, status):
-        logging.getLogger(__name__).debug("Stopped checking " + transaction.uri)
+        logging.getLogger(__name__).debug("Stopped checking %s" % (transaction.uri))
         self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatus = ? WHERE id = ?', [str(status), transaction.idno]) )
 
     def foundDefect(self, transaction, defect, evidence, severity=0.5):

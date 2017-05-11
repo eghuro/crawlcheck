@@ -41,7 +41,7 @@ class Network(object):
         log = logging.getLogger(__name__)
         try:
             acc_header = Network.__create_accept_header(acceptedTypes)
-            log.debug("Accept header: "+acc_header)
+            log.debug("Accept header: %s" % (acc_header))
             r = Network.__conditional_fetch(linkedTransaction, acc_header, conf, session, journal)
             Network.__store_cookies(linkedTransaction, r.cookies, journal)
             name = Network.__save_content(r.text, conf.getProperty("tmpPrefix"), conf.getProperty("tmpSuffix"))
@@ -51,7 +51,7 @@ class Network(object):
             return name
             
         except ConnectionError as e:
-            log.debug("Connection error: "+format(e))
+            log.debug("Connection error: %s" % (format(e)))
             journal.foundDefect(linkedTransaction.srcId, "badlink", "Invalid link", linkedTransaction.uri, 1.0)
             raise NetworkError(e)
         except Timeout as e:
@@ -68,14 +68,14 @@ class Network(object):
             raise UrlError(s+" is not an allowed schema")
 
         try:
-            log.debug("Timeout set to: " + str(conf.getProperty("timeout")))
+            log.debug("Timeout set to: %s" % ( str(conf.getProperty("timeout"))))
             r = session.head(linkedTransaction.uri, headers={ "user-agent": conf.getProperty("agent") }, timeout=conf.getProperty("timeout"), verify=verify) #TODO: accept
         except Timeout as e:
             log.error("Timeout")
             journal.foundDefect(linkedTransaction.srcId, "timeout", "Link timed out", linkedTransaction.uri, 0.9)
             raise NetworkError() from e
         except ConnectionError as e:
-            log.debug("Connection error: "+format(e))
+            log.debug("Connection error: %s" % (format(e)))
             journal.foundDefect(linkedTransaction.srcId, "badlink", "Invalid link", linkedTransaction.uri, 1.0)
             raise NetworkError(e) from e
 
@@ -104,10 +104,10 @@ class Network(object):
     def __conditional_fetch(transaction, accept, conf, session, journal):
         
         if not transaction.isWorthIt(conf):
-            logging.getLogger(__name__).debug("Uri not accepted: "+transaction.uri) 
+            logging.getLogger(__name__).debug("Uri not accepted: %s" % (transaction.uri))
             raise ConditionError
         elif not conf.type_acceptor.mightAccept(transaction.type):
-            logging.getLogger(__name__).debug("Content-type not accepted: "+transaction.type+" ("+transaction.uri+")")
+            logging.getLogger(__name__).debug("Content-type not accepted: %s (%s)" % (transaction.type, transaction.uri))
             raise ConditionError
         
         else:
@@ -119,8 +119,8 @@ class Network(object):
         r = None
         head = {"user-agent" : agent, "accept" : accept }
         log = logging.getLogger(__name__)
-        log.debug("Fetching "+transaction.uri)
-        log.debug("Data: "+str(transaction.data))
+        log.debug("Fetching %s" % (transaction.uri))
+        log.debug("Data: %s" % (str(transaction.data)))
         #if not allowed to send cookies or don't have any, then cookies are None -> should be safe to use them; maybe filter which to use?
         attempt = 0
         while attempt < max_attempts:
@@ -147,17 +147,17 @@ class Network(object):
                 transaction.status = r.status_code
 
                 if transaction.uri != r.url:
-                    logging.getLogger(__name__).debug("Redirection: "+transaction.uri+" -> "+r.url)
+                    logging.getLogger(__name__).debug("Redirection: %s -> %s" % (transaction.uri, r.url))
                     transaction.changePrimaryUri(r.url)
 
                 return r
-            msg = "All " + str(max_attempts) + " attempts to get " + transaction.uri + " failed."
+            msg = "All %s attempts to get %s failed." % (str(max_attempts), transaction.uri)
             journal.foundDefect(transaction.idno, "neterr", "Network error", msg, 0.9)
             raise NetworkError(msg)
 
     @staticmethod
     def __gen_param(transaction):
-        if transaction.data is not None:
+        if (transaction.data is not None) and (len(transaction.data) > 0):
             param = "?"+urlencode(transaction.data)
         else: 
             param = ""
@@ -181,13 +181,7 @@ class Network(object):
     def __create_accept_header(acceptedTypes):
 
         #see RFC 2616, section 14.1
-        if len(acceptedTypes) > 0:
-            string = acceptedTypes[0]
-            for aType in acceptedTypes[2:]:
-                string += ", "+aType
-            return string
-        else:
-            return ""
+        return ",".join(acceptedTypes)
 
     @staticmethod
     def __store_cookies(transaction, cookies, journal):
