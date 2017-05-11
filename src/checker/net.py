@@ -59,6 +59,7 @@ class Network(object):
         max_attempts =  conf.getProperty("maxAttempts")
         while attempt < max_attempts:
             try:
+                log.debug("Requesting")
                 r = session.request(transaction.method,
                                     transaction.uri + Network.__gen_param(transaction), #TODO: factory method on transaction
                                     headers=head,
@@ -67,7 +68,9 @@ class Network(object):
                                     verify=conf.getProperty("verifyHttps"),
                                     stream=True)#TODO: data
             except (ConnectionError, Timeout) as e:
+                log.debug("Error while downloading: %s" % format(e))
                 if (attempt + 1) < max_attempts:
+                    log.warn("Failed to get %s, retrying!" % transaction.uri)
                     wait = math.pow(10, attempt)
                     time.sleep(wait)
                 else:
@@ -103,20 +106,23 @@ class Network(object):
 
                 return r
 
-            msg = "All %s attempts to get %s failed." % (str(max_attempts), transaction.uri)
-            journal.foundDefect(transaction.idno, "neterr", "Network error", msg, 0.9)
-            raise NetworkError(msg)
+        msg = "All %s attempts to get %s failed." % (str(max_attempts), transaction.uri)
+        journal.foundDefect(transaction.idno, "neterr", "Network error", msg, 0.9)
+        raise NetworkError(msg)
 
     @staticmethod
     def getContent(transaction, conf, journal):
+        log = logging.getLogger(__name__)
         try:
             with tempfile.NamedTemporaryFile(delete=False,
                                              prefix=conf.getProperty("tmpPrefix"),
                                              suffix=conf.getProperty("tmpSuffix")) as tmp:
                 transaction.file = tmp.name
+                log.debug("Downloading 1MB chunks into %s" % tmp.name)
                 for chunk in transaction.request.iter_content(chunk_size=1000000):
                     if chunk:
                         tmp.write(chunk)
+                log.debug("%s downloaded." % transaction.uri)
         except ConnectionError as e:
             log.debug("Connection error: %s" % (format(e)))
             journal.foundDefect(transaction.srcId, "badlink", "Invalid link", transaction.uri, 1.0)
