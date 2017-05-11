@@ -17,6 +17,7 @@ import os
 import os.path
 import sqlite3
 import time
+import gc
 
 
 def handler(signum, frame):
@@ -109,6 +110,7 @@ def load_plugins(cl, log, conf):
 def main():
     """ Load configuration, find plugins, run core.
     """
+    gc.enable()
     global core_instance
     core_instance = None
     signal.signal(signal.SIGINT, handler)
@@ -175,11 +177,13 @@ def main():
                 except:
                     log.error("Failed to initialize database")
                     raise
-        
+
         plugins, headers, filters, pps = load_plugins(cl, log, conf)
 
         log.info("Running checker")
-        core_instance = Core(plugins, filters, headers, pps, cl.get_configuration())
+        core_instance = Core(plugins, filters, headers, pps, conf)
+        cl = None
+        gc.collect()
         if not export_only:
             try:
                 t = time.time()

@@ -7,6 +7,7 @@ Parameters of connection to the database are set in DBAPIConfiguration
 import sqlite3 as mdb
 from enum import Enum
 import logging
+import gc
 
 
 class DBAPIconfiguration(object):
@@ -107,7 +108,8 @@ class DBAPI(object):
             self.logs[table].append(query_pair)
             self.bufferedQueries = self.bufferedQueries + 1
             if self.bufferedQueries > self.limit:
-               self.sync()
+                self.sync()
+                gc.collect()
         else:
             raise TableError()
 
@@ -271,42 +273,49 @@ class DBAPI(object):
             t['aliases'] = [row[0] for row in c.fetchall()]
 
         payload['link'] = []
-        proc = 0
-        total = 0
-        good = 0
-        q = ('SELECT link.findingId, transactions.uri, transactions.responseStatus, link.toUri, '
-             'link.processed, link.requestId, link.responseId FROM '
-             'link INNER JOIN transactions ON link.responseId = transactions.id')
+        proci0 = 0
+        total0 = 0
+        good0 = 0
+        q = ('SELECT link.findingId, transactions.uri, '
+             'transactions.verificationStatus, link.toUri, link.processed, '
+             'link.requestId '
+             'FROM link '
+             'INNER JOIN transactions ON link.requestId = transactions.id ')
+             #'INNER JOIN defect ON defect.responseId = link.responseId '
+             #'INNER JOIN defectType ON defect.type = defectType.id '
+             #'WHERE defectType.type = "badlink"')
         c.execute(q)
         for row in c.fetchall():
             link = dict()
             link['findingId'] = row[0]
             link['fromUri'] = row[1]
-            link['good'] = (row[2] < 400)
+            link['good'] = (row[2] != 'VerificationStatus.done_ko')
             link['toUri'] = row[3]
             link['processed'] = row[4]
             link['requestId'] = row[5]
             link['responseId'] = row[6]
             payload['link'].append(link)
             if row[4]:
-                proc = proc + 1
-            total = total + 1
+                proc0 = proc0 + 1
+            total0 = total0 + 1
             if link['good']:
-                good = good + 1
-        if total == 0.0:
-            perc = 0.0
+                good0 = good0 + 1
+
+        if total0 == 0.0:
+            perc0 = 0.0
         else:
-            perc = proc / total * 100.0
-        payload['visual-data']['processed-pie'] = [[0, perc, "black"], [perc, 100, "gray"]]
-        if proc == 0.0:
-            perc = 0.0
-        else:
-            perc = good / proc * 100.0
-        payload['visual-data']['processed-pie'] = [[0, perc, "good"], [perc, 100, "red"]]
+            perc0 = proc0 / total0 * 100.0
+
+        #payload['visual-data']['processed-pie'] = [[0, perc0, "black"], [perc0, 100, "gray"]]
+        #if proc0 == 0.0:
+        #    perc1 = 0.0
+        #else:
+        #    perc1 = good0 / proc0 * 100.0
+        #payload['visual-data']['processed-pie'] = [[0, perc1, "good"], [perc1, 100, "red"]]
 
         payload['defect'] = []
-        payload['visual-data']['defect-type-count'] = dict()
-        payload['visual-data']['defect-type-severity'] = dict()
+        #payload['visual-data']['defect-type-count'] = dict()
+        #payload['visual-data']['defect-type-severity'] = dict()
 
         q = ('SELECT defect.findingId, defectType.type, '
              'defectType.description, defect.evidence, defect.severity, '
@@ -324,12 +333,12 @@ class DBAPI(object):
             defect['responseId'] = row[5]
             defect['uri'] = row[6]
             payload['defect'].append(defect)
-            if row[1] not in payload['visual-data']['defect-type-count']:
-                payload['visual-data']['defect-type-count'][row[1]] = 0
-            payload['visual-data']['defect-type-count'][row[1]] = payload['visual-data']['defect-type-count'][row[1]] + 1
-            payload['visual-data']['defect-type-severity'][row[1]] = row[4]
-        payload['visual-data']['defect-type-count-array'] = [payload['visual-data']['defect-type-count'][key] for key in payload['visual-data']['defect-type-count'].keys()]
-        payload['visual-data']['defect-type-label-array'] = [key for key in payload['visual-data']['defect-type-count'].keys()]
-        payload['visual-data']['severity-values'] = list(set([payload['visual-data']['defect-type-severity'][t] for t in payload['visual-data']['defect-type-severity'].keys()]))
+            #if row[1] not in payload['visual-data']['defect-type-count']:
+            #    payload['visual-data']['defect-type-count'][row[1]] = 0
+            #payload['visual-data']['defect-type-count'][row[1]] = payload['visual-data']['defect-type-count'][row[1]] + 1
+            #payload['visual-data']['defect-type-severity'][row[1]] = row[4]
+        #payload['visual-data']['defect-type-count-array'] = [payload['visual-data']['defect-type-count'][key] for key in payload['visual-data']['defect-type-count'].keys()]
+        #payload['visual-data']['defect-type-label-array'] = [key for key in payload['visual-data']['defect-type-count'].keys()]
+        #payload['visual-data']['severity-values'] = list(set([payload['visual-data']['defect-type-severity'][t] for t in payload['visual-data']['defect-type-severity'].keys()]))
 
         return payload

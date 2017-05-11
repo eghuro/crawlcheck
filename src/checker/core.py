@@ -11,7 +11,7 @@ from pluginDBAPI import DBAPI, VerificationStatus, Table
 from common import PluginType, PluginTypeError
 from net import Network, NetworkError, ConditionError, StatusError
 from filter import FilterException
-
+import gc
 
 
 
@@ -123,6 +123,7 @@ class Core:
                     self.volume = self.volume - l
                     self.files.pop(0)
                     self.log.debug("Size of tmps after cleanup: " + str(self.volume))
+                    gc.collect()
 
     def finalize(self):
         #self.rack.stop()
@@ -135,6 +136,7 @@ class Core:
         finally:
             #clean tmp files
             self.clean_tmps()
+            gc.collect()
             #run postprocessing
             self.postprocess()
 
