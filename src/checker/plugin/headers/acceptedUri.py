@@ -19,7 +19,7 @@ class ExpectedUri(IPlugin):
     def setJournal(self, journal):
         self.__journal = journal
 
-    def filter(self, transaction, r):
+    def filter(self, transaction, headers):
         if len(self.__conf.regex_acceptor.getAcceptingPlugins(transaction.uri)) == 0:
             self.__log.debug(transaction.uri + " is not accepted by any available plugin")
             raise FilterException()

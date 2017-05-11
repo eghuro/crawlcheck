@@ -19,9 +19,9 @@ class CanonicalFilter(IPlugin):
     def setJournal(self, journal):
         pass
 
-    def filter(self, transaction, r):
-        if 'Link' in r.headers:
-            parts = r.headers['Link'].split(';')
+    def filter(self, transaction, headers):
+        if 'Link' in headers:
+            parts = headers['Link'].split(';')
             if parts[1].strip() == 'rel="canonical"':
                 canonical = parts[0][1:-1] #Link: <http://example.com/page.html>; rel="canonical"
                 transaction.changePrimaryUri(canonical)

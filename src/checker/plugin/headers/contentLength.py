@@ -19,9 +19,9 @@ class ContentLengthFilter(IPlugin):
     def setJournal(self, journal):
         pass
 
-    def filter(self, transaction, r):
-        if 'Content-Length' in r.headers:
-            conlen = int(r.headers['Content-Length'])
+    def filter(self, transaction, headers):
+        if 'Content-Length' in headers:
+            conlen = int(headers['Content-Length'])
             maxContent = self.__conf.getProperty("maxContentLength")
             if maxContent is not None:
                 if conlen > maxContent:

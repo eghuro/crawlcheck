@@ -9,7 +9,7 @@ maxContentLength: 2000000
 agent: "Crawlcheck/0.05"
 logfile: cc-ksp.log
 report: "http://localhost:5000"
-cleanreport: False
+cleanreport: True
 maxVolume: 100000000 #max 100MB of tmp files
 dbCacheLimit: 1000000 #cache up to 1M of DB queries
     
@@ -55,6 +55,9 @@ filters:
  - acceptedType
  - acceptedUri
  - uri_normalizer
+
+postprocess:
+ - report_exporter
 
 entryPoints:
  - "http://ksp.mff.cuni.cz/"

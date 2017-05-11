@@ -36,157 +36,115 @@ class Network(object):
     __allowed_schemata = set(['http', 'https'])
 
     @staticmethod
-    def getLink(linkedTransaction, acceptedTypes, conf, journal, session):
-
+    def testLink(transaction, journal, conf, session, acceptedTypes):
         log = logging.getLogger(__name__)
-        try:
-            acc_header = Network.__create_accept_header(acceptedTypes)
-            log.debug("Accept header: %s" % (acc_header))
-            r = Network.__conditional_fetch(linkedTransaction, acc_header, conf, session, journal)
-            Network.__store_cookies(linkedTransaction, r.cookies, journal)
-            name = Network.__save_content(r.text, conf.getProperty("tmpPrefix"), conf.getProperty("tmpSuffix"))
-            match, mime = Network.__test_content_type(linkedTransaction.type, name)
-            if not match:
-                journal.foundDefect(linkedTransaction.idno, "type-mishmash", "Declared content-type doesn't match detected one", "Declared "+linkedTransaction.type+", detected "+mime, 0.3)
-            return name
-            
-        except ConnectionError as e:
-            log.debug("Connection error: %s" % (format(e)))
-            journal.foundDefect(linkedTransaction.srcId, "badlink", "Invalid link", linkedTransaction.uri, 1.0)
-            raise NetworkError(e)
-        except Timeout as e:
-            log.error("Timeout")
-            journal.foundDefect(linkedTransaction.srcId, "timeout", "Link timed out", linkedTransaction.uri, 0.9)
-            raise NetworkError() from e
 
-    @staticmethod
-    def check_link(linkedTransaction, journal, conf, session, verify=False):
-
-        log = logging.getLogger(__name__)
-        s = urlparse(linkedTransaction.uri).scheme
-        if s not in Network.__allowed_schemata:
-            raise UrlError(s+" is not an allowed schema")
-
-        try:
-            log.debug("Timeout set to: %s" % ( str(conf.getProperty("timeout"))))
-            r = session.head(linkedTransaction.uri, headers={ "user-agent": conf.getProperty("agent") }, timeout=conf.getProperty("timeout"), verify=verify) #TODO: accept
-        except Timeout as e:
-            log.error("Timeout")
-            journal.foundDefect(linkedTransaction.srcId, "timeout", "Link timed out", linkedTransaction.uri, 0.9)
-            raise NetworkError() from e
-        except ConnectionError as e:
-            log.debug("Connection error: %s" % (format(e)))
-            journal.foundDefect(linkedTransaction.srcId, "badlink", "Invalid link", linkedTransaction.uri, 1.0)
-            raise NetworkError(e) from e
-
-        linkedTransaction.status = r.status_code
-
-        if r.status_code >= 400:
-            journal.foundDefect(linkedTransaction.srcId, "badlink", "Invalid link", linkedTransaction.uri, 1.0)
-            raise StatusError(r.status_code)
-
-        if 'content-type' in r.headers:
-            ct = r.headers['content-type']
-        elif 'Content-Type' in r.headers:
-            ct = r.headers['Content-Type']
-        else:
-            ct = ''
-
-        if not ct.strip():
-            journal.foundDefect(linkedTransaction.idno, "badtype", "Content-type empty", None, 0.5)
-
-        if ';' in ct: #text/html;charset=utf-8 -> text/html
-            ct = ct.split(';')[0]
-
-        return ct, r
-    
-    @staticmethod
-    def __conditional_fetch(transaction, accept, conf, session, journal):
-        
-        if not transaction.isWorthIt(conf):
-            logging.getLogger(__name__).debug("Uri not accepted: %s" % (transaction.uri))
-            raise ConditionError
-        elif not conf.type_acceptor.mightAccept(transaction.type):
-            logging.getLogger(__name__).debug("Content-type not accepted: %s (%s)" % (transaction.type, transaction.uri))
-            raise ConditionError
-        
-        else:
-            return Network.__fetch_response(transaction, conf.getProperty("agent"), accept, conf.getProperty('timeout'), session, journal, conf.getProperty("verifyHttps"), conf.getProperty("maxAttempts"))
-
-    @staticmethod
-    def __fetch_response(transaction, agent, accept, timeout, session, journal, verify=False, max_attempts=3):
-
-        r = None
-        head = {"user-agent" : agent, "accept" : accept }
-        log = logging.getLogger(__name__)
         log.debug("Fetching %s" % (transaction.uri))
         log.debug("Data: %s" % (str(transaction.data)))
+
+        s = urlparse(transaction.uri).scheme
+        if s not in Network.__allowed_schemata:
+            raise UrlError(s + " is not an allowed schema")
+
+        accept = ",".join(acceptedTypes)
+        log.debug("Accept header: %s" % (accept))
+
+        head = {"user-agent" : conf.getProperty("agent"), "accept" : accept } #TODO: custom headers
+
         #if not allowed to send cookies or don't have any, then cookies are None -> should be safe to use them; maybe filter which to use?
+        #TODO: cookies handled by session
+
+        log.debug("Timeout set to: %s" % ( str(conf.getProperty("timeout"))))
         attempt = 0
+        max_attempts =  conf.getProperty("maxAttempts")
         while attempt < max_attempts:
             try:
-                if transaction.method == 'GET':
-                    r = session.get(transaction.uri+Network.__gen_param(transaction), allow_redirects=False, headers = head, timeout = timeout, cookies = transaction.cookies, verify=verify)
-                elif transaction.method == 'POST':
-                    r = session.post(transaction.uri, allow_redirects=False, headers = head, data = transaction.data, timeout = timeout, cookies = transaction.cookies, verify=verify)
-            except ConnectionError as e:
+                r = session.request(transaction.method,
+                                    transaction.uri + Network.__gen_param(transaction), #TODO: factory method on transaction
+                                    headers=head,
+                                    timeout=conf.getProperty("timeout"),
+                                    cookies=transaction.cookies,
+                                    verify=conf.getProperty("verifyHttps"),
+                                    stream=True)#TODO: data
+            except (ConnectionError, Timeout) as e:
                 if (attempt + 1) < max_attempts:
                     wait = math.pow(10, attempt)
                     time.sleep(wait)
                 else:
-                    raise
-                attempt = attempt + 1
-            except Timeout as e:
-                if (attempt + 1) < max_attempts:
-                    wait = math.pow(10, attempt)
-                    time.sleep(wait)
-                else:
-                    raise
+                    raise NetworkError from e
                 attempt = attempt + 1
             else:
                 transaction.status = r.status_code
 
+                if r.status_code >= 400:
+                    journal.foundDefect(transaction.srcId, "badlink", "Invalid link", transaction.uri, 1.0)
+                    raise StatusError(r.status_code)
+
                 if transaction.uri != r.url:
-                    logging.getLogger(__name__).debug("Redirection: %s -> %s" % (transaction.uri, r.url))
+                    log.debug("Redirection: %s -> %s" % (transaction.uri, r.url))
                     transaction.changePrimaryUri(r.url)
 
+                if 'content-type' in r.headers:
+                    ct = r.headers['content-type']
+                elif 'Content-Type' in r.headers:
+                    ct = r.headers['Content-Type']
+                else:
+                    ct = ''
+
+                if not ct.strip():
+                    journal.foundDefect(transaction.idno, "badtype", "Content-type empty", None, 0.5)
+
+                if ';' in ct: #text/html;charset=utf-8 -> text/html
+                    ct = ct.split(';')[0]
+
+                transaction.type = ct
+
+                Network.__store_cookies(transaction, r.cookies, journal)
+
                 return r
+
             msg = "All %s attempts to get %s failed." % (str(max_attempts), transaction.uri)
             journal.foundDefect(transaction.idno, "neterr", "Network error", msg, 0.9)
             raise NetworkError(msg)
 
     @staticmethod
+    def getContent(transaction, conf, journal):
+        try:
+            with tempfile.NamedTemporaryFile(delete=False,
+                                             prefix=conf.getProperty("tmpPrefix"),
+                                             suffix=conf.getProperty("tmpSuffix")) as tmp:
+                transaction.file = tmp.name
+                for chunk in transaction.request.iter_content(chunk_size=1000000):
+                    if chunk:
+                        tmp.write(chunk)
+        except ConnectionError as e:
+            log.debug("Connection error: %s" % (format(e)))
+            journal.foundDefect(transaction.srcId, "badlink", "Invalid link", transaction.uri, 1.0)
+            raise NetworkError from e
+        except Timeout as e:
+            log.error("Timeout")
+            journal.foundDefect(transaction.srcId, "timeout", "Link timed out", transaction.uri, 0.9)
+            raise NetworkError() from e
+        else:
+            match, mime = Network.__test_content_type(transaction.type, transaction.file)
+            if not match:
+                journal.foundDefect(transaction.idno, "type-mishmash", "Declared content-type doesn't match detected one", "Declared "+transaction.type+", detected "+mime, 0.3)
+
+    @staticmethod
     def __gen_param(transaction):
-        if (transaction.data is not None) and (len(transaction.data) > 0):
+        if (transaction.data is not None) and (len(transaction.data) > 0) and (transaction.method in set(['GET', 'HEAD'])):
             param = "?"+urlencode(transaction.data)
         else: 
             param = ""
         return param
 
     @staticmethod
-    def __save_content(content, prefix=None, suffix=None):
-
-        with tempfile.NamedTemporaryFile(delete=False, prefix=prefix, suffix=suffix) as tmp:
-            tmp.write(content.encode('utf-8'))
-            name = tmp.name
-        return name
-
-    @staticmethod
-    def __test_content_type(ctype, fname):
-
-        mime = magic.from_file(fname, mime=True)
-        return (mime == ctype), mime
-
-    @staticmethod
-    def __create_accept_header(acceptedTypes):
-
-        #see RFC 2616, section 14.1
-        return ",".join(acceptedTypes)
-
-    @staticmethod
     def __store_cookies(transaction, cookies, journal):
-
         for name, value in cookies.items():
             journal.gotCookie(transaction, name, value)
         transaction.cookies = cookies
-            
+
+    @staticmethod
+    def __test_content_type(ctype, fname):
+        mime = magic.from_file(fname, mime=True)
+        return (mime == ctype), mime

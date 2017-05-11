@@ -98,9 +98,12 @@ def load_plugins(cl, log, conf):
             elif pluginInfo.plugin_object.category in plugin_categories:
                 log.debug("General plugin")
                 plugins.append(pluginInfo.plugin_object)
-            elif pluginInfo.plugin_object.id in conf.postprocess and pluginInfo.plugin_object.category is PluginType.POSTPROCESS:
+            elif pluginInfo.plugin_object.category is PluginType.POSTPROCESS:
                 log.debug("Postprocessor")
-                postprocess.append(pluginInfo.plugin_object)
+                if pluginInfo.plugin_object.id in conf.postprocess: 
+                    postprocess.append(pluginInfo.plugin_object)
+                else:
+                    log.debug("Not allowed in conf")
             else:
                 log.error("Unknown category for " + pluginInfo.name)
     else:

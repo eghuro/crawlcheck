@@ -19,7 +19,7 @@ class ExpectedType(IPlugin):
     def setJournal(self, journal):
         self.__journal = journal
 
-    def filter(self, transaction, r):
+    def filter(self, transaction, headers):
         if transaction.expected is None:
             return
         if not transaction.type.startswith(transaction.expected):

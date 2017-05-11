@@ -81,14 +81,14 @@ class Core:
                 for tf in self.filters:
                     tf.filter(transaction)
 
-                r = transaction.testLink(self.conf, self.journal, session) #HEAD, pokud neni zakazan
+                start = time.time()
+                r = transaction.testLink(self.conf, self.journal, session) #precte hlavicky
 
                 #custom HTTP header filters, incl. test if ct matches expectation
                 for hf in self.header_filters:
                    hf.filter(transaction, r)
 
-                start = time.time()
-                transaction.loadResponse(self.conf, self.journal, session)
+                transaction.loadResponse(self.conf, self.journal, session) #precte telo
             except TouchException: #nesmim se toho dotykat
                 self.log.debug("Forbidden to touch %s" % (transaction.uri))
                 self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
@@ -192,6 +192,7 @@ class Transaction:
         self.data = data
         self.status = None
         self.cookies = None
+        self.request = None
 
     def changePrimaryUri(self, new_uri):
         self.aliases.append(new_uri)
@@ -200,15 +201,14 @@ class Transaction:
     def testLink(self, conf, journal, session):
         can = conf.regex_acceptor.canTouch(self.uri)
         if can:
-            self.type, r = Network.check_link(self, journal, conf, session)
-            return r
+            self.request = Network.testLink(self, journal, conf, session, self.getAcceptedTypes(conf)) # nastavi status, type
+            return self.request.headers
         else:
             raise TouchException()
 
     def loadResponse(self, conf, journal, session):
         try:
-            acceptedTypes = self.getAcceptedTypes(conf)
-            self.file = Network.getLink(self, acceptedTypes, conf, journal, session)
+            Network.getContent(self, conf, journal) #pouzije request, nastavi file
         except (NetworkError, ConditionError, StatusError):
             raise
 
