@@ -7,11 +7,12 @@ import copy
 import codecs
 import requests
 from urllib.parse import urlparse, ParseResult
-from pluginDBAPI import DBAPI, VerificationStatus, Table
+from pluginDBAPI import DBAPI, VerificationStatus, Query
 from common import PluginType, PluginTypeError
 from net import Network, NetworkError, ConditionError, StatusError
 from filter import FilterException
 import gc
+import sqlite3 as mdb
 
 
 
@@ -22,8 +23,9 @@ class Core:
         self.log = logging.getLogger(__name__)
         self.conf = conf
         self.db = DBAPI(conf.dbconf)
-        self.db.load_defect_types()
-        self.db.load_finding_id()
+        with mdb.connect(conf.dbconf.getDbname()) as con:
+            self.db.load_defect_types(con)
+            self.db.load_finding_id(con)
         self.files = []
         self.__time_subscribers = []
         self.volume = 0
@@ -40,7 +42,7 @@ class Core:
         self.queue = TransactionQueue(self.db, self.conf)
         self.queue.load()
 
-        self.journal = Journal(self.db)
+        self.journal = Journal(self.db, self.conf)
 
         for plugin in self.plugins+headers+filters+postprocess:
             self.__initializePlugin(plugin)
@@ -297,8 +299,8 @@ class TransactionQueue:
         except queue.Empty:
             raise
         else:
-            self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatus = ? WHERE id = ?', ["PROCESSING", t.idno]) )
-            self.__db.log(Table.link_defect, ('UPDATE link SET processed = ? WHERE toUri = ?', [str("true"), str(t.uri)] ))
+            self.__db.log(Query.transactions_status, ("PROCESSING", t.idno) )
+            self.__db.log(Query.link_status, (str("true"), str(t.uri) ))
             return t
 
     def push(self, transaction, parent=None):
@@ -344,12 +346,10 @@ class TransactionQueue:
     def __mark_seen(self, transaction):
         if (transaction.uri, transaction.method) not in self.__seen:
             self.__q.put(transaction)
-            self.__db.log(Table.transactions,
-                          ('INSERT INTO transactions (id, method, uri, origin, verificationStatus, depth) VALUES (?, ?, ?, \'CHECKER\', ?, ?)', 
-                          [str(transaction.idno), transaction.method, transaction.uri, "REQUESTED", str(transaction.depth)]) )
+            self.__db.log(Query.transactions,
+                          (str(transaction.idno), transaction.method, transaction.uri, "REQUESTED", str(transaction.depth)) )
             for uri in transaction.aliases:
-                self.__db.log(Table.aliases,
-                              ('INSERT INTO aliases (transactionId, uri) VALUES (?, ?)', [str(transaction.idno), uri]))
+                self.__db.log(Query.aliases, (str(transaction.idno), uri))
         #TODO: co kdyz jsme pristupovali s jinymi parametry?
         #mark all known aliases as seen
         for uri in transaction.aliases:
@@ -370,37 +370,39 @@ class TransactionQueue:
                     cookies.update(self.__conf.custom_cookies[reg])
         if allowed:
             if len(cookies.keys()) > 0:
-                logging.getLoggier(__name__).debug("Cookies of %s updated to %s" % (transaction.uri, str(cookies)))
+                logging.getLogger(__name__).debug("Cookies of %s updated to %s" % (transaction.uri, str(cookies)))
             transaction.cookies = cookies
 
 
     def load(self):
-        #load transactions from DB to memory - only where status is requested
-        for t in self.__db.get_requested_transactions():
-            #uri = t[0]; depth = t[1]; idno = t[3]
-            srcId = -1
-            if t[2] is not None:
-                srcId = t[2]
-            decoded = str(urllib.parse.unquote(urllib.parse.unquote(t[0])), 'utf-8')
-            self.__q.put(Transaction(decoded, t[1], srcId, t[3]))
-        #load uris from transactions table for list of seen URIs
-        self.__seen.update(self.__db.get_seen_uris())
-        #set up transaction id for factory method
-        transactionId = self.__db.get_max_transaction_id() + 1
+        with mdb.connect(self.__conf.dbconf.getDbname()) as con:
+            #load transactions from DB to memory - only where status is requested
+            for t in self.__db.get_requested_transactions(con):
+                #uri = t[0]; depth = t[1]; idno = t[3]
+                srcId = -1
+                if t[2] is not None:
+                    srcId = t[2]
+                decoded = str(urllib.parse.unquote(urllib.parse.unquote(t[0])), 'utf-8')
+                self.__q.put(Transaction(decoded, t[1], srcId, t[3]))
+            #load uris from transactions table for list of seen URIs
+            self.__seen.update(self.__db.get_seen_uris(con))
+            #set up transaction id for factory method
+            transactionId = self.__db.get_max_transaction_id(con) + 1
 
 class Journal:
 
 
-    def __init__(self, db):
+    def __init__(self, db, conf):
         self.__db = db
+        self.__conf = conf
        
     def startChecking(self, transaction):
         logging.getLogger(__name__).debug("Starting checking %s" % (transaction.uri))
-        self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatus = ?, uri = ?, contentType = ?, responseStatus = ? WHERE id = ?', ["VERIFYING", transaction.uri, transaction.type, transaction.status, transaction.idno]) )
+        self.__db.log(Query.transactions_load, ("VERIFYING", transaction.uri, transaction.type, transaction.status, transaction.idno) )
 
     def stopChecking(self, transaction, status):
         logging.getLogger(__name__).debug("Stopped checking %s" % (transaction.uri))
-        self.__db.log(Table.transactions, ('UPDATE transactions SET verificationStatus = ? WHERE id = ?', [str(status), transaction.idno]) )
+        self.__db.log(Query.transactions_status, (str(status), transaction.idno) )
 
     def foundDefect(self, transaction, defect, evidence, severity=0.5):
         self.foundDefect(transaction.idno, defect.name, defect.additional, evidence, severity)
@@ -410,7 +412,8 @@ class Journal:
         self.__db.log_defect(trId, name, additional, evidence, severity)
 
     def getKnownDefectTypes(self):
-        return self.__db.get_known_defect_types()
+        with mdb.connect(self.__conf.dbconf.getDbname()) as con:
+            return self.__db.get_known_defect_types(con)
 
     def gotCookie(self, transaction, name, value):
         self.__db.log_cookie(transaction.idno, name, value)
@@ -421,4 +424,5 @@ class Defect:
     def __init__(self, name, additional = None):
         self.name = name
         self.additional = additional
+
 

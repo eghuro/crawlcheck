@@ -1,13 +1,13 @@
 ---
 version: 1.05
-database: crawlcheck
+database: crawlcheck-ksp.sqlite
 cleandb: True
 initdb: True
 pluginDir: plugin  # defaults to 'plugin'
 maxDepth: 10
 maxContentLength: 2000000
 agent: "Crawlcheck/0.05"
-logfile: cc.log
+logfile: cc-ksp.log
 report: "http://localhost:5000"
 cleanreport: False
 maxVolume: 100000000 #max 100MB of tmp files
@@ -36,7 +36,7 @@ content-types:
 
 regexes:
  -
-    regex: "https?://ksp.mff.cuni.cz/(?!sksp|profil).*"
+    regex: "https?://ksp.mff.cuni.cz/(?!sksp|profil|forum).*"
     plugins:
        - linksFinder
        - tidyHtmlValidator
@@ -44,7 +44,7 @@ regexes:
        - css_scraper
        - formChecker
  -
-    regex: "https?://(?!ksp.mff.cuni.cz/(sksp|profil)).+" #test links (HEAD request) only
+    regex: "https?://(?!ksp.mff.cuni.cz/(sksp|profil|forum)).+" #test links (HEAD request) only
     plugins:
 
 filters:

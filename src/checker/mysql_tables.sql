@@ -4,9 +4,7 @@ CREATE TABLE IF NOT EXISTS transactions (
   uri VARCHAR(255) NOT NULL,
   responseStatus INTEGER,
   contentType VARCHAR(255),
-  content VARCHAR(255),
   verificationStatus VARCHAR(20),
-  origin VARCHAR(255),
   depth INTEGER NOT NULL
 );
 
@@ -28,6 +26,7 @@ CREATE TABLE IF NOT EXISTS link (
 CREATE INDEX IF NOT EXISTS link_request_id ON link (requestId);
 CREATE INDEX IF NOT EXISTS link_processed ON link (processed);
 CREATE INDEX IF NOT EXISTS link_response_id ON link (responseId);
+CREATE INDEX IF NOT EXISTS link_to_uri ON link (toUri);
 
 CREATE TABLE IF NOT EXISTS defectType (
   id INTEGER PRIMARY KEY NOT NULL,
