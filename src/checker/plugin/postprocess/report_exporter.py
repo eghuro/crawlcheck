@@ -4,6 +4,7 @@ import requests
 from requests.exceptions import ConnectionError
 import yaml
 import logging
+import gc
 
 
 class ReportExporter(IPlugin):
@@ -39,6 +40,7 @@ class ReportExporter(IPlugin):
             self.__log.debug(payload)
 
             if payload is not None:
+                gc.collect()
                 #DELETE request on /data
                 if self.__conf.getProperty('cleanreport'):
                     try:

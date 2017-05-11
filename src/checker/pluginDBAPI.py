@@ -8,6 +8,8 @@ import sqlite3 as mdb
 from enum import Enum
 import logging
 import gc
+from multiprocessing import Process, Queue, Pool
+from functools import partial
 
 
 class DBAPIconfiguration(object):
@@ -220,11 +222,46 @@ class DBAPI(object):
 
 
     def create_report_payload(self):
-        payload = dict()
-        with mdb.connect(self.conf.getDbname()) as con:
+        log = logging.getLogger(__name__)
+        log.info("Creating report")
+        qt = Queue()
+        tproc = Process(target=DBAPI.__create_transactions, args=(self.conf.getDbname(), qt, 4))
+        #payload['transactions'] = DBAPI.__create_transactions(self.conf.getDbname())
 
-            #TODO: 3 parallel processes
-            payload['transactions'] = []
+        ql = Queue()
+        lproc = Process(target=DBAPI.__create_links, args=(self.conf.getDbname(), ql))
+        #payload['link'] = DBAPI.__create_links(self.conf.getDbname())
+
+        qd = Queue()
+        dproc = Process(target=DBAPI.__create_defects, args=(self.conf.getDbname(), qd))
+        #payload['defect'] = DBAPI.__create_defects(self.conf.getDbname())
+
+        log.debug("Starting report worker processes")
+        tproc.start()
+        lproc.start()
+        dproc.start()
+
+        log.debug("Getting data from workers")
+        payload = dict()
+        payload['defect'] = qd.get()
+        log.info("Got defects")
+        payload['link'] = ql.get()
+        log.info("Got links")
+        payload['transactions'] = qt.get()
+        log.info("Got transactions")
+
+        log.info("Joining")
+        lproc.join()
+        dproc.join()
+        tproc.join()
+
+        return payload
+
+    @staticmethod
+    def __create_transactions(dbname, queue, allowance):
+        log = logging.getLogger(__name__)
+        with mdb.connect(dbname) as con:
+            transactions = []
             q = ('SELECT id, method, responseStatus, contentType, '
                  'verificationStatus, depth, uri FROM transactions')
 
@@ -241,24 +278,19 @@ class DBAPI(object):
                 transaction['uri'] = row[6]
                 if row[5] == 0:
                     transaction['parentId'] = transaction['id']
-                payload['transactions'].append(transaction)
+                transactions.append(transaction)
 
-            for t in payload['transactions']:
-                if t['depth'] > 0:
-                    q = ('SELECT link.responseId FROM link '
-                         'WHERE link.requestId = ? '
-                         'AND link.processed = "true"')
-                    c.execute(q, [t['id']])
-                    try:
-                        t['parentId'] = c.fetchone()[0]
-                    except TypeError:
-                        t['parentId'] = -1
-                        logging.getLogger().error("No parent for link with requestId: %s (depth: %s)" % (str(t['id']), str(t['depth'])))
-                q = ('SELECT uri FROM aliases WHERE transactionId = ?')
-                c.execute(q, [t['id']])
-                t['aliases'] = [row[0] for row in c.fetchall()]
+            log.info("%s transactions, processing in pool of %s processes" % (str(len(transactions)), str(allowance)))
 
-            payload['link'] = []
+            with Pool(allowance) as pool:
+                partial_process = partial(process_transaction, dbname=dbname)
+                queue.put(pool.map(partial_process, transactions))
+
+    @staticmethod
+    def __create_links(dbname, queue):
+        with mdb.connect(dbname) as con:
+            c = con.cursor()
+            links = []
             proc0 = 0
             total0 = 0
             good0 = 0
@@ -277,7 +309,7 @@ class DBAPI(object):
                 link['processed'] = row[4]
                 link['requestId'] = row[5]
                 link['responseId'] = row[6]
-                payload['link'].append(link)
+                links.append(link)
                 if row[4]:
                     proc0 = proc0 + 1
                 total0 = total0 + 1
@@ -288,14 +320,19 @@ class DBAPI(object):
                 perc0 = 0.0
             else:
                 perc0 = proc0 / total0 * 100.0
+            queue.put(links)
 
+    @staticmethod
+    def __create_defects(dbname, queue):
+        with mdb.connect(dbname) as con:
+            defects = []
             q = ('SELECT defect.findingId, defectType.type, '
                  'defectType.description, defect.evidence, defect.severity, '
                  'defect.responseId, transactions.uri FROM defect '
                  'INNER JOIN defectType ON defect.type = defectType.id '
                  'INNER JOIN transactions ON defect.responseId = transactions.id')
+            c = con.cursor()
             c.execute(q)
-            payload['defect'] = []
             for row in c.fetchall():
                 defect = dict()
                 defect['findingId'] = row[0]
@@ -305,6 +342,25 @@ class DBAPI(object):
                 defect['severity'] = row[4]
                 defect['responseId'] = row[5]
                 defect['uri'] = row[6]
-                payload['defect'].append(defect)
+                defects.append(defect)
+            queue.put(defects)
 
-        return payload
+
+def process_transaction(t, dbname):
+    with mdb.connect(dbname) as con:
+        c = con.cursor()
+        if t['depth'] > 0:
+            q = ('SELECT link.responseId FROM link '
+                 'WHERE link.requestId = ? '
+                 'AND link.processed = "true" LIMIT 1')
+            c.execute(q, [t['id']])
+            try:
+                t['parentId'] = c.fetchone()[0]
+            except TypeError:
+                t['parentId'] = -1
+                logging.getLogger().error("No parent for link with requestId: %s (depth: %s)" % (str(t['id']), str(t['depth'])))
+
+        q = ('SELECT uri FROM aliases WHERE transactionId = ?')
+        c.execute(q, [t['id']])
+        t['aliases'] = [row[0] for row in c.fetchall()]
+        return t
