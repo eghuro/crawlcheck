@@ -33,7 +33,7 @@ class StatusError(Exception):
 
 class Network(object):
 
-    __allowed_schemata = ['http', 'https']
+    __allowed_schemata = set(['http', 'https'])
 
     @staticmethod
     def getLink(linkedTransaction, acceptedTypes, conf, journal, session):
@@ -85,10 +85,9 @@ class Network(object):
             journal.foundDefect(linkedTransaction.srcId, "badlink", "Invalid link", linkedTransaction.uri, 1.0)
             raise StatusError(r.status_code)
 
-        lst = list(r.headers.keys())
-        if 'content-type' in lst:
+        if 'content-type' in r.headers:
             ct = r.headers['content-type']
-        elif 'Content-Type' in lst:
+        elif 'Content-Type' in r.headers:
             ct = r.headers['Content-Type']
         else:
             ct = ''

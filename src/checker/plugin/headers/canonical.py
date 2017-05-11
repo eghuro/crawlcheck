@@ -20,7 +20,7 @@ class CanonicalFilter(IPlugin):
         pass
 
     def filter(self, transaction, r):
-        if 'Link' in list(r.headers.keys()):
+        if 'Link' in r.headers:
             parts = r.headers['Link'].split(';')
             if parts[1].strip() == 'rel="canonical"':
                 canonical = parts[0][1:-1] #Link: <http://example.com/page.html>; rel="canonical"

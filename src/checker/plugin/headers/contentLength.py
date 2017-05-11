@@ -20,7 +20,7 @@ class ContentLengthFilter(IPlugin):
         pass
 
     def filter(self, transaction, r):
-        if 'Content-Length' in list(r.headers.keys()):
+        if 'Content-Length' in r.headers:
             conlen = int(r.headers['Content-Length'])
             maxContent = self.__conf.getProperty("maxContentLength")
             if maxContent is not None:
