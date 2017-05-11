@@ -74,7 +74,7 @@ class Network(object):
                     wait = math.pow(10, attempt)
                     time.sleep(wait)
                 else:
-                    raise NetworkError from e
+                    raise NetworkError("%s attempts failed" % str(max_attempts)) from e
                 attempt = attempt + 1
             else:
                 transaction.status = r.status_code
