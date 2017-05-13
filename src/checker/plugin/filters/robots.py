@@ -36,14 +36,15 @@ class RobotsFilter(IPlugin):
 
         try:
             #grab sitemaps
-            maps = self.__robots.get(transaction.uri).sitemaps
+            maps = set(self.__robots.get(transaction.uri).sitemaps)
 
             #link robots.txt from transaction, but mark transaction as visited
             robots_url = Robots.robots_url(transaction.uri)
 
-            if self.__known_maps - set(maps):
+            diff_map = maps - self.__known_maps
+            if len(diff_map) > 0:
                 robots_transaction = self.__queue.push_virtual_link(robots_url, transaction)
-                for new_map in self.__known_maps - set(maps):
+                for new_map in diff_map:
                     self.__log.debug("Discovered sitemap: "+new_map)
                     self.__queue.push_link(new_map, robots_transaction)
                 self.__known_maps.update(maps)

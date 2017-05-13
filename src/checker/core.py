@@ -108,12 +108,11 @@ class Core:
                 self.log.error("Network error: %s" % (format(e)))
                 self.journal.stopChecking(transaction, VerificationStatus.done_ko)
                 continue
-
             else: #Plugins
                 for sub in self.__time_subscribers:
                     sub.markStart(start, transaction.uri)
                 self.files.append(transaction.file)
-                self.volume = self.volume + os.path.getsize(transaction.file) 
+                self.volume = self.volume + os.path.getsize(transaction.file)
                 self.journal.startChecking(transaction)
                 self.rack.run(transaction)
                 self.journal.stopChecking(transaction, VerificationStatus.done_ok)
@@ -213,9 +212,13 @@ class Transaction:
             raise
 
     def getContent(self):
-        with codecs.open(self.file, 'r', 'utf-8') as f:
-            data = f.read()
-            return str(data)
+        try:
+            with codecs.open(self.file, 'r', 'utf-8') as f:
+                data = f.read()
+                return str(data)
+        except UnicodeDecodeError as e:
+            logging.getLogger(__name__).error("Error loading content for %s" % self.uri)
+            return ""
 
     def getStripedUri(self):
         pr = urlparse(self.uri)
@@ -329,6 +332,7 @@ class TransactionQueue:
     def push_virtual_link(self, uri, parent):
         t = createTransaction(uri, parent.depth + 1, parent.idno)
         self.__mark_seen(t)
+        self.__bake_cookies(t, parent)
         self.__db.log_link(parent.idno, uri, t.idno)
         return t
 
@@ -359,7 +363,7 @@ class TransactionQueue:
 
     def __bake_cookies(self, transaction, parent):
         cookies = dict()
-        if parent is not None:
+        if parent and parent.cookies:
             cookies = parent.cookies.copy()
         allowed = False
         for reg in self.__conf.cookies:

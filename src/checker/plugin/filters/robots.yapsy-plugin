@@ -4,5 +4,5 @@ Module = robots
 
 [Documentation]
 Author = Alexandr Mansurov
-Version = 0.1
+Version = 0.2
 Description = Check robots.txt if we can access given URI
