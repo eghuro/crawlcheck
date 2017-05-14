@@ -46,7 +46,7 @@ class SitemapGenerator(IPlugin):
         else:
             self.__log.warn("sitemap-file property not present in configuration")
             pref = self.__conf.getProperty("tmpPrefix")
-            suf = self.__conf.getProperty("tmpSuffix")
+            suf = "-sitemap.xml"
             with tempfile.NamedTemporaryFile(delete=False, prefix=pref,
                                              suffix=suf, mode='w') as out:
                 self.__write_file(out, r)
@@ -54,7 +54,6 @@ class SitemapGenerator(IPlugin):
         self.__log.info("Sitemap written into %s" % outfile)
 
     def __write_file(self, out, r):
-        print(type(out))
         out.write(SitemapGenerator.header)
         self.__write_urls(out, r)
         out.write('</urlset>')
@@ -62,7 +61,5 @@ class SitemapGenerator(IPlugin):
 
     def __write_urls(self, out, r):
         for url in self.__db.get_urls():
-            print(type(r))
-            print(type(url))
             if r.match(url):
                 out.write(SitemapGenerator.line % url)

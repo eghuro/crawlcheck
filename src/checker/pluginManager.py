@@ -31,7 +31,7 @@ def configure_logger(conf, debug=False):
         log.setLevel(logging.DEBUG)
     else:
         log.setLevel(logging.INFO)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter('%(asctime)s - %(processName)-10s - %(name)s - %(levelname)s - %(message)s')
     if conf:
         if conf.getProperty('logfile') is not None:
             need_roll = os.path.isfile(conf.getProperty('logfile'))

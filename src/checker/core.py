@@ -192,6 +192,7 @@ class Transaction:
         self.status = None
         self.cookies = None
         self.request = None
+        self.expected = None
 
     def changePrimaryUri(self, new_uri):
         self.aliases.append(new_uri)

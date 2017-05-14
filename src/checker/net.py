@@ -118,8 +118,9 @@ class Network(object):
                                              prefix=conf.getProperty("tmpPrefix"),
                                              suffix=conf.getProperty("tmpSuffix")) as tmp:
                 transaction.file = tmp.name
-                log.debug("Downloading 1MB chunks into %s" % tmp.name)
-                for chunk in transaction.request.iter_content(chunk_size=1000000):
+                log.debug("Downloading chunks into %s" % tmp.name)
+                chsize = min(conf.getProperty("maxContentLength"), 10000000)
+                for chunk in transaction.request.iter_content(chunk_size=chsize):
                     if chunk:
                         tmp.write(chunk)
                 log.debug("%s downloaded." % transaction.uri)
