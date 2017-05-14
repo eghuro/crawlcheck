@@ -27,7 +27,7 @@ class ImageTagValidator(IPlugin):
             transaction.cache['soup'] = soup
 
         for img in soup.find_all('img'):
-            if 'src' in img:
+            if 'src' in img.attrs:
                 desc = img['src']
             else:
                 desc = ""
