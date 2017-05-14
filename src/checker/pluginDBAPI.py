@@ -234,7 +234,7 @@ class DBAPI(object):
         qt = Queue()
         tproc = Process(target=DBAPI.__create_transactions,
                         args=(self.conf.getDbname(), qt,
-                              self.conf.getProperty("cores", 4))
+                              self.conf.getProperty("cores", 4)))
 
         ql = Queue()
         lproc = Process(target=DBAPI.__create_links,
