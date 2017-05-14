@@ -1,6 +1,6 @@
 # Crawlcheck
 
-Crawlcheck is a web crawler invoking plugins on received content. It's intended for verification of websites prior to deployment. The process of verification is customisable by configuration script that allows complex specification which plugins should check particular URIs and content-types. Main engine and plugins are written in Python, there's also possibility to show report in form of website written in Ruby on Rails or generate report in PDF. The report contains discoveries plugins made during the verification.
+Crawlcheck is a web crawler invoking plugins on received content. It's intended for verification of websites prior to deployment. The process of verification is customisable by configuration script that allows complex specification which plugins should check particular URIs and content-types.
 
 ![travis-ci](https://api.travis-ci.org/eghuro/crawlcheck.svg?branch=master) ![codecov](https://img.shields.io/codecov/c/github/eghuro/crawlcheck/master.svg)
 
@@ -31,17 +31,26 @@ pip install -r requirements.txt
 You will need python3, python-pip and sqlite3, virtualenv, libmagic and libtidy installed. All dev or devel versions.
 
 ### Configuration
-Configuration file is a simple YAML file.
+Configuration file is a YAML file defined as follows:
 ```sh
 ---
-version: 1.03        # configuration format version
-database: crawlcheck # sqlite database file
-maxDepth: 10         # max amount of links followed from any entry point (default: unlimited)
-agent: Crawlcheck/1.03 # user agent used (default: Crawlcheck/1.03)
-logfile: cc.log      # where to store logs
-maxContentLength: 2000000 # max file size to download
-pluginDir: plugin    # where to look for plugins (including subfolders, default: 'plugin')
-timeout: 1           # timeout for networking
+version: 1.05                   # configuration format version
+database: crawlcheck.sqlite     # sqlite database file
+maxDepth: 10                    # max amount of links followed from any entry point (default: unlimited)
+agent: "Crawlcheck/1.05"        # user agent used (default: Crawlcheck/1.05)
+logfile: cc.log                 # where to store logs
+maxContentLength: 2000000       # max file size to download
+pluginDir: plugin               # where to look for plugins (including subfolders, default: 'plugin')
+timeout: 1                      # timeout for networking
+cleandb: True                   # clean database before execution
+initdb: True                    # initialize database
+report: "http://localhost:5000" # report REST API
+cleanreport: True               # clean entries in report before sending current
+maxVolume: 100000000            # max 100 MB of tmp files
+maxAttempts: 2                  # attempts to download a web page
+dbCacheLimit: 1000000           # cache up to 1M of DB queries
+sitemap-file: "sitemap.xml"     # where to store generated sitemap.xml
+sitemap-regex: "https?://ksp.mff.cuni.cz(/.*)?" # regex for sitemap generator
 
 # other parameters used by plugins written as ```key: value```
 
@@ -77,7 +86,15 @@ filters: #Filters (plugins of category header and filter) that can be used
  - depth
  - robots
  - contentLength
+ - canonical
+ - acceptedType
+ - acceptedUri
+ - uri_normalizer
+ - expectedType
 
+postprocess:
+ - sitemap_generator
+ - report_exporter
 
 payload: 
 #if following URL is reached (exactly, no prefix or suffix) 
@@ -129,17 +146,27 @@ For output file ``.pdf`` is added automatically.
 
 ### Plugins
 
-There are currently 4 types of plugins: crawlers, checkers, headers and filters. Crawlers are specializing in discovering new links. Checkers check syntax of various files. Headers check HTTP headers and together with filters serve to customize the crawling process itself.
+There are currently 5 types of plugins: crawlers, checkers, headers, filters and postprocessors. Crawlers are specializing in discovering new links. Checkers check syntax of various files. Headers check HTTP headers and together with filters serve to customize the crawling process itself. Postprocessors are used to generate reports or other outputs from the application.
 
 Crawlcheck is currently extended with the following plugins:
 
-* linksFinder
-* tidyHtmlValidator
-* tinycss
-* css_scraper
-* contentLength
-* depth
-* robots
+* linksFinder (crawler)
+* sitemapScanner (crawler)
+* tidyHtmlValidator (checker)
+* tinycss (checker)
+* css_scraper (checker)
+* seoimg (checker)
+* seometa (checker)
+* contentLength (header)
+* expectedType (header)
+* canonical (header)
+* acceptedType (header)
+* acceptedUri (header)
+* uri_normalizer (header)
+* depth (filter)
+* robots (filter)
+* report_exporter (postprocessor)
+* sitemap_generator (postprocessor)
 
 ### How to write a plugin
 
@@ -188,6 +215,7 @@ See http://yapsy.sourceforge.net/IPlugin.html and http://yapsy.sourceforge.net/P
  - Parallelization
  - Duplication detection
  - SEO related checks
+
 License
 ----
 

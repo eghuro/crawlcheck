@@ -11,6 +11,7 @@ logfile: cc-ksp.log
 report: "http://localhost:5000"
 cleanreport: True
 maxVolume: 100000000 #max 100MB of tmp files
+maxAttempts: 2
 dbCacheLimit: 1000000 #cache up to 1M of DB queries
     
 content-types:
@@ -21,6 +22,8 @@ content-types:
      - tidyHtmlValidator
      - css_scraper
      - formChecker
+     - seoimg
+     - seometa
  -
    "content-type": "text/css"
    plugins:
@@ -36,13 +39,15 @@ content-types:
 
 regexes:
  -
-    regex: "https?://ksp.mff.cuni.cz/(?!sksp|profil|forum).*"
+    regex: "http://ksp.mff.cuni.cz/(?!sksp|profil|forum).*"
     plugins:
        - linksFinder
        - tidyHtmlValidator
        - tinycss
        - css_scraper
        - formChecker
+       - seoimg
+       - seometa
  -
     regex: "https?://(?!ksp.mff.cuni.cz/(sksp|profil|forum)).+" #test links (HEAD request) only
     plugins:
@@ -55,9 +60,10 @@ filters:
  - acceptedType
  - acceptedUri
  - uri_normalizer
+ - expectedType
 
 postprocess:
- - report_exporter
+ - sitemap_generator
 
 entryPoints:
  - "http://ksp.mff.cuni.cz/"
