@@ -1,0 +1,8 @@
+[Core]
+Name = SEO: IMG tag checker
+Module = seo_images
+
+[Documentation]
+Author = Alexandr Mansurov
+Version = 0.0
+Description = Check IMG tags follow best practices
