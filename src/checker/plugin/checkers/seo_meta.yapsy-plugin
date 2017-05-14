@@ -1,0 +1,8 @@
+[Core]
+Name = SEO: meta tags checker
+Module = seo_meta
+
+[Documentation]
+Author = Alexandr Mansurov
+Version = 0.0
+Description = Check meta tags for SEO
