@@ -270,8 +270,8 @@ class Configuration(object):
         self.custom_cookies = cc
         self.postprocess = pp
 
-    def getProperty(self, key):
+    def getProperty(self, key, default=None):
         if key in self.properties:
             return self.properties[key]
         else:
-            return None
+            return default
