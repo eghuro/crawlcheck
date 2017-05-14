@@ -91,21 +91,26 @@ class Core:
                 transaction.loadResponse(self.conf, self.journal, session) #precte telo
             except TouchException: #nesmim se toho dotykat
                 self.log.debug("Forbidden to touch %s" % (transaction.uri))
+                self.files.append(transaction.file)
                 self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                 continue
             except ConditionError: #URI nebo content-type dle konfigurace
-               self.log.debug("Condition failed")
-               self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
-               continue
+                self.log.debug("Condition failed")
+                self.files.append(transaction.file)
+                self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
+                continue
             except FilterException: #filters
                 self.log.debug("%s filtered out" % (transaction.uri))
+                self.files.append(transaction.file)
                 self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                 continue
             except StatusError as e: #already logged
-               self.journal.stopChecking(transaction, VerificationStatus.done_ko)
-               continue
+                self.journal.stopChecking(transaction, VerificationStatus.done_ko)
+                self.files.append(transaction.file)
+                continue
             except NetworkError as e:
                 self.log.error("Network error: %s" % (format(e)))
+                self.files.append(transaction.file)
                 self.journal.stopChecking(transaction, VerificationStatus.done_ko)
                 continue
             else: #Plugins
@@ -154,6 +159,8 @@ class Core:
             try:
                 os.remove(filename)
             except OSError:
+                continue
+            except TypeError:
                 continue
 
     def __initializePlugin(self, plugin):
