@@ -214,6 +214,13 @@ class DBAPI(object):
                 return row[0]
         return 0
 
+    def get_urls(self):
+        with mdb.connect(self.conf.getDbname()) as con:
+            q = 'SELECT uri FROM transactions'
+            c = con.cursor()
+            c.execute(q)
+            return [x[0] for x in c.fetchall()]
+
     def get_known_defect_types(self, con):
         q = 'SELECT type, description FROM defectType'
         c = con.cursor()

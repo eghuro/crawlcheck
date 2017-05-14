@@ -8,6 +8,8 @@ CREATE TABLE IF NOT EXISTS transactions (
   depth INTEGER NOT NULL
 );
 
+CREATE INDEX IF NOT EXISTS transactions_uri ON transactions (uri);
+
 CREATE TABLE IF NOT EXISTS aliases (
     transactionId INTEGER NOT NULL,
     uri VARCHAR(255) PRIMARY KEY NOT NULL
