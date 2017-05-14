@@ -72,8 +72,8 @@ class LinksFinder(IPlugin):
                 urlNoAnchor = url.split('#')[0]
 
                 addr = urllib.parse.quote(urlNoAnchor.encode('utf-8'))
-                #et = None
-                #log.debug("Tag: "+tag+"; looking for img here")
-                #if tag == "img":
-                #    et = "image/"
+
+                et = None
+                if link.name == "img":
+                    et = "image/"
                 self.__queue.push_link(addr, transaction) #dups handled there
