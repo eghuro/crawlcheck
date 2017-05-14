@@ -86,7 +86,7 @@ def load_plugins(cl, log, conf):
     if len(manager.getAllPlugins()) > 0:
         log.info("Loaded plugins:")
         for pluginInfo in manager.getAllPlugins():
-            log.info(pluginInfo.name)
+            log.info("%s (%s)" % (pluginInfo.name, pluginInfo.plugin_object.id))
             if pluginInfo.plugin_object.category is PluginType.FILTER or pluginInfo.plugin_object.category is PluginType.HEADER:
                 if pluginInfo.plugin_object.id in allowed_filters:
                     if pluginInfo.plugin_object.category is PluginType.FILTER:

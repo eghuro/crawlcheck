@@ -112,7 +112,9 @@ class Core:
                 for sub in self.__time_subscribers:
                     sub.markStart(start, transaction.uri)
                 self.files.append(transaction.file)
-                self.volume = self.volume + os.path.getsize(transaction.file)
+                transaction.cache = dict()
+                transaction.cache['size'] = os.path.getsize(transaction.file)
+                self.volume = self.volume + transaction.cache['size']
                 self.journal.startChecking(transaction)
                 self.rack.run(transaction)
                 self.journal.stopChecking(transaction, VerificationStatus.done_ok)
@@ -266,9 +268,9 @@ class Rack:
 
     def run(self, transaction):
 
-        transaction.cache = dict()
         for plugin in self.plugins:
             self.__run_one(transaction, plugin)
+        transaction.cache = None
 
     def __run_one(self, transaction, plugin):
 

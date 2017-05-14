@@ -66,7 +66,7 @@ class ConfigLoader(object):
             version_check = self.__version_check(root)
             if db_check and version_check:
                 self.loaded = self.__set_up(root)
-        except yaml.scanner.ScannerError as e:
+        except (yaml.scanner.ScannerError, yaml.parser.ParserError) as e:
             self.__log.error("Configuration file error: " + e)
 
         cfile.close()

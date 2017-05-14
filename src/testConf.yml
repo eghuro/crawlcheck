@@ -13,6 +13,8 @@ cleanreport: True
 maxVolume: 100000000 #max 100MB of tmp files
 maxAttempts: 2
 dbCacheLimit: 1000000 #cache up to 1M of DB queries
+sitemap-file: "sitemap.xml"
+sitemap-regex: "https?://ksp.mff.cuni.cz(/.*)?"
     
 content-types:
  - 
@@ -24,18 +26,22 @@ content-types:
      - formChecker
      - seoimg
      - seometa
+     - dupdetect
  -
    "content-type": "text/css"
    plugins:
      - tinycss
+     - dupdetect
  -
    "content-type": "text/xml"
    plugins:
      - sitemapScanner
+     - dupdetect
  -
    "content-type": "application/xml"
    plugins:
      - sitemapScanner
+     - dupdetect
 
 regexes:
  -
@@ -48,6 +54,7 @@ regexes:
        - formChecker
        - seoimg
        - seometa
+       - dupdetect
  -
     regex: "https?://(?!ksp.mff.cuni.cz/(sksp|profil|forum)).+" #test links (HEAD request) only
     plugins:
@@ -63,6 +70,7 @@ filters:
  - expectedType
 
 postprocess:
+ - report_exporter
  - sitemap_generator
 
 entryPoints:
