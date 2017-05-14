@@ -13,7 +13,12 @@ class LinksFinder(IPlugin):
     
     
     def __init__(self):
-        self.queue = None
+        self.__queue = None
+        self.__tags = {'a' : 'href',
+                       'link' : 'href',
+                       'img' : 'src',
+                       'iframe' : 'src',
+                       'frame' : 'src'}
 
 
     def setJournal(self, journal):
@@ -21,7 +26,7 @@ class LinksFinder(IPlugin):
 
 
     def setQueue(self, queue):
-        self.queue = queue
+        self.__queue = queue
 
 
     def check(self, transaction):
@@ -29,14 +34,19 @@ class LinksFinder(IPlugin):
             vybere atribut href, resp. src, ulozi jako odkazy
         """
 
-        soup = BeautifulSoup(transaction.getContent(), 'html.parser')
+        if 'soup' in transaction.cache and transaction.cache['soup']:
+            soup = transaction.cache['soup']
+        else:
+            soup = BeautifulSoup(transaction.getContent(), 'lxml')
+            transaction.cache['soup'] = soup
 
         self.updateCanonical(soup, transaction)
 
-        self.checkType(soup, ['a', 'link'], 'href', transaction)
-        self.checkType(soup, ['img', 'iframe', 'frame'], 'src', transaction)
+        self.check_links(soup.find_all(self.__tags.keys()), transaction,
+                         self.__tags)
 
         return
+
 
     def updateCanonical(self, soup, transaction):
        for html in soup.find_all('html', limit=1):
@@ -47,40 +57,14 @@ class LinksFinder(IPlugin):
                             transaction.changePrimaryUri(link['href'])
                             return
 
-    def checkType(self, soup, tagL, attr, transaction):
-        
-        if attr == 'href':
-            self.make_links_absolute(soup, transaction.uri, tagL)
-        elif attr == 'src':
-            self.make_sources_absolute(soup, transaction.uri, tagL)
 
-        images = soup.find_all(tagL)
-
-        self.check_links(images, transaction, attr)
-        return
-
-   
-   
-    def make_links_absolute(self, soup, url, tagL):
-        
-        for tag in soup.findAll(tagL, href=True):
-            if 'href' in tag.attrs:
-                tag['href'] = urljoin(url, tag['href'])
-
-
-    def make_sources_absolute(self, soup, url, tagL):
-        
-        for tag in soup.findAll(tagL):
-            if 'src' in tag.attrs:
-                tag['src'] = urljoin(url, tag['src'])
-
-
-    def check_links(self, links, transaction, tag):
+    def check_links(self, links, transaction, tags):
 
         for link in links:
-            url = link.get(tag)
+            url = link.get(tags[link.name])
             
             if url is not None:
+                url = urljoin(transaction.uri, url)
                 p = urlparse(url)
                 if p.scheme not in ['http', 'https']:
                     continue #check only HTTP(S) - no FTP, MAILTO, etc.
@@ -92,4 +76,4 @@ class LinksFinder(IPlugin):
                 #log.debug("Tag: "+tag+"; looking for img here")
                 #if tag == "img":
                 #    et = "image/"
-                self.queue.push_link(addr, transaction) #duplicates handled in queue
+                self.__queue.push_link(addr, transaction) #dups handled there

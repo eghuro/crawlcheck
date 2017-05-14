@@ -194,6 +194,7 @@ class Transaction:
         self.request = None
         self.expected = None
         self.headers = dict()
+        self.cache = None
 
     def changePrimaryUri(self, new_uri):
         self.aliases.append(new_uri)
@@ -264,7 +265,8 @@ class Rack:
         self.log = logging.getLogger(__name__)
 
     def run(self, transaction):
- 
+
+        transaction.cache = dict()
         for plugin in self.plugins:
             self.__run_one(transaction, plugin)
 

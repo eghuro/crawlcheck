@@ -18,7 +18,11 @@ class CssScraper(IPlugin):
 
 
     def check(self, transaction):
-        soup = BeautifulSoup(transaction.getContent(), 'html.parser')
+        if 'soup' in transaction.cache and transaction.cache['soup']:
+            soup = transaction.cache['soup']
+        else:
+            soup = BeautifulSoup(transaction.getContent(), 'lxml')
+            transaction.cache['soup'] = soup
         self.internal(soup, transaction)
         self.inlines(soup, transaction)
 

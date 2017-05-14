@@ -4,5 +4,5 @@ Module = links_finder_plugin
 
 [Documentation]
 Author = Alexandr Mansurov
-Version = 0.6
+Version = 0.7
 Description = Discover links in HTML and add them into DB
