@@ -232,13 +232,17 @@ class DBAPI(object):
         log = logging.getLogger(__name__)
         log.info("Creating report")
         qt = Queue()
-        tproc = Process(target=DBAPI.__create_transactions, args=(self.conf.getDbname(), qt, 4))
+        tproc = Process(target=DBAPI.__create_transactions,
+                        args=(self.conf.getDbname(), qt,
+                              self.conf.getProperty("cores", 4))
 
         ql = Queue()
-        lproc = Process(target=DBAPI.__create_links, args=(self.conf.getDbname(), ql))
+        lproc = Process(target=DBAPI.__create_links,
+                        args=(self.conf.getDbname(), ql))
 
         qd = Queue()
-        dproc = Process(target=DBAPI.__create_defects, args=(self.conf.getDbname(), qd))
+        dproc = Process(target=DBAPI.__create_defects,
+                        args=(self.conf.getDbname(), qd))
 
         log.debug("Starting report worker processes")
         tproc.start()
