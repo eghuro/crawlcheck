@@ -9,8 +9,10 @@ Crawlcheck is a web crawler invoking plugins on received content. It's intended 
 
 ### Tech
 
-Crawlcheck's engine currently runs on Python 3.5 and uses SQLite3 as a database backend. Report website is using Ruby on Rails and Bootstrap.
-Crawlcheck uses a number of open source projects to work properly. Python dependencies are listed in [requirements.txt](https://github.com/eghuro/crawlcheck/blob/architecture-refactoring/requirements.txt), Ruby dependencies are listed in [Gemfile](https://github.com/eghuro/crawlcheck/blob/architecture-refactoring/src/report/Gemfile)
+Crawlcheck's engine currently runs on Python 3.5 and uses SQLite3 as a database backend.
+Crawlcheck uses a number of open source projects to work properly. Python dependencies are listed in [requirements.txt](https://github.com/eghuro/crawlcheck/blob/master/requirements.txt)
+
+For a web report there's [separate project](https://github.com/eghuro/crawlcheck-report).
 
 And of course Crawlcheck itself is open source with a [public repository](https://github.com/eghuro/crawlcheck) on GitHub.
 
@@ -24,9 +26,9 @@ $ git clone https://github.com/eghuro/crawlcheck crawlcheck
 2) Run install script
 ```sh
 cd crawlcheck
-./install.sh [database-file-location]
+pip install -r requirements.txt
 ```
-You will need python3, python-pip and sqlite3, virtualenv, ruby, libmagic, libtidy and zlib installed. All dev or devel versions.
+You will need python3, python-pip and sqlite3, virtualenv, libmagic and libtidy installed. All dev or devel versions.
 
 ### Configuration
 Configuration file is a simple YAML file.
@@ -108,14 +110,6 @@ $ python checker/ [config.yml]
 ```
 Note: ```[root]/crawlcheck``` is where repository was cloned to, ```[config.yml]``` stands for the configuration file path
 
-### Running report website
-Assuming you have gone through set-up and configuration and checker either finished or is still running (otherwise there are just no data to display), now run report app:
-```sh
-$ cd [root]/crawlcheck/src/report/
-$ bin/rails server
-```
-Note: you can specify port by adding ```-p [number]``` and interface by specifying ```-b [ip address]```
-
 ### Generating report to PDF
 There is also a very simple Python script to generate a PDF containing all invalid links and other defects.
 To run the script you need MySQL connector (you already have, since you ran checker) and ``pylatex``.
@@ -184,13 +178,6 @@ class MyPlugin(IPlugin):
     def check(self, transaction):
         # implement the checking logic here for crawlers and checkers
 
-    def filter(self, transaction, r):
-        # implement the filtering logic here for headers (r is response from HEAD request)
-        raise FilterException() # to forbid processing this transaction
-
-    def filter(self, transaction):
-        # implement the filtering logic here for filters
-        raise FilterException() # to forbid processing this transaction
 ```
 
 See http://yapsy.sourceforge.net/IPlugin.html and http://yapsy.sourceforge.net/PluginManager.html#plugin-info-file-format for more details.
@@ -199,14 +186,8 @@ See http://yapsy.sourceforge.net/IPlugin.html and http://yapsy.sourceforge.net/P
 
  - Improve Tests and Documentation
  - Parallelization
- - Report - get full path from entry point to invalid link
- - More runtime rules in configuration - cookies related
- - Report - manual annotations of findings
- - Filters and search in report
- - Detect sitemap.xml (from robots.txt), validate it, note the links from sitemap
- - Generate sitemap.xml
- - Detect forms and Javascript actions
-
+ - Duplication detection
+ - SEO related checks
 License
 ----
 
