@@ -49,7 +49,8 @@ class Network(object):
         accept = ",".join(acceptedTypes)
         log.debug("Accept header: %s" % (accept))
 
-        head = {"user-agent" : conf.getProperty("agent"), "accept" : accept } #TODO: custom headers
+        transaction.headers["User-Agent"] = conf.getProperty("agent")
+        transaction.headers["Accept"] = accept
 
         #if not allowed to send cookies or don't have any, then cookies are None -> should be safe to use them; maybe filter which to use?
         #TODO: cookies handled by session
@@ -62,7 +63,7 @@ class Network(object):
                 log.debug("Requesting")
                 r = session.request(transaction.method,
                                     transaction.uri + Network.__gen_param(transaction), #TODO: factory method on transaction
-                                    headers=head,
+                                    headers=transaction.headers,
                                     timeout=conf.getProperty("timeout"),
                                     cookies=transaction.cookies,
                                     verify=conf.getProperty("verifyHttps"),

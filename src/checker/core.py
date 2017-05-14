@@ -193,6 +193,7 @@ class Transaction:
         self.cookies = None
         self.request = None
         self.expected = None
+        self.headers = dict()
 
     def changePrimaryUri(self, new_uri):
         self.aliases.append(new_uri)
@@ -328,7 +329,9 @@ class TransactionQueue:
         if parent is None:
             self.push(createTransaction(uri, 0, -1), None)
         else:
-            self.push(createTransaction(uri, parent.depth + 1, parent.idno), parent)
+            t = createTransaction(uri, parent.depth + 1, parent.idno)
+            t.headers['Referer'] = parent.uri
+            self.push(t, parent)
 
     def push_virtual_link(self, uri, parent):
         t = createTransaction(uri, parent.depth + 1, parent.idno)
