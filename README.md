@@ -210,9 +210,8 @@ See http://yapsy.sourceforge.net/IPlugin.html and http://yapsy.sourceforge.net/P
 
 ### TODOs
 
- - Improve Tests and Documentation
+ - Tests, docs, code review
  - Parallelization
- - Duplication detection
  - SEO related checks
 
 License
