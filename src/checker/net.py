@@ -78,38 +78,47 @@ class Network(object):
                     raise NetworkError("%s attempts failed" % str(max_attempts)) from e
                 attempt = attempt + 1
             else:
-                transaction.status = r.status_code
-
-                if r.status_code >= 400:
-                    journal.foundDefect(transaction.srcId, "badlink", "Invalid link", transaction.uri, 1.0)
-                    raise StatusError(r.status_code)
-
-                if transaction.uri != r.url:
-                    log.debug("Redirection: %s -> %s" % (transaction.uri, r.url))
-                    transaction.changePrimaryUri(r.url)
-
-                if 'content-type' in r.headers:
-                    ct = r.headers['content-type']
-                elif 'Content-Type' in r.headers:
-                    ct = r.headers['Content-Type']
-                else:
-                    ct = ''
-
-                if not ct.strip():
-                    journal.foundDefect(transaction.idno, "badtype", "Content-type empty", None, 0.5)
-
-                if ';' in ct: #text/html;charset=utf-8 -> text/html
-                    ct = ct.split(';')[0]
-
-                transaction.type = ct
-
-                Network.__store_cookies(transaction, r.cookies, journal)
-
-                return r
-
+                return Network.__process_link(transaction, r, journal, log)
         msg = "All %s attempts to get %s failed." % (str(max_attempts), transaction.uri)
         journal.foundDefect(transaction.idno, "neterr", "Network error", msg, 0.9)
         raise NetworkError(msg)
+
+
+    @staticmethod
+    def __process_link(transaction, r, journal, log):
+        transaction.status = r.status_code
+
+        if r.status_code >= 400:
+            journal.foundDefect(transaction.srcId, "badlink", "Invalid link", transaction.uri, 1.0)
+            raise StatusError(r.status_code)
+
+        if transaction.uri != r.url:
+            log.debug("Redirection: %s -> %s" % (transaction.uri, r.url))
+            transaction.changePrimaryUri(r.url)
+
+        transaction.type = Network.__getCT(r, journal)
+        Network.__store_cookies(transaction, r.cookies, journal)
+
+        return r
+
+
+    @staticmethod
+    def __getCT(r, journal):
+        if 'content-type' in r.headers:
+            ct = r.headers['content-type']
+        elif 'Content-Type' in r.headers:
+            ct = r.headers['Content-Type']
+        else:
+            ct = ''
+
+        if not ct.strip():
+            journal.foundDefect(transaction.idno, "badtype", "Content-type empty", None, 0.5)
+
+        if ';' in ct: #text/html;charset=utf-8 -> text/html
+            ct = ct.split(';')[0]
+
+        return ct
+
 
     @staticmethod
     def getContent(transaction, conf, journal):
