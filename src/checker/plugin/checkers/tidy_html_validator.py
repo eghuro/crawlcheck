@@ -20,20 +20,18 @@ class Tidy_HTML_Validator(IPlugin):
     def setJournal(self, journal):
         self.journal = journal
 
-        for dt in journal.getKnownDefectTypes(): #TODO: TESTME
+        maxes = {'W' : self.max_warn, 'E' : self.max_err}
+        
+        for dt in journal.getKnownDefectTypes():
             #dt[0] type, dt[1] description
             #parse codes of W{X} or E{Y} -> get max X or Y
     
             try:        
                 letter = dt[0][0]
                 number = int(dt[0][1:])
-                if letter == 'W':
-                    if number > self.max_warn:
-                        self.max_warn = number
-                    self.codes[dt[1]] = dt[0]
-                elif letter == 'E':
-                    if number > self.max_err:
-                        self.max_err = number
+                if letter in maxes.keys:
+                    if number > maxes[letter]:
+                        maxes[letter] = number
                     self.codes[dt[1]] = dt[0]
             except ValueError:
                 continue
