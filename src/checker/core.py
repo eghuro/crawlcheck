@@ -126,12 +126,13 @@ class Core:
                 while self.volume > self.conf.getProperty("maxVolume"):
                     self.log.debug("CLEANUP ... Size of tmps: %s, limit: %s" % (str(self.volume), str(self.conf.getProperty("maxVolume"))))
                     f = self.files[0]
-                    l = os.path.getsize(f)
-                    os.remove(f)
-                    self.volume = self.volume - l
+                    if f:
+                        l = os.path.getsize(f)
+                        os.remove(f)
+                        self.volume = self.volume - l
                     self.files.pop(0)
-                    self.log.debug("Size of tmps after cleanup: %s" % (str(self.volume)))
-                    gc.collect()
+                self.log.debug("Size of tmps after cleanup: %s" % (str(self.volume)))
+                gc.collect()
 
     def finalize(self):
         #self.rack.stop()
