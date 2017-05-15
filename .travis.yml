@@ -4,6 +4,14 @@ python:
   - "3.5-dev" # 3.5 development branch
   - "nightly" # currently points to 3.6-dev
 
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - gcc-4.8
+    - g++-4.8
+
 # command to install dependencies
 before_install:
  - sudo apt-get install sqlite3 libsqlite3-dev libmagic-dev libtidy-dev gcc-4.8 g++-4.8
