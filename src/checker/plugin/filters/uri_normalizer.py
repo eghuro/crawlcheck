@@ -7,7 +7,7 @@ import logging
 class Normalizer(IPlugin):
 
     category = PluginType.FILTER
-    id = "normalize"
+    id = "uri_normalizer"
 
     def __init__(self):
         self.__log = logging.getLogger(__name__)

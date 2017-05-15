@@ -119,6 +119,7 @@ class Network(object):
                                              prefix=conf.getProperty("tmpPrefix"),
                                              suffix=conf.getProperty("tmpSuffix")) as tmp:
                 transaction.file = tmp.name
+                log.info("Downloading %s" % transaction.uri)
                 log.debug("Downloading chunks into %s" % tmp.name)
                 chsize = min(conf.getProperty("maxContentLength"), 10000000)
                 for chunk in transaction.request.iter_content(chunk_size=chsize):
