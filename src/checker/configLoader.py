@@ -91,6 +91,22 @@ class ConfigLoader(object):
         return version_check
 
 
+    def __get_data(self, ep):
+        data = dict()
+        if 'data' in ep:
+            for it in ep['data']:
+                for k in it.keys():
+                    data[k] = it[k]
+        return data
+
+    def __get_method(self, ep):
+        method = 'GET'
+        if 'method' in ep:
+            if ep['method'].upper() in ConfigLoader.__METHODS:
+                method = ep['method'].upper()
+        return method
+
+
     def __set_entry_points(self, root):
         if 'entryPoints' not in root:
             self.__log.warning("Entry points should be specified")
@@ -102,30 +118,18 @@ class ConfigLoader(object):
                 if type(ep) is str:
                     self.entryPoints.append(EPR(ep))
                 elif type(ep) is dict:
-                    data = dict()
-                    if 'data' in ep:
-                        for it in ep['data']:
-                            for k in it.keys():
-                                data[k] = it[k]
-                    method = 'GET'
-                    if 'method' in ep:
-                        if ep['method'].upper() in ConfigLoader.__METHODS:
-                            method = ep['method'].upper()
+                    data = self.__get_data(ep)
+                    method = self.__get_method(ep)
                     if 'url' not in ep:
                         raise ConfigurationException("url not present in entryPoint")
                     self.entryPoints.append(EPR(ep['url'], method, data))
 
 
-    def __set_filters(self, root):
-        if 'filters' in root:
-            for f in root['filters']:
-                self.filters.append(f)
-
-
-    def __set_postprocessors(self, root):
-        if 'postprocess' in root:
-            for pp in root['postprocess']:
-                self.postprocess.append(pp)
+    def __set_plugins(self, root, tag, lst):
+        if tag in root:
+            for p in root[tag]:
+                lst.append(p)
+        return lst
 
 
     def __set_payloads(self, root):
@@ -186,8 +190,8 @@ class ConfigLoader(object):
 
         #Grab lists
         self.__set_entry_points(root)
-        self.__set_filters(root)
-        self.__set_postprocessors(root)
+        self.filters = self.__set_plugins(root, 'filters', self.filters)
+        self.postprocess = self.__set_plugins(root, 'postprocess', self.postprocess)
         self.__set_payloads(root)
 
         #Grab properties
