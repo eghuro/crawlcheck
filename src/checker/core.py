@@ -186,15 +186,15 @@ class Core:
         if plugin.category not in known_categories:
             raise PluginTypeError
 
-        if plugin.category == PluginType.CRAWLER:
+        try:
             plugin.setQueue(self.queue)
-        elif plugin.category in set([PluginType.FILTER, PluginType.HEADER]):
+        except AttributeError:
+            pass
+
+        if plugin.category in set([PluginType.FILTER, PluginType.HEADER, PluginType.POSTPROCESS]):
             plugin.setConf(self.conf)
-            if plugin.id == 'robots': #TODO: refactor
-                plugin.setQueue(self.queue)
-        elif plugin.category == PluginType.POSTPROCESS:
-            plugin.setConf(self.conf)
-            plugin.setDb(self.db)
+            if plugin.category == PluginType.POSTPROESS:
+                plugin.setDb(self.db)
 
 
 class TouchException(Exception):
