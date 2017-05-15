@@ -115,14 +115,18 @@ class ConfigLoader(object):
         else:
             epSet = root['entryPoints']
             for ep in epSet:
-                if type(ep) is str:
-                    self.entryPoints.append(EPR(ep))
-                elif type(ep) is dict:
-                    data = self.__get_data(ep)
-                    method = self.__get_method(ep)
-                    if 'url' not in ep:
-                        raise ConfigurationException("url not present in entryPoint")
-                    self.entryPoints.append(EPR(ep['url'], method, data))
+                self.__parse_entry_point(ep)
+
+
+    def __parse_entry_point(self, ep):
+        if type(ep) is str:
+            self.entryPoints.append(EPR(ep))
+        elif type(ep) is dict:
+            data = self.__get_data(ep)
+            method = self.__get_method(ep)
+            if 'url' not in ep:
+                raise ConfigurationException("url not present in entryPoint")
+            self.entryPoints.append(EPR(ep['url'], method, data))
 
 
     def __set_plugins(self, root, tag, lst):
@@ -135,16 +139,19 @@ class ConfigLoader(object):
     def __set_payloads(self, root):
         if 'payload' in root:
             for p in root['payload']:
-                if 'url' not in p:
-                    raise ConfigurationException("url not present in payload")
-                if 'method' not in p:
-                    raise ConfigurationException("method not present in payload")
-                if p['method'].upper() not in ConfigLoader.__METHODS:
-                    raise ConfigurationException("Invalid method: "+p['method'])
-                if 'data' not in p:
-                    raise ConfigurationException("data not present in payload")
+                self.__parse_payload(p)
 
-                self.payloads[ (p['url'], p['method'].upper()) ] = p['data']
+    def __parse_payload(self, p):
+        if 'url' not in p:
+            raise ConfigurationException("url not present in payload")
+        if 'method' not in p:
+            raise ConfigurationException("method not present in payload")
+        if p['method'].upper() not in ConfigLoader.__METHODS:
+            raise ConfigurationException("Invalid method: "+p['method'])
+        if 'data' not in p:
+            raise ConfigurationException("data not present in payload")
+
+        self.payloads[ (p['url'], p['method'].upper()) ] = p['data']
 
 
     def __set_cookies(self, root, u, us):
@@ -152,22 +159,26 @@ class ConfigLoader(object):
         if us in root:
           for url in root[us]:
             if ('cookie' in url) and (u in url):
-                # can be cookie: True/False parameter or structure
-                if type(url['cookie']) is not bool:
-                    #structure
-                    if url['cookie']['reply']:
-                        reg = re.compile(url[u])
-                        self.cookieFriendlyRegexes.add(reg)
-                        if 'custom' in url['cookie']:
-                            self.customCookies[reg] = url['cookie']['custom']
-                            #self.customCookies[regex] = dict(key:value of cookies)
-                        #else: no cookies to send
-                    #else: forbidden to reply cookies and also send custom ones
-                elif url['cookie']: #cookie: True/False parameter
-                    self.cookieFriendlyRegexes.add(re.compile(url[u]))
-                else:
-                    raise ConfigurationError("Wrong format of cookie record for "+url[u])
+                self.__parse_cookie(url)
             #else: no cookie record or wrong url record -> raised earlier
+
+
+    def __parse_cookie(self, url):
+        # can be cookie: True/False parameter or structure
+        if type(url['cookie']) is not bool:
+             #structure
+            if url['cookie']['reply']:
+                reg = re.compile(url[u])
+                self.cookieFriendlyRegexes.add(reg)
+                if 'custom' in url['cookie']:
+                    self.customCookies[reg] = url['cookie']['custom']
+                    #self.customCookies[regex] = dict(key:value of cookies)
+                #else: no cookies to send
+            #else: forbidden to reply cookies and also send custom ones
+        elif url['cookie']: #cookie: True/False parameter
+            self.cookieFriendlyRegexes.add(re.compile(url[u]))
+        else:
+            raise ConfigurationError("Wrong format of cookie record for "+url[u])
 
  
     def __set_up(self, root):
@@ -225,20 +236,22 @@ class ConfigLoader(object):
 
 
     def __create_uri_regex_acceptor(self, root):
-       acceptor = RegexAcceptor()
-       if 'regexes' in root:
-           regexes = root['regexes']
-           if regexes:
-               for regex in regexes:
-                   if 'regex' not in regex:
-                       raise ConfigurationError("Regex not specified")
-                   if 'plugins' in regex:
-                       if regex['plugins'] is not None:
-                           for plugin in regex['plugins']:
-                               acceptor.setRegex(regex['regex'], plugin)
-                       else:
-                           acceptor.setRegex(regex['regex'], None)
+        acceptor = RegexAcceptor()
+        if 'regexes' in root:
+            for regex in root['regexes']:
+                self.__parse_regex(regex, acceptor)
        return acceptor
+
+
+    def __parse_regex(self, regex, acceptor):
+        if 'regex' not in regex:
+            raise ConfigurationError("Regex not specified")
+        if 'plugins' in regex:
+            if regex['plugins'] is not None:
+                for plugin in regex['plugins']:
+                    acceptor.setRegex(regex['regex'], plugin)
+            else:
+                acceptor.setRegex(regex['regex'], None)
 
 
     @staticmethod
