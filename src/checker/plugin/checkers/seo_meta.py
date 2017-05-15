@@ -1,5 +1,4 @@
 from common import PluginType, getSoup
-from bs4 import BeautifulSoup
 from yapsy.IPlugin import IPlugin
 import logging
 

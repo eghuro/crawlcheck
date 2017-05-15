@@ -1,5 +1,4 @@
-from common import PluginType
-from bs4 import BeautifulSoup
+from common import PluginType, getSoup
 from yapsy.IPlugin import IPlugin
 from urllib.parse import urlparse, urljoin
 import urllib.parse
@@ -34,12 +33,7 @@ class LinksFinder(IPlugin):
             vybere atribut href, resp. src, ulozi jako odkazy
         """
 
-        if 'soup' in transaction.cache and transaction.cache['soup']:
-            soup = transaction.cache['soup']
-        else:
-            soup = BeautifulSoup(transaction.getContent(), 'lxml')
-            transaction.cache['soup'] = soup
-
+        soup = getSoup(transaction)
         self.updateCanonical(soup, transaction)
 
         self.check_links(soup.find_all(self.__tags.keys()), transaction,

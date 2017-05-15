@@ -1,5 +1,4 @@
-from common import PluginType
-from bs4 import BeautifulSoup
+from common import PluginType, getSoup
 from yapsy.IPlugin import IPlugin
 
 
@@ -18,11 +17,7 @@ class CssScraper(IPlugin):
 
 
     def check(self, transaction):
-        if 'soup' in transaction.cache and transaction.cache['soup']:
-            soup = transaction.cache['soup']
-        else:
-            soup = BeautifulSoup(transaction.getContent(), 'lxml')
-            transaction.cache['soup'] = soup
+        soup = getSoup(transaction)
         self.internal(soup, transaction)
         self.inlines(soup, transaction)
 

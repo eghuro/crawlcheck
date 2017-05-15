@@ -1,7 +1,6 @@
-from common import PluginType
+from common import PluginType, getSoup
 import core
 from yapsy.IPlugin import IPlugin
-from bs4 import BeautifulSoup
 import urllib.parse
 
 class Form_Checker(IPlugin):
@@ -19,12 +18,7 @@ class Form_Checker(IPlugin):
         self.queue = queue
 
     def check(self, transaction):
-        if 'soup' in transaction.cache and transaction.cache['soup']:
-            soup = transaction.cache['soup']
-        else:
-            soup = BeautifulSoup(transaction.getContent(), 'lxml')
-            transaction.cache['soup'] = soup
-        forms = soup.find_all('form')
+        forms = getSoup(tranacton).find_all('form')
         for form in forms:
             self.check_form(form, transaction)
 

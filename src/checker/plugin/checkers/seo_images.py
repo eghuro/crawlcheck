@@ -1,5 +1,4 @@
-from common import PluginType
-from bs4 import BeautifulSoup
+from common import PluginType, getSoup
 from yapsy.IPlugin import IPlugin
 import logging
 
@@ -20,13 +19,7 @@ class ImageTagValidator(IPlugin):
         """Pusti validator, ulozi chyby.
         """
 
-        if 'soup' in transaction.cache and transaction.cache['soup']:
-            soup = transaction.cache['soup']
-        else:
-            soup = BeautifulSoup(transaction.getContent(), 'lxml')
-            transaction.cache['soup'] = soup
-
-        for img in soup.find_all('img'):
+        for img in getSoup(transaction).find_all('img'):
             if 'src' in img.attrs:
                 desc = img['src']
             else:
