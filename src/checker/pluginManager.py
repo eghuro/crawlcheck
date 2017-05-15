@@ -85,29 +85,31 @@ def __load_plugins(cl, log, conf):
     if len(manager.getAllPlugins()) > 0:
         log.info("Loaded plugins:")
         for pluginInfo in manager.getAllPlugins():
-            log.info("%s (%s)" % (pluginInfo.name, pluginInfo.plugin_object.id))
-            if pluginInfo.plugin_object.category is PluginType.FILTER or pluginInfo.plugin_object.category is PluginType.HEADER:
-                if pluginInfo.plugin_object.id in allowed_filters:
-                    if pluginInfo.plugin_object.category is PluginType.FILTER:
-                        log.debug("Filter")
-                        filters.append(pluginInfo.plugin_object)
-                    elif pluginInfo.plugin_object.category is PluginType.HEADER:
-                        log.debug("Header")
-                        headers.append(pluginInfo.plugin_object)
-            elif pluginInfo.plugin_object.category in plugin_categories:
-                log.debug("General plugin")
-                plugins.append(pluginInfo.plugin_object)
-            elif pluginInfo.plugin_object.category is PluginType.POSTPROCESS:
-                log.debug("Postprocessor")
-                if pluginInfo.plugin_object.id in conf.postprocess: 
-                    postprocess.append(pluginInfo.plugin_object)
-                else:
-                    log.debug("Not allowed in conf")
-            else:
-                log.error("Unknown category for " + pluginInfo.name)
+            __load_plugin(pluginInfo)
     else:
         log.info("No plugins found")
     return plugins, headers, filters, postprocess
+
+
+def __load_plugin(pluginInfo):
+    log.info("%s (%s)" % (pluginInfo.name, pluginInfo.plugin_object.id))
+
+    filter_lists = {PluginType.FILTER: filters, PluginType:HEADER: headers}
+    if pluginInfo.plugin_object.category in filter_categories:
+        if pluginInfo.plugin_object.id in allowed_filters:
+            filter_lists[pluginInfo.plugin_object.category].append(pluginInfo.plugin_object)
+    elif pluginInfo.plugin_object.category in plugin_categories:
+        log.debug("General plugin")
+        plugins.append(pluginInfo.plugin_object)
+    elif pluginInfo.plugin_object.category == PluginType.POSTPROCESS:
+        log.debug("Postprocessor")
+        if pluginInfo.plugin_object.id in conf.postprocess:
+            postprocess.append(pluginInfo.plugin_object)
+        else:
+            log.debug("Not allowed in conf")
+    else:
+        log.error("Unknown category for " + pluginInfo.name)
+
 
 def __load_configuration():
     if not os.path.isfile(sys.argv[1]):
