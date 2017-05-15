@@ -47,11 +47,15 @@ class Core:
         for plugin in self.plugins+headers+filters+postprocess:
             self.__initializePlugin(plugin)
 
+        self.__push_entry_points()
+        self.rack = Rack(self.conf.type_acceptor, self.conf.regex_acceptor, plugins)
+
+
+    def __push_entry_points(self):
         for entryPoint in self.conf.entry_points:
             self.log.debug("Pushing to queue: %s, data: %s" % (entryPoint.url, str(entryPoint.data)))
             self.queue.push(createTransaction(entryPoint.url, 0, -1, entryPoint.method, entryPoint.data))
 
-        self.rack = Rack(self.conf.type_acceptor, self.conf.regex_acceptor, plugins)
 
     def run(self):
         with requests.Session() as session:
@@ -175,19 +179,22 @@ class Core:
 
     def __initializePlugin(self, plugin):
         plugin.setJournal(self.journal)
+        known_categories = set([PluginType.CRAWLER, PluginType.CHECKER,
+                                PluginType.FILTER, PluginType.HEADER,
+                                PluginType,POSTPROCESS])
+
+        if plugin.category not in known_categories:
+            raise PluginTypeError
+
         if plugin.category == PluginType.CRAWLER:
             plugin.setQueue(self.queue)
-        elif plugin.category == PluginType.CHECKER:
-            pass
-        elif (plugin.category == PluginType.FILTER) or (plugin.category == PluginType.HEADER):
+        elif plugin.category in set([PluginType.FILTER, PluginType.HEADER]):
             plugin.setConf(self.conf)
             if plugin.id == 'robots': #TODO: refactor
                 plugin.setQueue(self.queue)
         elif plugin.category == PluginType.POSTPROCESS:
             plugin.setConf(self.conf)
             plugin.setDb(self.db)
-        else:
-            raise PluginTypeError
 
 
 class TouchException(Exception):
@@ -386,10 +393,15 @@ class TransactionQueue:
                 self.__seen.add( (transaction.uri, transaction.method) )
 
 
-    def __bake_cookies(self, transaction, parent):
-        cookies = dict()
+    def __init_cookies(self, parent):
         if parent and parent.cookies:
-            cookies = parent.cookies.copy()
+            return parent.cookies.copy()
+        else:
+            return dict()
+
+
+    def __bake_cookies(self, transaction, parent):
+        cookies = self.__init_cookies(parent)
         allowed = False
         for reg in self.__conf.cookies:
             if reg.match(transaction.uri): #sending cookies allowed #TODO: aliases
@@ -398,8 +410,6 @@ class TransactionQueue:
                 if reg in self.__conf.custom_cookies: #got custom cookies to send
                     cookies.update(self.__conf.custom_cookies[reg])
         if allowed:
-            if len(cookies.keys()) > 0:
-                logging.getLogger(__name__).debug("Cookies of %s updated to %s" % (transaction.uri, str(cookies)))
             transaction.cookies = cookies
 
 
