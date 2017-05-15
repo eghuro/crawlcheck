@@ -228,13 +228,12 @@ class DBAPI(object):
         return c.fetchall()
 
 
-    def create_report_payload(self):
+    def create_report_payload(self, cores=4):
         log = logging.getLogger(__name__)
         log.info("Creating report")
         qt = Queue()
         tproc = Process(target=DBAPI.__create_transactions,
-                        args=(self.conf.getDbname(), qt,
-                              self.conf.getProperty("cores", 4)))
+                        args=(self.conf.getDbname(), qt, cores))
 
         ql = Queue()
         lproc = Process(target=DBAPI.__create_links,

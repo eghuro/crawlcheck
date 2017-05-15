@@ -35,7 +35,8 @@ class ReportExporter(IPlugin):
                 self.__log.warn("Is report REST API running?")
 
             #prepare YAML payload
-            payload = yaml.dump(self.__db.create_report_payload())
+            payload = yaml.dump(self.__db.create_report_payload(
+                                    self.__conf.getProperty("cores")))
             self.__log.info("Payload size: " + str(len(payload)))
             self.__log.debug(payload)
 
