@@ -57,6 +57,12 @@ class Core:
         with requests.Session() as session:
             self.__run(session)
 
+    def __handle_err(self, msg, transaction, status = VerificationStatus.done_ignored):
+        self.log.debug(msg)
+        self.files.append(transaction.file)
+        self.journal.stopChecking(transaction, status)
+        
+
     def __run(self, session):
         #Queue
         while not self.queue.isEmpty():
@@ -90,28 +96,20 @@ class Core:
 
                 transaction.loadResponse(self.conf, self.journal, session) #precte telo
             except TouchException: #nesmim se toho dotykat
-                self.log.debug("Forbidden to touch %s" % (transaction.uri))
-                self.files.append(transaction.file)
-                self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
+                self.__handle_err("Forbidden to touch %s" % (transaction.uri), transaction)
                 continue
             except ConditionError: #URI nebo content-type dle konfigurace
-                self.log.debug("Condition failed")
-                self.files.append(transaction.file)
-                self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
+                self.__handle_err("Condition failed", transaction)
                 continue
             except FilterException: #filters
-                self.log.debug("%s filtered out" % (transaction.uri))
-                self.files.append(transaction.file)
-                self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
+                self.__handle_err("%s filtered out" % (transaction.uri))
                 continue
             except StatusError as e: #already logged
                 self.journal.stopChecking(transaction, VerificationStatus.done_ko)
                 self.files.append(transaction.file)
                 continue
             except NetworkError as e:
-                self.log.error("Network error: %s" % (format(e)))
-                self.files.append(transaction.file)
-                self.journal.stopChecking(transaction, VerificationStatus.done_ko)
+                self.__handle_err("Network error: %s" % (format(e)), VerificationStatus.done_ko)
                 continue
             else: #Plugins
                 for sub in self.__time_subscribers:
