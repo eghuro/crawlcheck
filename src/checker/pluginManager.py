@@ -29,29 +29,28 @@ def __configure_logger(conf, debug=False):
     log = logging.getLogger()
     if debug:
         log.setLevel(logging.DEBUG)
+        level = logging.DEBUG
     else:
         log.setLevel(logging.INFO)
+        level = logging.INFO
+
     formatter = logging.Formatter('%(asctime)s - %(processName)-10s - %(name)s - %(levelname)s - %(message)s')
-    if conf:
-        if conf.getProperty('logfile') is not None:
-            need_roll = os.path.isfile(conf.getProperty('logfile'))
-            fh = logging.handlers.RotatingFileHandler(conf.getProperty('logfile'), backupCount=50)
-            if debug:
-                fh.setLevel(logging.DEBUG)
-            else:
-                fh.setLevel(logging.INFO)
-            fh.setFormatter(formatter)
-            log.addHandler(fh)
+    if conf and conf.getProperty('logfile') is not None:
+        need_roll = os.path.isfile(conf.getProperty('logfile'))
+        fh = logging.handlers.RotatingFileHandler(conf.getProperty('logfile'), backupCount=50)
+        fh.setLevel(level)
+        fh.setFormatter(formatter)
+        log.addHandler(fh)
 
-            if need_roll:
-                # Add timestamp
-                log.debug('\n---------\nLog closed on %s.\n---------\n' % time.asctime())
-
-                # Roll over on application start
-                fh.doRollover()
+        if need_roll:
             # Add timestamp
-            log.debug('\n---------\nLog started on %s.\n---------\n' % time.asctime())
+            log.debug('\n---------\nLog closed on %s.\n---------\n' % time.asctime())
 
+            # Roll over on application start
+            fh.doRollover()
+
+        # Add timestamp
+        log.debug('\n---------\nLog started on %s.\n---------\n' % time.asctime())
 
     sh = logging.StreamHandler()
     sh.setLevel(logging.INFO)
@@ -144,6 +143,7 @@ def __load_cmd_options(log):
     print("Export only: " + str(export_only))
     return debug, export_only
 
+
 def __prepare_database(conf, export_only, log):
     #if database file exists and user wanted to clean it, remove it
     cleaned = False
@@ -157,19 +157,24 @@ def __prepare_database(conf, export_only, log):
         if not cleaned:
             log.warn("Database file " + conf.dbconf.getDbname() + " doesn't exist")
         if conf.getProperty('initdb') or cleaned:
-            log.info('Initializing database file ' + conf.dbconf.getDbname())
-            try:
-                with open('checker/mysql_tables.sql', 'r') as tables, sqlite3.connect(conf.dbconf.getDbname()) as conn:
-                    qry0 = tables.read().split(';')
-                    c = conn.cursor()
-                    for q in qry0:
-                        c.execute(q)
-                    conn.commit()
-                    c.close()
-                    log.info("Successfully initialized database: " + conf.dbconf.getDbname())
-            except:
-                log.error("Failed to initialize database")
-                raise
+            __initialize_database(log, conf)
+
+
+def __initialize_database(log, conf):
+    log.info('Initializing database file ' + conf.dbconf.getDbname())
+    try:
+        with open('checker/mysql_tables.sql', 'r') as tables, sqlite3.connect(conf.dbconf.getDbname()) as conn:
+            qry0 = tables.read().split(';')
+            c = conn.cursor()
+            for q in qry0:
+                c.execute(q)
+            conn.commit()
+            c.close()
+            log.info("Successfully initialized database: " + conf.dbconf.getDbname())
+    except:
+        log.error("Failed to initialize database")
+        raise
+
 
 def __run_checker(log, plugins, filters, headers, pps, conf, export_only):
     global core_instance
