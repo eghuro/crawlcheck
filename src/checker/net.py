@@ -127,14 +127,7 @@ class Network(object):
             with tempfile.NamedTemporaryFile(delete=False,
                                              prefix=conf.getProperty("tmpPrefix"),
                                              suffix=conf.getProperty("tmpSuffix")) as tmp:
-                transaction.file = tmp.name
-                log.info("Downloading %s" % transaction.uri)
-                log.debug("Downloading chunks into %s" % tmp.name)
-                chsize = min(conf.getProperty("maxContentLength"), 10000000)
-                for chunk in transaction.request.iter_content(chunk_size=chsize):
-                    if chunk:
-                        tmp.write(chunk)
-                log.debug("%s downloaded." % transaction.uri)
+                Network.__download(transaction, conf, tmp, journal, log)
         except ConnectionError as e:
             log.debug("Connection error: %s" % (format(e)))
             journal.foundDefect(transaction.srcId, "badlink", "Invalid link", transaction.uri, 1.0)
@@ -147,6 +140,18 @@ class Network(object):
             match, mime = Network.__test_content_type(transaction.type, transaction.file)
             if not match:
                 journal.foundDefect(transaction.idno, "type-mishmash", "Declared content-type doesn't match detected one", "Declared "+transaction.type+", detected "+mime, 0.3)
+
+    @static
+    def __download(transaction, conf, tmp, journal, log):
+            transaction.file = tmp.name
+            log.info("Downloading %s" % transaction.uri)
+            log.debug("Downloading chunks into %s" % tmp.name)
+            chsize = min(conf.getProperty("maxContentLength"), 10000000)
+            for chunk in transaction.request.iter_content(chunk_size=chsize):
+                if chunk:
+                    tmp.write(chunk)
+            log.debug("%s downloaded." % transaction.uri)
+
 
     @staticmethod
     def __gen_param(transaction):
