@@ -14,3 +14,11 @@ class PluginTypeError(Exception):
 
     def __str__(self):
         return "Unknown plugin type"
+
+def getSoup(transaction):
+    if 'soup' in transaction.cache and transaction.cache['soup']:
+        soup = transaction.cache['soup']
+    else:
+        soup = BeautifulSoup(transaction.getContent(), 'lxml')
+        transaction.cache['soup'] = soup
+    return soup

@@ -1,4 +1,4 @@
-from common import PluginType
+from common import PluginType, getSoup
 from bs4 import BeautifulSoup
 from yapsy.IPlugin import IPlugin
 import logging
@@ -37,13 +37,7 @@ class MetaTagValidator(IPlugin):
     def check(self, transaction):
         """Pusti validator, ulozi chyby.
         """
-        if 'soup' in transaction.cache and transaction.cache['soup']:
-            soup = transaction.cache['soup']
-        else:
-            soup = BeautifulSoup(transaction.getContent(), 'lxml')
-            transaction.cache['soup'] = soup
-
-        for html in soup.find_all('html', limit=1):
+        for html in getSoup(transaction).find_all('html', limit=1):
             for head in html.find_all('head', limit=1):
                 self.__classify(head, 'description', transaction.idno,
                                   "seo:nodsc", "seo:multidsc")
