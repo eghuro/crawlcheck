@@ -146,20 +146,21 @@ def __load_cmd_options(log):
     return debug, export_only
 
 
-def __prepare_database(conf, export_only, log):
+def __prepare_database(conf, log):
     #if database file exists and user wanted to clean it, remove it
     cleaned = False
 
-    if os.path.isfile(conf.dbconf.getDbname()) and conf.getProperty('cleandb') and not export_only:
+    if os.path.isfile(conf.dbconf.getDbname()) and conf.getProperty('cleandb'):
         log.info("Removing database file " + conf.dbconf.getDbname() + " as configured")
         os.remove(conf.dbconf.getDbname())
         cleaned = True
+
     #if database file doesn't exist, create & initialize it - or warn use
-    if not os.path.isfile(conf.dbconf.getDbname()) and not export_only:
-        if not cleaned:
-            log.warn("Database file " + conf.dbconf.getDbname() + " doesn't exist")
+    if not os.path.isfile(conf.dbconf.getDbname()):
         if conf.getProperty('initdb') or cleaned:
             __initialize_database(log, conf)
+        else:
+            log.error("Database file " + conf.dbconf.getDbname() + " doesn't exist")
 
 
 def __initialize_database(log, conf):
@@ -216,7 +217,8 @@ def main():
         debug, export_only = __load_cmd_options(log)
         __configure_logger(conf, debug=debug)
 
-        __prepare_database(conf, export_only, log)
+        if not export_only:
+            __prepare_database(conf, log)
 
         plugins, headers, filters, pps = __load_plugins(cl, log, conf)
         cl = None
