@@ -62,6 +62,19 @@ class Core:
         self.files.append(transaction.file)
         self.journal.stopChecking(transaction, status)
         
+    def __filter(self, transaction):
+        #Custom filters: depth, robots.txt
+        for tf in self.filters:
+            tf.filter(transaction)
+
+        start = time.time()
+        r = transaction.testLink(self.conf, self.journal, session) #precte hlavicky
+
+        #custom HTTP header filters, incl. test if ct matches expectation
+        for hf in self.header_filters:
+            hf.filter(transaction, r)
+
+        return start
 
     def __run(self, session):
         #Queue
@@ -79,21 +92,10 @@ class Core:
 
                 if not transaction.isWorthIt(self.conf): #neni zadny plugin, ktery by prijal
                     self.log.debug("%s not worth my time" % (transaction.uri))
-
                     self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                     continue
 
-                #Custom filters: depth, robots.txt
-                for tf in self.filters:
-                    tf.filter(transaction)
-
-                start = time.time()
-                r = transaction.testLink(self.conf, self.journal, session) #precte hlavicky
-
-                #custom HTTP header filters, incl. test if ct matches expectation
-                for hf in self.header_filters:
-                   hf.filter(transaction, r)
-
+                start = self.__filter(transaction)
                 transaction.loadResponse(self.conf, self.journal, session) #precte telo
             except TouchException: #nesmim se toho dotykat
                 self.__handle_err("Forbidden to touch %s" % (transaction.uri), transaction)
@@ -112,25 +114,34 @@ class Core:
                 self.__handle_err("Network error: %s" % (format(e)), VerificationStatus.done_ko)
                 continue
             else: #Plugins
-                for sub in self.__time_subscribers:
-                    sub.markStart(start, transaction.uri)
-                self.files.append(transaction.file)
-                transaction.cache = dict()
-                transaction.cache['size'] = os.path.getsize(transaction.file)
-                self.volume = self.volume + transaction.cache['size']
-                self.journal.startChecking(transaction)
-                self.rack.run(transaction)
-                self.journal.stopChecking(transaction, VerificationStatus.done_ok)
-                while self.volume > self.conf.getProperty("maxVolume"):
-                    self.log.debug("CLEANUP ... Size of tmps: %s, limit: %s" % (str(self.volume), str(self.conf.getProperty("maxVolume"))))
-                    f = self.files[0]
-                    if f:
-                        l = os.path.getsize(f)
-                        os.remove(f)
-                        self.volume = self.volume - l
-                    self.files.pop(0)
-                self.log.debug("Size of tmps after cleanup: %s" % (str(self.volume)))
-                gc.collect()
+                self.__process(transaction)
+
+
+    def __process(self, transaction):
+        for sub in self.__time_subscribers:
+            sub.markStart(start, transaction.uri)
+        self.files.append(transaction.file)
+        transaction.cache = dict()
+        transaction.cache['size'] = os.path.getsize(transaction.file)
+        self.volume = self.volume + transaction.cache['size']
+        self.journal.startChecking(transaction)
+        self.rack.run(transaction)
+        self.journal.stopChecking(transaction, VerificationStatus.done_ok)
+        self.__cleanup()
+
+
+    def __cleanup(self):
+        while self.volume > self.conf.getProperty("maxVolume"):
+            self.log.debug("CLEANUP ... Size of tmps: %s, limit: %s" % (str(self.volume), str(self.conf.getProperty("maxVolume"))))
+            f = self.files[0]
+            if f:
+                l = os.path.getsize(f)
+                os.remove(f)
+                self.volume = self.volume - l
+            self.files.pop(0)
+        self.log.debug("Size of tmps after cleanup: %s" % (str(self.volume)))
+        gc.collect()
+
 
     def finalize(self):
         #self.rack.stop()
