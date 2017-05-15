@@ -25,7 +25,7 @@ def handler(signum, frame):
         core_instance.finalize()
     sys.exit(0)
 
-def configure_logger(conf, debug=False):
+def __configure_logger(conf, debug=False):
     log = logging.getLogger()
     if debug:
         log.setLevel(logging.DEBUG)
@@ -58,7 +58,7 @@ def configure_logger(conf, debug=False):
     sh.setFormatter(formatter)
     log.addHandler(sh)
 
-def load_plugins(cl, log, conf):
+def __load_plugins(cl, log, conf):
     allowed_filters = set(cl.get_allowed_filters())
 
     plugins = []
@@ -110,6 +110,85 @@ def load_plugins(cl, log, conf):
         log.info("No plugins found")
     return plugins, headers, filters, postprocess
 
+def __load_configuration():
+    if not os.path.isfile(sys.argv[1]):
+        log.error("Invalid configuration file: " + sys.argv[1])
+        return
+
+    log.info("Loading configuration file: " + sys.argv[1])
+    cl = ConfigLoader()
+    cl.load(sys.argv[1])
+    conf = cl.get_configuration()
+    if conf is None:
+        log.error("Failed to load configuration file")
+        return None
+    else:
+        return conf
+
+def __load_cmd_options(log):
+    if len(sys.argv) >= 3:
+        if sys.argv[2] == '-d':
+            debug = True
+            if len(sys.argv) == 4:
+                if sys.argv[3] == '-e':
+                    export_only = True
+        elif sys.argv[2] == '-e': #TODO: properly
+            export_only = True
+            if len(sys.argv) == 4:
+                if sys.argv[3] == '-d':
+                    debug=True
+        else:
+            log.error("Input error: " + sys.argv[2])
+            return
+    print("Debug: " + str(debug))
+    print("Export only: " + str(export_only))
+    return debug, export_only
+
+def __prepare_database(conf, export_only, log):
+    #if database file exists and user wanted to clean it, remove it
+    cleaned = False
+
+    if os.path.isfile(conf.dbconf.getDbname()) and conf.getProperty('cleandb') and not export_only:
+        log.info("Removing database file " + conf.dbconf.getDbname() + " as configured")
+        os.remove(conf.dbconf.getDbname())
+        cleaned = True
+    #if database file doesn't exist, create & initialize it - or warn use
+    if not os.path.isfile(conf.dbconf.getDbname()) and not export_only:
+        if not cleaned:
+            log.warn("Database file " + conf.dbconf.getDbname() + " doesn't exist")
+        if conf.getProperty('initdb') or cleaned:
+            log.info('Initializing database file ' + conf.dbconf.getDbname())
+            try:
+                with open('checker/mysql_tables.sql', 'r') as tables, sqlite3.connect(conf.dbconf.getDbname()) as conn:
+                    qry0 = tables.read().split(';')
+                    c = conn.cursor()
+                    for q in qry0:
+                        c.execute(q)
+                    conn.commit()
+                    c.close()
+                    log.info("Successfully initialized database: " + conf.dbconf.getDbname())
+            except:
+                log.error("Failed to initialize database")
+                raise
+
+def __run_checker(log, plugins, filters, headers, pps, conf, export_only):
+    global core_instance
+    log.info("Running checker")
+    core_instance = Core(plugins, filters, headers, pps, conf)
+    if not export_only:
+        try:
+            t = time.time()
+            core_instance.run()
+            log.debug("Execution lasted: " + str(time.time() - t))
+        except Exception as e:
+            log.exception("Unexpected exception")
+        finally:
+            core_instance.finalize()
+            log.info("The End.")
+    else:
+       core_instance.postprocess()
+
+
 def main():
     """ Load configuration, find plugins, run core.
     """
@@ -123,82 +202,20 @@ def main():
 
     if len(sys.argv) >= 2:
         # load configuration
-        if not os.path.isfile(sys.argv[1]):
-            log.error("Invalid configuration file: " + sys.argv[1])
-            return
-
-        log.info("Loading configuration file: " + sys.argv[1])
-        cl = ConfigLoader()
-        cl.load(sys.argv[1])
-        conf = cl.get_configuration()
+        conf = __load_configuration()
         if conf is None:
-            log.error("Failed to load configuration file")
             return
 
-        export_only = False
-        debug = False
-        if len(sys.argv) >= 3:
-            if sys.argv[2] == '-d':
-                debug = True
-                if len(sys.argv) == 4:
-                    if sys.argv[3] == '-e':
-                        export_only = True
-            elif sys.argv[2] == '-e': #TODO: properly
-                export_only = True
-                if len(sys.argv) == 4:
-                    if sys.argv[3] == '-d':
-                        debug=True
-            else:
-                log.error("Input error: " + sys.argv[2])
-                return
-        print("Debug: " + str(debug))
-        print("Export only: " + str(export_only))
-        configure_logger(conf, debug=debug)
+        debug, export_only = __load_cmd_options(log)
+        __configure_logger(conf, debug=debug)
 
-        #if database file exists and user wanted to clean it, remove it
-        cleaned = False
+        __prepare_database(conf, export_only, log)
 
-        if os.path.isfile(conf.dbconf.getDbname()) and conf.getProperty('cleandb') and not export_only:
-            log.info("Removing database file " + conf.dbconf.getDbname() + " as configured")
-            os.remove(conf.dbconf.getDbname())
-            cleaned = True
-        #if database file doesn't exist, create & initialize it - or warn use
-        if not os.path.isfile(conf.dbconf.getDbname()) and not export_only:
-            if not cleaned:
-                log.warn("Database file " + conf.dbconf.getDbname() + " doesn't exist")
-            if conf.getProperty('initdb') or cleaned:
-                log.info('Initializing database file ' + conf.dbconf.getDbname())
-                try:
-                    with open('checker/mysql_tables.sql', 'r') as tables, sqlite3.connect(conf.dbconf.getDbname()) as conn:
-                        qry0 = tables.read().split(';')
-                        c = conn.cursor()
-                        for q in qry0:
-                            c.execute(q)
-                        conn.commit()
-                        c.close()
-                        log.info("Successfully initialized database: " + conf.dbconf.getDbname())
-                except:
-                    log.error("Failed to initialize database")
-                    raise
-
-        plugins, headers, filters, pps = load_plugins(cl, log, conf)
-
-        log.info("Running checker")
-        core_instance = Core(plugins, filters, headers, pps, conf)
+        plugins, headers, filters, pps = __load_plugins(cl, log, conf)
         cl = None
         gc.collect()
-        if not export_only:
-            try:
-                t = time.time()
-                core_instance.run()
-                log.debug("Execution lasted: " + str(time.time() - t))
-            except Exception as e:
-                log.exception("Unexpected exception")
-            finally:
-                core_instance.finalize()
-                log.info("The End.")
-        else:
-           core_instance.postprocess() 
+
+        __run_checker(log, plugins, headers, filters, pps, conf, export_only) 
     else:
         print("Usage: "+sys.argv[0]+" <configuration YAML file>")
 
