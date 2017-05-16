@@ -264,6 +264,41 @@ class DBAPI(object):
 
         return payload
 
+    def __fetchall(self, q):
+        with mdb.connect(self.conf.getDbname()) as con:
+            c = con.cursor()
+            c.execute(q)
+            return c.fetchall()
+
+    def get_invalid_links(self):
+        q = ('select transactions.uri, defect.evidence, defectType.type '
+             'from defect '
+             'inner join defectType on defect.type = defectType.id '
+             'join transactions on transactions.id = defect.responseId '
+             'where defectType.type = "badlink" or '
+             'defectType.type = "timeout" '
+             'order by defect.severity, transactions.uri')
+
+        return self.__fetchall(q)
+
+    def get_other_defects(self):
+        query = ('select transactions.uri, defect.evidence, '
+                 'defectType.description, defect.severity '
+                 'from defect '
+                 'inner join defectType on defect.type = defectType.id '
+                 'inner join transactions on transactions.id = defect.responseId '
+                 'where defectType.type != "badlink" and '
+                 'defectType.type != "timeout" '
+                 'order by defect.severity desc, defectType.type, transactions.uri')
+
+        return self.__fetchall(query)
+
+    def get_cookies(self):
+        query = ('select transactions.uri, cookies.name, cookies.value '
+                 'from cookies inner join transactions '
+                 'on cookies.responseId = transactions.id')
+        return self.__fetchall(query)
+
     @staticmethod
     def __create_transactions(dbname, queue, allowance):
         log = logging.getLogger(__name__)

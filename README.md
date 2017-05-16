@@ -29,6 +29,8 @@ pip install -r requirements.txt
 ```
 You will need python3, python-pip and sqlite3, virtualenv, libmagic and libtidy installed. All dev or devel versions.
 
+For PDF report, pdflatex and following LaTex packages are needed: geometry, lastpage, testcomp, lmodern, inputenc, fontenc 
+
 ### Configuration
 Configuration file is a YAML file defined as follows:
 ```sh
@@ -50,6 +52,7 @@ maxAttempts: 2                  # attempts to download a web page
 dbCacheLimit: 1000000           # cache up to 1M of DB queries
 sitemap-file: "sitemap.xml"     # where to store generated sitemap.xml
 sitemap-regex: "https?://ksp.mff.cuni.cz(/.*)?" # regex for sitemap generator
+report-file: "report"           # where to write PDF report (.pdf will be added automatically)
 
 # other parameters used by plugins written as ```key: value```
 
@@ -94,6 +97,7 @@ filters: #Filters (plugins of category header and filter) that can be used
 postprocess:
  - sitemap_generator
  - report_exporter
+ - TexReporter
 
 payload: 
 #if following URL is reached (exactly, no prefix or suffix) 
@@ -126,23 +130,6 @@ $ python checker/ [config.yml]
 ```
 Note: ```[root]/crawlcheck``` is where repository was cloned to, ```[config.yml]``` stands for the configuration file path
 
-### Generating report to PDF
-There is also a very simple Python script to generate a PDF containing all invalid links and other defects.
-To run the script you need MySQL connector (you already have, since you ran checker) and ``pylatex``.
-You can install pylatex using PIP:
-```sh
-$ pip install pylatex
-```
-You should also have ```pdflatex``` on your system.
-
-Now run the script as follows:
-```sh
-$ cd [root]/crawlcheck/src
-$ python TexReporter.py <dbfile> <outputfile>
-```
-For output file ``.pdf`` is added automatically.
-
-
 ### Plugins
 
 There are currently 5 types of plugins: crawlers, checkers, headers, filters and postprocessors. Crawlers are specializing in discovering new links. Checkers check syntax of various files. Headers check HTTP headers and together with filters serve to customize the crawling process itself. Postprocessors are used to generate reports or other outputs from the application.
@@ -166,6 +153,7 @@ Crawlcheck is currently extended with the following plugins:
 * robots (filter)
 * report_exporter (postprocessor)
 * sitemap_generator (postprocessor)
+* TexReporter (postprocessor)
 
 ### How to write a plugin
 
