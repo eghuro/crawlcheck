@@ -18,7 +18,7 @@ class Form_Checker(IPlugin):
         self.queue = queue
 
     def check(self, transaction):
-        forms = getSoup(tranacton).find_all('form')
+        forms = getSoup(transaction).find_all('form')
         for form in forms:
             self.check_form(form, transaction)
 

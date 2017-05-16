@@ -1,4 +1,5 @@
 from enum import Enum
+from bs4 import BeautifulSoup
 
 class PluginType(Enum):
     

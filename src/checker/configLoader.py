@@ -240,7 +240,7 @@ class ConfigLoader(object):
         if 'regexes' in root:
             for regex in root['regexes']:
                 self.__parse_regex(regex, acceptor)
-       return acceptor
+        return acceptor
 
 
     def __parse_regex(self, regex, acceptor):

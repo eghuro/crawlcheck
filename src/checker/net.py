@@ -141,7 +141,7 @@ class Network(object):
             if not match:
                 journal.foundDefect(transaction.idno, "type-mishmash", "Declared content-type doesn't match detected one", "Declared "+transaction.type+", detected "+mime, 0.3)
 
-    @static
+    @staticmethod
     def __download(transaction, conf, tmp, journal, log):
             transaction.file = tmp.name
             log.info("Downloading %s" % transaction.uri)

@@ -66,7 +66,7 @@ class Core:
         self.files.append(transaction.file)
         self.journal.stopChecking(transaction, status)
         
-    def __filter(self, transaction):
+    def __filter(self, transaction, session):
         #Custom filters: depth, robots.txt
         for tf in self.filters:
             tf.filter(transaction)
@@ -99,7 +99,7 @@ class Core:
                     self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
                     continue
 
-                start = self.__filter(transaction)
+                start = self.__filter(transaction, session)
                 transaction.loadResponse(self.conf, self.journal, session) #precte telo
             except TouchException: #nesmim se toho dotykat
                 self.__handle_err("Forbidden to touch %s" % (transaction.uri), transaction)
@@ -108,7 +108,7 @@ class Core:
                 self.__handle_err("Condition failed", transaction)
                 continue
             except FilterException: #filters
-                self.__handle_err("%s filtered out" % (transaction.uri))
+                self.__handle_err("%s filtered out" % (transaction.uri), transaction)
                 continue
             except StatusError as e: #already logged
                 self.journal.stopChecking(transaction, VerificationStatus.done_ko)
@@ -118,10 +118,10 @@ class Core:
                 self.__handle_err("Network error: %s" % (format(e)), VerificationStatus.done_ko)
                 continue
             else: #Plugins
-                self.__process(transaction)
+                self.__process(transaction, start)
 
 
-    def __process(self, transaction):
+    def __process(self, transaction, start):
         for sub in self.__time_subscribers:
             sub.markStart(start, transaction.uri)
         self.files.append(transaction.file)
@@ -181,7 +181,7 @@ class Core:
         plugin.setJournal(self.journal)
         known_categories = set([PluginType.CRAWLER, PluginType.CHECKER,
                                 PluginType.FILTER, PluginType.HEADER,
-                                PluginType,POSTPROCESS])
+                                PluginType.POSTPROCESS])
 
         if plugin.category not in known_categories:
             raise PluginTypeError
@@ -193,7 +193,7 @@ class Core:
 
         if plugin.category in set([PluginType.FILTER, PluginType.HEADER, PluginType.POSTPROCESS]):
             plugin.setConf(self.conf)
-            if plugin.category == PluginType.POSTPROESS:
+            if plugin.category == PluginType.POSTPROCESS:
                 plugin.setDb(self.db)
 
 

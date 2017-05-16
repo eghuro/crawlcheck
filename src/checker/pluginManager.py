@@ -8,6 +8,7 @@ from configLoader import ConfigLoader
 from core import Core
 from common import PluginType
 
+import click
 import logging
 import logging.handlers
 import signal
@@ -84,17 +85,21 @@ def __load_plugins(cl, log, conf):
 
     if len(manager.getAllPlugins()) > 0:
         log.info("Loaded plugins:")
+        filter_lists = {PluginType.FILTER: filters,
+                        PluginType.HEADER: headers}
         for pluginInfo in manager.getAllPlugins():
-            __load_plugin(pluginInfo)
+            __load_plugin(pluginInfo, log, conf, filter_lists,
+                          filter_categories, plugin_categories,
+                          allowed_filters, plugins, postprocess)
     else:
         log.info("No plugins found")
     return plugins, headers, filters, postprocess
 
 
-def __load_plugin(pluginInfo):
+def __load_plugin(pluginInfo, log, conf, filter_lists, filter_categories,
+                  plugin_categories, allowed_filters, plugins, postprocess):
     log.info("%s (%s)" % (pluginInfo.name, pluginInfo.plugin_object.id))
 
-    filter_lists = {PluginType.FILTER: filters, PluginType:HEADER: headers}
     if pluginInfo.plugin_object.category in filter_categories:
         if pluginInfo.plugin_object.id in allowed_filters:
             filter_lists[pluginInfo.plugin_object.category].append(pluginInfo.plugin_object)
@@ -111,39 +116,16 @@ def __load_plugin(pluginInfo):
         log.error("Unknown category for " + pluginInfo.name)
 
 
-def __load_configuration():
-    if not os.path.isfile(sys.argv[1]):
-        log.error("Invalid configuration file: " + sys.argv[1])
-        return
-
-    log.info("Loading configuration file: " + sys.argv[1])
+def __load_configuration(cfile, log):
+    log.info("Loading configuration file: " + cfile)
     cl = ConfigLoader()
-    cl.load(sys.argv[1])
+    cl.load(cfile)
     conf = cl.get_configuration()
     if conf is None:
         log.error("Failed to load configuration file")
-        return None
+        return None, None
     else:
-        return conf
-
-def __load_cmd_options(log):
-    if len(sys.argv) >= 3:
-        if sys.argv[2] == '-d':
-            debug = True
-            if len(sys.argv) == 4:
-                if sys.argv[3] == '-e':
-                    export_only = True
-        elif sys.argv[2] == '-e': #TODO: properly
-            export_only = True
-            if len(sys.argv) == 4:
-                if sys.argv[3] == '-d':
-                    debug=True
-        else:
-            log.error("Input error: " + sys.argv[2])
-            return
-    print("Debug: " + str(debug))
-    print("Export only: " + str(export_only))
-    return debug, export_only
+        return conf, cl
 
 
 def __prepare_database(conf, log):
@@ -179,7 +161,7 @@ def __initialize_database(log, conf):
         raise
 
 
-def __run_checker(log, plugins, filters, headers, pps, conf, export_only):
+def __run_checker(log, plugins, headers, filters, pps, conf, export_only):
     global core_instance
     log.info("Running checker")
     core_instance = Core(plugins, filters, headers, pps, conf)
@@ -197,9 +179,16 @@ def __run_checker(log, plugins, filters, headers, pps, conf, export_only):
        core_instance.postprocess()
 
 
-def main():
+@click.command()
+@click.option('-e', is_flag=True)
+@click.option('-d', is_flag=True)
+@click.argument('cfile', type=click.Path(exists=True))
+def main(e, d, cfile):
     """ Load configuration, find plugins, run core.
     """
+    export_only = e
+    debug = d
+
     gc.enable()
     global core_instance
     core_instance = None
@@ -208,25 +197,21 @@ def main():
     log = logging.getLogger(__name__)
     log.info("Crawlcheck started")
 
-    if len(sys.argv) >= 2:
-        # load configuration
-        conf = __load_configuration()
-        if conf is None:
-            return
+    # load configuration
+    conf, cl = __load_configuration(cfile, log)
+    if conf is None:
+        return
 
-        debug, export_only = __load_cmd_options(log)
-        __configure_logger(conf, debug=debug)
+    __configure_logger(conf, debug=debug)
 
-        if not export_only:
-            __prepare_database(conf, log)
+    if not export_only:
+        __prepare_database(conf, log)
 
-        plugins, headers, filters, pps = __load_plugins(cl, log, conf)
-        cl = None
-        gc.collect()
+    plugins, headers, filters, pps = __load_plugins(cl, log, conf)
+    cl = None
+    gc.collect()
 
-        __run_checker(log, plugins, headers, filters, pps, conf, export_only) 
-    else:
-        print("Usage: "+sys.argv[0]+" <configuration YAML file>")
+    __run_checker(log, plugins, headers, filters, pps, conf, export_only)
 
 if __name__ == "__main__":
     main()
