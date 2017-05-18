@@ -94,10 +94,10 @@ class DBAPI(object):
         self.queries[Query.defect] = ('INSERT INTO defect (findingId, type, '
                                       'evidence, severity, responseId) VALUES '
                                       '(?, ?, ?, ?, ?)')
-        self.queries[Query.cookies] = ('(INSERT INTO cookies (findingId, '
+        self.queries[Query.cookies] = ('INSERT INTO cookies (findingId, '
                                        'name, value, responseId) VALUES (?, '
                                        '?, ?, ?)')
-        self.queries[Query.aliases] = ('INSERT INTO aliases (transactionId, ',
+        self.queries[Query.aliases] = ('INSERT INTO aliases (transactionId, '
                                        'uri) VALUES (?, ?)')
         self.queries[Query.transactions] = ('INSERT INTO transactions (id, '
                                             'method, uri, verificationStatus,'
@@ -157,6 +157,7 @@ class DBAPI(object):
 
     def sync(self):
         logging.getLogger().info("Writing into database")
+
         with mdb.connect(self.conf.getDbname()) as con:
             try:
                 cursor = con.cursor()

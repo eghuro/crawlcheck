@@ -72,6 +72,7 @@ filters:
 postprocess:
  - report_exporter
  - sitemap_generator
+ - TexReporter
 
 entryPoints:
  - "http://ksp.mff.cuni.cz/"

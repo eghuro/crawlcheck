@@ -125,7 +125,7 @@ class Core:
                 continue
             except NetworkError as e:
                 self.__handle_err("Network error: %s" % (format(e)),
-                                  VerificationStatus.done_ko)
+                                  transaction, VerificationStatus.done_ko)
                 continue
             else:  # Plugins
                 self.__process(transaction, start)
@@ -162,7 +162,7 @@ class Core:
             # write to database
             self.db.sync()
         except:
-            pass
+            self.log.exception("Unexpected exception while syncing")
         finally:
             # clean tmp files
             self.clean_tmps()

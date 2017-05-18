@@ -103,13 +103,13 @@ class Network(object):
             log.debug("Redirection: %s -> %s" % (transaction.uri, r.url))
             transaction.changePrimaryUri(r.url)
 
-        transaction.type = Network.__getCT(r, journal)
+        transaction.type = Network.__getCT(r, journal, transaction.idno)
         Network.__store_cookies(transaction, r.cookies, journal)
 
         return r
 
     @staticmethod
-    def __getCT(r, journal):
+    def __getCT(r, journal, idno):
         if 'content-type' in r.headers:
             ct = r.headers['content-type']
         elif 'Content-Type' in r.headers:
@@ -118,8 +118,8 @@ class Network(object):
             ct = ''
 
         if not ct.strip():
-            journal.foundDefect(transaction.idno, "badtype",
-                                "Content-type empty", None, 0.5)
+            journal.foundDefect(idno, "badtype", "Content-type empty", None,
+                                0.5)
 
         if ';' in ct:  # text/html;charset=utf-8 -> text/html
             ct = ct.split(';')[0]

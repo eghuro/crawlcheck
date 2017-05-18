@@ -28,6 +28,8 @@ class MetaTagValidator(IPlugin):
         elif len(foo) == 0:
             clas = zero
             dsc = ""
+        else:
+            return
 
         self.__journal.foundDefect(idno, clas,
                                    MetaTagValidator.__defects[clas],
