@@ -213,7 +213,9 @@ See http://yapsy.sourceforge.net/IPlugin.html and http://yapsy.sourceforge.net/P
 
 - Tests, docs
 - Parallelization
+- Allow includes in config
 - SEO related checks
+- Security related checks
 
 ## License
 
