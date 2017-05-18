@@ -25,8 +25,8 @@ def handler(signum, frame):
     print("Caught signal")
     if core_instance is not None:
         core_instance.clean_tmps()
-        # on kill signal just rm tmp files and leave
-        print("Some DB queries might got lost ...")
+        core_instance.db.sync()
+        # on kill signal just rm tmp files, sync db and leave
     sys.exit(0)
 
 
