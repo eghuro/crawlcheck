@@ -15,7 +15,6 @@ import gc
 import sqlite3 as mdb
 
 
-
 class Core:
 
     def __init__(self, plugins, filters, headers, postprocess, conf):
@@ -48,40 +47,44 @@ class Core:
             self.__initializePlugin(plugin)
 
         self.__push_entry_points()
-        self.rack = Rack(self.conf.type_acceptor, self.conf.regex_acceptor, plugins)
-
+        self.rack = Rack(self.conf.type_acceptor, self.conf.regex_acceptor,
+                         plugins)
 
     def __push_entry_points(self):
         for entryPoint in self.conf.entry_points:
-            self.log.debug("Pushing to queue: %s, data: %s" % (entryPoint.url, str(entryPoint.data)))
-            self.queue.push(createTransaction(entryPoint.url, 0, -1, entryPoint.method, entryPoint.data))
-
+            self.log.debug("Pushing to queue: %s, data: %s" %
+                           (entryPoint.url, str(entryPoint.data)))
+            self.queue.push(createTransaction(entryPoint.url, 0, -1,
+                                              entryPoint.method,
+                                              entryPoint.data))
 
     def run(self):
         with requests.Session() as session:
             self.__run(session)
 
-    def __handle_err(self, msg, transaction, status = VerificationStatus.done_ignored):
+    def __handle_err(self, msg, transaction,
+                     status=VerificationStatus.done_ignored):
         self.log.debug(msg)
         self.files.append(transaction.file)
         self.journal.stopChecking(transaction, status)
-        
+
     def __filter(self, transaction, session):
-        #Custom filters: depth, robots.txt
+        # Custom filters: depth, robots.txt
         for tf in self.filters:
             tf.filter(transaction)
 
         start = time.time()
-        r = transaction.testLink(self.conf, self.journal, session) #precte hlavicky
+        r = transaction.testLink(self.conf, self.journal, session)
+        # precte hlavicky
 
-        #custom HTTP header filters, incl. test if ct matches expectation
+        # custom HTTP header filters, incl. test if ct matches expectation
         for hf in self.header_filters:
             hf.filter(transaction, r)
 
         return start
 
     def __run(self, session):
-        #Queue
+        # Queue
         while not self.queue.isEmpty():
             try:
                 transaction = self.queue.pop()
@@ -94,32 +97,38 @@ class Core:
 
                 self.log.info("Processing %s" % (transaction.uri))
 
-                if not transaction.isWorthIt(self.conf): #neni zadny plugin, ktery by prijal
+                if not transaction.isWorthIt(self.conf):
+                    # neni zadny plugin, ktery by prijal
                     self.log.debug("%s not worth my time" % (transaction.uri))
-                    self.journal.stopChecking(transaction, VerificationStatus.done_ignored)
+                    self.journal.stopChecking(transaction,
+                                              VerificationStatus.done_ignored)
                     continue
 
                 start = self.__filter(transaction, session)
-                transaction.loadResponse(self.conf, self.journal, session) #precte telo
-            except TouchException: #nesmim se toho dotykat
-                self.__handle_err("Forbidden to touch %s" % (transaction.uri), transaction)
+                transaction.loadResponse(self.conf, self.journal, session)
+                # precte telo
+            except TouchException:  # nesmim se toho dotykat
+                self.__handle_err("Forbidden to touch %s" %
+                                  (transaction.uri), transaction)
                 continue
-            except ConditionError: #URI nebo content-type dle konfigurace
+            except ConditionError:  # URI nebo content-type dle konfigurace
                 self.__handle_err("Condition failed", transaction)
                 continue
-            except FilterException: #filters
-                self.__handle_err("%s filtered out" % (transaction.uri), transaction)
+            except FilterException:  # filters
+                self.__handle_err("%s filtered out" % (transaction.uri),
+                                  transaction)
                 continue
-            except StatusError as e: #already logged
-                self.journal.stopChecking(transaction, VerificationStatus.done_ko)
+            except StatusError as e:  # already logged
+                self.journal.stopChecking(transaction,
+                                          VerificationStatus.done_ko)
                 self.files.append(transaction.file)
                 continue
             except NetworkError as e:
-                self.__handle_err("Network error: %s" % (format(e)), VerificationStatus.done_ko)
+                self.__handle_err("Network error: %s" % (format(e)),
+                                  VerificationStatus.done_ko)
                 continue
-            else: #Plugins
+            else:  # Plugins
                 self.__process(transaction, start)
-
 
     def __process(self, transaction, start):
         for sub in self.__time_subscribers:
@@ -133,10 +142,11 @@ class Core:
         self.journal.stopChecking(transaction, VerificationStatus.done_ok)
         self.__cleanup()
 
-
     def __cleanup(self):
         while self.volume > self.conf.getProperty("maxVolume"):
-            self.log.debug("CLEANUP ... Size of tmps: %s, limit: %s" % (str(self.volume), str(self.conf.getProperty("maxVolume"))))
+            self.log.debug("CLEANUP ... Size of tmps: %s, limit: %s" %
+                           (str(self.volume),
+                            str(self.conf.getProperty("maxVolume"))))
             f = self.files[0]
             if f:
                 l = os.path.getsize(f)
@@ -146,20 +156,18 @@ class Core:
         self.log.debug("Size of tmps after cleanup: %s" % (str(self.volume)))
         gc.collect()
 
-
     def finalize(self):
-        #self.rack.stop()
         self.log.debug("Finalizing")
         try:
-            #write to database
+            # write to database
             self.db.sync()
         except:
             pass
         finally:
-            #clean tmp files
+            # clean tmp files
             self.clean_tmps()
             gc.collect()
-            #run postprocessing
+            # run postprocessing
             self.postprocess()
 
     def postprocess(self):
@@ -191,7 +199,8 @@ class Core:
         except AttributeError:
             pass
 
-        if plugin.category in set([PluginType.FILTER, PluginType.HEADER, PluginType.POSTPROCESS]):
+        if plugin.category in set([PluginType.FILTER, PluginType.HEADER,
+                                   PluginType.POSTPROCESS]):
             plugin.setConf(self.conf)
             if plugin.category == PluginType.POSTPROCESS:
                 plugin.setDb(self.db)
@@ -205,7 +214,7 @@ class TouchException(Exception):
 class Transaction:
 
     def __init__(self, uri, depth, srcId, idno, method="GET", data=None):
-        #Use the factory method below!!
+        # Use the factory method below!!
         self.uri = uri
         self.aliases = [uri]
         self.depth = depth
@@ -229,14 +238,17 @@ class Transaction:
     def testLink(self, conf, journal, session):
         can = conf.regex_acceptor.canTouch(self.uri)
         if can:
-            self.request = Network.testLink(self, journal, conf, session, self.getAcceptedTypes(conf)) # nastavi status, type
+            self.request = Network.testLink(self, journal, conf, session,
+                                            self.getAcceptedTypes(conf))
+            # nastavi status, type
             return self.request.headers
         else:
             raise TouchException()
 
     def loadResponse(self, conf, journal, session):
         try:
-            Network.getContent(self, conf, journal) #pouzije request, nastavi file
+            Network.getContent(self, conf, journal)
+            # pouzije request, nastavi file
         except (NetworkError, ConditionError, StatusError):
             raise
 
@@ -246,7 +258,8 @@ class Transaction:
                 data = f.read()
                 return str(data)
         except UnicodeDecodeError as e:
-            logging.getLogger(__name__).error("Error loading content for %s" % self.uri)
+            logging.getLogger(__name__).error("Error loading content for %s" %
+                                              self.uri)
             return ""
 
     def getStripedUri(self):
@@ -259,7 +272,6 @@ class Transaction:
         else:
             return Transaction.__set2list(conf.type_acceptor.uris)
 
-
     def isWorthIt(self, conf):
         ra = conf.regex_acceptor.mightAccept(self.uri)
         return ra
@@ -268,11 +280,14 @@ class Transaction:
     def __set2list(x):
         y = []
         for z in x:
-          y.append(z)
+            y.append(z)
         return y
 
+
 transactionId = 0
-def createTransaction(uri, depth = 0, parentId = -1, method = 'GET', params=dict()):
+
+
+def createTransaction(uri, depth=0, parentId=-1, method='GET', params=dict()):
     assert (type(params) is dict) or (params is None)
     global transactionId
     decoded = str(urllib.parse.unquote(urllib.parse.unquote(uri)))
@@ -283,66 +298,59 @@ def createTransaction(uri, depth = 0, parentId = -1, method = 'GET', params=dict
 
 class Rack:
 
-    def __init__(self, typeAcceptor,regexAcceptor, plugins = []):
-
+    def __init__(self, typeAcceptor, regexAcceptor, plugins=[]):
         self.plugins = plugins
         self.typeAcceptor = typeAcceptor
         self.regexAcceptor = regexAcceptor
         self.log = logging.getLogger(__name__)
 
     def run(self, transaction):
-
         for plugin in self.plugins:
             self.__run_one(transaction, plugin)
         transaction.cache = None
 
     def __run_one(self, transaction, plugin):
-
         if self.accept(transaction, plugin):
-            self.log.info("%s started checking %s" % (plugin.id, transaction.uri))
+            self.log.info("%s started checking %s" %
+                          (plugin.id, transaction.uri))
             plugin.check(transaction)
-            self.log.info("%s stopped checking %s" % (plugin.id, transaction.uri))
+            self.log.info("%s stopped checking %s" %
+                          (plugin.id, transaction.uri))
 
     def accept(self, transaction, plugin):
-
         rot = transaction.getStripedUri()[::-1]
         type_cond = self.typeAcceptor.accept(str(transaction.type), plugin.id)
         regex_cond = self.regexAcceptor.accept(transaction.uri, plugin.id)
         return type_cond and regex_cond
 
-    def stop(self):
-        pass
 
 class TransactionQueue:
-
 
     def __init__(self, db, conf):
         self.__db = db
         self.__conf = conf
         self.__seen = set()
         self.__q = queue.Queue()
-        
+
     def isEmpty(self):
         return self.__q.empty()
 
     def pop(self):
         try:
             t = self.__q.get(block=True, timeout=1)
-            #t.uri.decode('utf-8')
         except queue.Empty:
             raise
         else:
-            self.__db.log(Query.transactions_status, ("PROCESSING", t.idno) )
-            self.__db.log(Query.link_status, (str("true"), str(t.uri) ))
+            self.__db.log(Query.transactions_status, ("PROCESSING", t.idno))
+            self.__db.log(Query.link_status, (str("true"), str(t.uri)))
             return t
 
     def push(self, transaction, parent=None):
-
-        #logging.getLogger(__name__).debug("Push link to "+transaction.uri)
-
         uri, params = TransactionQueue.__strip_parse_query(transaction)
-        if (transaction.uri, transaction.method) in self.__conf.payloads: #chceme sem neco poslat
-            params.update(self.__conf.payloads[(transaction.uri, transaction.method)])
+        if (transaction.uri, transaction.method) in self.__conf.payloads:
+            # chceme sem neco poslat
+            params.update(self.__conf.payloads[(transaction.uri,
+                                                transaction.method)])
             transaction.data = params
             transaction.uri = uri
 
@@ -370,8 +378,7 @@ class TransactionQueue:
 
     @staticmethod
     def __strip_parse_query(transaction):
-
-         #strip query off uri and parse it into separate dict
+        # strip query off uri and parse it into separate dict
         p = urlparse(transaction.uri)
         params = urllib.parse.parse_qs(p.query)
         p_ = ParseResult(p.scheme, p.netloc, p.path, p.params, None, None)
@@ -383,15 +390,16 @@ class TransactionQueue:
         if (transaction.uri, transaction.method) not in self.__seen:
             self.__q.put(transaction)
             self.__db.log(Query.transactions,
-                          (str(transaction.idno), transaction.method, transaction.uri, "REQUESTED", str(transaction.depth)) )
+                          (str(transaction.idno), transaction.method,
+                           transaction.uri, "REQUESTED",
+                           str(transaction.depth)))
             for uri in transaction.aliases:
                 self.__db.log(Query.aliases, (str(transaction.idno), uri))
-        #TODO: co kdyz jsme pristupovali s jinymi parametry?
-        #mark all known aliases as seen
+        # TODO: co kdyz jsme pristupovali s jinymi parametry?
+        # mark all known aliases as seen
         for uri in transaction.aliases:
             if (uri, transaction.method) not in self.__seen:
-                self.__seen.add( (transaction.uri, transaction.method) )
-
+                self.__seen.add((transaction.uri, transaction.method))
 
     def __init_cookies(self, parent):
         if parent and parent.cookies:
@@ -399,54 +407,62 @@ class TransactionQueue:
         else:
             return dict()
 
-
     def __bake_cookies(self, transaction, parent):
         cookies = self.__init_cookies(parent)
         allowed = False
         for reg in self.__conf.cookies:
-            if reg.match(transaction.uri): #sending cookies allowed #TODO: aliases
+            if reg.match(transaction.uri):  # sending cookies allowed
+                # TODO: aliases
                 allowed = True
                 # najit vsechna cookies pro danou adresu
-                if reg in self.__conf.custom_cookies: #got custom cookies to send
+                if reg in self.__conf.custom_cookies:
+                    # got custom cookies to send
                     cookies.update(self.__conf.custom_cookies[reg])
         if allowed:
             transaction.cookies = cookies
 
-
     def load(self):
         with mdb.connect(self.__conf.dbconf.getDbname()) as con:
-            #load transactions from DB to memory - only where status is requested
+            # load transactions from DB to memory
+            # only where status is requested
             for t in self.__db.get_requested_transactions(con):
-                #uri = t[0]; depth = t[1]; idno = t[3]
+                # uri = t[0]; depth = t[1]; idno = t[3]
                 srcId = -1
                 if t[2] is not None:
                     srcId = t[2]
-                decoded = str(urllib.parse.unquote(urllib.parse.unquote(t[0])), 'utf-8')
+                decoded = str(urllib.parse.unquote(urllib.parse.unquote(t[0])),
+                              'utf-8')
                 self.__q.put(Transaction(decoded, t[1], srcId, t[3]))
-            #load uris from transactions table for list of seen URIs
+            # load uris from transactions table for list of seen URIs
             self.__seen.update(self.__db.get_seen_uris(con))
-            #set up transaction id for factory method
+            # set up transaction id for factory method
             transactionId = self.__db.get_max_transaction_id(con) + 1
 
-class Journal:
 
+class Journal:
 
     def __init__(self, db, conf):
         self.__db = db
         self.__conf = conf
-       
+
     def startChecking(self, transaction):
-        logging.getLogger(__name__).debug("Starting checking %s" % (transaction.uri))
-        self.__db.log(Query.transactions_load, ("VERIFYING", transaction.uri, transaction.type, transaction.status, transaction.idno) )
+        logging.getLogger(__name__).debug("Starting checking %s" %
+                                          (transaction.uri))
+        self.__db.log(Query.transactions_load,
+                      ("VERIFYING", transaction.uri, transaction.type,
+                       transaction.status, transaction.idno))
 
     def stopChecking(self, transaction, status):
-        logging.getLogger(__name__).debug("Stopped checking %s" % (transaction.uri))
-        self.__db.log(Query.transactions_status, (str(status), transaction.idno) )
+        logging.getLogger(__name__).debug("Stopped checking %s" %
+                                          (transaction.uri))
+        self.__db.log(Query.transactions_status,
+                      (str(status), transaction.idno))
 
     def foundDefect(self, transaction, defect, evidence, severity=0.5):
-        self.foundDefect(transaction.idno, defect.name, defect.additional, evidence, severity)
+        self.foundDefect(transaction.idno, defect.name, defect.additional,
+                         evidence, severity)
 
-    def foundDefect(self, trId, name, additional, evidence, severity = 0.5):
+    def foundDefect(self, trId, name, additional, evidence, severity=0.5):
         assert type(trId) == int
         self.__db.log_defect(trId, name, additional, evidence, severity)
 
@@ -457,11 +473,9 @@ class Journal:
     def gotCookie(self, transaction, name, value):
         self.__db.log_cookie(transaction.idno, name, value)
 
+
 class Defect:
 
-
-    def __init__(self, name, additional = None):
+    def __init__(self, name, additional=None):
         self.name = name
         self.additional = additional
-
-

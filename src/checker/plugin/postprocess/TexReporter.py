@@ -4,9 +4,11 @@ from pylatex import Document, Section, Tabular, Package, NoEscape
 import pylatex.utils
 import urllib.parse
 
+
 class TexReporter(IPlugin):
     """ Generate PDF report via LaTex.
-        Generates LaTex document based on contents of the database and creates PDF out of it.
+        Generates LaTex document based on contents of the database and creates
+        PDF out of it.
     """
 
     category = PluginType.POSTPROCESS
@@ -19,21 +21,25 @@ class TexReporter(IPlugin):
     # Create a function called "chunks" with two arguments, l and n:
     @staticmethod
     def __chunks(l, n):
-        #see: https://chrisalbon.com/python/break_list_into_chunks_of_equal_size.html
+        # See: https://chrisalbon.com/python/break_list_into_chunks_of_equal_size.html
         # For item i in a range that is a length of l,
         for i in range(0, len(l), n):
             # Create an index range for l of n items:
             yield l[i:i+n]
 
     def printReport(self, out):
-        """ All logic is in this method. 
-            Links and other defects are separated. Tables with relevant contents are created. Paging is implemented.
+        """ All logic is in this method.
+            Links and other defects are separated.
+            Tables with relevant contents are created. Paging is implemented.
 
             out : name of output document, .pdf is added automatically
         """
         doc = Document()
-        doc.packages.append(Package('geometry', options = ['top=1in', 'bottom=1.25in', 'left=0.25in', 'right=1.25in']))
-        
+        doc.packages.append(Package('geometry', options=['top=1in',
+                                                         'bottom=1.25in',
+                                                         'left=0.25in',
+                                                         'right=1.25in']))
+
         max_on_page = 47
         with doc.create(Section('Invalid links')):
             pages = self.__chunks(self.__db.get_invalid_links(), max_on_page)
@@ -61,7 +67,8 @@ class TexReporter(IPlugin):
             for page in pages:
                 with doc.create(Tabular('|l|l|l|l|')) as table:
                     table.add_hline()
-                    table.add_row(('On page', 'Description', 'Evidence', 'Severity'))
+                    table.add_row(('On page', 'Description', 'Evidence',
+                                   'Severity'))
                     table.add_hline()
 
                     for row in page:

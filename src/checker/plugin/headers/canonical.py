@@ -23,5 +23,6 @@ class CanonicalFilter(IPlugin):
         if 'Link' in headers:
             parts = headers['Link'].split(';')
             if parts[1].strip() == 'rel="canonical"':
-                canonical = parts[0][1:-1] #Link: <http://example.com/page.html>; rel="canonical"
+                canonical = parts[0][1:-1]
+                # Link: <http://example.com/page.html>; rel="canonical"
                 transaction.changePrimaryUri(canonical)

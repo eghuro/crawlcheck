@@ -25,5 +25,8 @@ class ContentLengthFilter(IPlugin):
             maxContent = self.__conf.getProperty("maxContentLength")
             if maxContent is not None:
                 if conlen > maxContent:
-                    self.__log.warning("Content length too large for "+transaction.uri+" (got: "+str(conlen)+", limit: "+str(maxContent)+") Skipping download.")
+                    self.__log.warning("Content length too large for " +
+                                       transaction.uri + " (got: " +
+                                       str(conlen) + ", limit: " +
+                                       str(maxContent)+") Skipping download.")
                     raise FilterException()

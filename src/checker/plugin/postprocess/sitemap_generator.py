@@ -14,10 +14,10 @@ class SitemapGenerator(IPlugin):
               '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"\n'
               '   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"\n'
               '   xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap'
-              '/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">\n')
+              '/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd'
+              '">\n')
 
     line = "\t<url>\n\t\t<loc>%s</loc>\n\t</url>\n"
-
 
     def __init__(self):
         self.__log = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ class SitemapGenerator(IPlugin):
             with open(outfile, 'w') as out:
                 self.__write_file(out, r)
         else:
-            self.__log.warn("sitemap-file property not present in configuration")
+            self.__log.warn("sitemap-file property not found in config")
             pref = self.__conf.getProperty("tmpPrefix")
             suf = "-sitemap.xml"
             with tempfile.NamedTemporaryFile(delete=False, prefix=pref,
@@ -57,7 +57,6 @@ class SitemapGenerator(IPlugin):
         out.write(SitemapGenerator.header)
         self.__write_urls(out, r)
         out.write('</urlset>')
-
 
     def __write_urls(self, out, r):
         for url in self.__db.get_urls():

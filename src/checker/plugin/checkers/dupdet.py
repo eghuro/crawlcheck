@@ -7,12 +7,11 @@ import os
 
 
 class DuplicateDetector(IPlugin):
-    #See: http://pythoncentral.io/finding-duplicate-files-with-python/
+    # See: http://pythoncentral.io/finding-duplicate-files-with-python/
     # https://github.com/IanLee1521/utilities/blob/master/utilities/find_duplicates.py
 
     category = PluginType.CHECKER
     id = "dupdetect"
-
 
     def __init__(self):
         self.__journal = None
@@ -36,7 +35,7 @@ class DuplicateDetector(IPlugin):
                         self.__hash[f] = self.__hashfile(transaction.file)
                     if self.__hash[f] == h:
                         if filecmp.cmp(f, transaction.file):
-                            #duplicate (same size, same hash, same content)
+                            # duplicate (same size, same hash, same content)
                             self.__journal.foundDefect(transaction.idno, "dup",
                                                        "Duplicate pages",
                                                        self.__urls[f], 0.7)

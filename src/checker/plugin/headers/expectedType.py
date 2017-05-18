@@ -3,6 +3,7 @@ from common import PluginType
 from yapsy.IPlugin import IPlugin
 import logging
 
+
 class ExpectedType(IPlugin):
 
     category = PluginType.HEADER
@@ -23,6 +24,11 @@ class ExpectedType(IPlugin):
         if transaction.expected is None:
             return
         if not transaction.type.startswith(transaction.expected):
-            self.__log.debug("Got content type: "+transaction.type+", expected content type starting with "+transaction.expected + "(Could be CSRF with fake img?)")
-            self.__journal.foundDefect(transaction.idno, "mistyped", "Content-type not expected", transaction.expected, 0.8)
+            self.__log.debug("Got content type: " + transaction.type +
+                             ", expected content type starting with " +
+                             transaction.expected)
+            self.__journal.foundDefect(transaction.idno, "mistyped",
+                                       "Content-type not expected",
+                                       "Expected: " + transaction.expected +
+                                       " Got: " + transaction.type, 0.8)
             raise FilterException()

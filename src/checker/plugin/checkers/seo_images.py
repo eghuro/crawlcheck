@@ -4,11 +4,10 @@ import logging
 
 
 class ImageTagValidator(IPlugin):
-    
+
     category = PluginType.CHECKER
     id = "seoimg"
-    
-    
+
     def __init__(self):
         self.__journal = None
 
@@ -34,6 +33,6 @@ class ImageTagValidator(IPlugin):
                                            "seo:img:noheight",
                                            "IMG tag with no height attribute",
                                            desc, 0.6)
-            #TODO: only jpg, png, gifs are allowed
-            #TODO: check IMG dimensions match declared ones
+            # TODO: only jpg, png, gifs are allowed
+            # TODO: check IMG dimensions match declared ones
         return

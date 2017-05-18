@@ -2,4 +2,3 @@
 class FilterException(Exception):
 
     pass
-

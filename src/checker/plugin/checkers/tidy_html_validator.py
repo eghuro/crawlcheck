@@ -4,7 +4,7 @@ from common import PluginType
 
 
 class Tidy_HTML_Validator(IPlugin):
-    
+
     category = PluginType.CHECKER
     id = "tidyHtmlValidator"
 
@@ -20,13 +20,13 @@ class Tidy_HTML_Validator(IPlugin):
     def setJournal(self, journal):
         self.journal = journal
 
-        maxes = {'W' : self.max_warn, 'E' : self.max_err}
-        
+        maxes = {'W': self.max_warn, 'E': self.max_err}
+
         for dt in journal.getKnownDefectTypes():
-            #dt[0] type, dt[1] description
-            #parse codes of W{X} or E{Y} -> get max X or Y
-    
-            try:        
+            # dt[0] type, dt[1] description
+            # parse codes of W{X} or E{Y} -> get max X or Y
+
+            try:
                 letter = dt[0][0]
                 number = int(dt[0][1:])
                 if letter in maxes.keys:
@@ -40,7 +40,8 @@ class Tidy_HTML_Validator(IPlugin):
         res = tidy_document(transaction.getContent(), keep_doc=True)
 
         lines = res[1].splitlines()
-        #lines is a list of strings that looks like: line 54 column 37 - Warning: replacing invalid character code 153
+        # lines is a list of strings that looks like:
+        # line 54 column 37 - Warning: replacing invalid character code 153
         for line in lines:
             loc, desc = line.split(' - ', 1)
             err_warn, msg = desc.split(': ', 1)

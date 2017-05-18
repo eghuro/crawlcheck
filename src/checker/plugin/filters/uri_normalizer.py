@@ -4,6 +4,7 @@ from yapsy.IPlugin import IPlugin
 from url_normalize import url_normalize
 import logging
 
+
 class Normalizer(IPlugin):
 
     category = PluginType.FILTER
@@ -22,5 +23,6 @@ class Normalizer(IPlugin):
     def filter(self, transaction):
         normalized = url_normalize(transaction.uri)
         if transaction.uri != normalized:
-            self.__log.debug("Normalizing: " + transaction.uri + " -> " + normalized)
+            self.__log.debug("Normalizing: " + transaction.uri + " -> " +
+                             normalized)
             transaction.changePrimaryUri(url_normalize(transaction.uri))

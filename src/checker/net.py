@@ -1,5 +1,6 @@
 import requests
-from requests.exceptions import InvalidSchema, ConnectionError, MissingSchema, Timeout
+from requests.exceptions import InvalidSchema, ConnectionError
+from requests.exceptions import MissingSchema, Timeout
 from urllib.parse import urlparse, urlencode
 import os
 import tempfile
@@ -9,6 +10,7 @@ import math
 import time
 
 requests.packages.urllib3.disable_warnings()
+
 
 class NetworkError(Exception):
     pass
@@ -52,22 +54,24 @@ class Network(object):
         transaction.headers["User-Agent"] = conf.getProperty("agent")
         transaction.headers["Accept"] = accept
 
-        #if not allowed to send cookies or don't have any, then cookies are None -> should be safe to use them; maybe filter which to use?
-        #TODO: cookies handled by session
+        # if not allowed to send cookies or don't have any, then cookies are
+        # None -> should be safe to use them; maybe filter which to use?
+        # TODO: cookies handled by session
 
-        log.debug("Timeout set to: %s" % ( str(conf.getProperty("timeout"))))
+        log.debug("Timeout set to: %s" % (str(conf.getProperty("timeout"))))
         attempt = 0
-        max_attempts =  conf.getProperty("maxAttempts")
+        max_attempts = conf.getProperty("maxAttempts")
         while attempt < max_attempts:
             try:
                 log.debug("Requesting")
                 r = session.request(transaction.method,
-                                    transaction.uri + Network.__gen_param(transaction), #TODO: factory method on transaction
+                                    transaction.uri + Network.__gen_param(transaction),
+                                    # TODO: factory method on transaction
                                     headers=transaction.headers,
                                     timeout=conf.getProperty("timeout"),
                                     cookies=transaction.cookies,
                                     verify=conf.getProperty("verifyHttps"),
-                                    stream=True)#TODO: data
+                                    stream=True)  # TODO: data
             except (ConnectionError, Timeout) as e:
                 log.debug("Error while downloading: %s" % format(e))
                 if (attempt + 1) < max_attempts:
@@ -75,21 +79,24 @@ class Network(object):
                     wait = math.pow(10, attempt)
                     time.sleep(wait)
                 else:
-                    raise NetworkError("%s attempts failed" % str(max_attempts)) from e
+                    raise NetworkError("%s attempts failed" %
+                                       str(max_attempts)) from e
                 attempt = attempt + 1
             else:
                 return Network.__process_link(transaction, r, journal, log)
-        msg = "All %s attempts to get %s failed." % (str(max_attempts), transaction.uri)
-        journal.foundDefect(transaction.idno, "neterr", "Network error", msg, 0.9)
+        msg = "All %s attempts to get %s failed." % (str(max_attempts),
+                                                     transaction.uri)
+        journal.foundDefect(transaction.idno, "neterr", "Network error",
+                            msg, 0.9)
         raise NetworkError(msg)
-
 
     @staticmethod
     def __process_link(transaction, r, journal, log):
         transaction.status = r.status_code
 
-        if r.status_code >= 400:
-            journal.foundDefect(transaction.srcId, "badlink", "Invalid link", transaction.uri, 1.0)
+        if r.status_code != requests.codes.ok:
+            journal.foundDefect(transaction.srcId, "badlink", "Invalid link",
+                                transaction.uri, 1.0)
             raise StatusError(r.status_code)
 
         if transaction.uri != r.url:
@@ -101,7 +108,6 @@ class Network(object):
 
         return r
 
-
     @staticmethod
     def __getCT(r, journal):
         if 'content-type' in r.headers:
@@ -112,13 +118,13 @@ class Network(object):
             ct = ''
 
         if not ct.strip():
-            journal.foundDefect(transaction.idno, "badtype", "Content-type empty", None, 0.5)
+            journal.foundDefect(transaction.idno, "badtype",
+                                "Content-type empty", None, 0.5)
 
-        if ';' in ct: #text/html;charset=utf-8 -> text/html
+        if ';' in ct:  # text/html;charset=utf-8 -> text/html
             ct = ct.split(';')[0]
 
         return ct
-
 
     @staticmethod
     def getContent(transaction, conf, journal):
@@ -130,14 +136,17 @@ class Network(object):
                 Network.__download(transaction, conf, tmp, journal, log)
         except ConnectionError as e:
             log.debug("Connection error: %s" % (format(e)))
-            journal.foundDefect(transaction.srcId, "badlink", "Invalid link", transaction.uri, 1.0)
+            journal.foundDefect(transaction.srcId, "badlink", "Invalid link",
+                                transaction.uri, 1.0)
             raise NetworkError from e
         except Timeout as e:
             log.error("Timeout")
-            journal.foundDefect(transaction.srcId, "timeout", "Link timed out", transaction.uri, 0.9)
+            journal.foundDefect(transaction.srcId, "timeout",
+                                "Link timed out", transaction.uri, 0.9)
             raise NetworkError() from e
         else:
-            match, mime = Network.__test_content_type(transaction.type, transaction.file)
+            match, mime = Network.__test_content_type(transaction.type,
+                                                      transaction.file)
             if not match:
                 journal.foundDefect(transaction.idno, "type-mishmash", "Declared content-type doesn't match detected one", "Declared "+transaction.type+", detected "+mime, 0.3)
 
@@ -152,12 +161,13 @@ class Network(object):
                     tmp.write(chunk)
             log.debug("%s downloaded." % transaction.uri)
 
-
     @staticmethod
     def __gen_param(transaction):
-        if (transaction.data is not None) and (len(transaction.data) > 0) and (transaction.method in set(['GET', 'HEAD'])):
+        if (transaction.data is not None) and \
+           (len(transaction.data) > 0) and \
+           (transaction.method in set(['GET', 'HEAD'])):
             param = "?"+urlencode(transaction.data)
-        else: 
+        else:
             param = ""
         return param
 

@@ -3,6 +3,7 @@ from common import PluginType
 from yapsy.IPlugin import IPlugin
 import logging
 
+
 class DepthFilter(IPlugin):
 
     category = PluginType.FILTER
@@ -21,7 +22,9 @@ class DepthFilter(IPlugin):
     def filter(self, transaction):
         maxDepth = self.__conf.getProperty("maxDepth")
         if maxDepth == 0:
-            return #unlimited
+            return  # unlimited
         if transaction.depth > maxDepth:
-            self.__log.debug("Skipping "+transaction.uri+" as it's depth "+str(transaction.depth)+" and max depth condition is "+str(maxDepth))
+            self.__log.debug("Skipping " + transaction.uri +
+                             " as it's depth " + str(transaction.depth) +
+                             " and max depth condition is " + str(maxDepth))
             raise FilterException()

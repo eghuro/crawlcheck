@@ -49,15 +49,15 @@ class DBAPIconfiguration(object):
     def setLimit(self, limit):
         self.limit = limit
 
-class VerificationStatus(Enum):
 
+class VerificationStatus(Enum):
     requested = "REQUESTED"
     done_ok = "DONE - OK"
     done_ko = "DONE - KO"
     done_ignored = "DONE - IGNORED"
 
-class Query(Enum):
 
+class Query(Enum):
     transactions = 1
     link = 2
     defect = 5
@@ -68,8 +68,8 @@ class Query(Enum):
     transactions_status = 8
     link_status = 0
 
-class TableError(LookupError):
 
+class TableError(LookupError):
     pass
 
 
@@ -82,17 +82,36 @@ class DBAPI(object):
         self.conf = conf
         self.limit = conf.getLimit()
         self.findingId = -1
-        self.query_types = [Query.defect_types, Query.transactions, Query.transactions_load, Query.transactions_status, Query.aliases,  Query.link, Query.link_status, Query.defect, Query.cookies]
+        self.query_types = [Query.defect_types, Query.transactions,
+                            Query.transactions_load, Query.transactions_status,
+                            Query.aliases,  Query.link, Query.link_status,
+                            Query.defect, Query.cookies]
         self.queries = dict()
-        self.queries[Query.link] = 'INSERT INTO link (findingId, toUri, requestId, responseId) VALUES (?,?,?,?)'
-        self.queries[Query.defect_types] = 'INSERT INTO defectType (id, type, description) VALUES (?, ?, ?)'
-        self.queries[Query.defect] = 'INSERT INTO defect (findingId, type, evidence, severity, responseId) VALUES (?, ?, ?, ?, ?)'
-        self.queries[Query.cookies] = 'INSERT INTO cookies (findingId, name, value, responseId) VALUES (?, ?, ?, ?)'
-        self.queries[Query.aliases] = 'INSERT INTO aliases (transactionId, uri) VALUES (?, ?)'
-        self.queries[Query.transactions] = 'INSERT INTO transactions (id, method, uri, verificationStatus, depth) VALUES (?, ?, ?, ?, ?)'
-        self.queries[Query.transactions_load] = 'UPDATE transactions SET verificationStatus = ?, uri = ?, contentType = ?, responseStatus = ? WHERE id = ?'
-        self.queries[Query.transactions_status] = 'UPDATE transactions SET verificationStatus = ? WHERE id = ?'
-        self.queries[Query.link_status] = 'UPDATE link SET processed = ? WHERE toUri = ?'
+        self.queries[Query.link] = ('INSERT INTO link (findingId, toUri, '
+                                    'requestId, responseId) VALUES (?,?,?,?)')
+        self.queries[Query.defect_types] = ('INSERT INTO defectType (id, type,'
+                                            'description) VALUES (?, ?, ?)')
+        self.queries[Query.defect] = ('INSERT INTO defect (findingId, type, '
+                                      'evidence, severity, responseId) VALUES '
+                                      '(?, ?, ?, ?, ?)')
+        self.queries[Query.cookies] = ('(INSERT INTO cookies (findingId, '
+                                       'name, value, responseId) VALUES (?, '
+                                       '?, ?, ?)')
+        self.queries[Query.aliases] = ('INSERT INTO aliases (transactionId, ',
+                                       'uri) VALUES (?, ?)')
+        self.queries[Query.transactions] = ('INSERT INTO transactions (id, '
+                                            'method, uri, verificationStatus,'
+                                            'depth) VALUES (?, ?, ?, ?, ?)')
+        self.queries[Query.transactions_load] = ('UPDATE transactions SET '
+                                                 'verificationStatus = ?, '
+                                                 'uri = ?, contentType = ?, '
+                                                 'responseStatus = ? WHERE '
+                                                 'id = ?')
+        self.queries[Query.transactions_status] = ('UPDATE transactions SET '
+                                                   'verificationStatus = ? '
+                                                   'WHERE id = ?')
+        self.queries[Query.link_status] = ('UPDATE link SET processed = ? '
+                                           'WHERE toUri = ?')
         self.logs = dict()
         for qtype in self.query_types:
             self.logs[qtype] = []
@@ -112,23 +131,30 @@ class DBAPI(object):
             raise TableError()
 
     def log_link(self, parent_id, uri, new_id):
-       self.findingId = self.findingId + 1
-       self.log(Query.link, (str(self.findingId), uri, str(new_id), str(parent_id)))
+        self.findingId = self.findingId + 1
+        self.log(Query.link,
+                 (str(self.findingId), uri, str(new_id), str(parent_id)))
 
-    def log_defect(self, transactionId, name, additional, evidence, severity = 0.5):
+    def log_defect(self, transactionId, name, additional, evidence,
+                   severity=0.5):
         self.findingId = self.findingId + 1
         if name not in self.defect_types:
             self.defectId = self.defectId + 1
-            self.log(Query.defect_types, (str(self.defectId), str(name), str(additional)))
+            self.log(Query.defect_types,
+                     (str(self.defectId), str(name), str(additional)))
             self.defect_types.append(name)
             self.defectTypesWithId[name] = self.defectId
         defId = self.defectTypesWithId[name]
-        self.log(Query.defect, (str(self.findingId), str(defId), str(evidence), str(severity), str(transactionId)))
+        self.log(Query.defect,
+                 (str(self.findingId), str(defId), str(evidence),
+                  str(severity), str(transactionId)))
 
     def log_cookie(self, transactionId, name, value):
         self.findingId = self.findingId + 1
-        self.log(Query.cookies, (str(self.findingId), str(name), str(value), str(transactionId)))
-        
+        self.log(Query.cookies,
+                 (str(self.findingId), str(name), str(value),
+                  str(transactionId)))
+
     def sync(self):
         logging.getLogger().info("Writing into database")
         with mdb.connect(self.conf.getDbname()) as con:
@@ -145,7 +171,6 @@ class DBAPI(object):
                 for qtype in self.query_types:
                     self.logs[qtype] = []
                 self.bufferedQueries = 0
-
 
     def error(self, e, con):
         con.rollback()
@@ -174,7 +199,7 @@ class DBAPI(object):
         maxs = []
         for t in ['link', 'defect', 'cookies']:
             maxs.append(self.__load_max_finding_id(t, con))
-        self.findingId =  max(maxs)
+        self.findingId = max(maxs)
 
     def __load_max_finding_id(self, table, con):
         query = 'SELECT MAX(findingId) FROM %s' % (table)
@@ -187,9 +212,14 @@ class DBAPI(object):
         return 0
 
     def get_requested_transactions(self, con):
-        q = 'CREATE TEMPORARY VIEW linkedUris AS SELECT link.toUri, transactions.id FROM link INNER JOIN transactions ON link.responseId = transactions.id'
-        query = ('SELECT linkedUris.toUri AS uri, transactions.depth AS depth, linkedUris.id AS srcId, transactions.id AS idno'
-                 ' FROM transactions LEFT JOIN linkedUris ON transactions.uri = linkedUris.toUri WHERE transactions.verificationStatus = ?')
+        q = ('CREATE TEMPORARY VIEW linkedUris AS SELECT link.toUri, '
+             'transactions.id FROM link INNER JOIN transactions ON '
+             'link.responseId = transactions.id')
+        query = ('SELECT linkedUris.toUri AS uri, '
+                 'transactions.depth AS depth, linkedUris.id AS srcId, '
+                 'transactions.id AS idno FROM transactions LEFT JOIN '
+                 'linkedUris ON transactions.uri = linkedUris.toUri WHERE '
+                 'transactions.verificationStatus = ?')
 
         cursor = con.cursor()
         cursor.execute(q)
@@ -226,7 +256,6 @@ class DBAPI(object):
         c = con.cursor()
         c.execute(q)
         return c.fetchall()
-
 
     def create_report_payload(self, cores=4):
         log = logging.getLogger(__name__)
@@ -284,12 +313,12 @@ class DBAPI(object):
     def get_other_defects(self):
         query = ('select transactions.uri, defect.evidence, '
                  'defectType.description, defect.severity '
-                 'from defect '
-                 'inner join defectType on defect.type = defectType.id '
-                 'inner join transactions on transactions.id = defect.responseId '
-                 'where defectType.type != "badlink" and '
-                 'defectType.type != "timeout" '
-                 'order by defect.severity desc, defectType.type, transactions.uri')
+                 'from defect inner join defectType on '
+                 'defect.type=defectType.id inner join transactions on '
+                 'transactions.id=defect.responseId where '
+                 'defectType.type != "badlink" and '
+                 'defectType.type != "timeout" order by defect.severity desc,'
+                 'defectType.type, transactions.uri')
 
         return self.__fetchall(query)
 
@@ -309,7 +338,7 @@ class DBAPI(object):
 
             c = con.cursor()
             c.execute(q)
-            for row in c.fetchall(): #type(row): tuple
+            for row in c.fetchall():  # type(row): tuple
                 transaction = dict()
                 transaction['id'] = row[0]
                 transaction['method'] = row[1]
@@ -322,7 +351,8 @@ class DBAPI(object):
                     transaction['parentId'] = transaction['id']
                 transactions.append(transaction)
 
-            log.info("%s transactions, processing in pool of %s processes" % (str(len(transactions)), str(allowance)))
+            log.info("%s transactions, processing in pool of %s processes" %
+                     (str(len(transactions)), str(allowance)))
 
             with Pool(allowance) as pool:
                 partial_process = partial(process_transaction, dbname=dbname)
@@ -337,10 +367,10 @@ class DBAPI(object):
             total0 = 0
             good0 = 0
             q = ('SELECT link.findingId, transactions.uri, '
-                 'transactions.verificationStatus, link.toUri, link.processed, '
-                 'link.requestId, link.responseId '
+                 'transactions.verificationStatus, link.toUri, '
+                 'link.processed, link.requestId, link.responseId '
                  'FROM link '
-                 'INNER JOIN transactions ON link.requestId = transactions.id ')
+                 'INNER JOIN transactions ON link.requestId = transactions.id')
             c.execute(q)
             for row in c.fetchall():
                 link = dict()
@@ -372,7 +402,8 @@ class DBAPI(object):
                  'defectType.description, defect.evidence, defect.severity, '
                  'defect.responseId, transactions.uri FROM defect '
                  'INNER JOIN defectType ON defect.type = defectType.id '
-                 'INNER JOIN transactions ON defect.responseId = transactions.id')
+                 'INNER JOIN transactions ON defect.responseId = '
+                 'transactions.id')
             c = con.cursor()
             c.execute(q)
             for row in c.fetchall():
@@ -400,7 +431,9 @@ def process_transaction(t, dbname):
                 t['parentId'] = c.fetchone()[0]
             except TypeError:
                 t['parentId'] = -1
-                logging.getLogger().error("No parent for link with requestId: %s (depth: %s)" % (str(t['id']), str(t['depth'])))
+                logging.getLogger().error("No parent for link with " +
+                                          " requestId: %s (depth: %s)" %
+                                          (str(t['id']), str(t['depth'])))
 
         q = ('SELECT uri FROM aliases WHERE transactionId = ?')
         c.execute(q, [t['id']])

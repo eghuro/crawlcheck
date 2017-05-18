@@ -26,6 +26,7 @@ def handler(signum, frame):
         core_instance.finalize()
     sys.exit(0)
 
+
 def __configure_logger(conf, debug=False):
     log = logging.getLogger()
     if debug:
@@ -35,28 +36,31 @@ def __configure_logger(conf, debug=False):
         log.setLevel(logging.INFO)
         level = logging.INFO
 
-    formatter = logging.Formatter('%(asctime)s - %(processName)-10s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter('%(asctime)s - %(processName)-10s - %(name)s'
+                                  ' - %(levelname)s - %(message)s')
     if conf and conf.getProperty('logfile') is not None:
         need_roll = os.path.isfile(conf.getProperty('logfile'))
-        fh = logging.handlers.RotatingFileHandler(conf.getProperty('logfile'), backupCount=50)
+        fh = logging.handlers.RotatingFileHandler(conf.getProperty('logfile'),
+                                                  backupCount=50)
         fh.setLevel(level)
         fh.setFormatter(formatter)
         log.addHandler(fh)
 
         if need_roll:
             # Add timestamp
-            log.debug('\n---------\nLog closed on %s.\n---------\n' % time.asctime())
+            log.debug('\n------\nLog closed on %s.\n------\n' % time.asctime())
 
             # Roll over on application start
             fh.doRollover()
 
         # Add timestamp
-        log.debug('\n---------\nLog started on %s.\n---------\n' % time.asctime())
+        log.debug('\n-------\nLog started on %s.\n-------\n' % time.asctime())
 
     sh = logging.StreamHandler()
     sh.setLevel(logging.INFO)
     sh.setFormatter(formatter)
     log.addHandler(sh)
+
 
 def __load_plugins(cl, log, conf):
     allowed_filters = set(cl.get_allowed_filters())
@@ -75,12 +79,13 @@ def __load_plugins(cl, log, conf):
 
     # load plugins
     manager = PluginManager()
-    path = os.path.join(os.path.abspath("checker/"), conf.getProperty('pluginDir'))
+    path = os.path.join(os.path.abspath("checker/"),
+                        conf.getProperty('pluginDir'))
     log.info("Plugin directory set to: "+path)
     dirList = [x[0] for x in os.walk(path)]
     for d in dirList:
         log.info("Looking for plugins in "+d)
-    manager.setPluginPlaces(dirList) #pluginDir and all subdirs
+    manager.setPluginPlaces(dirList)  # pluginDir and all subdirs
     manager.collectPlugins()
 
     if len(manager.getAllPlugins()) > 0:
@@ -129,33 +134,37 @@ def __load_configuration(cfile, log):
 
 
 def __prepare_database(conf, log):
-    #if database file exists and user wanted to clean it, remove it
+    # if database file exists and user wanted to clean it, remove it
     cleaned = False
 
     if os.path.isfile(conf.dbconf.getDbname()) and conf.getProperty('cleandb'):
-        log.info("Removing database file " + conf.dbconf.getDbname() + " as configured")
+        log.info("Removing database file %s as configured" %
+                 conf.dbconf.getDbname())
         os.remove(conf.dbconf.getDbname())
         cleaned = True
 
-    #if database file doesn't exist, create & initialize it - or warn use
+    # if database file doesn't exist, create & initialize it - or warn use
     if not os.path.isfile(conf.dbconf.getDbname()):
         if conf.getProperty('initdb') or cleaned:
             __initialize_database(log, conf)
         else:
-            log.error("Database file " + conf.dbconf.getDbname() + " doesn't exist")
+            log.error("Database file %s doesn't exist"
+                      % conf.dbconf.getDbname())
 
 
 def __initialize_database(log, conf):
     log.info('Initializing database file ' + conf.dbconf.getDbname())
     try:
-        with open('checker/mysql_tables.sql', 'r') as tables, sqlite3.connect(conf.dbconf.getDbname()) as conn:
+        with open('checker/mysql_tables.sql', 'r') as tables, \
+             sqlite3.connect(conf.dbconf.getDbname()) as conn:
             qry0 = tables.read().split(';')
             c = conn.cursor()
             for q in qry0:
                 c.execute(q)
             conn.commit()
             c.close()
-            log.info("Successfully initialized database: " + conf.dbconf.getDbname())
+            log.info("Successfully initialized database: " +
+                     conf.dbconf.getDbname())
     except:
         log.error("Failed to initialize database")
         raise
@@ -176,7 +185,7 @@ def __run_checker(log, plugins, headers, filters, pps, conf, export_only):
             core_instance.finalize()
             log.info("The End.")
     else:
-       core_instance.postprocess()
+        core_instance.postprocess()
 
 
 @click.command()
@@ -193,7 +202,7 @@ def main(e, d, cfile):
     global core_instance
     core_instance = None
     signal.signal(signal.SIGINT, handler)
-    
+
     log = logging.getLogger(__name__)
     log.info("Crawlcheck started")
 

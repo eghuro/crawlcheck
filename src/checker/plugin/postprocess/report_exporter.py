@@ -34,7 +34,7 @@ class ReportExporter(IPlugin):
             except ConnectionError:
                 self.__log.warn("Is report REST API running?")
 
-            #prepare YAML payload
+            # prepare YAML payload
             payload = yaml.dump(self.__db.create_report_payload(
                                     self.__conf.getProperty("cores")))
             self.__log.info("Payload size: " + str(len(payload)))
@@ -42,18 +42,19 @@ class ReportExporter(IPlugin):
 
             if payload is not None:
                 gc.collect()
-                #DELETE request on /data
+                # DELETE request on /data
                 if self.__conf.getProperty('cleanreport'):
                     try:
                         r = requests.delete(url)
                         if r.status_code != 200:
                             self.__log.error("Delete failed")
                     except ConnectionError:
-                        self.__log.error("Connection error while deleting old report")
-                #POST request on /data
+                        self.__log.error("Connection error while deleting " +
+                                         "old report")
+                # POST request on /data
                 try:
-                    r = requests.post(url, data={'payload' : payload})
-                    if r.status_code != 200:
+                    r = requests.post(url, data={'payload': payload})
+                    if r.status_code != requests.codes.ok:
                         self.__log.error("Upload failed")
                 except ConnectionError:
                     self.__log.error("Connection error while uploading report")

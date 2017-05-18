@@ -3,6 +3,7 @@ from common import PluginType
 from yapsy.IPlugin import IPlugin
 import logging
 
+
 class ExpectedType(IPlugin):
 
     category = PluginType.HEADER
@@ -21,5 +22,6 @@ class ExpectedType(IPlugin):
 
     def filter(self, transaction, headers):
         if transaction.type not in self.__conf.type_acceptor.uris:
-            self.__log.debug(transaction.type + " is not accepted by any available plugin")
+            self.__log.debug(transaction.type + " is not accepted by any " +
+                             "available plugin")
             raise FilterException()

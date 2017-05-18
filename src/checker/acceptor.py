@@ -34,19 +34,15 @@ class RegexAcceptor(object):
     def __init__(self):
         self.regexes = dict()
 
-
     def canTouch(self, value):
-
         for plugin in self.regexes.keys():
             for regex in self.regexes[plugin]:
                 if regex.match(value):
                     return True
         return False
 
-
     def mightAccept(self, value):
         return self.canTouch(value)
-
 
     def accept(self, value, plugin):
         if plugin in self.regexes.keys():
@@ -74,8 +70,6 @@ class RegexAcceptor(object):
             self.regexes[plugin] = [p]
 
 
-
-
 class Acceptor(object):
     """Acceptor handles the business rules.
     It public API allows to check if a plugin should verify an URI using accept
@@ -83,7 +77,6 @@ class Acceptor(object):
     """
 
     def __init__(self, defaultUri=False):
-        #self.defaultUri = defaultUri
         self.pluginUri = dict()
         self.uriDefault = dict()
         self.uris = set()
@@ -93,39 +86,42 @@ class Acceptor(object):
         return self.__resolveDefaultAcceptValue(self.getMaxPrefix(value))
 
     def accept(self, value, pluginId):
-        #value je rovnou adresa, nikoliv Transaction
-        return self.__resolvePluginAcceptValue(pluginId, self.getMaxPrefix(value))
+        # value je rovnou adresa, nikoliv Transaction
+        return self.__resolvePluginAcceptValue(pluginId,
+                                               self.getMaxPrefix(value))
 
     def getMaxPrefix(self, value):
-       assert type(value) is str
-       # seznam prefixu, pro nas uri chceme nejdelsi prefix
-       trie = marisa_trie.Trie(list(self.uris))
-       prefList = trie.prefixes(value)
-        
-       if len(prefList) > 0:
-           return prefList[-1]
-        
-       else:
-           return value
+        assert type(value) is str
+        # seznam prefixu, pro nas uri chceme nejdelsi prefix
+        trie = marisa_trie.Trie(list(self.uris))
+        prefList = trie.prefixes(value)
+
+        if len(prefList) > 0:
+            return prefList[-1]
+        else:
+            return value
 
     def mightAccept(self, value):
         return self.getMaxPrefix(value) in self.positive_uris
 
     def __resolvePluginAcceptValue(self, pluginId, uri):
         res = self.__pluginAcceptValue(pluginId, uri)
-        if res == Resolution.yes:    #accept -> pokud neni explicitni match, zakazano
+        if res == Resolution.yes:
+            # accept -> pokud neni explicitni match, zakazano
             return True
         else:
             return False
 
-    def __resolveDefaultAcceptValue(self, uri):    #canTouch -> pokud neni explicitni zakaz, povoleno
+    def __resolveDefaultAcceptValue(self, uri):
+        # canTouch -> pokud neni explicitni zakaz, povoleno
         res = self.__resolveFromDefault(uri, self.uriDefault)
         if res == Resolution.no:
             return False
         else:
             return True
 
-    def __pluginAcceptValue(self, pluginId, uri): #existuje pravidlo (plugin, value, X)?
+    def __pluginAcceptValue(self, pluginId, uri):
+        # existuje pravidlo (plugin, value, X)?
         if pluginId in self.pluginUri:
             uris = self.pluginUri[pluginId]
             if uri in uris:
@@ -136,7 +132,8 @@ class Acceptor(object):
             return Resolution.none
 
     @staticmethod
-    def __resolveFromDefault(identifier, default):  #existuje pravidlo (value, X)?
+    def __resolveFromDefault(identifier, default):
+        # existuje pravidlo (value, X)?
         if identifier in default:
             return Acceptor.getResolution(default[identifier])
         else:
@@ -153,8 +150,10 @@ class Acceptor(object):
             self.positive_uris.add(value)
 
     def setDefaultAcceptValue(self, uri, value):
-        #config loader nastavi True, pokud nekdy videl danou hodnotu v konfiguraci a nebyla zakazana
-        #config loader nastavi False, pokud je zakazano se danych hodnot dotykat
+        # config loader nastavi True, pokud nekdy videl danou hodnotu v
+        # konfiguraci a nebyla zakazana
+        # config loader nastavi False, pokud je zakazano se danych hodnot
+        # dotykat
         if uri in self.uriDefault:
             if not self.uriDefault[uri]:
                 return

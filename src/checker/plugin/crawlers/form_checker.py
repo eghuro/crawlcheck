@@ -3,6 +3,7 @@ import core
 from yapsy.IPlugin import IPlugin
 import urllib.parse
 
+
 class Form_Checker(IPlugin):
 
     category = PluginType.CRAWLER
@@ -27,8 +28,8 @@ class Form_Checker(IPlugin):
         action = self.get_action(form, transaction)
         params = self.get_params(form)
 
-        self.queue.push(core.createTransaction(action, transaction.depth+1), transaction)
-        #self.database.setScript(transactionId, action, method, params)
+        self.queue.push(core.createTransaction(action, transaction.depth+1), transaction)  # TODO: found link
+        # self.database.setScript(transactionId, action, method, params)
         # TODO: script
         # TODO: params
 
