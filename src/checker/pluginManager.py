@@ -22,8 +22,11 @@ import gc
 
 
 def handler(signum, frame):
+    print("Caught signal")
     if core_instance is not None:
-        core_instance.finalize()
+        core_instance.clean_tmps()
+        # on kill signal just rm tmp files and leave
+        print("Some DB queries might got lost ...")
     sys.exit(0)
 
 
