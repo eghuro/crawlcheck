@@ -211,7 +211,7 @@ See http://yapsy.sourceforge.net/IPlugin.html and http://yapsy.sourceforge.net/P
 
 ## TODOs
 
-- Tests, docs, code review
+- Tests, docs
 - Parallelization
 - SEO related checks
 
