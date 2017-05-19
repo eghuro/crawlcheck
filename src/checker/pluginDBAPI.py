@@ -10,6 +10,7 @@ import logging
 import gc
 from multiprocessing import Process, Queue, Pool
 from functools import partial
+import copy
 
 
 class DBAPIconfiguration(object):
@@ -119,6 +120,7 @@ class DBAPI(object):
         self.defectId = -1
         self.defectTypesWithId = dict()
         self.bufferedQueries = 0
+        self.__syncer_worker = None
 
     def log(self, query, query_params):
         if query in self.logs:
@@ -155,27 +157,48 @@ class DBAPI(object):
                  (str(self.findingId), str(name), str(value),
                   str(transactionId)))
 
-    def sync(self):
-        logging.getLogger().info("Writing into database")
-
-        with mdb.connect(self.conf.getDbname()) as con:
+    @staticmethod
+    def syncer(dbname, qtypes, queries, logs):
+        log = logging.getLogger(__name__)
+        log.info("Writing into database")
+        with mdb.connect(dbname) as con:
             try:
                 cursor = con.cursor()
 
-                for qtype in self.query_types:
-                    cursor.executemany(self.queries[qtype], self.logs[qtype])
+                for qtype in qtypes:
+                    cursor.executemany(queries[qtype], logs[qtype])
 
             except mdb.Error as e:
-                self.error(e, con)
-
+                con.rollback()
+                log.error("SQL Error: "+str(e))
             else:
-                for qtype in self.query_types:
-                    self.logs[qtype] = []
-                self.bufferedQueries = 0
+                log.info("Sync successful")
+
+    def sync(self, final=False):
+        log = logging.getLogger(__name__)
+        if self.__syncer_worker:
+            log.info("Waiting for DB sync worker to finish")
+            self.__syncer_worker.join()
+
+        logs = copy.deepcopy(self.logs)
+        sproc = Process(name="DB sync worker",
+                        target=DBAPI.syncer, args=(self.conf.getDbname(),
+                                                   self.query_types,
+                                                   self.queries,
+                                                   logs))
+        self.__syncer_worker = sproc
+        sproc.start()
+        for qtype in self.query_types:
+            self.logs[qtype] = []
+            self.bufferedQueries = 0
+
+        if final:
+            log.info("Waiting for DB sync worker to finish")
+            sproc.join()
 
     def error(self, e, con):
         con.rollback()
-        log = logging.getLogger()
+        log = logging.getLogger(__name__)
         log.error("SQL Error: "+str(e))
 
     def load_defect_types(self, con):
@@ -264,15 +287,18 @@ class DBAPI(object):
         if not cores:
             log.error("Cores: none")
         qt = Queue()
-        tproc = Process(target=DBAPI.__create_transactions,
+        tproc = Process(name="Transaction report",
+                        target=DBAPI.__create_transactions,
                         args=(self.conf.getDbname(), qt, cores))
 
         ql = Queue()
-        lproc = Process(target=DBAPI.__create_links,
+        lproc = Process(name="Link report",
+                        target=DBAPI.__create_links,
                         args=(self.conf.getDbname(), ql))
 
         qd = Queue()
-        dproc = Process(target=DBAPI.__create_defects,
+        dproc = Process(name="Defect report",
+                        target=DBAPI.__create_defects,
                         args=(self.conf.getDbname(), qd))
 
         log.debug("Starting report worker processes")
@@ -438,9 +464,10 @@ def process_transaction(t, dbname):
                 t['parentId'] = c.fetchone()[0]
             except TypeError:
                 t['parentId'] = -1
-                logging.getLogger().error("No parent for link with " +
-                                          " requestId: %s (depth: %s)" %
-                                          (str(t['id']), str(t['depth'])))
+                logging.getLogger(__name__).error("No parent for link with " +
+                                                  "requestId: %s (depth: %s)" %
+                                                  (str(t['id']),
+                                                   str(t['depth'])))
 
         q = ('SELECT uri FROM aliases WHERE transactionId = ?')
         c.execute(q, [t['id']])

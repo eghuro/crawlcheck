@@ -163,7 +163,7 @@ class Core:
         self.log.debug("Finalizing")
         try:
             # write to database
-            self.db.sync()
+            self.db.sync(final=True)
         except:
             self.log.exception("Unexpected exception while syncing")
         finally:
