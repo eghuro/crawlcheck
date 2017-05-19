@@ -146,7 +146,7 @@ class Core:
             self.__cleanup()
 
     def __cleanup(self):
-        while self.volume > self.conf.getProperty("maxVolume"):
+        while self.volume > (self.conf.getProperty("maxVolume") / 2):
             self.log.debug("CLEANUP ... Size of tmps: %s, limit: %s" %
                            (str(self.volume),
                             str(self.conf.getProperty("maxVolume"))))
