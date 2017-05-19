@@ -165,6 +165,10 @@ class DBAPI(object):
             try:
                 cursor = con.cursor()
 
+                cursor.execute("PRAGMA synchronous = OFF")
+                cursor.execute("PRAGMA page_size = 65536")
+                cursor.execute("PRAGMA journal_mode = MEMORY")
+
                 for qtype in qtypes:
                     cursor.executemany(queries[qtype], logs[qtype])
 
