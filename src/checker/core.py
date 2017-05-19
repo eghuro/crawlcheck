@@ -140,7 +140,10 @@ class Core:
         self.journal.startChecking(transaction)
         self.rack.run(transaction)
         self.journal.stopChecking(transaction, VerificationStatus.done_ok)
-        self.__cleanup()
+        if self.volume > self.conf.getProperty("maxVolume"):
+            # call cleanup only if there are files to remove
+            # ensures gc.collect() is called once in a while but not often
+            self.__cleanup()
 
     def __cleanup(self):
         while self.volume > self.conf.getProperty("maxVolume"):
