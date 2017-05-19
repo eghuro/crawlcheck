@@ -4,5 +4,5 @@ Module = sitemap_scanner
 
 [Documentation]
 Author = Alexandr Mansurov
-Version = 0.0
+Version = 0.1
 Description = Discover pages through sitemap.xml
