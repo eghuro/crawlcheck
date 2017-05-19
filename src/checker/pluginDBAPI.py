@@ -168,9 +168,13 @@ class DBAPI(object):
                 cursor.execute("PRAGMA synchronous = OFF")
                 cursor.execute("PRAGMA page_size = 65536")
                 cursor.execute("PRAGMA journal_mode = MEMORY")
+                cursor.execute("PRAGMA auto_vacuum = NONE")
 
                 for qtype in qtypes:
                     cursor.executemany(queries[qtype], logs[qtype])
+
+                log.debug("Vacuum")
+                cursor.execute("VACUUM")
 
             except mdb.Error as e:
                 con.rollback()
