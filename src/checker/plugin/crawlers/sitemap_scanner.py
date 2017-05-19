@@ -42,7 +42,7 @@ class SitemapScanner(IPlugin):
         if not urls:
             return #no urls or not a sitemap.xml
 
-        if len(soup.findAll('sitemap')) == 0 or
+        if len(soup.findAll('sitemap')) == 0 or \
            len(soup.findAll('sitemapindex')) == 0:
             return # not a sitemap.xml nor Sitemap index
 

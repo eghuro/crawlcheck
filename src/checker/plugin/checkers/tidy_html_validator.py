@@ -29,7 +29,7 @@ class Tidy_HTML_Validator(IPlugin):
             try:
                 letter = dt[0][0]
                 number = int(dt[0][1:])
-                if letter in maxes.keys:
+                if letter in maxes:
                     if number > maxes[letter]:
                         maxes[letter] = number
                     self.codes[dt[1]] = dt[0]

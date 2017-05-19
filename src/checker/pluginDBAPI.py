@@ -261,6 +261,8 @@ class DBAPI(object):
     def create_report_payload(self, cores=4):
         log = logging.getLogger(__name__)
         log.info("Creating report")
+        if not cores:
+            log.error("Cores: none")
         qt = Queue()
         tproc = Process(target=DBAPI.__create_transactions,
                         args=(self.conf.getDbname(), qt, cores))
@@ -332,6 +334,10 @@ class DBAPI(object):
     @staticmethod
     def __create_transactions(dbname, queue, allowance):
         log = logging.getLogger(__name__)
+        if allowance < 1:
+            log.error("Wrong amount of processes: " + str(allowance))
+            return
+
         with mdb.connect(dbname) as con:
             transactions = []
             q = ('SELECT id, method, responseStatus, contentType, '
