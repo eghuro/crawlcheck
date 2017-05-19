@@ -157,6 +157,7 @@ class Core:
                 self.volume = self.volume - l
             self.files.pop(0)
         self.log.debug("Size of tmps after cleanup: %s" % (str(self.volume)))
+        self.log.info("Enqueued: %s transactions" % (self.queue.len()))
         gc.collect()
 
     def finalize(self):
@@ -337,6 +338,9 @@ class TransactionQueue:
 
     def isEmpty(self):
         return self.__q.empty()
+
+    def len(self):
+        return self.__q.qsize()
 
     def pop(self):
         try:
