@@ -159,7 +159,7 @@ class Core:
         self.log.debug("Size of tmps after cleanup: %s" % (str(self.volume)))
         self.log.info("Enqueued: %s transactions" % (str(self.queue.len())))
         self.log.info("Buffered: %s DB queries" % (str(self.db.bufferedQueries)))
-        self.log.info("Seen: % addresses" % (str(self.queue.seenlen)))
+        self.log.info("Seen: %s addresses" % (str(self.queue.seenlen)))
         gc.collect()
 
     def finalize(self):
