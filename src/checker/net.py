@@ -1,6 +1,6 @@
 import requests
 from requests.exceptions import InvalidSchema, ConnectionError
-from requests.exceptions import MissingSchema, Timeout
+from requests.exceptions import MissingSchema, Timeout, TooManyRedirects
 from urllib.parse import urlparse, urlencode
 import os
 import tempfile
