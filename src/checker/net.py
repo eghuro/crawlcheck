@@ -72,6 +72,9 @@ class Network(object):
                                     cookies=transaction.cookies,
                                     verify=conf.getProperty("verifyHttps"),
                                     stream=True)  # TODO: data
+            except TooManyRedirects as e:
+                log.exception("Error while downloading: too many redirects", e)
+                raise NetworkError("Too many redirects") from e
             except (ConnectionError, Timeout) as e:
                 log.debug("Error while downloading: %s" % format(e))
                 if (attempt + 1) < max_attempts:
