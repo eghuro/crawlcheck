@@ -24,7 +24,7 @@ import gc
 def handler(signum, frame):
     print("Caught signal")
     if core_instance is not None:
-        core_instance.clean_tmps()
+        core_instance.clean()
         core_instance.db.sync(final=True)
         # on kill signal just rm tmp files, sync db and leave
     sys.exit(0)

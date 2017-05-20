@@ -157,7 +157,9 @@ class Core:
                 self.volume = self.volume - l
             self.files.pop(0)
         self.log.debug("Size of tmps after cleanup: %s" % (str(self.volume)))
-        self.log.info("Enqueued: %s transactions" % (self.queue.len()))
+        self.log.info("Enqueued: %s transactions" % (str(self.queue.len())))
+        self.log.info("Buffered: %s DB queries" % (str(self.db.bufferedQueries)))
+        self.log.info("Seen: % addresses" % (str(self.queue.seenlen)))
         gc.collect()
 
     def finalize(self):
@@ -168,9 +170,8 @@ class Core:
         except:
             self.log.exception("Unexpected exception while syncing")
         finally:
-            # clean tmp files
-            self.clean_tmps()
-            gc.collect()
+            # clean tmp files and queue & list of seen addresses
+            self.clean()
             # run postprocessing
             self.postprocess()
 
@@ -188,6 +189,11 @@ class Core:
                 continue
             except TypeError:
                 continue
+
+    def clean(self):
+        self.clean_tmps()
+        self.__queue = None
+        gc.collect()
 
     def __initializePlugin(self, plugin):
         plugin.setJournal(self.journal)
@@ -335,6 +341,7 @@ class TransactionQueue:
         self.__conf = conf
         self.__seen = set()
         self.__q = queue.Queue()
+        self.seenlen = 0
 
     def isEmpty(self):
         return self.__q.empty()
@@ -407,6 +414,7 @@ class TransactionQueue:
         for uri in transaction.aliases:
             if (uri, transaction.method) not in self.__seen:
                 self.__seen.add((transaction.uri, transaction.method))
+                self.seenlen = self.seenlen + 1
 
     def __init_cookies(self, parent):
         if parent and parent.cookies:

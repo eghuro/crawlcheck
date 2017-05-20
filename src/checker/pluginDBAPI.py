@@ -170,6 +170,8 @@ class DBAPI(object):
                 cursor.execute("PRAGMA journal_mode = MEMORY")
                 cursor.execute("PRAGMA auto_vacuum = NONE")
 
+                # https://www.sqlite.org/pragma.html#pragma_page_size
+
                 for qtype in qtypes:
                     cursor.executemany(queries[qtype], logs[qtype])
 
@@ -184,6 +186,7 @@ class DBAPI(object):
 
     def sync(self, final=False):
         log = logging.getLogger(__name__)
+        log.info("Syncing database")
         if self.__syncer_worker:
             log.info("Waiting for DB sync worker to finish")
             self.__syncer_worker.join()
