@@ -360,13 +360,17 @@ class TransactionQueue:
             return t
 
     def push(self, transaction, parent=None):
-        uri, params = TransactionQueue.__strip_parse_query(transaction)
-        if (transaction.uri, transaction.method) in self.__conf.payloads:
-            # chceme sem neco poslat
-            params.update(self.__conf.payloads[(transaction.uri,
-                                                transaction.method)])
-            transaction.data = params
-            transaction.uri = uri
+        try: 
+            uri, params = TransactionQueue.__strip_parse_query(transaction)
+            if (transaction.uri, transaction.method) in self.__conf.payloads:
+                # chceme sem neco poslat
+                params.update(self.__conf.payloads[(transaction.uri,
+                                                    transaction.method)])
+                transaction.data = params
+                transaction.uri = uri
+        except ValueError as e:
+            log = logging.getLogger(__name__)
+            log.exception("Unexpected error, skipping payload", e)
 
         self.__mark_seen(transaction)
 
