@@ -67,8 +67,10 @@ class RobotsFilter(IPlugin):
                         vt = self.__visit_times[robots_url]
                         self.__log.debug("Got timestamp for robots.txt file " +
                                          robots_url + ": " +
-                                         str(vt))
-                        sleep_time = time.time() - vt - delay
+                                         str(vt) + ", current: " +
+                                         str(time.time()) + " delay: " +
+                                         str(delay))
+                        sleep_time = delay - (time.time() - vt)
                         if sleep_time > 0:
                             self.__log.info("Sleep for " + str(sleep_time) +
                                             " due to crawl delay")
