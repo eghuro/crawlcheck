@@ -1,6 +1,6 @@
 [Core]
 Name = Non-semantic HTML tag detector
-Module = nonsem
+Module = non_semantic_html
 
 [Documentation]
 Author = Alexandr Mansurov

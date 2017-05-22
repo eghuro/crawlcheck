@@ -1,6 +1,7 @@
 from yapsy.IPlugin import IPlugin
 from tidylib import tidy_document
 from common import PluginType
+import logging
 
 
 class Tidy_HTML_Validator(IPlugin):
@@ -13,14 +14,16 @@ class Tidy_HTML_Validator(IPlugin):
         self.codes = dict()
         self.max_err = 0
         self.max_warn = 0
+        self.max_inf = 0
         self.severity = dict()
         self.severity['Warning'] = 0.5
         self.severity['Error'] = 1.0
+        self.severity['Info'] = 0.3
 
     def setJournal(self, journal):
         self.journal = journal
 
-        maxes = {'W': self.max_warn, 'E': self.max_err}
+        maxes = {'W': self.max_warn, 'E': self.max_err, 'I': self.max_inf}
 
         for dt in journal.getKnownDefectTypes():
             # dt[0] type, dt[1] description
@@ -33,6 +36,8 @@ class Tidy_HTML_Validator(IPlugin):
                     if number > maxes[letter]:
                         maxes[letter] = number
                     self.codes[dt[1]] = dt[0]
+                else:
+                    logging.getLogger(__name__).warn("Unknown letter: " + letter)
             except ValueError:
                 continue
 
@@ -67,9 +72,15 @@ class Tidy_HTML_Validator(IPlugin):
         else:
             if cat == 'Warning':
                 num = self.max_warn
-                self.max_warn = self.max_warn+1
+                self.max_warn = self.max_warn + 1
             elif cat == 'Error':
                 num = self.max_err
-                self.max_err = self.max_err+1
+                self.max_err = self.max_err + 1
+            elif cat == 'Info':
+                num = self.max_inf
+                self.max_inf = self.max_inf + 1
+            else:
+                logging.getLogger(__name__).error("Unknown category: " + cat)
+                return None
             code = self.__generate_code(cat[0], num, desc)
         return code
