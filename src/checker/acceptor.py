@@ -15,9 +15,11 @@ there are URI and content type specific rules and a default fallback. The only
 exception is that the default fallback must be set.
 """
 
+from common import ConfigurationError
 import marisa_trie
 import re
 from enum import Enum
+import sre_constants
 
 
 class Resolution(Enum):
@@ -62,7 +64,10 @@ class RegexAcceptor(object):
         return accepting
 
     def setRegex(self, regex, plugin):
-        p = re.compile(regex)
+        try:
+            p = re.compile(regex)
+        except sre_constants.error as e:
+            raise ConfigurationError("Error on regex %s : %s" % (regex, str(e))) from e
 
         if plugin in self.regexes.keys():
             self.regexes[plugin].append(p)

@@ -4,14 +4,10 @@
 import yaml
 from pluginDBAPI import DBAPIconfiguration
 from acceptor import Acceptor, RegexAcceptor
+from common import ConfigurationError
 import logging
 import sys
 import re
-
-
-class ConfigurationError(Exception):
-    def __init__(self, msg):
-        self.msg = msg
 
 
 class EPR(object):

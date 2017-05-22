@@ -22,3 +22,7 @@ def getSoup(transaction):
         soup = BeautifulSoup(transaction.getContent(), 'lxml')
         transaction.cache['soup'] = soup
     return soup
+
+class ConfigurationError(Exception):
+    def __init__(self, msg):
+        self.msg = msg
