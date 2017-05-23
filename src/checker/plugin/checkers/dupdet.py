@@ -34,11 +34,23 @@ class DuplicateDetector(IPlugin):
                     if f not in self.__hash:
                         self.__hash[f] = self.__hashfile(transaction.file)
                     if self.__hash[f] == h:
-                        if filecmp.cmp(f, transaction.file):
-                            # duplicate (same size, same hash, same content)
-                            self.__journal.foundDefect(transaction.idno, "dup",
-                                                       "Duplicate pages",
-                                                       self.__urls[f], 0.7)
+                        try:
+                            if filecmp.cmp(f, transaction.file):
+                                # duplicate (same size, hash, content)
+                                self.__journal.foundDefect(transaction.idno,
+                                                           "dup",
+                                                           "Duplicate pages",
+                                                           self.__urls[f], 0.7)
+                        except FileNotFoundError as e:
+                            self.__log.warn("File not found: %s" % (str(e)))
+                            if not os.isfile(f):
+                                self.__size_dups[fsize].pop()
+                                self.__log.debug("Removed missing file %s " +
+                                                  "from set" % (str(f)))
+                            else:
+                                self.__log.debug("Missing transaction file %s "
+                                                 "- THIS IS NOT GOOD!!!" %
+                                                 (transaction.file))
             self.__size_dups[fsize].add(transaction.file)
         else:
             self.__size_dups[fsize] = set([transaction.file])
