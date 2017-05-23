@@ -3,6 +3,6 @@ class FilterException(Exception):
 
     pass
 
-class Rechedule(Exception):
+class Reschedule(Exception):
 
     pass
