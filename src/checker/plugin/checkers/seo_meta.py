@@ -24,7 +24,7 @@ class MetaTagValidator(IPlugin):
         foo = head.find_all('meta', {'name': name})
         if len(foo) > 1:
             clas = multi
-            dsc = str(len(desc))
+            dsc = str(len(foo))
         elif len(foo) == 0:
             clas = zero
             dsc = ""
