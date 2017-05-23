@@ -1,4 +1,4 @@
-from filter import FilterException
+from filter import FilterException, Reschedule
 from common import PluginType
 from yapsy.IPlugin import IPlugin
 import reppy
@@ -71,7 +71,13 @@ class RobotsFilter(IPlugin):
                                          str(time.time()) + " delay: " +
                                          str(delay))
                         sleep_time = delay - (time.time() - vt)
-                        if sleep_time > 0:
+                        bound = self.__conf.getProperty("reschedule", 5)
+                        if sleep_time > bound:
+                            self.__log.warn("Should sleep for " +
+                                            str(sleep_time) +
+                                            " - rescheduling")
+                            raise Reschedule()
+                        elif sleep_time > 0:
                             self.__log.info("Sleep for " + str(sleep_time) +
                                             " due to crawl delay")
                             self.__log.debug("Robots.txt: " + robots_url)

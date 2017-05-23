@@ -118,6 +118,9 @@ class Core:
                 self.__handle_err("%s filtered out" % (transaction.uri),
                                   transaction)
                 continue
+            except Reschedule:  # eg. long crawl delay
+                self.queue.push_rescheduled(transaction)
+                continue
             except StatusError as e:  # already logged
                 self.journal.stopChecking(transaction,
                                           VerificationStatus.done_ko)
@@ -393,6 +396,9 @@ class TransactionQueue:
         self.__bake_cookies(t, parent)
         self.__db.log_link(parent.idno, uri, t.idno)
         return t
+
+    def push_rescheduled(self, transaction):
+        self.__q.put(transaction)
 
     @staticmethod
     def __strip_parse_query(transaction):

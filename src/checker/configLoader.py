@@ -282,6 +282,11 @@ class Configuration(object):
 
     def getProperty(self, key, default=None):
         if key in self.properties:
+            if default is not None:
+                if isinstance(self.properties[key], type(default)):
+                    return self.properties[key]
+                else:
+                    return default
             return self.properties[key]
         else:
             return default
