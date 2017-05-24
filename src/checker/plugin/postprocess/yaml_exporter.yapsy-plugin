@@ -1,0 +1,8 @@
+[Core]
+Name = YAML exporter
+Module = yaml_exporter
+
+[Documentation]
+Author = Alexandr Mansurov
+Version = 0.0
+Description = Exports data to YAML file
