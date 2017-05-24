@@ -42,22 +42,26 @@ def __configure_logger(conf, debug=False):
     formatter = logging.Formatter('%(asctime)s - %(processName)-10s - %(name)s'
                                   ' - %(levelname)s - %(message)s')
     if conf and conf.getProperty('logfile') is not None:
-        need_roll = os.path.isfile(conf.getProperty('logfile'))
-        fh = logging.handlers.RotatingFileHandler(conf.getProperty('logfile'),
-                                                  backupCount=50)
-        fh.setLevel(level)
-        fh.setFormatter(formatter)
-        log.addHandler(fh)
+        try:
+            lf = conf.getProperty('logfile')
+            need_roll = os.path.isfile(lf)
+            fh = logging.handlers.RotatingFileHandler(lf, backupCount=50)
+            fh.setLevel(level)
+            fh.setFormatter(formatter)
+            log.addHandler(fh)
 
-        if need_roll:
+            if need_roll:
+                # Add timestamp
+                log.debug('\n------\nLog closed on %s.\n------\n' % time.asctime())
+
+                # Roll over on application start
+                fh.doRollover()
+
             # Add timestamp
-            log.debug('\n------\nLog closed on %s.\n------\n' % time.asctime())
-
-            # Roll over on application start
-            fh.doRollover()
-
-        # Add timestamp
-        log.debug('\n-------\nLog started on %s.\n-------\n' % time.asctime())
+            log.debug('\n-------\nLog started on %s.\n-------\n' % time.asctime())
+        except FileNotFoundError:
+            log.exception("Error creating log file")
+            raise
 
     sh = logging.StreamHandler()
     sh.setLevel(logging.INFO)
@@ -214,7 +218,10 @@ def main(e, d, cfile):
     if conf is None:
         return
 
-    __configure_logger(conf, debug=debug)
+    try:
+        __configure_logger(conf, debug=debug)
+    except FileNotFoundError:
+        return
 
     if not export_only:
         __prepare_database(conf, log)
