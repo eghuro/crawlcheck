@@ -29,6 +29,7 @@ class DuplicateDetector(IPlugin):
         if fsize in self.__size_dups:
             h = self.__hashfile(transaction.file)
             self.__hash[transaction.file] = h
+            rem = []
             for f in self.__size_dups[fsize]:
                 if f != transaction.file and self.__urls[f] != transaction.uri:
                     if f not in self.__hash:
@@ -43,14 +44,16 @@ class DuplicateDetector(IPlugin):
                                                            self.__urls[f], 0.7)
                         except FileNotFoundError as e:
                             self.__log.warn("File not found: %s" % (str(e)))
-                            if not os.isfile(f):
-                                self.__size_dups[fsize].pop()
-                                self.__log.debug("Removed missing file %s " +
-                                                  "from set" % (str(f)))
+                            if not os.path.isfile(f):
+                                rem.append(f)
+                                self.__log.debug("Removed missing file " + f +
+                                                  "from set")
                             else:
-                                self.__log.debug("Missing transaction file %s "
-                                                 "- THIS IS NOT GOOD!!!" %
-                                                 (transaction.file))
+                                self.__log.debug("Missing transaction file " +
+                                                 transaction.file +
+                                                 " - THIS IS NOT GOOD!!!")
+            for x in rem:
+                self.__size_dups[fsize].remove(x)
             self.__size_dups[fsize].add(transaction.file)
         else:
             self.__size_dups[fsize] = set([transaction.file])

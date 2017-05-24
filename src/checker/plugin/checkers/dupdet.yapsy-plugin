@@ -4,5 +4,5 @@ Module = dupdet
 
 [Documentation]
 Author = Alexandr Mansurov
-Version = 0.0
+Version = 0.1
 Description = Check if the page is not duplicate of another
