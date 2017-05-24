@@ -285,10 +285,6 @@ class Transaction:
                                               self.uri)
             return ""
 
-    def getStripedUri(self):
-        pr = urlparse(self.uri)
-        return str(pr.scheme+'://'+pr.netloc)
-
     def getAcceptedTypes(self, conf):
         if conf is None:
             return []
@@ -341,7 +337,6 @@ class Rack:
                           (plugin.id, transaction.uri))
 
     def accept(self, transaction, plugin):
-        rot = transaction.getStripedUri()[::-1]
         type_cond = self.typeAcceptor.accept(str(transaction.type), plugin.id)
         regex_cond = self.regexAcceptor.accept(transaction.uri, plugin.id)
         return type_cond and regex_cond
