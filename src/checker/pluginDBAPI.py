@@ -121,6 +121,7 @@ class DBAPI(object):
         self.defectTypesWithId = dict()
         self.bufferedQueries = 0
         self.__syncer_worker = None
+        self.__sync_cnt = 0
 
     def log(self, query, query_params):
         if query in self.logs:
@@ -158,7 +159,7 @@ class DBAPI(object):
                   str(transactionId)))
 
     @staticmethod
-    def syncer(dbname, qtypes, queries, logs):
+    def syncer(dbname, qtypes, queries, logs, vacuum=True):
         log = logging.getLogger(__name__)
         log.info("Writing into database")
         with mdb.connect(dbname) as con:
@@ -175,8 +176,9 @@ class DBAPI(object):
                 for qtype in qtypes:
                     cursor.executemany(queries[qtype], logs[qtype])
 
-                log.debug("Vacuum")
-                cursor.execute("VACUUM")
+                if vacuum:
+                    log.debug("Vacuum")
+                    cursor.execute("VACUUM")
 
             except mdb.Error as e:
                 con.rollback()
@@ -192,11 +194,12 @@ class DBAPI(object):
             self.__syncer_worker.join()
 
         logs = copy.deepcopy(self.logs)
+        vacuum = (self.__sync_cnt % 100 == 0)
         sproc = Process(name="DB sync worker",
                         target=DBAPI.syncer, args=(self.conf.getDbname(),
                                                    self.query_types,
                                                    self.queries,
-                                                   logs))
+                                                   logs, vacuum))
         self.__syncer_worker = sproc
         sproc.start()
         for qtype in self.query_types:
@@ -234,7 +237,7 @@ class DBAPI(object):
         maxs = []
         for t in ['link', 'defect', 'cookies']:
             maxs.append(self.__load_max_finding_id(t, con))
-        self.findingId = max(maxs)
+        self.findingId = max(maxs) + 1
 
     def __load_max_finding_id(self, table, con):
         query = 'SELECT MAX(findingId) FROM %s' % (table)
@@ -277,6 +280,8 @@ class DBAPI(object):
         if row is not None:
             if row[0] is not None:
                 return row[0]
+        logging.getLogger(__name__).warn("Setting transactions ID to 0 as " +
+                                         "no results returned")
         return 0
 
     def get_urls(self):

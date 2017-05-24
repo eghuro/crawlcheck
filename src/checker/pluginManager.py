@@ -173,7 +173,7 @@ def __initialize_database(log, conf):
             log.info("Successfully initialized database: " +
                      conf.dbconf.getDbname())
     except:
-        log.error("Failed to initialize database")
+        log.exception("Failed to initialize database")
         raise
 
 
