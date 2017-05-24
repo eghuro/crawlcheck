@@ -2,7 +2,7 @@ from common import PluginType
 from yapsy.IPlugin import IPlugin
 import requests
 from requests.exceptions import ConnectionError
-import yaml
+from ruamel import yaml
 import logging
 import gc
 

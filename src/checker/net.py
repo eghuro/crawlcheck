@@ -135,7 +135,8 @@ class Network(object):
         try:
             with tempfile.NamedTemporaryFile(delete=False,
                                              prefix=conf.getProperty("tmpPrefix"),
-                                             suffix=conf.getProperty("tmpSuffix")) as tmp:
+                                             suffix=conf.getProperty("tmpSuffix")
+                                             dir=conf.getProperty("tmpDir", "/tmp/")) as tmp:
                 Network.__download(transaction, conf, tmp, journal, log)
         except ConnectionError as e:
             log.debug("Connection error: %s" % (format(e)))

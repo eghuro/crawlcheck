@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Configuration Loader loads configuration from external YAML file.
 """
-import yaml
+from ruamel import yaml
 from pluginDBAPI import DBAPIconfiguration
 from acceptor import Acceptor, RegexAcceptor
 from common import ConfigurationError

@@ -14,10 +14,10 @@ pyparsing==2.1.10
 python-dateutil==2.6.0
 python-magic==0.4.12
 pytidylib==0.3.2
-PyYAML==3.12
 reppy==0.4.3
 requests==2.13.0
 rfc3987==1.3.7
+ruamel.yaml==0.14.12
 six==1.10.0
 tinycss==0.4
 url==0.4.0
