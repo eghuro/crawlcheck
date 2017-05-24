@@ -83,6 +83,15 @@ class Core:
 
         return start
 
+    #see: https://stackoverflow.com/questions/22238090/validating-urls-in-python/22238205#22238205
+    @staticmethod
+    def __validate_uri(x):
+        try:
+            result = urlparse(x)
+            return True if [result.scheme, result.netloc] else False
+        except:
+            return False
+
     def __run(self, session):
         # Queue
         while not self.queue.isEmpty():
@@ -96,6 +105,14 @@ class Core:
                     transaction.uri = str(transaction.uri)
 
                 self.log.info("Processing %s" % (transaction.uri))
+
+                if not Core.__validate_uri(transaction.uri):
+                    self.log.error("Invalid URI: %s" % (transaction.uri))
+                    self.journal.foundDefect("invaliduri", "URI is invalid",
+                                             transaction.uri, 1.0)
+                    self.journal.stopChecking(transaction,
+                                              VerificationStatus.done_ko)
+                    continue
 
                 if not transaction.isWorthIt(self.conf):
                     # neni zadny plugin, ktery by prijal
