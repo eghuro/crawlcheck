@@ -21,12 +21,16 @@ class ContentLengthFilter(IPlugin):
 
     def filter(self, transaction, headers):
         if 'Content-Length' in headers:
-            conlen = int(headers['Content-Length'])
-            maxContent = self.__conf.getProperty("maxContentLength")
-            if maxContent is not None:
-                if conlen > maxContent:
-                    self.__log.warning("Content length too large for " +
-                                       transaction.uri + " (got: " +
-                                       str(conlen) + ", limit: " +
-                                       str(maxContent)+") Skipping download.")
-                    raise FilterException()
+            try:
+                conlen = int(headers['Content-Length'])
+                maxContent = self.__conf.getProperty("maxContentLength")
+                if maxContent is not None:
+                    if conlen > maxContent:
+                        self.__log.warning("Content length too large for " +
+                                           transaction.uri + " (got: " +
+                                           str(conlen) + ", limit: " +
+                                           str(maxContent)+") Skipping download.")
+                        raise FilterException()
+            except ValueError as e:
+                self.__log.exception("Error reading headers, skipping download.", e)
+                raise FilterException() from e
