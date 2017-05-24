@@ -224,7 +224,10 @@ def main(e, d, cfile):
         return
 
     if not export_only:
-        __prepare_database(conf, log)
+        try:
+            __prepare_database(conf, log)
+        except:
+            return
 
     plugins, headers, filters, pps = __load_plugins(cl, log, conf)
     cl = None
