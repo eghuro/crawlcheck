@@ -117,7 +117,8 @@ class Core:
 
                 if not self.uri_regex.match(transaction.uri):
                     self.log.error("Invalid URI: %s" % (transaction.uri))
-                    self.journal.foundDefect("invaliduri", "URI is invalid",
+                    self.journal.foundDefect(transaction.idno, "invaliduri",
+                                             "URI is invalid",
                                              transaction.uri, 1.0)
                     self.journal.stopChecking(transaction,
                                               VerificationStatus.done_ko)
