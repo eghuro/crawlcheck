@@ -13,7 +13,7 @@ from net import Network, NetworkError, ConditionError, StatusError
 from filter import FilterException, Reschedule
 import gc
 import sqlite3 as mdb
-import re
+from rfc3987 import match
 
 
 class Core:
@@ -51,14 +51,6 @@ class Core:
         self.rack = Rack(self.conf.type_acceptor, self.conf.regex_acceptor,
                          plugins)
 
-        self.uri_regex = re.compile(
-        r'^(?:http|ftp)s?://' # http:// or https://
-        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
-        r'localhost|' #localhost...
-        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
-        r'(?::\d+)?' # optional port
-        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
-
     def __push_entry_points(self):
         for entryPoint in self.conf.entry_points:
             self.log.debug("Pushing to queue: %s, data: %s" %
@@ -92,15 +84,6 @@ class Core:
 
         return start
 
-    #see: https://stackoverflow.com/questions/22238090/validating-urls-in-python/22238205#22238205
-    @staticmethod
-    def __validate_uri(x):
-        try:
-            result = urlparse(x)
-            return True if [result.scheme, result.netloc] else False
-        except:
-            return False
-
     def __run(self, session):
         # Queue
         while not self.queue.isEmpty():
@@ -115,7 +98,7 @@ class Core:
 
                 self.log.info("Processing %s" % (transaction.uri))
 
-                if not self.uri_regex.match(transaction.uri):
+                if not match(transaction.uri):
                     self.log.error("Invalid URI: %s" % (transaction.uri))
                     self.journal.foundDefect(transaction.idno, "invaliduri",
                                              "URI is invalid",
