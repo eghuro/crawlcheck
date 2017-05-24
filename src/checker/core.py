@@ -13,6 +13,7 @@ from net import Network, NetworkError, ConditionError, StatusError
 from filter import FilterException, Reschedule
 import gc
 import sqlite3 as mdb
+import re
 
 
 class Core:
@@ -49,6 +50,14 @@ class Core:
         self.__push_entry_points()
         self.rack = Rack(self.conf.type_acceptor, self.conf.regex_acceptor,
                          plugins)
+
+        self.uri_regex = re.compile(
+        r'^(?:http|ftp)s?://' # http:// or https://
+        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
+        r'localhost|' #localhost...
+        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
+        r'(?::\d+)?' # optional port
+        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
 
     def __push_entry_points(self):
         for entryPoint in self.conf.entry_points:
@@ -106,7 +115,7 @@ class Core:
 
                 self.log.info("Processing %s" % (transaction.uri))
 
-                if not Core.__validate_uri(transaction.uri):
+                if not self.uri_regex.match(transaction.uri):
                     self.log.error("Invalid URI: %s" % (transaction.uri))
                     self.journal.foundDefect("invaliduri", "URI is invalid",
                                              transaction.uri, 1.0)
