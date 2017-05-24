@@ -35,8 +35,8 @@ cd crawlcheck
 pip install -r requirements.txt
 ```
 
-You will need python3, python-pip and sqlite3, virtualenv, libmagic and libtidy
-installed. All dev or devel versions.
+You will need python3, python-pip and sqlite3, virtualenv, libmagic, libtidy,
+libxml2 and libxslt installed. All dev or devel versions.
 
 For PDF report, pdflatex and following LaTex packages are needed: geometry,
 lastpage, testcomp, lmodern, inputenc, fontenc.
