@@ -14,6 +14,8 @@ from filter import FilterException, Reschedule
 import gc
 import sqlite3 as mdb
 from rfc3987 import match
+import datrie
+import string
 
 
 class Core:
@@ -239,7 +241,7 @@ class Transaction:
     def __init__(self, uri, depth, srcId, idno, method="GET", data=None):
         # Use the factory method below!!
         self.uri = uri
-        self.aliases = [uri]
+        self.aliases = set([uri])
         self.depth = depth
         self.type = None
         self.file = None
@@ -255,7 +257,7 @@ class Transaction:
         self.cache = None
 
     def changePrimaryUri(self, new_uri):
-        self.aliases.append(new_uri)
+        self.aliases.add(new_uri)
         self.uri = new_uri
 
     def testLink(self, conf, journal, session):
@@ -347,7 +349,7 @@ class TransactionQueue:
     def __init__(self, db, conf):
         self.__db = db
         self.__conf = conf
-        self.__seen = set()
+        self.__seen = datrie.Trie(string.printable)
         self.__q = queue.Queue()
         self.seenlen = 0
 
@@ -403,6 +405,7 @@ class TransactionQueue:
         return t
 
     def push_rescheduled(self, transaction):
+        assert self.__been_seen(transaction)
         self.__q.put(transaction)
 
     @staticmethod
@@ -415,8 +418,20 @@ class TransactionQueue:
 
         return uri, params
 
+    def __been_seen(self, transaction):
+        if transaction.uri in self.__seen:
+            #return True
+            return transaction.method in self.__seen[transaction.uri]
+        return False
+
+    def __set_seen(self, transaction):
+        if transaction.uri in self.__seen:
+            self.__seen[transaction.uri].add(transaction.method)
+        else:
+            self.__seen[transaction.uri] = set([transaction.method])
+
     def __mark_seen(self, transaction):
-        if (transaction.uri, transaction.method) not in self.__seen:
+        if not self.__been_seen(transaction):
             self.__q.put(transaction)
             self.__db.log(Query.transactions,
                           (str(transaction.idno), transaction.method,
@@ -427,8 +442,8 @@ class TransactionQueue:
         # TODO: co kdyz jsme pristupovali s jinymi parametry?
         # mark all known aliases as seen
         for uri in transaction.aliases:
-            if (uri, transaction.method) not in self.__seen:
-                self.__seen.add((transaction.uri, transaction.method))
+            if not self.__been_seen(transaction):
+                self.__set_seen(transaction)
                 self.seenlen = self.seenlen + 1
 
     def __init_cookies(self, parent):
@@ -464,7 +479,7 @@ class TransactionQueue:
                               'utf-8')
                 self.__q.put(Transaction(decoded, t[1], srcId, t[3]))
             # load uris from transactions table for list of seen URIs
-            self.__seen.update(self.__db.get_seen_uris(con))
+            #self.__seen.update(self.__db.get_seen_uris(con)) #TODO
             # set up transaction id for factory method
             transactionId = self.__db.get_max_transaction_id(con) + 1
 
