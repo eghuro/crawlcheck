@@ -76,9 +76,9 @@ class Network(object):
                 log.exception("Error while downloading: too many redirects", e)
                 raise NetworkError("Too many redirects") from e
             except (ConnectionError, Timeout) as e:
-                log.debug("Error while downloading: %s" % format(e))
+                log.warn("Error while downloading: %s" % e)
                 if (attempt + 1) < max_attempts:
-                    log.warn("Failed to get %s, retrying!" % transaction.uri)
+                    log.info("Retrying!")
                     wait = math.pow(10, attempt)
                     time.sleep(wait)
                 else:
