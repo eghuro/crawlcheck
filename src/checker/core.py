@@ -332,7 +332,7 @@ class Rack:
 
     def __run_one(self, transaction, plugin):
         if self.accept(transaction, plugin):
-            self.log.debug("%s started checking %s" %
+            self.log.info("%s started checking %s" %
                            (plugin.id, transaction.uri))
             plugin.check(transaction)
             self.log.debug("%s stopped checking %s" %
