@@ -344,6 +344,10 @@ class Rack:
         return type_cond and regex_cond
 
 
+class SeenLimit(Error):
+    pass
+
+
 class TransactionQueue:
 
     def __init__(self, db, conf):
@@ -382,7 +386,11 @@ class TransactionQueue:
             log = logging.getLogger(__name__)
             log.exception("Unexpected error, skipping payload", e)
 
-        self.__mark_seen(transaction)
+        try:
+            self.__mark_seen(transaction)
+        except SeenLimit:
+            log.warn("Not logging link, because limit was reached")
+            return
 
         if parent is not None:
             self.__db.log_link(parent.idno, transaction.uri, transaction.idno)
@@ -432,6 +440,9 @@ class TransactionQueue:
 
     def __mark_seen(self, transaction):
         if not self.__been_seen(transaction):
+            if self.__conf.getProperty('urlLimit') is not None:
+                if self.seenlen >= self.__conf.getProperty('urlLimit'):
+                    raise SeenLimit()
             self.__q.put(transaction)
             self.__db.log(Query.transactions,
                           (str(transaction.idno), transaction.method,
