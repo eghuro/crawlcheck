@@ -33,6 +33,10 @@ content-types:
      - tinycss
      - dupdetect
  -
+  "content-type": "application/gzip"
+  plugins:
+    - sitemapScanner
+ -
    "content-type": "text/xml"
    plugins:
      - sitemapScanner
@@ -72,7 +76,6 @@ filters:
 postprocess:
  - report_exporter
  - sitemap_generator
- - TexReporter
 
 entryPoints:
  - "http://ksp.mff.cuni.cz/"
