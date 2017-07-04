@@ -1,6 +1,6 @@
 from common import PluginType, getSoup
 from yapsy.IPlugin import IPlugin
-from urllib.parse import urlparse, urljoin
+from urllib.parse import urlparse, urljoin, urldefrag
 import urllib.parse
 
 
@@ -54,11 +54,9 @@ class LinksFinder(IPlugin):
                 if p.scheme not in ['http', 'https']:
                     continue  # check only HTTP(S) - no FTP, MAILTO, etc.
 
-                urlNoAnchor = url.split('#')[0]
-
-                addr = urllib.parse.quote(urlNoAnchor.encode('utf-8'))
+                addr = urllib.parse.quote(url.encode('utf-8'))
 
                 et = None
                 if link.name == "img":
                     et = "image/"
-                self.__queue.push_link(addr, transaction)  # dups handled there
+                self.__queue.push_link(addr, transaction, et)  # dups handled there

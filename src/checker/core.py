@@ -6,7 +6,7 @@ import time
 import copy
 import codecs
 import requests
-from urllib.parse import urlparse, ParseResult
+from urllib.parse import urlparse, ParseResult, urldefrag
 from pluginDBAPI import DBAPI, VerificationStatus, Query
 from common import PluginType, PluginTypeError
 from net import Network, NetworkError, ConditionError, StatusError
@@ -308,11 +308,12 @@ class Transaction:
 transactionId = 0
 
 
-def createTransaction(uri, depth=0, parentId=-1, method='GET', params=dict()):
+def createTransaction(uri, depth=0, parentId=-1, method='GET', params=dict(), expected=None):
     assert (type(params) is dict) or (params is None)
     global transactionId
     decoded = str(urllib.parse.unquote(urllib.parse.unquote(uri)))
     tr = Transaction(decoded, depth, parentId, transactionId, method, params)
+    tr.expected = expected
     transactionId = transactionId + 1
     return tr
 
@@ -374,6 +375,7 @@ class TransactionQueue:
             return t
 
     def push(self, transaction, parent=None):
+        transaction.uri = defrag(transaction.uri)[0]
         try: 
             uri, params = TransactionQueue.__strip_parse_query(transaction)
             if (transaction.uri, transaction.method) in self.__conf.payloads:
@@ -397,11 +399,11 @@ class TransactionQueue:
 
         self.__bake_cookies(transaction, parent)
 
-    def push_link(self, uri, parent):
+    def push_link(self, uri, parent, expected=None):
         if parent is None:
-            self.push(createTransaction(uri, 0, -1), None)
+            self.push(createTransaction(uri, 0, -1, expected), None)
         else:
-            t = createTransaction(uri, parent.depth + 1, parent.idno)
+            t = createTransaction(uri, parent.depth + 1, parent.idno, expected)
             t.headers['Referer'] = parent.uri
             self.push(t, parent)
 
