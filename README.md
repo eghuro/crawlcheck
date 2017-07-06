@@ -209,14 +209,6 @@ class MyPlugin(IPlugin):
 
 See http://yapsy.sourceforge.net/IPlugin.html and http://yapsy.sourceforge.net/PluginManager.html#plugin-info-file-format for more details.
 
-## TODOs
-
-- Tests, docs
-- Parallelization
-- Allow includes in config
-- SEO related checks
-- Security related checks
-
 ## License
 
 MIT
