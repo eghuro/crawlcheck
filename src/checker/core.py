@@ -257,8 +257,9 @@ class Transaction:
         self.cache = None
 
     def changePrimaryUri(self, new_uri):
-        self.aliases.add(new_uri)
-        self.uri = new_uri
+        uri = urldefrag(new_uri)[0]
+        self.aliases.add(uri)
+        self.uri = uri
 
     def testLink(self, conf, journal, session):
         can = conf.regex_acceptor.canTouch(self.uri)
@@ -345,7 +346,7 @@ class Rack:
         return type_cond and regex_cond
 
 
-class SeenLimit(Error):
+class SeenLimit(Exception):
     pass
 
 
@@ -375,7 +376,7 @@ class TransactionQueue:
             return t
 
     def push(self, transaction, parent=None):
-        transaction.uri = defrag(transaction.uri)[0]
+        transaction.uri = urldefrag(transaction.uri)[0]
         try: 
             uri, params = TransactionQueue.__strip_parse_query(transaction)
             if (transaction.uri, transaction.method) in self.__conf.payloads:
@@ -401,9 +402,9 @@ class TransactionQueue:
 
     def push_link(self, uri, parent, expected=None):
         if parent is None:
-            self.push(createTransaction(uri, 0, -1, expected), None)
+            self.push(createTransaction(uri, 0, -1, 'GET', dict(), expected), None)
         else:
-            t = createTransaction(uri, parent.depth + 1, parent.idno, expected)
+            t = createTransaction(uri, parent.depth + 1, parent.idno, 'GET', dict(), expected)
             t.headers['Referer'] = parent.uri
             self.push(t, parent)
 
