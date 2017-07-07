@@ -9,6 +9,7 @@ from yapsy.IPlugin import IPlugin
 import logging
 import time
 
+logging.getLogger("reppy").setLevel(logging.CRITICAL)
 
 class RobotsFilter(IPlugin):
 

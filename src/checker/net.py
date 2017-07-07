@@ -10,6 +10,8 @@ import math
 import time
 
 requests.packages.urllib3.disable_warnings()
+logging.getLogger("requests").setLevel(logging.CRITICAL)
+logging.getLogger("urllib3").setLevel(logging.CRITICAL)
 
 
 class NetworkError(Exception):
