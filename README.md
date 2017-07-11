@@ -165,6 +165,8 @@ Crawlcheck is currently extended with the following plugins:
 * css_scraper (checker)
 * seoimg (checker)
 * seometa (checker)
+* dupdetect (checker)
+* non_semantic_html (checker)
 * contentLength (header)
 * expectedType (header)
 * canonical (header)
@@ -174,6 +176,7 @@ Crawlcheck is currently extended with the following plugins:
 * depth (filter)
 * robots (filter)
 * report_exporter (postprocessor)
+* yaml_exporter (postprocessor)
 * sitemap_generator (postprocessor)
 * TexReporter (postprocessor)
 
@@ -201,20 +204,30 @@ from common import PluginType
 from filter import FilterException  # for headers and filters
 class MyPlugin(IPlugin):
 
-    category = PluginType.CHECKER
+    category = PluginType.CHECKER # pick appropriate type
     id = myPlugin
 
     def setJournal(self, journal):
         # record journal somewhere - all categories
 
     def setQueue(self, queue):
-        # record queue somewhere - only crawlers
+        # record queue somewhere - if needed
 
     def setConf(self, conf):
         # record configuration - only headers and filters
 
     def check(self, transaction):
         # implement the checking logic here for crawlers and checkers
+
+    def filter(self, transaction):
+        # implement the filtering logic here for filters and headers
+        # raise FilterException to filter the transaction out
+
+    def setDb(self, db):
+        # record DB somewhere - only postprocessors
+
+    def process(self):
+        # implement the postprocessing logic here for postprocessor
 ```
 
 See http://yapsy.sourceforge.net/IPlugin.html and http://yapsy.sourceforge.net/PluginManager.html#plugin-info-file-format for more details.
