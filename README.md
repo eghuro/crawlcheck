@@ -82,26 +82,43 @@ content-types:
     plugins: # plugins to use for given content-type
        - linksFinder
        - htmlValidator
+       - css_scraper
+       - formChecker
+       - seoimg
+       - seometa
+       - dupdetect
+       - non_semantic_html
  -
     "content-type": "text/css"
     plugins:
        - tinycss
+       - dupdetect
+ -
+    "content-type": "application/gzip"
+    plugins:
+       - sitemapScanner
+-
+    "content-type": "application/xml"
+    plugins:
+       - sitemapScanner
+       - dupdetect
 
 urls:
  -
-    url: "http://mj.ucw.cz/vyuka/"
+    url: "http://mj.ucw.cz/vyuka/.+"
     plugins: # which plugins are allowed for given URL
        - linksFinder
        - tidyHtmlValidator
        - tinycss
+       - css_scraper
+       - formChecker
+       - seoimg
+       - seometa
+       - dupdeteict
+       - non_semantic_html
  -
-    url: "http://mj.ucw.cz/" #forbid entry here
-
-suffixes:
- -
-    suffix: "ucw.cz/"
+    url: "http://mj.ucw.cz/" #test links (HEAD request) only
     plugins:
-       - linksFinder
 
 filters: #Filters (plugins of category header and filter) that can be used
  - depth
@@ -116,29 +133,14 @@ filters: #Filters (plugins of category header and filter) that can be used
 postprocess:
  - sitemap_generator
  - report_exporter
+ - yaml_exporter
  - TexReporter
-
-payload:
-#if following URL is reached (exactly, no regex)
-#and request is to be made with a method specified, add provided
-#parameters into request
- -
-    url: "https://stackoverflow.com/search"
-    method: GET
-    data:
-        q: x
 
 entryPoints: # where to start
 # Note, that once URI get's to the database it's no longer being requested
 # (beware of repeated starts, if entry point remains in the database execution won't
 # start from this entry point)
  - "http://mj.ucw.cz/vyuka/"
- -
-    url: "http://www.mff.cuni.cz/" #here we specify additional parameters to be added
-    method: GET                    #into request
-    data:
-      - foo: bar
-```
 
 ## Running crawlcheck
 Assuming you have gone through set-up and configuration, now run checker:
