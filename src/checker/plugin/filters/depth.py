@@ -20,7 +20,7 @@ class DepthFilter(IPlugin):
         pass
 
     def filter(self, transaction):
-        maxDepth = self.__conf.getProperty("maxDepth")
+        maxDepth = self.__conf.getProperty("maxDepth", 0)
         if maxDepth == 0:
             return  # unlimited
         if transaction.depth > maxDepth:
