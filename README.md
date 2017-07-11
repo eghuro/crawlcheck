@@ -62,8 +62,16 @@ cleanreport: True               # clean entries in report before sending current
 maxVolume: 100000000            # max 100 MB of tmp files
 maxAttempts: 2                  # attempts to download a web page
 dbCacheLimit: 1000000           # cache up to 1M of DB queries
+tmpPrefix: "Crawlcheck"         # prefix for temporary file names with downloaded content
+tmpSuffix: "content"            # suffix for teimporary file names with downloaded content
+tmpDir: "/tmp/"			# where to store temporary files (default: /tmp/)
+dbCacheLimit: 100000		# amount of cached database queries
+urlLimit: 10000000		# limit on seen URIs
+verifyHttps: True		# verify HTTPS?
+cores: 2			# amount of cores available (eg. for paralel report payload generation)
 sitemap-file: "sitemap.xml"     # where to store generated sitemap.xml
 sitemap-regex: "https?://ksp.mff.cuni.cz(/.*)?" # regex for sitemap generator
+yaml-out-file: "cc.yml"		# where to write YAML report
 report-file: "report"           # where to write PDF report (.pdf will be added automatically)
 
 # other parameters used by plugins written as ```key: value```
