@@ -27,7 +27,7 @@ class RobotsFilter(IPlugin):
     def setConf(self, conf):
         self.__conf = conf
         self.__robots = RobotsCache(capacity=100,
-                                    timeout=self.__conf.getProperty('timeout'))
+                                    timeout=self.__conf.getProperty('timeout', 0))
 
     def setJournal(self, journal):
         pass
