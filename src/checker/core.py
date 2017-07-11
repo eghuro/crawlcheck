@@ -450,9 +450,11 @@ class TransactionQueue:
             self.__db.log(Query.transactions,
                           (str(transaction.idno), transaction.method,
                            transaction.uri, "REQUESTED",
-                           str(transaction.depth)))
+                           str(transaction.depth), str(transaction.expected)))
             for uri in transaction.aliases:
                 self.__db.log(Query.aliases, (str(transaction.idno), uri))
+            for key, value in transaction.data.items():
+                self.__db.log_param(transaction.idno, key, value)
         # TODO: co kdyz jsme pristupovali s jinymi parametry?
         # mark all known aliases as seen
         for uri in transaction.aliases:
@@ -511,6 +513,10 @@ class Journal:
                       ("VERIFYING", transaction.uri, transaction.type,
                        transaction.status, transaction.idno))
 
+        # zapsat ziskane hlavicky
+        for key, value in transaction.headers.items():
+            self.__db.log_header(transaction.idno, key, value)
+
     def stopChecking(self, transaction, status):
         logging.getLogger(__name__).debug("Stopped checking %s" %
                                           (transaction.uri))
@@ -529,8 +535,9 @@ class Journal:
         with mdb.connect(self.__conf.dbconf.getDbname()) as con:
             return self.__db.get_known_defect_types(con)
 
-    def gotCookie(self, transaction, name, value):
-        self.__db.log_cookie(transaction.idno, name, value)
+    def gotCookie(self, transaction, name, value, secure, httpOnly, path):
+        self.__db.log_cookie(transaction.idno, name, value, secure, httpOnly,
+                             path)
 
 
 class Defect:

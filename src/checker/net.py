@@ -179,8 +179,13 @@ class Network(object):
 
     @staticmethod
     def __store_cookies(transaction, cookies, journal):
-        for name, value in cookies.items():
-            journal.gotCookie(transaction, name, value)
+        for cookie in cookies:
+            name = cookie.name
+            value = cookie.value
+            path = cookie.path
+            secure = cookie.secure
+            httpOnly = cookie.has_nonstandard_attr('httpOnly')
+            journal.gotCookie(transaction, name, value, secure, httpOnly, path)
         transaction.cookies = cookies
 
     @staticmethod
