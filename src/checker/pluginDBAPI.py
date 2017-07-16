@@ -68,6 +68,8 @@ class Query(Enum):
     transactions_load = 7
     transactions_status = 8
     link_status = 0
+    headers = 9
+    params = 10
 
 
 class TableError(LookupError):
@@ -86,7 +88,8 @@ class DBAPI(object):
         self.query_types = [Query.defect_types, Query.transactions,
                             Query.transactions_load, Query.transactions_status,
                             Query.aliases,  Query.link, Query.link_status,
-                            Query.defect, Query.cookies]
+                            Query.defect, Query.cookies, Query.headers,
+                            Query.params]
         self.queries = dict()
         self.queries[Query.link] = ('INSERT INTO link (findingId, toUri, '
                                     'requestId, responseId) VALUES (?,?,?,?)')
@@ -96,13 +99,15 @@ class DBAPI(object):
                                       'evidence, severity, responseId) VALUES '
                                       '(?, ?, ?, ?, ?)')
         self.queries[Query.cookies] = ('INSERT INTO cookies (findingId, '
-                                       'name, value, responseId) VALUES (?, '
+                                       'name, value, responseId, secure, '
+                                       'httpOnly, path) VALUES (?, ?, ?, ?, '
                                        '?, ?, ?)')
         self.queries[Query.aliases] = ('INSERT INTO aliases (transactionId, '
                                        'uri) VALUES (?, ?)')
         self.queries[Query.transactions] = ('INSERT INTO transactions (id, '
                                             'method, uri, verificationStatus,'
-                                            'depth) VALUES (?, ?, ?, ?, ?)')
+                                            'depth, expected) VALUES '
+                                            '(?, ?, ?, ?, ?, ?)')
         self.queries[Query.transactions_load] = ('UPDATE transactions SET '
                                                  'verificationStatus = ?, '
                                                  'uri = ?, contentType = ?, '
@@ -113,6 +118,12 @@ class DBAPI(object):
                                                    'WHERE id = ?')
         self.queries[Query.link_status] = ('UPDATE link SET processed = ? '
                                            'WHERE toUri = ?')
+        self.queries[Query.headers] = ('INSERT INTO headers (findingId, '
+                                       'name, value, responseId) VALUES (?, ?,'
+                                       ' ?, ?)')
+        self.queries[Query.params] = ('INSERT into param (findingId, '
+                                      'responseId, key, value) VALUES (?, ?, '
+                                      '?, ?)')
         self.logs = dict()
         for qtype in self.query_types:
             self.logs[qtype] = []
@@ -152,11 +163,22 @@ class DBAPI(object):
                  (str(self.findingId), str(defId), str(evidence),
                   str(severity), str(transactionId)))
 
-    def log_cookie(self, transactionId, name, value):
+    def log_cookie(self, transactionId, name, value, secure, httpOnly, path):
         self.findingId = self.findingId + 1
         self.log(Query.cookies,
                  (str(self.findingId), str(name), str(value),
+                  str(transactionId), str(secure), str(httpOnly), str(path)))
+
+    def log_header(self, transactionId, name, value):
+        self.findingId = self.findingId + 1
+        self.log(Query.headers,
+                 (str(self.findingId), str(name), str(value),
                   str(transactionId)))
+
+    def log_param(self, transactionId, key, value):
+        self.findingId = self.findingId + 1
+        self.log(Query.param,
+                 (str(self.findingId), str(transactionId), key, value))
 
     @staticmethod
     def syncer(dbname, qtypes, queries, logs, vacuum=True):

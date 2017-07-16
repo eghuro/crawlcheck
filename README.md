@@ -62,8 +62,16 @@ cleanreport: True               # clean entries in report before sending current
 maxVolume: 100000000            # max 100 MB of tmp files
 maxAttempts: 2                  # attempts to download a web page
 dbCacheLimit: 1000000           # cache up to 1M of DB queries
+tmpPrefix: "Crawlcheck"         # prefix for temporary file names with downloaded content
+tmpSuffix: "content"            # suffix for teimporary file names with downloaded content
+tmpDir: "/tmp/"			# where to store temporary files (default: /tmp/)
+dbCacheLimit: 100000		# amount of cached database queries
+urlLimit: 10000000		# limit on seen URIs
+verifyHttps: True		# verify HTTPS?
+cores: 2			# amount of cores available (eg. for paralel report payload generation)
 sitemap-file: "sitemap.xml"     # where to store generated sitemap.xml
 sitemap-regex: "https?://ksp.mff.cuni.cz(/.*)?" # regex for sitemap generator
+yaml-out-file: "cc.yml"		# where to write YAML report
 report-file: "report"           # where to write PDF report (.pdf will be added automatically)
 
 # other parameters used by plugins written as ```key: value```
@@ -74,26 +82,43 @@ content-types:
     plugins: # plugins to use for given content-type
        - linksFinder
        - htmlValidator
+       - css_scraper
+       - formChecker
+       - seoimg
+       - seometa
+       - dupdetect
+       - non_semantic_html
  -
     "content-type": "text/css"
     plugins:
        - tinycss
+       - dupdetect
+ -
+    "content-type": "application/gzip"
+    plugins:
+       - sitemapScanner
+-
+    "content-type": "application/xml"
+    plugins:
+       - sitemapScanner
+       - dupdetect
 
 urls:
  -
-    url: "http://mj.ucw.cz/vyuka/"
+    url: "http://mj.ucw.cz/vyuka/.+"
     plugins: # which plugins are allowed for given URL
        - linksFinder
        - tidyHtmlValidator
        - tinycss
+       - css_scraper
+       - formChecker
+       - seoimg
+       - seometa
+       - dupdeteict
+       - non_semantic_html
  -
-    url: "http://mj.ucw.cz/" #forbid entry here
-
-suffixes:
- -
-    suffix: "ucw.cz/"
+    url: "http://mj.ucw.cz/" #test links (HEAD request) only
     plugins:
-       - linksFinder
 
 filters: #Filters (plugins of category header and filter) that can be used
  - depth
@@ -108,29 +133,14 @@ filters: #Filters (plugins of category header and filter) that can be used
 postprocess:
  - sitemap_generator
  - report_exporter
+ - yaml_exporter
  - TexReporter
-
-payload:
-#if following URL is reached (exactly, no regex)
-#and request is to be made with a method specified, add provided
-#parameters into request
- -
-    url: "https://stackoverflow.com/search"
-    method: GET
-    data:
-        q: x
 
 entryPoints: # where to start
 # Note, that once URI get's to the database it's no longer being requested
 # (beware of repeated starts, if entry point remains in the database execution won't
 # start from this entry point)
  - "http://mj.ucw.cz/vyuka/"
- -
-    url: "http://www.mff.cuni.cz/" #here we specify additional parameters to be added
-    method: GET                    #into request
-    data:
-      - foo: bar
-```
 
 ## Running crawlcheck
 Assuming you have gone through set-up and configuration, now run checker:
@@ -155,6 +165,8 @@ Crawlcheck is currently extended with the following plugins:
 * css_scraper (checker)
 * seoimg (checker)
 * seometa (checker)
+* dupdetect (checker)
+* non_semantic_html (checker)
 * contentLength (header)
 * expectedType (header)
 * canonical (header)
@@ -164,6 +176,7 @@ Crawlcheck is currently extended with the following plugins:
 * depth (filter)
 * robots (filter)
 * report_exporter (postprocessor)
+* yaml_exporter (postprocessor)
 * sitemap_generator (postprocessor)
 * TexReporter (postprocessor)
 
@@ -191,20 +204,30 @@ from common import PluginType
 from filter import FilterException  # for headers and filters
 class MyPlugin(IPlugin):
 
-    category = PluginType.CHECKER
+    category = PluginType.CHECKER # pick appropriate type
     id = myPlugin
 
     def setJournal(self, journal):
         # record journal somewhere - all categories
 
     def setQueue(self, queue):
-        # record queue somewhere - only crawlers
+        # record queue somewhere - if needed
 
     def setConf(self, conf):
         # record configuration - only headers and filters
 
     def check(self, transaction):
         # implement the checking logic here for crawlers and checkers
+
+    def filter(self, transaction):
+        # implement the filtering logic here for filters and headers
+        # raise FilterException to filter the transaction out
+
+    def setDb(self, db):
+        # record DB somewhere - only postprocessors
+
+    def process(self):
+        # implement the postprocessing logic here for postprocessor
 ```
 
 See http://yapsy.sourceforge.net/IPlugin.html and http://yapsy.sourceforge.net/PluginManager.html#plugin-info-file-format for more details.
