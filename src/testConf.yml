@@ -15,7 +15,7 @@ maxAttempts: 2
 dbCacheLimit: 1000000 #cache up to 1M of DB queries
 sitemap-file: "sitemap.xml"
 sitemap-regex: "https?://ksp.mff.cuni.cz(/.*)?"
-verify: True
+verifyHttps: True
     
 content-types:
  - 
