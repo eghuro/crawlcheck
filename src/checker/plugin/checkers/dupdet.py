@@ -47,7 +47,7 @@ class DuplicateDetector(IPlugin):
                             if not os.path.isfile(f):
                                 rem.append(f)
                                 self.__log.debug("Removed missing file " + f +
-                                                  "from set")
+                                                 "from set")
                             else:
                                 self.__log.debug("Missing transaction file " +
                                                  transaction.file +

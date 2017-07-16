@@ -15,6 +15,11 @@ class PluginTypeError(Exception):
         return "Unknown plugin type"
 
 
+class ConfigurationError(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+
+
 def getSoup(transaction):
     if 'soup' in transaction.cache and transaction.cache['soup']:
         soup = transaction.cache['soup']
@@ -23,6 +28,3 @@ def getSoup(transaction):
         transaction.cache['soup'] = soup
     return soup
 
-class ConfigurationError(Exception):
-    def __init__(self, msg):
-        self.msg = msg

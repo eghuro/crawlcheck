@@ -6,7 +6,6 @@ The process of verification is customisable by configuration script that allows
 complex specification which plugins should check particular URIs and
 content-types.
 
-
 ## Version
 
 0.04
@@ -25,7 +24,7 @@ For a web report there's [separate project](https://github.com/eghuro/crawlcheck
 1) Fetch sources
 
 ```sh
-$ git clone https://github.com/eghuro/crawlcheck crawlcheck
+git clone https://github.com/eghuro/crawlcheck crawlcheck
 ```
 
 2) Run install script
@@ -64,14 +63,14 @@ maxAttempts: 2                  # attempts to download a web page
 dbCacheLimit: 1000000           # cache up to 1M of DB queries
 tmpPrefix: "Crawlcheck"         # prefix for temporary file names with downloaded content
 tmpSuffix: "content"            # suffix for teimporary file names with downloaded content
-tmpDir: "/tmp/"			# where to store temporary files (default: /tmp/)
-dbCacheLimit: 100000		# amount of cached database queries
-urlLimit: 10000000		# limit on seen URIs
-verifyHttps: True		# verify HTTPS?
-cores: 2			# amount of cores available (eg. for paralel report payload generation)
+tmpDir: "/tmp/"                 # where to store temporary files (default: /tmp/)
+dbCacheLimit: 100000            # amount of cached database queries
+urlLimit: 10000000              # limit on seen URIs
+verifyHttps: True               # verify HTTPS?
+cores: 2                        # amount of cores available (eg. for paralel report payload generation)
 sitemap-file: "sitemap.xml"     # where to store generated sitemap.xml
 sitemap-regex: "https?://ksp.mff.cuni.cz(/.*)?" # regex for sitemap generator
-yaml-out-file: "cc.yml"		# where to write YAML report
+yaml-out-file: "cc.yml"         # where to write YAML report
 report-file: "report"           # where to write PDF report (.pdf will be added automatically)
 
 # other parameters used by plugins written as ```key: value```
@@ -146,8 +145,8 @@ entryPoints: # where to start
 Assuming you have gone through set-up and configuration, now run checker:
 
 ```sh
-$ cd [root]/crawlcheck/src/
-$ python checker/ [config.yml]
+cd [root]/crawlcheck/src/
+python checker/ [config.yml]
 ```
 
 Note: ```[root]/crawlcheck``` is where repository was cloned to, ```[config.yml]``` stands for the configuration file path

@@ -37,7 +37,8 @@ class Tidy_HTML_Validator(IPlugin):
                         maxes[letter] = number
                     self.codes[dt[1]] = dt[0]
                 else:
-                    logging.getLogger(__name__).warn("Unknown letter: " + letter)
+                    logging.getLogger(__name__).warn("Unknown letter: " +
+                                                     letter)
             except ValueError:
                 continue
 
