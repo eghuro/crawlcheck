@@ -437,19 +437,25 @@ class DBAPI(object):
             proc0 = 0
             total0 = 0
             good0 = 0
-            q = ('SELECT link.findingId, transactions.uri, '
-                 'transactions.verificationStatus, link.toUri, '
-                 'link.processed, link.requestId, link.responseId '
-                 'FROM link '
-                 'INNER JOIN transactions ON link.requestId = transactions.id')
-            c.execute(q)
+            q = ('SELECT link.findingId, responseTr.uri, link.toUri, '
+                 'requestTr.verificationStatus, link.processed, requestId, '
+                 'responseId FROM link '
+                 'INNER JOIN transactions as requestTr '
+                 'ON requestTr.id = link.requestId '
+                 'INNER JOIN transactions as responseTr '
+                 'ON responseTr.id = link.responseId')
+            try:
+                c.execute(q)
+            except mdb.OperationalError:
+                log = logging.getLogger(__name__)
+                log.exception(q)
             for row in c.fetchall():
                 link = dict()
                 link['findingId'] = row[0]
                 link['fromUri'] = row[1]
-                link['good'] = (row[2] != 'VerificationStatus.done_ko')
-                link['toUri'] = row[3]
-                link['processed'] = row[4]
+                link['good'] = (row[3] != 'VerificationStatus.done_ko')
+                link['toUri'] = row[2]
+                link['processed'] = (row[4] == 'true')
                 link['requestId'] = row[5]
                 link['responseId'] = row[6]
                 links.append(link)
