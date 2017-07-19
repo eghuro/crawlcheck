@@ -16,6 +16,7 @@ dbCacheLimit: 1000000 #cache up to 1M of DB queries
 sitemap-file: "sitemap.xml"
 sitemap-regex: "https?://ksp.mff.cuni.cz(/.*)?"
 verify: True
+yaml-out-file: 'cc-ksp.yml'
     
 content-types:
  - 
@@ -76,6 +77,7 @@ filters:
 
 postprocess:
  - report_exporter
+ - yaml_exporter
  - sitemap_generator
 
 entryPoints:

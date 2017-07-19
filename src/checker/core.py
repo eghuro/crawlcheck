@@ -453,9 +453,10 @@ class TransactionQueue:
                            str(transaction.depth), str(transaction.expected)))
             for uri in transaction.aliases:
                 self.__db.log(Query.aliases, (str(transaction.idno), uri))
-            for key, value in transaction.data.items():
-                self.__db.log_param(transaction.idno, key, value)
-        # TODO: co kdyz jsme pristupovali s jinymi parametry?
+            if self.__conf.getProperty('recordParams', True):
+                for key, value in transaction.data.items():
+                    self.__db.log_param(transaction.idno, key, value)
+        # co kdyz jsme pristupovali s jinymi parametry?
         # mark all known aliases as seen
         for uri in transaction.aliases:
             if not self.__been_seen(transaction):
@@ -514,8 +515,9 @@ class Journal:
                        transaction.status, transaction.idno))
 
         # zapsat ziskane hlavicky
-        for key, value in transaction.headers.items():
-            self.__db.log_header(transaction.idno, key, value)
+        if self.__conf.getProperty('recordHeaders', True):
+            for key, value in transaction.headers.items():
+                self.__db.log_header(transaction.idno, key, value)
 
     def stopChecking(self, transaction, status):
         logging.getLogger(__name__).debug("Stopped checking %s" %
