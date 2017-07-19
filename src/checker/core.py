@@ -444,11 +444,19 @@ class TransactionQueue:
         else:
             self.__seen[transaction.uri] = set([transaction.method])
 
+    def __record_params(self, transaction):
+        if self.__conf.getProperty('recordParams', True):
+            for key, value in transaction.data.items():
+                self.__db.log_param(transaction.idno, key, value)
+
+    def __test_url_limit(self):
+        if self.__conf.getProperty('urlLimit') is not None:
+            if self.seenlen >= self.__conf.getProperty('urlLimit'):
+                raise SeenLimit()
+
     def __mark_seen(self, transaction):
         if not self.__been_seen(transaction):
-            if self.__conf.getProperty('urlLimit') is not None:
-                if self.seenlen >= self.__conf.getProperty('urlLimit'):
-                    raise SeenLimit()
+            self.__test_url_limit()
             self.__q.put(transaction)
             self.__db.log(Query.transactions,
                           (str(transaction.idno), transaction.method,
@@ -456,9 +464,7 @@ class TransactionQueue:
                            str(transaction.depth), str(transaction.expected)))
             for uri in transaction.aliases:
                 self.__db.log(Query.aliases, (str(transaction.idno), uri))
-            if self.__conf.getProperty('recordParams', True):
-                for key, value in transaction.data.items():
-                    self.__db.log_param(transaction.idno, key, value)
+            self.__record_params(transaction)
         # co kdyz jsme pristupovali s jinymi parametry?
         # mark all known aliases as seen
         for uri in transaction.aliases:

@@ -444,11 +444,9 @@ class DBAPI(object):
                  'ON requestTr.id = link.requestId '
                  'INNER JOIN transactions as responseTr '
                  'ON responseTr.id = link.responseId')
-            try:
-                c.execute(q)
-            except mdb.OperationalError:
-                log = logging.getLogger(__name__)
-                log.exception(q)
+
+            c.execute(q)
+
             for row in c.fetchall():
                 link = dict()
                 link['findingId'] = row[0]
