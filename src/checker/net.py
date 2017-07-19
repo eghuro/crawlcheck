@@ -8,6 +8,7 @@ import magic
 import logging
 import math
 import time
+import sys
 
 requests.packages.urllib3.disable_warnings()
 logging.getLogger("requests").setLevel(logging.CRITICAL)
@@ -162,7 +163,10 @@ class Network(object):
             transaction.file = tmp.name
             log.info("Downloading %s" % transaction.uri)
             log.debug("Downloading chunks into %s" % tmp.name)
-            chsize = min(conf.getProperty("maxContentLength"), 10000000)
+            limit = conf.getProperty("maxContentLength", sys.maxsize)
+            # jde jen o to, ze pokud maxContentLength neni zadana, pak chceme,
+            # aby ten limit byl > nez 10 000 000, pri None to hazi vyjimku
+            chsize = min(limit, 10000000)
             for chunk in transaction.request.iter_content(chunk_size=chsize):
                 if chunk:
                     tmp.write(chunk)
