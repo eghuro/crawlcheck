@@ -40,21 +40,21 @@ class Network(object):
     __allowed_schemata = set(['http', 'https'])
 
     @staticmethod
-    def testLink(transaction, journal, conf, session, acceptedTypes):
+    def testLink(tr, journal, conf, session, acceptedTypes):
         log = logging.getLogger(__name__)
 
-        log.debug("Fetching %s" % (transaction.uri))
-        log.debug("Data: %s" % (str(transaction.data)))
+        log.debug("Fetching %s" % (tr.uri))
+        log.debug("Data: %s" % (str(tr.data)))
 
-        s = urlparse(transaction.uri).scheme
+        s = urlparse(tr.uri).scheme
         if s not in Network.__allowed_schemata:
             raise UrlError(s + " is not an allowed schema")
 
         accept = ",".join(acceptedTypes)
         log.debug("Accept header: %s" % (accept))
 
-        transaction.headers["User-Agent"] = conf.getProperty("agent")
-        transaction.headers["Accept"] = accept
+        tr.headers["User-Agent"] = conf.getProperty("agent")
+        tr.headers["Accept"] = accept
 
         # if not allowed to send cookies or don't have any, then cookies are
         # None -> should be safe to use them; maybe filter which to use?
@@ -66,12 +66,12 @@ class Network(object):
         while attempt < max_attempts:
             try:
                 log.debug("Requesting")
-                r = session.request(transaction.method,
-                                    transaction.uri + Network.__gen_param(transaction),
+                r = session.request(tr.method,
+                                    tr.uri + Network.__gen_param(tr),
                                     # TODO: factory method on transaction
-                                    headers=transaction.headers,
+                                    headers=tr.headers,
                                     timeout=conf.getProperty("timeout"),
-                                    cookies=transaction.cookies,
+                                    cookies=tr.cookies,
                                     verify=conf.getProperty("verifyHttps"),
                                     stream=True)  # TODO: data
             except TooManyRedirects as e:
@@ -88,11 +88,10 @@ class Network(object):
                                        str(max_attempts)) from e
                 attempt = attempt + 1
             else:
-                return Network.__process_link(transaction, r, journal, log)
+                return Network.__process_link(tr, r, journal, log)
         msg = "All %s attempts to get %s failed." % (str(max_attempts),
-                                                     transaction.uri)
-        journal.foundDefect(transaction.idno, "neterr", "Network error",
-                            msg, 0.9)
+                                                     tr.uri)
+        journal.foundDefect(tr.idno, "neterr", "Network error", msg, 0.9)
         raise NetworkError(msg)
 
     @staticmethod
@@ -154,7 +153,9 @@ class Network(object):
             match, mime = Network.__test_content_type(transaction.type,
                                                       transaction.file)
             if not match:
-                journal.foundDefect(transaction.idno, "type-mishmash", "Declared content-type doesn't match detected one", "Declared "+transaction.type+", detected "+mime, 0.3)
+                journal.foundDefect(transaction.idno, "type-mishmash",
+                                   "Declared content-type doesn't match detected one",
+                                    "Declared " + transaction.type + ",detected " + mime, 0.3)
 
     @staticmethod
     def __download(transaction, conf, tmp, journal, log):

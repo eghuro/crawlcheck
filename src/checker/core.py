@@ -173,7 +173,8 @@ class Core:
             self.files.pop(0)
         self.log.debug("Size of tmps after cleanup: %s" % (str(self.volume)))
         self.log.info("Enqueued: %s transactions" % (str(self.queue.len())))
-        self.log.info("Buffered: %s DB queries" % (str(self.db.bufferedQueries)))
+        self.log.info("Buffered: %s DB queries" %
+                      (str(self.db.bufferedQueries)))
         self.log.info("Seen: %s addresses" % (str(self.queue.seenlen)))
         gc.collect()
 
@@ -309,7 +310,8 @@ class Transaction:
 transactionId = 0
 
 
-def createTransaction(uri, depth=0, parentId=-1, method='GET', params=dict(), expected=None):
+def createTransaction(uri, depth=0, parentId=-1, method='GET', params=dict(),
+                      expected=None):
     assert (type(params) is dict) or (params is None)
     global transactionId
     decoded = str(urllib.parse.unquote(urllib.parse.unquote(uri)))
@@ -335,7 +337,7 @@ class Rack:
     def __run_one(self, transaction, plugin):
         if self.accept(transaction, plugin):
             self.log.info("%s started checking %s" %
-                           (plugin.id, transaction.uri))
+                          (plugin.id, transaction.uri))
             plugin.check(transaction)
             self.log.debug("%s stopped checking %s" %
                            (plugin.id, transaction.uri))
@@ -377,7 +379,7 @@ class TransactionQueue:
 
     def push(self, transaction, parent=None):
         transaction.uri = urldefrag(transaction.uri)[0]
-        try: 
+        try:
             uri, params = TransactionQueue.__strip_parse_query(transaction)
             if (transaction.uri, transaction.method) in self.__conf.payloads:
                 # chceme sem neco poslat
@@ -402,9 +404,11 @@ class TransactionQueue:
 
     def push_link(self, uri, parent, expected=None):
         if parent is None:
-            self.push(createTransaction(uri, 0, -1, 'GET', dict(), expected), None)
+            self.push(createTransaction(uri, 0, -1, 'GET', dict(), expected),
+                      None)
         else:
-            t = createTransaction(uri, parent.depth + 1, parent.idno, 'GET', dict(), expected)
+            t = createTransaction(uri, parent.depth + 1, parent.idno, 'GET',
+                                  dict(), expected)
             t.headers['Referer'] = parent.uri
             self.push(t, parent)
 
@@ -431,7 +435,6 @@ class TransactionQueue:
 
     def __been_seen(self, transaction):
         if transaction.uri in self.__seen:
-            #return True
             return transaction.method in self.__seen[transaction.uri]
         return False
 
@@ -496,7 +499,7 @@ class TransactionQueue:
                               'utf-8')
                 self.__q.put(Transaction(decoded, t[1], srcId, t[3]))
             # load uris from transactions table for list of seen URIs
-            #self.__seen.update(self.__db.get_seen_uris(con)) #TODO
+            # self.__seen.update(self.__db.get_seen_uris(con)) #TODO
             # set up transaction id for factory method
             transactionId = self.__db.get_max_transaction_id(con) + 1
 

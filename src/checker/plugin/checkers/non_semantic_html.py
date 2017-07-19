@@ -3,11 +3,10 @@ from yapsy.IPlugin import IPlugin
 
 
 class NonSemanticHtml(IPlugin):
-    
+
     category = PluginType.CHECKER
     id = "non_semantic_html"
-    
-    
+
     def __init__(self):
         self.journal = None
         self.despicable_attrs = dict()
@@ -52,20 +51,18 @@ class NonSemanticHtml(IPlugin):
         self.despicable_attrs['tr'] = ['align', 'bgcolor', 'char', 'charoff',
                                        'valign']
         self.despicable_attrs['ul'] = ['compact', 'type']
-        
+
         self.despicable_tags = set(['i', 'b', 'u', 'basefont', 'big', 'blink',
                                     'center', 'font', 'marquee', 's', 'spacer',
                                     'strike', 'tt'])
 
-
     def setJournal(self, journal):
         self.journal = journal
-
 
     def check(self, transaction):
         # https://wiki.whatwg.org/wiki/Presentational_elements_and_attributes
         soup = getSoup(transaction)
-        for child in soup.descendants: 
+        for child in soup.descendants:
             try:
                 if child.name in self.despicable_attrs:
                     for a in self.despicable_attrs[child.name]:

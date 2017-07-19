@@ -6,7 +6,6 @@ The process of verification is customisable by configuration script that allows
 complex specification which plugins should check particular URIs and
 content-types.
 
-
 ## Version
 
 0.04
@@ -25,7 +24,7 @@ For a web report there's [separate project](https://github.com/eghuro/crawlcheck
 1) Fetch sources
 
 ```sh
-$ git clone https://github.com/eghuro/crawlcheck crawlcheck
+git clone https://github.com/eghuro/crawlcheck crawlcheck
 ```
 
 2) Run install script
@@ -71,7 +70,6 @@ verifyHttps: True               # verify HTTPS?
 cores: 2                        # amount of cores available (eg. for paralel report payload generation)
 recordParams: False             # record request data or URL params? (default: True)
 recordHeaders: False            # record response headers? (default: True)
-
 sitemap-file: "sitemap.xml"     # where to store generated sitemap.xml
 sitemap-regex: "https?://ksp.mff.cuni.cz(/.*)?" # regex for sitemap generator
 yaml-out-file: "cc.yml"         # where to write YAML report
@@ -149,8 +147,8 @@ entryPoints: # where to start
 Assuming you have gone through set-up and configuration, now run checker:
 
 ```sh
-$ cd [root]/crawlcheck/src/
-$ python checker/ [config.yml]
+cd [root]/crawlcheck/src/
+python checker/ [config.yml]
 ```
 
 Note: ```[root]/crawlcheck``` is where repository was cloned to, ```[config.yml]``` stands for the configuration file path

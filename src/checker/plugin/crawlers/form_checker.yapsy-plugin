@@ -1,8 +1,0 @@
-[Core]
-Name = form checker
-Module = form_checker
-
-[Documentation]
-Author = Alexandr Mansurov
-Version = 0.0
-Description = Check forms and scripts they point at

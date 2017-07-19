@@ -49,7 +49,7 @@ class RegexAcceptor(object):
     def accept(self, value, plugin):
         if plugin in self.regexes.keys():
             for p in self.regexes[plugin]:
-                if p.match(value) != None:
+                if p.match(value) is not None:
                     return True
         return False
 
@@ -58,7 +58,7 @@ class RegexAcceptor(object):
         for plugin in self.regexes.keys():
             if plugin is not None:
                 for r in self.regexes[plugin]:
-                    if r.match(value) != None:
+                    if r.match(value) is not None:
                         accepting.add(plugin)
                         break
         return accepting
@@ -67,7 +67,8 @@ class RegexAcceptor(object):
         try:
             p = re.compile(regex)
         except sre_constants.error as e:
-            raise ConfigurationError("Error on regex %s : %s" % (regex, str(e))) from e
+            raise ConfigurationError("Error on regex %s : %s" %
+                                     (regex, str(e))) from e
 
         if plugin in self.regexes.keys():
             self.regexes[plugin].append(p)
