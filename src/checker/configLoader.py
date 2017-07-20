@@ -188,8 +188,6 @@ class ConfigLoader(object):
             self.__log.error(e.msg)
             return False
 
-        # TODO: self.__set_cookies(root, u, us)
-
         # Grab lists
         self.__set_entry_points(root)
         self.filters = self.__set_plugins(root, 'filters', self.filters)

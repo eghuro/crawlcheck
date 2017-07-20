@@ -483,7 +483,6 @@ class TransactionQueue:
         allowed = False
         for reg in self.__conf.cookies:
             if reg.match(transaction.uri):  # sending cookies allowed
-                # TODO: aliases
                 allowed = True
                 # najit vsechna cookies pro danou adresu
                 if reg in self.__conf.custom_cookies:
@@ -504,8 +503,6 @@ class TransactionQueue:
                 decoded = str(urllib.parse.unquote(urllib.parse.unquote(t[0])),
                               'utf-8')
                 self.__q.put(Transaction(decoded, t[1], srcId, t[3]))
-            # load uris from transactions table for list of seen URIs
-            # self.__seen.update(self.__db.get_seen_uris(con)) #TODO
             # set up transaction id for factory method
             transactionId = self.__db.get_max_transaction_id(con) + 1
 

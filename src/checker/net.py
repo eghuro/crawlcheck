@@ -59,7 +59,6 @@ class Network(object):
 
         # if not allowed to send cookies or don't have any, then cookies are
         # None -> should be safe to use them; maybe filter which to use?
-        # TODO: cookies handled by session
 
         log.debug("Timeout set to: %s" % (str(conf.getProperty("timeout"))))
         attempt = 0
@@ -69,12 +68,11 @@ class Network(object):
                 log.debug("Requesting")
                 r = session.request(tr.method,
                                     tr.uri + Network.__gen_param(tr),
-                                    # TODO: factory method on transaction
                                     headers=tr.headers,
                                     timeout=conf.getProperty("timeout"),
                                     cookies=tr.cookies,
                                     verify=conf.getProperty("verifyHttps"),
-                                    stream=True)  # TODO: data
+                                    stream=True)
             except TooManyRedirects as e:
                 log.exception("Error while downloading: too many redirects", e)
                 raise NetworkError("Too many redirects") from e
@@ -155,8 +153,9 @@ class Network(object):
                                                       transaction.file)
             if not match:
                 journal.foundDefect(transaction.idno, "type-mishmash",
-                                   "Declared content-type doesn't match detected one",
-                                    "Declared " + transaction.type + ",detected " + mime, 0.3)
+                                    "Declared content-type doesn't match detected one",
+                                    "Declared " + transaction.type + ",detected " + mime,
+                                    0.3)
 
     @staticmethod
     def __download(transaction, conf, tmp, journal, log):

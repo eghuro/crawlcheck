@@ -61,8 +61,6 @@ class CssScraper(IPlugin):
             self.duplicit_inline(transaction, style)
         else:
             self.inlines_seen.add(style)
-        # TODO: testovat na podretezec
-        # TODO: zkoumat id/classy, zda tam neni podretezec inline css
 
     def duplicit_inline(self, transaction, style):
         self.journal.foundDefect(transaction.idno, 'seo:duplicit_inline',
