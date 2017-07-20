@@ -28,13 +28,7 @@ class SitemapScanner(IPlugin):
     def check(self, transaction):
         log = logging.getLogger(__name__)
 
-        if transaction.type == 'application/gzip':
-            with gzip.open(transaction.file, 'rb') as f:
-                content = f.read()
-                size = len(content)
-        else:
-            content = transaction.getContent()
-            size = transaction.cache['size']
+        content, size = self.__load_content(transaction)
 
         soup = BeautifulSoup(content, 'lxml-xml')
         urls = soup.findAll('url')
@@ -50,7 +44,20 @@ class SitemapScanner(IPlugin):
         self.__scan_urls(urls, transaction)
 
 
+    def __load_content(self, transaction):
+        if transaction.type == 'application/gzip':
+            with gzip.open(transaction.file, 'rb') as f:
+                content = f.read()
+                size = len(content)
+        else:
+            content = transaction.getContent()
+            size = transaction.cache['size']
+        return content, size
+
+
     def __scan_urls(self, urls, transaction):
+        """ Go through soup of urls and record links. """
+
         for u in urls:
             loc = u.find('loc').string
             p = urlparse(loc)
