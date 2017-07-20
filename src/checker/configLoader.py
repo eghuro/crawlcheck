@@ -248,6 +248,7 @@ class ConfigLoader(object):
                 acceptor.setPluginAcceptValue(plugin, tag[tag_string], True)
 
     def get_configuration(self):
+        """ Get the configuration object. """
         if self.loaded:
             return Configuration(self.__dbconf, self.typeAcceptor,
                                  self.uriRegexAcceptor, self.entryPoints,
@@ -279,6 +280,10 @@ class Configuration(object):
         self.postprocess = pp
 
     def getProperty(self, key, default=None):
+        """ Get a value for a custom property.
+        Default value is returned if the property is not specified.
+        """
+
         if key in self.properties:
             if default is not None:
                 if isinstance(self.properties[key], type(default)):

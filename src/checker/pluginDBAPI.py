@@ -77,9 +77,7 @@ class TableError(LookupError):
 
 
 class DBAPI(object):
-    """ API for access to underlying database.
-        Connection to the database is initiated in constructor and closed in
-        destructor.
+    """ API for access to the underlying database.
     """
     def __init__(self, conf):
         self.conf = conf
@@ -135,6 +133,7 @@ class DBAPI(object):
         self.__sync_cnt = 0
 
     def log(self, query, query_params):
+        """Log a query."""
         if query in self.logs:
             self.logs[query].append(query_params)
             self.bufferedQueries = self.bufferedQueries + 1
@@ -145,12 +144,14 @@ class DBAPI(object):
             raise TableError()
 
     def log_link(self, parent_id, uri, new_id):
+        """Log link from parent_id to uri with new_id."""
         self.findingId = self.findingId + 1
         self.log(Query.link,
                  (str(self.findingId), uri, str(new_id), str(parent_id)))
 
     def log_defect(self, transactionId, name, additional, evidence,
                    severity=0.5):
+        """Log a defect."""
         self.findingId = self.findingId + 1
         if name not in self.defect_types:
             self.defectId = self.defectId + 1
@@ -164,24 +165,28 @@ class DBAPI(object):
                   str(severity), str(transactionId)))
 
     def log_cookie(self, transactionId, name, value, secure, httpOnly, path):
+        """Log a cookie."""
         self.findingId = self.findingId + 1
         self.log(Query.cookies,
                  (str(self.findingId), str(name), str(value),
                   str(transactionId), str(secure), str(httpOnly), str(path)))
 
     def log_header(self, transactionId, name, value):
+        """ Log a header. """
         self.findingId = self.findingId + 1
         self.log(Query.headers,
                  (str(self.findingId), str(name), str(value),
                   str(transactionId)))
 
     def log_param(self, transactionId, key, value):
+        """ Log an URI parameter. """
         self.findingId = self.findingId + 1
         self.log(Query.param,
                  (str(self.findingId), str(transactionId), key, value))
 
     @staticmethod
     def syncer(dbname, qtypes, queries, logs, vacuum=True):
+        """Sync records into DB. Worker."""
         log = logging.getLogger(__name__)
         log.info("Writing into database")
         with mdb.connect(dbname) as con:
@@ -209,6 +214,7 @@ class DBAPI(object):
                 log.info("Sync successful")
 
     def sync(self, final=False):
+        """ Actually write cached queries into the database. """
         log = logging.getLogger(__name__)
         log.info("Syncing database")
         if self.__syncer_worker:

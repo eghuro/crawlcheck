@@ -22,6 +22,7 @@ import gc
 
 
 def handler(signum, frame):
+    """ Handle signal. """
     print("Caught signal")
     if core_instance is not None:
         core_instance.clean()

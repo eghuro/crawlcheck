@@ -59,6 +59,7 @@ class Network(object):
 
     @staticmethod
     def testLink(tr, journal, conf, session, acceptedTypes):
+        """Initiate a connection for the transaction. Read the headers."""
         log = logging.getLogger(__name__)
 
         log.debug("Fetching %s" % (tr.uri))
@@ -71,9 +72,6 @@ class Network(object):
 
         tr.headers["User-Agent"] = conf.getProperty("agent")
         tr.headers["Accept"] = accept
-
-        # if not allowed to send cookies or don't have any, then cookies are
-        # None -> should be safe to use them; maybe filter which to use?
 
         log.debug("Timeout set to: %s" % (str(conf.getProperty("timeout"))))
         attempt = 0
@@ -140,6 +138,11 @@ class Network(object):
 
     @staticmethod
     def getContent(transaction, conf, journal):
+        """
+        Finish downloading body of a transaction and store it into a temporary
+        file.
+        """
+
         log = logging.getLogger(__name__)
         try:
             with tempfile.NamedTemporaryFile(delete=False,

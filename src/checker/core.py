@@ -19,6 +19,7 @@ import string
 
 
 class Core:
+    """ The core of the application. Main loop is implemented here."""
 
     def __init__(self, plugins, filters, headers, postprocess, conf):
         self.plugins = plugins
@@ -58,6 +59,7 @@ class Core:
                                               entryPoint.data))
 
     def run(self):
+        """ Run the checker. """
         with requests.Session() as session:
             self.__run(session)
 
@@ -188,12 +190,16 @@ class Core:
             self.postprocess()
 
     def postprocess(self):
+        """ Run postprocessing. """
+
         self.log.info("Postprocessing")
         for pp in self.postprocessers:
             self.log.debug(pp.id)
             pp.process()
 
     def clean_tmps(self):
+        """ Clean temporary files allocated by core. """
+
         for filename in self.files:
             try:
                 os.remove(filename)
@@ -203,6 +209,7 @@ class Core:
                 continue
 
     def clean(self):
+        """ Cleanup. Clean temporary files and run garbage collection. """
         self.clean_tmps()
         self.__queue = None
         gc.collect()
@@ -229,11 +236,12 @@ class Core:
 
 
 class TouchException(Exception):
-
+    """ It is forbidden to touch the transaction (by configuration). """
     pass
 
 
 class Transaction:
+    """ Information about a web page is represented by this class."""
 
     def __init__(self, uri, depth, srcId, idno, method="GET", data=None):
         # Use the factory method below!!
@@ -254,11 +262,18 @@ class Transaction:
         self.cache = None
 
     def changePrimaryUri(self, new_uri):
+        """Add a new alias and represent it as a primary URI."""
         uri = urldefrag(new_uri)[0]
         self.aliases.add(uri)
         self.uri = uri
 
     def testLink(self, conf, journal, session):
+        """Phase 1 of downloading a page.
+        Are we allowed (by configuration) to touch the link?
+        If not, raise TouchException.
+        Otherwise initiate the connection and return headers.
+        """
+
         can = conf.regex_acceptor.canTouch(self.uri)
         if can:
             self.request = Network.testLink(self, journal, conf, session,
@@ -269,6 +284,11 @@ class Transaction:
             raise TouchException()
 
     def loadResponse(self, conf, journal, session):
+        """Phase 2 of downloading a page.
+        Finish downloading by storing body into a temporary file.
+        Errors are passed through.
+        """
+
         try:
             Network.getContent(self, conf, journal)
             # pouzije request, nastavi file
@@ -276,6 +296,7 @@ class Transaction:
             raise
 
     def getContent(self):
+        """Read content from underlying file as string."""
         try:
             with codecs.open(self.file, 'r', 'utf-8') as f:
                 data = f.read()
@@ -308,6 +329,8 @@ transactionId = 0
 
 def createTransaction(uri, depth=0, parentId=-1, method='GET', params=dict(),
                       expected=None):
+    """ Factory method for creating Transaction objects. """
+
     assert (type(params) is dict) or (params is None)
     global transactionId
     decoded = str(urllib.parse.unquote(urllib.parse.unquote(uri)))
@@ -318,7 +341,9 @@ def createTransaction(uri, depth=0, parentId=-1, method='GET', params=dict(),
 
 
 class Rack:
-
+    """ Rack stores plugins.
+    On run it passes the transaction to individual plugins.
+    """
     def __init__(self, typeAcceptor, regexAcceptor, plugins=[]):
         self.plugins = plugins
         self.typeAcceptor = typeAcceptor
@@ -326,6 +351,8 @@ class Rack:
         self.log = logging.getLogger(__name__)
 
     def run(self, transaction):
+        """Let plugins handle the transaction one by one in a sequence."""
+
         for plugin in self.plugins:
             self.__run_one(transaction, plugin)
         transaction.cache = None
@@ -339,17 +366,22 @@ class Rack:
                            (plugin.id, transaction.uri))
 
     def accept(self, transaction, plugin):
+        """Is the transaction accepted by the plugin?"""
+
         type_cond = self.typeAcceptor.accept(str(transaction.type), plugin.id)
         regex_cond = self.regexAcceptor.accept(transaction.uri, plugin.id)
         return type_cond and regex_cond
 
 
 class SeenLimit(Exception):
+    """ Reached a limit on amount of seen transactions. """
     pass
 
 
 class TransactionQueue:
-
+    """Transactons are stored here. Queue is stored locally. Operations are
+    written through to database.
+    """
     def __init__(self, db, conf):
         self.__db = db
         self.__conf = conf
@@ -374,6 +406,7 @@ class TransactionQueue:
             return t
 
     def push(self, transaction, parent=None):
+        """Push transaction into queue."""
         transaction.uri = urldefrag(transaction.uri)[0]
         try:
             uri, params = TransactionQueue.__strip_parse_query(transaction)
@@ -399,6 +432,10 @@ class TransactionQueue:
         self.__bake_cookies(transaction, parent)
 
     def push_link(self, uri, parent, expected=None):
+        """Push link into queue.
+        Transactions are created, proper Referer header is set.
+        """
+
         if parent is None:
             self.push(createTransaction(uri, 0, -1, 'GET', dict(), expected),
                       None)
@@ -409,6 +446,11 @@ class TransactionQueue:
             self.push(t, parent)
 
     def push_virtual_link(self, uri, parent):
+        """Push virtual link into queue.
+        Mark URI as seen, log link, write it all into DB.
+        Doesn't push the queue.
+        """
+
         t = createTransaction(uri, parent.depth + 1, parent.idno)
         self.__mark_seen(t)
         self.__bake_cookies(t, parent)
@@ -416,6 +458,9 @@ class TransactionQueue:
         return t
 
     def push_rescheduled(self, transaction):
+        """Force put transaction into queue, no further checks.
+        Transaction must've been seen previously.
+        """
         assert self.__been_seen(transaction)
         self.__q.put(transaction)
 
@@ -489,12 +534,17 @@ class TransactionQueue:
 
 
 class Journal:
+    """Journal logs events and writes them through to the DB."""
 
     def __init__(self, db, conf):
         self.__db = db
         self.__conf = conf
 
     def startChecking(self, transaction):
+        """Change status as we've started checking a transaction.
+        Also store headers if needed.
+        """
+
         logging.getLogger(__name__).debug("Starting checking %s" %
                                           (transaction.uri))
         self.__db.log(Query.transactions_load,
@@ -507,24 +557,31 @@ class Journal:
                 self.__db.log_header(transaction.idno, key, value)
 
     def stopChecking(self, transaction, status):
+        """Update status as we've stopped checking a transaction.
+        """
+
         logging.getLogger(__name__).debug("Stopped checking %s" %
                                           (transaction.uri))
         self.__db.log(Query.transactions_status,
                       (str(status), transaction.idno))
 
     def foundDefect(self, transaction, defect, evidence, severity=0.5):
+        """Log a defect."""
         self.foundDefect(transaction.idno, defect.name, defect.additional,
                          evidence, severity)
 
     def foundDefect(self, trId, name, additional, evidence, severity=0.5):
+        """Log a defect."""
         assert type(trId) == int
         self.__db.log_defect(trId, name, additional, evidence, severity)
 
     def getKnownDefectTypes(self):
+        """Get currently known defect types."""
         with mdb.connect(self.__conf.dbconf.getDbname()) as con:
             return self.__db.get_known_defect_types(con)
 
     def gotCookie(self, transaction, name, value, secure, httpOnly, path):
+        """Log a discovered cookie."""
         self.__db.log_cookie(transaction.idno, name, value, secure, httpOnly,
                              path)
 
