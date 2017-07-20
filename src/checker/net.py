@@ -47,7 +47,7 @@ class Network(object):
             raise UrlError(s + " is not an allowed schema")
 
     @staticmethod
-    def __backoff(attempt, max_attempts, log):
+    def __backoff(attempt, max_attempts, log, e):
         if (attempt + 1) < max_attempts:
             log.info("Retrying!")
             wait = math.pow(10, attempt)
@@ -93,7 +93,7 @@ class Network(object):
                 raise NetworkError("Too many redirects") from e
             except (ConnectionError, Timeout) as e:
                 log.warn("Error while downloading: %s" % e)
-                Network.__backoff(attempt, max_attempts, log)
+                Network.__backoff(attempt, max_attempts, log, e)
                 attempt = attempt + 1
             else:
                 return Network.__process_link(tr, r, journal, log)
