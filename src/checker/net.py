@@ -41,15 +41,30 @@ class Network(object):
     __allowed_schemata = set(['http', 'https'])
 
     @staticmethod
+    def __check_schema(uri):
+        s = urlparse(uri).scheme
+        if s not in Network.__allowed_schemata:
+            raise UrlError(s + " is not an allowed schema")
+
+    @staticmethod
+    def __backoff(attempt, max_attempts, log):
+        if (attempt + 1) < max_attempts:
+            log.info("Retrying!")
+            wait = math.pow(10, attempt)
+            time.sleep(wait)
+        else:
+            raise NetworkError("%s attempts failed" %
+                               str(max_attempts)) from e
+
+
+    @staticmethod
     def testLink(tr, journal, conf, session, acceptedTypes):
         log = logging.getLogger(__name__)
 
         log.debug("Fetching %s" % (tr.uri))
         log.debug("Data: %s" % (str(tr.data)))
 
-        s = urlparse(tr.uri).scheme
-        if s not in Network.__allowed_schemata:
-            raise UrlError(s + " is not an allowed schema")
+        Network.__check_schema(tr.uri)
 
         accept = ",".join(acceptedTypes)
         log.debug("Accept header: %s" % (accept))
@@ -78,13 +93,7 @@ class Network(object):
                 raise NetworkError("Too many redirects") from e
             except (ConnectionError, Timeout) as e:
                 log.warn("Error while downloading: %s" % e)
-                if (attempt + 1) < max_attempts:
-                    log.info("Retrying!")
-                    wait = math.pow(10, attempt)
-                    time.sleep(wait)
-                else:
-                    raise NetworkError("%s attempts failed" %
-                                       str(max_attempts)) from e
+                Network.__backoff(attempt, max_attempts, log)
                 attempt = attempt + 1
             else:
                 return Network.__process_link(tr, r, journal, log)
