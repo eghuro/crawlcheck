@@ -25,9 +25,6 @@ class Core:
         self.log = logging.getLogger(__name__)
         self.conf = conf
         self.db = DBAPI(conf.dbconf)
-        with mdb.connect(conf.dbconf.getDbname()) as con:
-            self.db.load_defect_types(con)
-            self.db.load_finding_id(con)
         self.files = []
         self.__time_subscribers = []
         self.volume = 0

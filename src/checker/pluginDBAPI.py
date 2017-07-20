@@ -237,40 +237,6 @@ class DBAPI(object):
         log = logging.getLogger(__name__)
         log.error("SQL Error: "+str(e))
 
-    def load_defect_types(self, con):
-        query = 'SELECT type, id FROM defectType'
-        cursor = con.cursor()
-        cursor.execute(query)
-        types = cursor.fetchall()
-        for dt in types:
-            if dt is not None:
-                if dt[0] is not None:
-                    self.defect_types.append(dt[0])
-                    if dt[1] is not None:
-                        self.defectTypesWithId[dt[0]] = dt[1]
-        query = 'SELECT MAX(id) from defectType'
-        cursor.execute(query)
-        row = cursor.fetchone()
-        if row is not None:
-            if row[0] is not None:
-                self.defectId = row[0]
-
-    def load_finding_id(self, con):
-        maxs = []
-        for t in ['link', 'defect', 'cookies']:
-            maxs.append(self.__load_max_finding_id(t, con))
-        self.findingId = max(maxs) + 1
-
-    def __load_max_finding_id(self, table, con):
-        query = 'SELECT MAX(findingId) FROM %s' % (table)
-        cursor = con.cursor()
-        cursor.execute(query)
-        row = cursor.fetchone()
-        if row is not None:
-            if row[0] is not None:
-                return int(row[0])
-        return 0
-
     def get_urls(self):
         with mdb.connect(self.conf.getDbname()) as con:
             q = 'SELECT uri FROM transactions'
