@@ -39,7 +39,7 @@ def __get_level(log, debug):
         level = logging.INFO
     return level
 
-def __rolling(lf, log):
+def __rolling(lf, fh, log):
     need_roll = os.path.isfile(lf)
     if need_roll:
         # Add timestamp
@@ -64,7 +64,7 @@ def __configure_logger(conf, debug=False):
             fh.setLevel(level)
             fh.setFormatter(formatter)
             log.addHandler(fh)
-            __rolling(lf, log)
+            __rolling(lf, fh, log)
 
         except FileNotFoundError:
             log.exception("Error creating log file")
