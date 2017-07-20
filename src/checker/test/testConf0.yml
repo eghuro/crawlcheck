@@ -1,9 +1,0 @@
----
-version:  1.03
-database: test.sqlite
-maxDepth: 5    
-content-types:
-
-urls:
-
-entryPoints:
