@@ -42,7 +42,6 @@ class Core:
         self.postprocessers = postprocess
 
         self.queue = TransactionQueue(self.db, self.conf)
-        self.queue.load()
 
         self.journal = Journal(self.db, self.conf)
 
@@ -490,21 +489,6 @@ class TransactionQueue:
                     cookies.update(self.__conf.custom_cookies[reg])
         if allowed:
             transaction.cookies = cookies
-
-    def load(self):
-        with mdb.connect(self.__conf.dbconf.getDbname()) as con:
-            # load transactions from DB to memory
-            # only where status is requested
-            for t in self.__db.get_requested_transactions(con):
-                # uri = t[0]; depth = t[1]; idno = t[3]
-                srcId = -1
-                if t[2] is not None:
-                    srcId = t[2]
-                decoded = str(urllib.parse.unquote(urllib.parse.unquote(t[0])),
-                              'utf-8')
-                self.__q.put(Transaction(decoded, t[1], srcId, t[3]))
-            # set up transaction id for factory method
-            transactionId = self.__db.get_max_transaction_id(con) + 1
 
 
 class Journal:

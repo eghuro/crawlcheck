@@ -271,41 +271,6 @@ class DBAPI(object):
                 return int(row[0])
         return 0
 
-    def get_requested_transactions(self, con):
-        q = ('CREATE TEMPORARY VIEW linkedUris AS SELECT link.toUri, '
-             'transactions.id FROM link INNER JOIN transactions ON '
-             'link.responseId = transactions.id')
-        query = ('SELECT linkedUris.toUri AS uri, '
-                 'transactions.depth AS depth, linkedUris.id AS srcId, '
-                 'transactions.id AS idno FROM transactions LEFT JOIN '
-                 'linkedUris ON transactions.uri = linkedUris.toUri WHERE '
-                 'transactions.verificationStatus = ?')
-
-        cursor = con.cursor()
-        cursor.execute(q)
-        cursor.execute(query, [str(VerificationStatus.requested)])
-        data = cursor.fetchall()
-        cursor.execute('DROP VIEW linkedUris')
-        return data
-
-    def get_seen_uris(self, con):
-        query = 'SELECT uri FROM aliases'
-        c = con.cursor()
-        c.execute(query)
-        return c.fetchall()
-
-    def get_max_transaction_id(self, con):
-        q = 'SELECT MAX(id) FROM transactions'
-        cursor = con.cursor()
-        cursor.execute(q)
-        row = cursor.fetchone()
-        if row is not None:
-            if row[0] is not None:
-                return row[0]
-        logging.getLogger(__name__).warn("Setting transactions ID to 0 as " +
-                                         "no results returned")
-        return 0
-
     def get_urls(self):
         with mdb.connect(self.conf.getDbname()) as con:
             q = 'SELECT uri FROM transactions'
