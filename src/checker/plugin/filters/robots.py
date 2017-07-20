@@ -36,22 +36,11 @@ class RobotsFilter(IPlugin):
         self.__queue = queue
 
     def filter(self, tran):
-
         try:
-            # grab sitemaps
-            maps = set(self.__robots.get(tran.uri).sitemaps)
-
             # link robots.txt from transaction, but mark transaction as visited
             robots_url = Robots.robots_url(tran.uri)
 
-            diff_map = maps - self.__known_maps
-            if len(diff_map) > 0:
-                robots_transaction = self.__queue.push_virtual_link(robots_url,
-                                                                    tran)
-                for new_map in diff_map:
-                    self.__log.debug("Discovered sitemap: "+new_map)
-                    self.__queue.push_link(new_map, robots_transaction)
-                self.__known_maps.update(maps)
+            self.__record_sitemaps(tran, robots_url)
 
             self.__log.debug("Testing robots.txt for " + tran.uri)
             agent = self.__conf.getProperty("agent")
@@ -61,31 +50,7 @@ class RobotsFilter(IPlugin):
                                  "prevent " + agent + " from fetching it")
                 raise FilterException()
             else:
-                delay = self.__robots.get(tran.uri).agent(agent).delay
-                if delay is not None:
-                    robots_url = Robots.robots_url(tran.uri)
-                    if robots_url in self.__visit_times:
-                        vt = self.__visit_times[robots_url]
-                        self.__log.debug("Got timestamp for robots.txt file " +
-                                         robots_url + ": " +
-                                         str(vt) + ", current: " +
-                                         str(time.time()) + " delay: " +
-                                         str(delay))
-                        sleep_time = delay - (time.time() - vt)
-                        bound = self.__conf.getProperty("reschedule", 5)
-                        if sleep_time > bound:
-                            self.__log.warn("Should sleep for " +
-                                            str(sleep_time) +
-                                            " - rescheduling")
-                            raise Reschedule()
-                        elif sleep_time > 0:
-                            self.__log.info("Sleep for " + str(sleep_time) +
-                                            " due to crawl delay")
-                            self.__log.debug("Robots.txt: " + robots_url)
-                            time.sleep(sleep_time)
-                    else:
-                        self.__log.debug("New robots.txt with crawl delay: " +
-                                         robots_url)
+                self.__crawl_delay(tran, agent, robots_url)
         except TypeError as e:
             self.__log.warning("Error while handling robots.txt for " +
                                tran.uri + ", not rejecting")
@@ -102,6 +67,46 @@ class RobotsFilter(IPlugin):
     def markVisit(self, url, t):
         robots_url = Robots.robots_url(url)
         self.__visit_times[robots_url] = t
+
+    def __record_sitemaps(self, tran, robots_url):
+        # grab sitemaps
+        maps = set(self.__robots.get(tran.uri).sitemaps)
+
+        diff_map = maps - self.__known_maps
+        if len(diff_map) > 0:
+            robots_transaction = self.__queue.push_virtual_link(robots_url,
+                                                                tran)
+            for new_map in diff_map:
+                self.__log.debug("Discovered sitemap: " + new_map)
+                self.__queue.push_link(new_map, robots_transaction)
+            self.__known_maps.update(maps)
+
+    def __crawl_delay(self, tran, agent, robots_url):
+        delay = self.__robots.get(tran.uri).agent(agent).delay
+        if delay is not None:
+            #robots_url = Robots.robots_url(tran.uri)
+            if robots_url in self.__visit_times:
+                vt = self.__visit_times[robots_url]
+                self.__log.debug("Got timestamp for robots.txt file " +
+                                 robots_url + ": " +
+                                 str(vt) + ", current: " +
+                                 str(time.time()) + " delay: " +
+                                 str(delay))
+                sleep_time = delay - (time.time() - vt)
+                bound = self.__conf.getProperty("reschedule", 5)
+                if sleep_time > bound:
+                    self.__log.warn("Should sleep for " +
+                                    str(sleep_time) +
+                                    " - rescheduling")
+                    raise Reschedule()
+                elif sleep_time > 0:
+                    self.__log.info("Sleep for " + str(sleep_time) +
+                                    " due to crawl delay")
+                    self.__log.debug("Robots.txt: " + robots_url)
+                    time.sleep(sleep_time)
+                else:
+                    self.__log.debug("New robots.txt with crawl delay: " +
+                                     robots_url)
 
 # See Reppy references:
 # http://pythonhackers.com/p/mt3/reppy
