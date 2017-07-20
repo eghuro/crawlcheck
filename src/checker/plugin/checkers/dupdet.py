@@ -66,13 +66,16 @@ class DuplicateDetector(IPlugin):
 
         rem = []
         for f in self.__size_dups[fsize]:
-            if f != transaction.file and self.__urls[f] != transaction.uri:
+            if self.__are_different(f, transaction):
                 if f not in self.__hash:
                     self.__hash[f] = self.__hashfile(transaction.file)
                 if self.__hash[f] == h:
                     if self.__file_cmp(f, transaction):
                         rem.append(f)
         return rem
+
+    def __are_different(self, f, transaction):
+        return f != transaction.file and self.__urls[f] != transaction.uri
 
     def __file_cmp(self, f, transacion):
         """Stage 3 of the duplication testing.
