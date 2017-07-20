@@ -30,35 +30,42 @@ def handler(signum, frame):
     sys.exit(0)
 
 
-def __configure_logger(conf, debug=False):
-    log = logging.getLogger()
+def __get_level(log, debug):
     if debug:
         log.setLevel(logging.DEBUG)
         level = logging.DEBUG
     else:
         log.setLevel(logging.INFO)
         level = logging.INFO
+    return level
 
+def __rolling(lf, log):
+    need_roll = os.path.isfile(lf)
+    if need_roll:
+        # Add timestamp
+        log.debug('\n------\nLog closed on %s.\n------\n' % time.asctime())
+
+        # Roll over on application start
+        fh.doRollover()
+
+    # Add timestamp
+    log.debug('\n-------\nLog started on %s.\n-------\n' % time.asctime())
+
+
+def __configure_logger(conf, debug=False):
+    log = logging.getLogger()
+    level = __get_level(log, debug)
     formatter = logging.Formatter('%(asctime)s - %(processName)-10s - %(name)s'
                                   ' - %(levelname)s - %(message)s', '%d %b %Y %H:%M:%S')
     if conf and conf.getProperty('logfile') is not None:
         try:
             lf = conf.getProperty('logfile')
-            need_roll = os.path.isfile(lf)
             fh = logging.handlers.RotatingFileHandler(lf, backupCount=50)
             fh.setLevel(level)
             fh.setFormatter(formatter)
             log.addHandler(fh)
+            __rolling(lf, log)
 
-            if need_roll:
-                # Add timestamp
-                log.debug('\n------\nLog closed on %s.\n------\n' % time.asctime())
-
-                # Roll over on application start
-                fh.doRollover()
-
-            # Add timestamp
-            log.debug('\n-------\nLog started on %s.\n-------\n' % time.asctime())
         except FileNotFoundError:
             log.exception("Error creating log file")
             raise
@@ -67,6 +74,18 @@ def __configure_logger(conf, debug=False):
     sh.setLevel(logging.INFO)
     sh.setFormatter(formatter)
     log.addHandler(sh)
+
+def __print_allowed_filters(log, allowed_filters):
+    log.info("Allowed filters")
+    for x in allowed_filters:
+        log.info(x)
+
+def __plugin_dirs(path, log, manager):
+    log.info("Plugin directory set to: "+path)
+    dirList = [x[0] for x in os.walk(path)]
+    for d in dirList:
+        log.info("Looking for plugins in "+d)
+    manager.setPluginPlaces(dirList)  # pluginDir and all subdirs
 
 
 def __load_plugins(cl, log, conf):
@@ -80,19 +99,13 @@ def __load_plugins(cl, log, conf):
     filter_categories = [PluginType.FILTER, PluginType.HEADER]
     plugin_categories = [PluginType.CHECKER, PluginType.CRAWLER]
 
-    log.info("Allowed filters")
-    for x in allowed_filters:
-        log.info(x)
+    __print_allowed_filters(log, allowed_filters)
 
     # load plugins
     manager = PluginManager()
     path = os.path.join(os.path.abspath("checker/"),
                         conf.getProperty('pluginDir'))
-    log.info("Plugin directory set to: "+path)
-    dirList = [x[0] for x in os.walk(path)]
-    for d in dirList:
-        log.info("Looking for plugins in "+d)
-    manager.setPluginPlaces(dirList)  # pluginDir and all subdirs
+    __plugin_dirs(path, log, manager)
     manager.collectPlugins()
 
     if len(manager.getAllPlugins()) > 0:
@@ -139,16 +152,17 @@ def __load_configuration(cfile, log):
     else:
         return conf, cl
 
-
-def __prepare_database(conf, log):
-    # if database file exists and user wanted to clean it, remove it
-    cleaned = False
-
+def __clean_database(conf, log):
     if os.path.isfile(conf.dbconf.getDbname()) and conf.getProperty('cleandb'):
         log.info("Removing database file %s as configured" %
                  conf.dbconf.getDbname())
         os.remove(conf.dbconf.getDbname())
-        cleaned = True
+        return True
+    return False
+
+def __prepare_database(conf, log):
+    # if database file exists and user wanted to clean it, remove it
+    cleaned = __clean_database(conf, log)
 
     # if database file doesn't exist, create & initialize it - or warn use
     if not os.path.isfile(conf.dbconf.getDbname()):
@@ -157,7 +171,6 @@ def __prepare_database(conf, log):
         else:
             log.error("Database file %s doesn't exist"
                       % conf.dbconf.getDbname())
-
 
 def __initialize_database(log, conf):
     log.info('Initializing database file ' + conf.dbconf.getDbname())
