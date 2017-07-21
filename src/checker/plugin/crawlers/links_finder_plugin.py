@@ -29,14 +29,14 @@ class LinksFinder(IPlugin):
         """
 
         soup = getSoup(transaction)
-        self.updateCanonical(soup, transaction)
+        self.__updateCanonical(soup, transaction)
 
-        self.check_links(soup.find_all(self.__tags.keys()), transaction,
-                         self.__tags)
+        self.__check_links(soup.find_all(self.__tags.keys()), transaction,
+                           self.__tags)
 
         return
 
-    def updateCanonical(self, soup, transaction):
+    def __updateCanonical(self, soup, transaction):
         for html in soup.find_all('html', limit=1):
             for head in html.find_all('head', limit=1):
                 for link in head.find_all('link'):
@@ -45,7 +45,7 @@ class LinksFinder(IPlugin):
                             transaction.changePrimaryUri(link['href'])
                             return
 
-    def check_links(self, links, transaction, tags):
+    def __check_links(self, links, transaction, tags):
         for link in links:
             url = link.get(tags[link.name])
             if url is not None:

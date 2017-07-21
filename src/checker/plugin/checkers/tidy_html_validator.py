@@ -10,20 +10,22 @@ class Tidy_HTML_Validator(IPlugin):
     id = "tidyHtmlValidator"
 
     def __init__(self):
-        self.journal = None
-        self.codes = dict()
-        self.max_err = 0
-        self.max_warn = 0
-        self.max_inf = 0
-        self.severity = dict()
-        self.severity['Warning'] = 0.5
-        self.severity['Error'] = 1.0
-        self.severity['Info'] = 0.3
+        self.__journal = None
+        self.__codes = dict()
+        self.__max_err = 0
+        self.__max_warn = 0
+        self.__max_inf = 0
+        self.__severity = dict()
+        self.__severity['Warning'] = 0.5
+        self.__severity['Error'] = 1.0
+        self.__severity['Info'] = 0.3
 
     def setJournal(self, journal):
-        self.journal = journal
+        self.__journal = journal
 
-        maxes = {'W': self.max_warn, 'E': self.max_err, 'I': self.max_inf}
+        maxes = {'W': self.__max_warn,
+                 'E': self.__max_err,
+                 'I': self.__max_inf}
 
         for dt in journal.getKnownDefectTypes():
             # dt[0] type, dt[1] description
@@ -35,7 +37,7 @@ class Tidy_HTML_Validator(IPlugin):
                 if letter in maxes:
                     if number > maxes[letter]:
                         maxes[letter] = number
-                    self.codes[dt[1]] = dt[0]
+                    self.__codes[dt[1]] = dt[0]
                 else:
                     logging.getLogger(__name__).warn("Unknown letter: " +
                                                      letter)
@@ -55,33 +57,35 @@ class Tidy_HTML_Validator(IPlugin):
 
     def __record(self, transaction, loc, cat, desc):
         code = self.__get_code(cat, desc)
-        if cat in self.severity:
-            sev = self.severity[cat]
+        if cat in self.__severity:
+            sev = self.__severity[cat]
         else:
             sev = -1.0
-        self.journal.foundDefect(transaction.idno, code, desc, [cat, loc], sev)
+        self.__journal.foundDefect(transaction.idno, code, desc, [cat, loc],
+                                   sev)
 
     def __generate_code(self, letter, number, desc):
-        code = letter+str(number)
-        self.codes[desc] = code
+        code = letter + str(number)
+        self.__codes[desc] = code
         return code
 
     def __get_code(self, cat, desc):
         code = None
-        if desc in self.codes:
-            code = self.codes[desc]
+        if desc in self.__codes:
+            code = self.__codes[desc]
         else:
             if cat == 'Warning':
-                num = self.max_warn
-                self.max_warn = self.max_warn + 1
+                num = self.__max_warn
+                self.__max_warn = self.__max_warn + 1
             elif cat == 'Error':
-                num = self.max_err
-                self.max_err = self.max_err + 1
+                num = self.__max_err
+                self._max_err = self.__max_err + 1
             elif cat == 'Info':
-                num = self.max_inf
-                self.max_inf = self.max_inf + 1
+                num = self.__max_inf
+                self.__max_inf = self.__max_inf + 1
             else:
-                logging.getLogger(__name__).error("Unknown category: " + cat)
+                log = logging.getLogger(__name__)
+                log.error("Unknown category: " + cat)
                 return None
             code = self.__generate_code(cat[0], num, desc)
         return code

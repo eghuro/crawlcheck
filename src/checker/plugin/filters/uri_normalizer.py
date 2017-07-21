@@ -12,10 +12,9 @@ class Normalizer(IPlugin):
 
     def __init__(self):
         self.__log = logging.getLogger(__name__)
-        self.__conf = None
 
     def setConf(self, conf):
-        self.__conf = conf
+        pass
 
     def setJournal(self, journal):
         pass

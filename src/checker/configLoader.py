@@ -10,7 +10,7 @@ import sys
 import re
 
 
-class EPR(object):
+class EntryPointRecord(object):
     def __init__(self, url, method='GET', data=dict()):
         self.url = url
         self.method = method
@@ -92,7 +92,7 @@ class ConfigLoader(object):
         else:
             epSet = root['entryPoints']
             for ep in epSet:
-                self.entryPoints.append(EPR(ep))
+                self.entryPoints.append(EntryPointRecord(ep))
 
     def __set_plugins(self, root, tag, lst):
         if tag in root:

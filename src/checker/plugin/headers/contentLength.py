@@ -29,8 +29,8 @@ class ContentLengthFilter(IPlugin):
                         self.__log.warning("Content length too large for " +
                                            transaction.uri + " (got: " +
                                            str(conlen) + ", limit: " +
-                                           str(maxContent)+") Skipping download.")
+                                           str(maxContent)+") Skipping.")
                         raise FilterException()
             except ValueError as e:
-                self.__log.exception("Error reading headers, skipping download.", e)
+                self.__log.exception("Error reading headers, skipping.", e)
                 raise FilterException() from e
