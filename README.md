@@ -20,6 +20,8 @@ properly. Python dependencies are listed in
 For a web report there's [separate project](https://github.com/eghuro/crawlcheck-report).
 
 ## Installation
+0) You will need python3, python-pip and sqlite3, virtualenv, libmagic, libtidy,
+libxml2 and libxslt installed. All dev or devel versions.
 
 1) Fetch sources
 
@@ -33,9 +35,6 @@ git clone https://github.com/eghuro/crawlcheck crawlcheck
 cd crawlcheck
 pip install -r requirements.txt
 ```
-
-You will need python3, python-pip and sqlite3, virtualenv, libmagic, libtidy,
-libxml2 and libxslt installed. All dev or devel versions.
 
 ## Configuration
 
@@ -150,11 +149,16 @@ cd [root]/crawlcheck/src/
 python checker/ [config.yml]
 ```
 
-Note: ```[root]/crawlcheck``` is where repository was cloned to, ```[config.yml]``` stands for the configuration file path
+Note: ```[root]/crawlcheck``` is where repository was cloned to,
+```[config.yml]``` stands for the configuration file path.
 
 ## Plugins
 
-There are currently 5 types of plugins: crawlers, checkers, headers, filters and postprocessors. Crawlers are specializing in discovering new links. Checkers check syntax of various files. Headers check HTTP headers and together with filters serve to customize the crawling process itself. Postprocessors are used to generate reports or other outputs from the application.
+There are currently 5 types of plugins: crawlers, checkers, headers, filters
+and postprocessors. Crawlers are specializing in discovering new links.
+Checkers check syntax of various files. Headers check HTTP headers and together
+with filters serve to customize the crawling process itself. Postprocessors are
+used to generate reports or other outputs from the application.
 
 Crawlcheck is currently extended with the following plugins:
 
@@ -182,8 +186,9 @@ Crawlcheck is currently extended with the following plugins:
 
 ## How to write a plugin
 
-Go to ``crawlcheck/src/checker/plugin/``, create ``my_new_plugin.py`` and ``my_new_plugin.yapsy-plugin`` files there.
-Fill out .yapsy-plugin file:
+Go to ``crawlcheck/src/checker/plugin/``, create ``my_new_plugin.py`` and
+``my_new_plugin.yapsy-plugin`` files there.
+Fill out the .yapsy-plugin file:
 
 ```sh
 [Core]
@@ -230,7 +235,9 @@ class MyPlugin(IPlugin):
         # implement the postprocessing logic here for postprocessor
 ```
 
-See <http://yapsy.sourceforge.net/IPlugin.html> and <http://yapsy.sourceforge.net/PluginManager.html#plugin-info-file-format> for more details.
+See <http://yapsy.sourceforge.net/IPlugin.html> and
+<http://yapsy.sourceforge.net/PluginManager.html#plugin-info-file-format> for
+more details.
 
 ## License
 
