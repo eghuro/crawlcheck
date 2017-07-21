@@ -2,7 +2,7 @@
 
 Crawlcheck is a web crawler invoking plugins on received content.
 It's intended for verification of websites prior to deployment.
-The process of verification is customisable by configuration script that allows
+The process of verification is customizable by configuration script that allows
 complex specification which plugins should check particular URIs and
 content-types.
 
@@ -17,7 +17,7 @@ database backend. Crawlcheck uses a number of open source projects to work
 properly. Python dependencies are listed in
 [requirements.txt](https://github.com/eghuro/crawlcheck/blob/master/requirements.txt)
 
-For a web report there's [separate project](https://github.com/eghuro/crawlcheck-report).
+For a web report, there's a [separate project](https://github.com/eghuro/crawlcheck-report).
 
 ## Installation
 0) You will need python3, python-pip and sqlite3, virtualenv, libmagic, libtidy,
@@ -38,32 +38,32 @@ pip install -r requirements.txt
 
 ## Configuration
 
-Configuration file is a YAML file defined as follows:
+A configuration file is a YAML file defined as follows:
 
 ```sh
 ---
 version: 1.05                   # configuration format version
-database: crawlcheck.sqlite     # sqlite database file
+database: crawlcheck.sqlite     # SQLite database file
 maxDepth: 10                    # max amount of links followed from any entry point (default: 0 meaning unlimited)
 agent: "Crawlcheck/1.05"        # user agent used (default: Crawlcheck/1.05)
 logfile: cc.log                 # where to store logs
 maxContentLength: 2000000       # max file size to download
 pluginDir: plugin               # where to look for plugins (including subfolders, default: 'plugin')
 timeout: 1                      # timeout for networking (default: 1)
-cleandb: True                   # clean database before execution
-initdb: True                    # initialize database
+cleandb: True                   # clean the database before execution
+initdb: True                    # initialize the database
 report: "http://localhost:5000" # report REST API
-cleanreport: True               # clean entries in report before sending current
-maxVolume: 100000000            # max 100 MB of tmp files (default: sys.maxsize)
+cleanreport: True               # clean entries in the report before sending current
+maxVolume: 100000000            # max 100 MB of temp files (default: sys.maxsize)
 maxAttempts: 2                  # attempts to download a web page (default: 3)
 dbCacheLimit: 1000000           # cache up to 1M of DB queries
 tmpPrefix: "Crawlcheck"         # prefix for temporary file names with downloaded content (default: Crawlcheck)
 tmpSuffix: "content"            # suffix for temporary file names with downloaded content (default: content)
 tmpDir: "/tmp/"                 # where to store temporary files (default: /tmp/)
-dbCacheLimit: 100000            # amount of cached database queries (default: sys.maxsize)
+dbCacheLimit: 100000            # the amount of cached database queries (default: sys.maxsize)
 urlLimit: 10000000              # limit on seen URIs
 verifyHttps: True               # verify HTTPS? (default: False)
-cores: 2                        # amount of cores available (eg. for paralel report payload generation)
+cores: 2                        # the amount of cores available (eg. for parallel report payload generation)
 recordParams: False             # record request data or URL params? (default: True)
 recordHeaders: False            # record response headers? (default: True)
 sitemap-file: "sitemap.xml"     # where to store generated sitemap.xml
@@ -154,11 +154,12 @@ Note: ```[root]/crawlcheck``` is where repository was cloned to,
 
 ## Plugins
 
-There are currently 5 types of plugins: crawlers, checkers, headers, filters
-and postprocessors. Crawlers are specializing in discovering new links.
-Checkers check syntax of various files. Headers check HTTP headers and together
-with filters serve to customize the crawling process itself. Postprocessors are
-used to generate reports or other outputs from the application.
+There are currently 5 types of plugins: crawlers, checkers, headers, filters,
+and postprocessors. The crawlers are specializing in discovering new links.
+The checkers check the syntax of various files. The headers check HTTP headers
+and together with the filters serve to customize the crawling process itself.
+The postprocessors are used to generate reports or other outputs from
+the application.
 
 Crawlcheck is currently extended with the following plugins:
 
