@@ -14,7 +14,7 @@ class NonSemanticHtml(IPlugin):
                                            'link', 'text', 'vlink']
         self.__despicable_attrs['br'] = ['clear']
         self.__despicable_attrs['caption'] = ['align']
-        self.__despicable_attrs['col'] = ['align', 'char', 'charoff', 
+        self.__despicable_attrs['col'] = ['align', 'char', 'charoff',
                                           'valign', 'width']
         self.__despicable_attrs['div'] = ['align']
         self.__despicable_attrs['dl'] = ['compact']
@@ -29,7 +29,8 @@ class NonSemanticHtml(IPlugin):
                                              'marginheight', 'marginwidth',
                                              'scrolling']
         self.__despicable_attrs['input'] = ['align']
-        self.__despicable_attrs['img'] = ['align', 'border', 'hspace', 'vspace']
+        self.__despicable_attrs['img'] = ['align', 'border', 'hspace',
+                                          'vspace']
         self.__despicable_attrs['legend'] = ['align']
         self.__despicable_attrs['li'] = ['type']
         self.__despicable_attrs['menu'] = ['compact']
@@ -40,10 +41,13 @@ class NonSemanticHtml(IPlugin):
         self.__despicable_attrs['pre'] = ['width']
         self.__despicable_attrs['table'] = ['align', 'border', 'bgcolor',
                                             'cellpadding', 'cellspacing',
-                                          'frame', 'rules', 'width']
-        self.__despicable_attrs['tbody'] = ['align', 'char', 'charoff', 'valign']
-        self.__despicable_attrs['thead'] = ['align', 'char', 'charoff', 'valign']
-        self.__despicable_attrs['tfoot'] = ['align', 'char', 'charoff', 'valign']
+                                            'frame', 'rules', 'width']
+        self.__despicable_attrs['tbody'] = ['align', 'char', 'charoff',
+                                            'valign']
+        self.__despicable_attrs['thead'] = ['align', 'char', 'charoff',
+                                            'valign']
+        self.__despicable_attrs['tfoot'] = ['align', 'char', 'charoff',
+                                            'valign']
         self.__despicable_attrs['th'] = ['align', 'bgcolor', 'char', 'charoff',
                                          'height', 'nowrap', 'valign', 'width']
         self.__despicable_attrs['td'] = ['align', 'bgcolor', 'char', 'charoff',
@@ -52,7 +56,7 @@ class NonSemanticHtml(IPlugin):
                                          'valign']
         self.__despicable_attrs['ul'] = ['compact', 'type']
 
-        self.__despicable_tags = set(['i', 'b', 'u', 'basefont', 'big', 
+        self.__despicable_tags = set(['i', 'b', 'u', 'basefont', 'big',
                                       'blink', 'center', 'font', 'marquee',
                                       's', 'spacer', 'strike', 'tt'])
 

@@ -59,4 +59,4 @@ class LinksFinder(IPlugin):
                 et = None
                 if link.name == "img":
                     et = "image/"
-                self.__queue.push_link(addr, transaction, et)  # dups handled there
+                self.__queue.push_link(addr, transaction, et)

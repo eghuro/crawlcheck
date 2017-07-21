@@ -58,7 +58,8 @@ def __configure_logger(conf, debug=False):
     log = logging.getLogger()
     level = __get_level(log, debug)
     formatter = logging.Formatter('%(asctime)s - %(processName)-10s - %(name)s'
-                                  ' - %(levelname)s - %(message)s', '%d %b %Y %H:%M:%S')
+                                  ' - %(levelname)s - %(message)s',
+                                  '%d %b %Y %H:%M:%S')
     if conf and conf.getProperty('logfile') is not None:
         try:
             lf = conf.getProperty('logfile')
