@@ -142,6 +142,7 @@ entryPoints: # where to start
 # (beware of repeated starts, if entry point remains in the database execution won't
 # start from this entry point)
  - "http://mj.ucw.cz/vyuka/"
+```
 
 ## Running crawlcheck
 Assuming you have gone through set-up and configuration, now run checker:
