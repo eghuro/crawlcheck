@@ -77,10 +77,12 @@ def __configure_logger(conf, debug=False):
     sh.setFormatter(formatter)
     log.addHandler(sh)
 
+
 def __print_allowed_filters(log, allowed_filters):
     log.info("Allowed filters")
     for x in allowed_filters:
         log.info(x)
+
 
 def __plugin_dirs(path, log, manager):
     log.info("Plugin directory set to: "+path)
@@ -154,6 +156,7 @@ def __load_configuration(cfile, log):
     else:
         return conf, cl
 
+
 def __clean_database(conf, log):
     if os.path.isfile(conf.dbconf.getDbname()) and conf.getProperty('cleandb'):
         log.info("Removing database file %s as configured" %
@@ -161,6 +164,7 @@ def __clean_database(conf, log):
         os.remove(conf.dbconf.getDbname())
         return True
     return False
+
 
 def __prepare_database(conf, log):
     # if database file exists and user wanted to clean it, remove it
@@ -173,6 +177,7 @@ def __prepare_database(conf, log):
         else:
             log.error("Database file %s doesn't exist"
                       % conf.dbconf.getDbname())
+
 
 def __initialize_database(log, conf):
     log.info('Initializing database file ' + conf.dbconf.getDbname())
