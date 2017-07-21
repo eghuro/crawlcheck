@@ -145,6 +145,7 @@ entryPoints: # where to start
 ```
 
 ## Running crawlcheck
+
 Assuming you have gone through set-up and configuration, now run checker:
 
 ```sh
@@ -232,7 +233,7 @@ class MyPlugin(IPlugin):
         # implement the postprocessing logic here for postprocessor
 ```
 
-See http://yapsy.sourceforge.net/IPlugin.html and http://yapsy.sourceforge.net/PluginManager.html#plugin-info-file-format for more details.
+See <http://yapsy.sourceforge.net/IPlugin.html> and <http://yapsy.sourceforge.net/PluginManager.html#plugin-info-file-format> for more details.
 
 ## License
 
