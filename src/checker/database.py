@@ -1,7 +1,7 @@
 """Database connector.
-For a plugin to access the database an API is provided.
-Plugins receive a DBAPI instance with an interface for common actions
-Parameters of connection to the database are set in DBAPIConfiguration
+To access the database an API is provided.
+Configuration is represented by DatabaseConfiguration object.
+Class DBAPI represents the database API.
 """
 
 import sqlite3 as mdb
@@ -13,7 +13,7 @@ from functools import partial
 import copy
 
 
-class DBAPIconfiguration(object):
+class DatabaseConfiguration(object):
     """ Configuration class for DBAPI.
 
     Configuration is set through respective setters and read through getters.
@@ -26,14 +26,14 @@ class DBAPIconfiguration(object):
         """Default constructor.
         """
 
-        self.dbname = ""
-        self.limit = 0
+        self.__dbname = ""
+        self.__limit = 0
 
     def getDbname(self):
         """ Database name getter.
         """
 
-        return self.dbname
+        return self.__dbname
 
     def setDbname(self, dbname):
         """Database name setter.
@@ -42,13 +42,13 @@ class DBAPIconfiguration(object):
             dbname: database name where data are stored
         """
 
-        self.dbname = dbname
+        self.__dbname = dbname
 
     def getLimit(self):
-        return self.limit
+        return self.__limit
 
     def setLimit(self, limit):
-        self.limit = limit
+        self.__limit = limit
 
 
 class VerificationStatus(Enum):

@@ -50,13 +50,13 @@ class DuplicateDetector(IPlugin):
         if fsize in self.__size_dups:
             h = self.__hashfile(transaction.file)
             self.__hash[transaction.file] = h
-            for x in self.__compare(fsize, transaction):
+            for x in self.__compare(fsize, transaction, h):
                 self.__size_dups[fsize].remove(x)
             self.__size_dups[fsize].add(transaction.file)
         else:
             self.__size_dups[fsize] = set([transaction.file])
 
-    def __compare(self, fsize, transaction):
+    def __compare(self, fsize, transaction, reference_hash):
         """Stage 2 of the duplication testing.
         Compare the transaction for possible duplication candidates.
 
@@ -69,7 +69,7 @@ class DuplicateDetector(IPlugin):
             if self.__are_different(f, transaction):
                 if f not in self.__hash:
                     self.__hash[f] = self.__hashfile(transaction.file)
-                if self.__hash[f] == h:
+                if self.__hash[f] == reference_hash:
                     if self.__file_cmp(f, transaction):
                         rem.append(f)
         return rem
@@ -77,7 +77,7 @@ class DuplicateDetector(IPlugin):
     def __are_different(self, f, transaction):
         return f != transaction.file and self.__urls[f] != transaction.uri
 
-    def __file_cmp(self, f, transacion):
+    def __file_cmp(self, f, transaction):
         """Stage 3 of the duplication testing.
         Compare a candidate with the transaction file.
         Report a possible duplicate through journal.

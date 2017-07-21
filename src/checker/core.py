@@ -7,7 +7,7 @@ import copy
 import codecs
 import requests
 from urllib.parse import urlparse, ParseResult, urldefrag
-from pluginDBAPI import DBAPI, VerificationStatus, Query
+from database import DBAPI, VerificationStatus, Query
 from common import PluginType, PluginTypeError
 from net import Network, NetworkError, ConditionError, StatusError
 from filter import FilterException, Reschedule
@@ -408,17 +408,6 @@ class TransactionQueue:
     def push(self, transaction, parent=None):
         """Push transaction into queue."""
         transaction.uri = urldefrag(transaction.uri)[0]
-        try:
-            uri, params = TransactionQueue.__strip_parse_query(transaction)
-            if (transaction.uri, transaction.method) in self.__conf.payloads:
-                # chceme sem neco poslat
-                params.update(self.__conf.payloads[(transaction.uri,
-                                                    transaction.method)])
-                transaction.data = params
-                transaction.uri = uri
-        except ValueError as e:
-            log = logging.getLogger(__name__)
-            log.exception("Unexpected error, skipping payload", e)
 
         try:
             self.__mark_seen(transaction)
@@ -428,8 +417,6 @@ class TransactionQueue:
 
         if parent is not None:
             self.__db.log_link(parent.idno, transaction.uri, transaction.idno)
-
-        self.__bake_cookies(transaction, parent)
 
     def push_link(self, uri, parent, expected=None):
         """Push link into queue.
@@ -453,7 +440,6 @@ class TransactionQueue:
 
         t = createTransaction(uri, parent.depth + 1, parent.idno)
         self.__mark_seen(t)
-        self.__bake_cookies(t, parent)
         self.__db.log_link(parent.idno, uri, t.idno)
         return t
 
@@ -463,16 +449,6 @@ class TransactionQueue:
         """
         assert self.__been_seen(transaction)
         self.__q.put(transaction)
-
-    @staticmethod
-    def __strip_parse_query(transaction):
-        # strip query off uri and parse it into separate dict
-        p = urlparse(transaction.uri)
-        params = urllib.parse.parse_qs(p.query)
-        p_ = ParseResult(p.scheme, p.netloc, p.path, p.params, None, None)
-        uri = p_.geturl()
-
-        return uri, params
 
     def __been_seen(self, transaction):
         if transaction.uri in self.__seen:
@@ -512,25 +488,6 @@ class TransactionQueue:
             if not self.__been_seen(transaction):
                 self.__set_seen(transaction)
                 self.seenlen = self.seenlen + 1
-
-    def __init_cookies(self, parent):
-        if parent and parent.cookies:
-            return parent.cookies.copy()
-        else:
-            return dict()
-
-    def __bake_cookies(self, transaction, parent):
-        cookies = self.__init_cookies(parent)
-        allowed = False
-        for reg in self.__conf.cookies:
-            if reg.match(transaction.uri):  # sending cookies allowed
-                allowed = True
-                # najit vsechna cookies pro danou adresu
-                if reg in self.__conf.custom_cookies:
-                    # got custom cookies to send
-                    cookies.update(self.__conf.custom_cookies[reg])
-        if allowed:
-            transaction.cookies = cookies
 
 
 class Journal:

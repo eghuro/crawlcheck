@@ -2,7 +2,7 @@
 """Configuration Loader loads configuration from external YAML file.
 """
 from ruamel import yaml
-from pluginDBAPI import DBAPIconfiguration
+from database import DatabaseConfiguration
 from acceptor import Acceptor, RegexAcceptor
 from common import ConfigurationError
 import logging
@@ -20,15 +20,14 @@ class EPR(object):
 class ConfigLoader(object):
     """ ConfigLoader loads configuration from file.
         Configuration is loaded through load()
-        Later, DB configuration, URI and Content-Type acceptors can be
-        retrieved through getters.
+        When loaded, configuration object can be retrieved through
+        get_configuration().
     """
 
     __VERSION = 1.05
-    __METHODS = ['GET', 'POST']
 
     def __init__(self):
-        self.__dbconf = DBAPIconfiguration()
+        self.__dbconf = DatabaseConfiguration()
         self.typeAcceptor = None
         self.uriRegexAcceptor = None
         self.entryPoints = []
@@ -36,9 +35,6 @@ class ConfigLoader(object):
         self.postprocess = []
         self.loaded = False
         self.properties = dict()
-        self.payloads = dict()
-        self.cookieFriendlyRegexes = set()
-        self.customCookies = dict()
         self.__log = logging.getLogger(__name__)
 
         # defaults
@@ -88,21 +84,6 @@ class ConfigLoader(object):
                              str(ConfigLoader.__VERSION) + ")")
         return version_check
 
-    def __get_data(self, ep):
-        data = dict()
-        if 'data' in ep:
-            for it in ep['data']:
-                for k in it.keys():
-                    data[k] = it[k]
-        return data
-
-    def __get_method(self, ep):
-        method = 'GET'
-        if 'method' in ep:
-            if ep['method'].upper() in ConfigLoader.__METHODS:
-                method = ep['method'].upper()
-        return method
-
     def __set_entry_points(self, root):
         if 'entryPoints' not in root:
             self.__log.warning("Entry points should be specified")
@@ -111,66 +92,13 @@ class ConfigLoader(object):
         else:
             epSet = root['entryPoints']
             for ep in epSet:
-                self.__parse_entry_point(ep)
-
-    def __parse_entry_point(self, ep):
-        if type(ep) is str:
-            self.entryPoints.append(EPR(ep))
-        elif type(ep) is dict:
-            data = self.__get_data(ep)
-            method = self.__get_method(ep)
-            if 'url' not in ep:
-                raise ConfigurationException("url not present in entryPoint")
-            self.entryPoints.append(EPR(ep['url'], method, data))
+                self.entryPoints.append(EPR(ep))
 
     def __set_plugins(self, root, tag, lst):
         if tag in root:
             for p in root[tag]:
                 lst.append(p)
         return lst
-
-    def __set_payloads(self, root):
-        if 'payload' in root:
-            for p in root['payload']:
-                self.__parse_payload(p)
-
-    def __parse_payload(self, p):
-        if 'url' not in p:
-            raise ConfigurationException("url not present in payload")
-        if 'method' not in p:
-            raise ConfigurationException("method not present in payload")
-        if p['method'].upper() not in ConfigLoader.__METHODS:
-            raise ConfigurationException("Invalid method: "+p['method'])
-        if 'data' not in p:
-            raise ConfigurationException("data not present in payload")
-
-        self.payloads[(p['url'], p['method'].upper())] = p['data']
-
-    def __set_cookies(self, root, u, us):
-        # Go through urls again, grab cookie friendly prefixes
-        if us in root:
-            for url in root[us]:
-                if ('cookie' in url) and (u in url):
-                    self.__parse_cookie(url)
-                # else: no cookie record or wrong url record -> raised earlier
-
-    def __parse_cookie(self, url):
-        # can be cookie: True/False parameter or structure
-        if type(url['cookie']) is not bool:
-            # structure
-            if url['cookie']['reply']:
-                reg = re.compile(url[u])
-                self.cookieFriendlyRegexes.add(reg)
-                if 'custom' in url['cookie']:
-                    self.customCookies[reg] = url['cookie']['custom']
-                    # self.customCookies[regex] = dict(key:value of cookies)
-                # else: no cookies to send
-            # else: forbidden to reply cookies and also send custom ones
-        elif url['cookie']:  # cookie: True/False parameter
-            self.cookieFriendlyRegexes.add(re.compile(url[u]))
-        else:
-            raise ConfigurationError("Wrong format of cookie record for " +
-                                     url[u])
 
     def __set_up(self, root):
         # Database is mandatory
@@ -193,7 +121,6 @@ class ConfigLoader(object):
         self.filters = self.__set_plugins(root, 'filters', self.filters)
         self.postprocess = self.__set_plugins(root, 'postprocess',
                                               self.postprocess)
-        self.__set_payloads(root)
 
         # Grab properties
         used_keys = set(['database', cts, 'regexes', 'version', 'entryPoints',
@@ -252,9 +179,7 @@ class ConfigLoader(object):
         if self.loaded:
             return Configuration(self.__dbconf, self.typeAcceptor,
                                  self.uriRegexAcceptor, self.entryPoints,
-                                 self.properties, self.payloads,
-                                 self.cookieFriendlyRegexes,
-                                 self.customCookies, self.postprocess)
+                                 self.properties, self.postprocess)
         else:
             return None
 
@@ -266,17 +191,13 @@ class ConfigLoader(object):
 
 
 class Configuration(object):
-    def __init__(self, db, ta, ra, ep, properties, pl, cfr, cc, pp):
+    def __init__(self, db, ta, ra, ep, properties, pp):
         self.properties = properties
         self.dbconf = db
         self.dbconf.setLimit(self.getProperty("dbCacheLimit"))
         self.type_acceptor = ta
         self.regex_acceptor = ra
         self.entry_points = ep
-        self.payloads = pl
-        self.cookies = cfr
-        # cookie friendly regexes -> eg. on these regexes we send cookies back
-        self.custom_cookies = cc
         self.postprocess = pp
 
     def getProperty(self, key, default=None):

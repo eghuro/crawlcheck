@@ -10,6 +10,8 @@ import math
 import time
 import sys
 
+# We handle and log exceptions from libraries.
+# This is to prevent libraries to write their messages to the log.
 requests.packages.urllib3.disable_warnings()
 logging.getLogger("requests").setLevel(logging.CRITICAL)
 logging.getLogger("urllib3").setLevel(logging.CRITICAL)
@@ -60,6 +62,7 @@ class Network(object):
     @staticmethod
     def testLink(tr, journal, conf, session, acceptedTypes):
         """Initiate a connection for the transaction. Read the headers."""
+
         log = logging.getLogger(__name__)
 
         log.debug("Fetching %s" % (tr.uri))
@@ -171,13 +174,17 @@ class Network(object):
 
     @staticmethod
     def __download(transaction, conf, tmp, journal, log):
+            MAX_CHSIZE = 10000000
             transaction.file = tmp.name
             log.info("Downloading %s" % transaction.uri)
             log.debug("Downloading chunks into %s" % tmp.name)
             limit = conf.getProperty("maxContentLength", sys.maxsize)
-            # jde jen o to, ze pokud maxContentLength neni zadana, pak chceme,
-            # aby ten limit byl > nez 10 000 000, pri None to hazi vyjimku
-            chsize = min(limit, 10000000)
+            # Note that the default value here is sys.maxsize.
+            # This is to handle the case when maxContentLength is not set.
+            # In that case want the limit to be greater than MAX_CHSIZE.
+            # If we don't specify our default value, it would be None.
+            # But limit cannot be None, it would cause exception in min call.
+            chsize = min(limit, MAX_CHSIZE)
             for chunk in transaction.request.iter_content(chunk_size=chsize):
                 if chunk:
                     tmp.write(chunk)
