@@ -38,9 +38,14 @@
         <h1>
 <a id="crawlcheck" class="anchor" href="#crawlcheck" aria-hidden="true"><span class="octicon octicon-link"></span></a>Crawlcheck</h1>
 
-<p>Crawlcheck is a web crawler invoking plugins on received content. It's intended for verification of websites prior to deployment. The process of verification is customisable by configuration script that allows complex specification which plugins should check particular URIs and content-types. Main engine and plugins are written in Python, there's also possibility to show report in form of website written in Ruby on Rails or generate report in PDF. The report contains discoveries plugins made during the verification.</p>
+<p>Crawlcheck is a web crawler invoking plugins on received content. It's intended for verification of websites prior to deployment. The process of verification is customisable by configuration script that allows complex specification which plugins should check particular URIs and content-types.</p>
 
 <p>Current version: 0.04</p>
+
+<h3>Dependencies</h3>
+Crawlcheck's engine currently runs on Python 3.5 and uses SQLite3 as a database backend. Crawlcheck uses a number of open source projects to work properly. Python dependencies are listed in <a href="https://github.com/eghuro/crawlcheck/blob/master/requirements.txt">requirements.txt</a>
+
+For a web report there's <a href="https://github.com/eghuro/crawlcheck-report">separate project</a>.
 
 <h3>
 <a id="installation" class="anchor" href="#installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installation</h3>
@@ -50,21 +55,17 @@
 
 <div class="highlight highlight-sh"><pre> git clone https://github.com/eghuro/crawlcheck crawlcheck</pre></div>
 
+<p>2) Run install script</p>
 
-<p>2) Set database location in crawlcheck/src/report/config/database.yml</p>
+<div class="highlight highlight-sh"><pre><span class="pl-c1">pip install -r requirements.txt</span></pre></div>
 
-<p>3) Run install script</p>
-
-<div class="highlight highlight-sh"><pre><span class="pl-c1">cd</span> crawlcheck
-./install.sh [database-file-location]</pre></div>
-
-<p>You will need python-2.7, python-pip and python-dev, sqlite3 (dev) and ruby installed.</p>
+<p>You will need python 3, python-pip and sqlite3, virtualenv, libmagic, libtidy, libxml2 and libxslt installed. All dev or devel versions.</p>
 
 <h3>
 <a id="configuration" class="anchor" href="#configuration" aria-hidden="true"><span class="octicon octicon-link"></span></a>Configuration</h3>
 
 <p>
-Configuration file is a simple YAML file.</p>
+Configuration file is a Configuration file is a YAML file defined as follows:</p>
 
 <div class="highlight highlight-sh"><pre>---
 version: 1.01        <span class="pl-c"># configuration format version</span>
@@ -108,44 +109,33 @@ $ python checker/ [config.yml]</pre></div>
 <p>Note: <code>[root]/crawlcheck</code> is where repository was cloned to, <code>[config.xml]</code> stands for the configuration file path</p>
 
 <h3>
-<a id="running-report-website" class="anchor" href="#running-report-website" aria-hidden="true"><span class="octicon octicon-link"></span></a>Running report website</h3>
-
-<p>Assuming you have gone through set-up and configuration and checker either finished or is still running (otherwise there are just no data to display), now run report app:</p>
-
-<div class="highlight highlight-sh"><pre>$ <span class="pl-c1">cd</span> [root]/crawlcheck/src/report/
-$ DATABASE_URL=<span class="pl-s"><span class="pl-pds">"</span>sqlite3://&lt;dbfile&gt;<span class="pl-pds">"</span></span> bin/rails server</pre></div>
-
-<p>Note: you can specify port by adding <code>-p [number]</code> and interface by specifying <code>-b [ip address]</code></p>
-
-<h3>
-<a id="generating-report-to-pdf" class="anchor" href="#generating-report-to-pdf" aria-hidden="true"><span class="octicon octicon-link"></span></a>Generating report to PDF</h3>
-
-<p>There is also a very simple Python script to generate a PDF containing all invalid links and other defects.
-To run the script you need MySQL connector (you already have, since you ran checker) and <code>pylatex</code>.
-You can install pylatex using PIP:</p>
-
-<div class="highlight highlight-sh"><pre>$ pip install pylatex</pre></div>
-
-<p>You should also have <code>pdflatex</code> on your system.</p>
-
-<p>Now run the script as follows:</p>
-
-<div class="highlight highlight-sh"><pre>$ <span class="pl-c1">cd</span> [root]/crawlcheck/src
-$ python TexReporter.py <span class="pl-k">&lt;</span>dbfile<span class="pl-k">&gt;</span> <span class="pl-k">&lt;</span>outputfile<span class="pl-k">&gt;</span></pre></div>
-
-<p>For output file <code>.pdf</code> is added automatically.</p>
-
-<h3>
 <a id="plugins" class="anchor" href="#plugins" aria-hidden="true"><span class="octicon octicon-link"></span></a>Plugins</h3>
 
-<p>
-Crawlcheck is currently extended with the following plugins:</p>
+<p>There are currently 5 types of plugins: crawlers, checkers, headers, filters and postprocessors. Crawlers are specializing in discovering new links. Checkers check syntax of various files. Headers check HTTP headers and together with filters serve to customize the crawling process itself. Postprocessors are used to generate reports or other outputs from the application.</p>
+
+<p>Crawlcheck is currently extended with the following plugins:</p>
 
 <ul>
-<li>linksFinder</li>
-<li>py_w3c_htmlValidator</li>
-<li>tinycss_cssValidator</li>
-<li>css_scraper</li>
+<li>linksFinder (crawler)</li>
+<li>sitemapScanner (crawler)</li>
+<li>tidyHtmlValidator (checker)</li>
+<li>tinycss (checker)</li>
+<li>css_scraper (checker)</li>
+<li>seoimg (checker)</li>
+<li>seometa (checker)</li>
+<li>dupdetect (checker)</li>
+<li>non_semantic_html (checker)</li>
+<li>contentLength (header)</li>
+<li>expectedType (header)</li>
+<li>canonical (header)</li>
+<li>acceptedType (header)</li>
+<li>acceptedUri (header)</li>
+<li>uri_normalizer (header)</li>
+<li>depth (filter)</li>
+<li>robots (filter)</li>
+<li>report_exporter (postprocessor)</li>
+<li>yaml_exporter (postprocessor)</li>
+<li>sitemap_generator (postprocessor)</li>
 </ul>
 
 <h3>
@@ -182,26 +172,11 @@ class MyPlugin(IPlugin):
 
 <p>See <a href="http://yapsy.sourceforge.net/IPlugin.html">http://yapsy.sourceforge.net/IPlugin.html</a> and <a href="http://yapsy.sourceforge.net/PluginManager.html#plugin-info-file-format">http://yapsy.sourceforge.net/PluginManager.html#plugin-info-file-format</a> for more details.</p>
 
-<h3>
-<a id="todos" class="anchor" href="#todos" aria-hidden="true"><span class="octicon octicon-link"></span></a>TODOs</h3>
-
-<ul>
-<li>Improve Tests and Documentation</li>
-<li>Report - manual annotations of findings</li>
-<li>Filters and search in report</li>
-<li>Regular expressions in configuration for plugins (URLs)</li>
-<li>Dockerize</li>
-<li>Detect forms and Javascript actions</li>
-<li>Event based parallel processing</li>
-</ul>
-
-<p>Feel free to submit a pull request.</p>
-
 <h2>
 <a id="license" class="anchor" href="#license" aria-hidden="true"><span class="octicon octicon-link"></span></a>License</h2>
 
 <p>MIT</p>
-<p>Copyright (c) 2015 Alexandr Mansurov</p>
+<p>Copyright (c) 2015-2017 Alexandr Mansurov</p>
 <p>Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:</p>
 <p>The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.</p>
 <p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
