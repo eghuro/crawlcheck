@@ -1,3 +1,5 @@
+# Brief overview
+
 * pluginManager - Initializes the application and loads available plugins.
 * configLoader - Parses the configuration file.
 * core
