@@ -40,6 +40,7 @@ def __get_level(log, debug):
         level = logging.INFO
     return level
 
+
 def __rolling(lf, fh, log):
     need_roll = os.path.isfile(lf)
     if need_roll:

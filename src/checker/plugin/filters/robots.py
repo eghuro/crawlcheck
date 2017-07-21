@@ -11,6 +11,7 @@ import time
 
 logging.getLogger("reppy").setLevel(logging.CRITICAL)
 
+
 class RobotsFilter(IPlugin):
 
     category = PluginType.FILTER
@@ -84,7 +85,6 @@ class RobotsFilter(IPlugin):
     def __crawl_delay(self, tran, agent, robots_url):
         delay = self.__robots.get(tran.uri).agent(agent).delay
         if delay is not None:
-            #robots_url = Robots.robots_url(tran.uri)
             if robots_url in self.__visit_times:
                 vt = self.__visit_times[robots_url]
                 self.__log.debug("Got timestamp for robots.txt file " +

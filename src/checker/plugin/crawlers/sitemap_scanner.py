@@ -12,7 +12,7 @@ class SitemapScanner(IPlugin):
     id = "sitemapScanner"
 
     # https://www.sitemaps.org/protocol.html
-    __limit_size = 50000000 # 50 MB
+    __limit_size = 50000000  # 50 MB
     __limit_records = 50000
 
     def __init__(self):
@@ -34,15 +34,14 @@ class SitemapScanner(IPlugin):
         urls = soup.findAll('url')
 
         if not urls:
-            return #no urls or not a sitemap.xml
+            return  # no urls or not a sitemap.xml
 
         if len(soup.findAll('sitemap')) == 0 or \
            len(soup.findAll('sitemapindex')) == 0:
-            return # not a sitemap.xml nor Sitemap index
+            return  # not a sitemap.xml nor Sitemap index
 
         self.__test_conditions(size, len(urls), transaction.idno)
         self.__scan_urls(urls, transaction)
-
 
     def __load_content(self, transaction):
         if transaction.type == 'application/gzip':
@@ -53,7 +52,6 @@ class SitemapScanner(IPlugin):
             content = transaction.getContent()
             size = transaction.cache['size']
         return content, size
-
 
     def __scan_urls(self, urls, transaction):
         """ Go through soup of urls and record links. """
@@ -66,7 +64,6 @@ class SitemapScanner(IPlugin):
             log.debug("Link from sitemap ("+transaction.uri+") to "+loc)
             self.__queue.push_link(loc, transaction)
 
-
     def __test_conditions(self, size, url_cnt, idno):
         if size > SitemapScanner__limit_size:
             self.__journal.foundDefect(idno, "sitemapsize",
@@ -77,6 +74,5 @@ class SitemapScanner(IPlugin):
             self.__journal.foundDefect(idno, "sitemaprecords",
                                        "Sitemap.xml exceeds 50 000 URLs",
                                        str(url_cnt), 0.6)
-
 
 # See: https://gist.github.com/chrisguitarguy/1305010

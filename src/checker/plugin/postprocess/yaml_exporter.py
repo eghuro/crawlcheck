@@ -24,7 +24,8 @@ class YamlExporter(IPlugin):
     def process(self):
         self.__log.info("Preparing report")
         if self.__conf.getProperty('yaml-out-file') is not None:
-            with open(self.__conf.getProperty('yaml-out-file'), 'w', encoding="utf-8") as out:
+            with open(self.__conf.getProperty('yaml-out-file'), 'w',
+                      encoding="utf-8") as out:
                 out.write(yaml.dump(self.__db.create_report_payload(
                                     self.__conf.getProperty("cores", 4))))
         else:

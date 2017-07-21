@@ -58,7 +58,6 @@ class Network(object):
             raise NetworkError("%s attempts failed" %
                                str(max_attempts)) from e
 
-
     @staticmethod
     def testLink(tr, journal, conf, session, acceptedTypes):
         """Initiate a connection for the transaction. Read the headers."""
