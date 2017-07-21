@@ -1,8 +1,0 @@
-[Core]
-Name = TexReporter
-Module = TexReporter
-
-[Documentation]
-Author = Alexandr Mansurov
-Version = 0.1
-Description = Creates pdf report

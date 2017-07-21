@@ -8,7 +8,7 @@ content-types.
 
 ## Version
 
-0.04
+1.0.0
 
 ## Dependencies
 
@@ -36,9 +36,6 @@ pip install -r requirements.txt
 
 You will need python3, python-pip and sqlite3, virtualenv, libmagic, libtidy,
 libxml2 and libxslt installed. All dev or devel versions.
-
-For PDF report, pdflatex and following LaTex packages are needed: geometry,
-lastpage, testcomp, lmodern, inputenc, fontenc.
 
 ## Configuration
 
@@ -82,7 +79,7 @@ content-types:
     "content-type": "text/html"
     plugins: # plugins to use for given content-type
        - linksFinder
-       - htmlValidator
+       - tidyHtmlValidator
        - css_scraper
        - formChecker
        - seoimg
