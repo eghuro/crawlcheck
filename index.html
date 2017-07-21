@@ -57,7 +57,8 @@ For a web report there's <a href="https://github.com/eghuro/crawlcheck-report">s
 
 <p>2) Run install script</p>
 
-<div class="highlight highlight-sh"><pre><span class="pl-c1">pip install -r requirements.txt</span></pre></div>
+<div class="highlight highlight-sh"><pre><span class="pl-c1">cd</span> crawlcheck
+pip install -r requirements.txt</pre></div>
 
 <p>You will need python 3, python-pip and sqlite3, virtualenv, libmagic, libtidy, libxml2 and libxslt installed. All dev or devel versions.</p>
 
@@ -68,28 +69,97 @@ For a web report there's <a href="https://github.com/eghuro/crawlcheck-report">s
 Configuration file is a Configuration file is a YAML file defined as follows:</p>
 
 <div class="highlight highlight-sh"><pre>---
-version: 1.01        <span class="pl-c"># configuration format version</span>
-database: crawlcheck <span class="pl-c"># sqlite database file</span>
+version: 1.05                   <span class="pl-c"># configuration format version</span>
+database: crawlcheck.sqlite     <span class="pl-c"># sqlite database file</span>
+maxDepth: 10                    <span class="pl-c"># max amount of links followed from any entry point (default: 0 meaning unlimited)</span>
+agent: "Crawlcheck/1.05"        <span class="pl-c"># user agent used (default: Crawlcheck/1.05)</span>
+logfile: cc.log                 <span class="pl-c"># where to store logs</span>
+maxContentLength: 2000000       <span class="pl-c"># max file size to download</span>
+pluginDir: plugin               <span class="pl-c"># where to look for plugins (including subfolders, default: 'plugin')</span>
+timeout: 1                      <span class="pl-c"># timeout for networking (default: 1)</span>
+cleandb: True                   <span class="pl-c"># clean database before execution</span>
+initdb: True                    <span class="pl-c"># initialize database</span>
+report: "http://localhost:5000" <span class="pl-c"># report REST API</span>
+cleanreport: True               <span class="pl-c"># clean entries in report before sending current</span>
+maxVolume: 100000000            <span class="pl-c"># max 100 MB of tmp files (default: sys.maxsize)</span>
+maxAttempts: 2                  <span class="pl-c"># attempts to download a web page (default: 3)</span>
+dbCacheLimit: 1000000           <span class="pl-c"># cache up to 1M of DB queries</span>
+tmpPrefix: "Crawlcheck"         <span class="pl-c"># prefix for temporary file names with downloaded content (default: Crawlcheck)</span>
+tmpSuffix: "content"            <span class="pl-c"># suffix for temporary file names with downloaded content (default: content)</span>
+tmpDir: "/tmp/"                 <span class="pl-c"># where to store temporary files (default: /tmp/)</span>
+dbCacheLimit: 100000            <span class="pl-c"># amount of cached database queries (default: sys.maxsize)</span>
+urlLimit: 10000000              <span class="pl-c"># limit on seen URIs</span>
+verifyHttps: True               <span class="pl-c"># verify HTTPS? (default: False)</span>
+cores: 2                        <span class="pl-c"># amount of cores available (eg. for paralel report payload generation)</span>
+recordParams: False             <span class="pl-c"># record request data or URL params? (default: True)</span>
+recordHeaders: False            <span class="pl-c"># record response headers? (default: True)</span>
+sitemap-file: "sitemap.xml"     <span class="pl-c"># where to store generated sitemap.xml</span>
+sitemap-regex: "https?://ksp.mff.cuni.cz(/.*)?" <span class="pl-c"># regex for sitemap generator</span>
+yaml-out-file: "cc.yml"         <span class="pl-c"># where to write YAML report</span>
+report-file: "report"           <span class="pl-c"># where to write PDF report (.pdf will be added automatically)</span>
+
+
+<span class="pl-c"># other parameters used by plugins written as ```key: value```</span>
 
 content-types:
  -
    <span class="pl-s"><span class="pl-pds">"</span>content-type<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>text/html<span class="pl-pds">"</span></span>
    plugins: <span class="pl-c"># plugins to use for given content-type</span>
      - linksFinder
-     - htmlValidator
+     - tidyHtmlValidator
+     - css_scraper
+     - formChecker
+     - seoimg
+     - seometa
+     - dupdetect
+     - non_semantic_html
 
  -
    <span class="pl-s"><span class="pl-pds">"</span>content-type<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>text/css<span class="pl-pds">"</span></span>
    plugins:
      - tinycss
+     - dupdetect
+ -
+   <span class="pl-s"><span class="pl-pds">"</span>content-type<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>application/gzip<span class="pl-pds">"</span></span>
+   plugins:
+     - sitemapScanner
+ -
+   <span class="pl-s"><span class="pl-pds">"</span>content-type<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>application/xml<span class="pl-pds">"</span></span>
+   plugins:
+     - sitemapScanner
+     - dupdetect
 
 urls:
--
-  url: <span class="pl-s"><span class="pl-pds">"</span>http://mj.ucw.cz/vyuka/<span class="pl-pds">"</span></span>
+ -
+  url: <span class="pl-s"><span class="pl-pds">"</span>http://mj.ucw.cz/vyuka/.+<span class="pl-pds">"</span></span>
   plugins: <span class="pl-c"># which plugins are allowed for given URL</span>
        - linksFinder
-       - htmlValidator
+       - tidyHtmlValidator
        - tinycss
+       - css_scraper
+       - formChecker
+       - seoimg
+       - seometa
+       - dupdeteict
+       - non_semantic_html
+ -
+  url: "http://mj.ucw.cz/" #test links (HEAD request) only
+  plugins:
+
+filters: <span class="pl-c"> #Filters (plugins of category header and filter) that can be used</span>
+ - depth
+ - robots
+ - contentLength
+ - canonical
+ - acceptedType
+ - acceptedUri
+ - uri_normalizer
+ - expectedType
+
+postprocess:
+ - sitemap_generator
+ - report_exporter
+ - yaml_exporter
 
 entryPoints: <span class="pl-c"># where to start</span>
 <span class="pl-c"># Note, that once URI get's to the database it's no longer being requested </span>
@@ -156,19 +226,36 @@ Description = My New Plugin</pre></div>
 <p>For plugin itself you need to implement following:</p>
 
 <div class="highlight highlight-sh"><pre>from yapsy.IPlugin import IPlugin
+from common import PluginType
+from filter import FilterException  # for headers and filters
+
+
 class MyPlugin(IPlugin):
 
-    def setDb(self, DB):
-        <span class="pl-c"># record DB somewhere</span>
+    category = PluginType.CHECKER <span class="pl-c"># pick appropriate type</span>
+    id = myPlugin
 
-    def getId(self):
-        <span class="pl-s"><span class="pl-pds">"</span><span class="pl-pds">"</span><span class="pl-pds">"</span> The id is used in configuration - in this case &lt;plugin id = <span class="pl-pds">"</span></span>myPlugin<span class="pl-s"><span class="pl-pds">"</span>/&gt;</span>
-<span class="pl-s">        <span class="pl-pds">"</span><span class="pl-pds">"</span><span class="pl-pds">"</span></span>
+    def setJournal(self, journal):
+        <span class="pl-c"># record journal somewhere - all categories</span>
 
-        <span class="pl-k">return</span> <span class="pl-s"><span class="pl-pds">"</span>myPlugin<span class="pl-pds">"</span></span>
+    def setQueue(self, queue):
+        <span class="pl-c"># record queue somewhere - if needed</span>
 
-    def check(self, transactionId, content):
-        <span class="pl-c"># implement the logic here</span></pre></div>
+    def setConf(self, conf):
+        <span class="pl-c"># record configuration - only headers and filters</span>
+
+    def check(self, transaction):
+        <span class="pl-c"># implement the checking logic here for crawlers and checkers</span>
+
+    def filter(self, transaction):
+        <span class="pl-c"># implement the filtering logic here for filters and headers</span>
+        <span class="pl-c"># raise FilterException to filter the transaction out</span>
+
+    def setDb(self, db):
+        <span class="pl-c"># record DB somewhere - only postprocessors</span>
+
+    def process(self):
+        <span class="pl-c"># implement the postprocessing logic here for postprocessor</span>
 
 <p>See <a href="http://yapsy.sourceforge.net/IPlugin.html">http://yapsy.sourceforge.net/IPlugin.html</a> and <a href="http://yapsy.sourceforge.net/PluginManager.html#plugin-info-file-format">http://yapsy.sourceforge.net/PluginManager.html#plugin-info-file-format</a> for more details.</p>
 
