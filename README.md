@@ -20,6 +20,7 @@ properly. Python dependencies are listed in
 For a web report, there's a [separate project](https://github.com/eghuro/crawlcheck-report).
 
 ## Installation
+
 0) You will need python3, python-pip and sqlite3, virtualenv, libmagic, libtidy,
 libxml2 and libxslt installed. All dev or devel versions.
 
@@ -149,8 +150,8 @@ cd [root]/crawlcheck/src/
 python checker/ [config.yml]
 ```
 
-Note: ```[root]/crawlcheck``` is where repository was cloned to,
-```[config.yml]``` stands for the configuration file path.
+Note: ``[root]/crawlcheck`` is where repository was cloned to,
+``[config.yml]`` stands for the configuration file path.
 
 ## Plugins
 
