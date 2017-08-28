@@ -20,8 +20,8 @@
         <p class="header">Extendable web checker</p>
 
         <ul>
-          <li class="download"><a class="buttons" href="https://github.com/eghuro/crawlcheck/archive/0.04.zip">Download ZIP</a></li>
-          <li class="download"><a class="buttons" href="https://github.com/eghuro/crawlcheck/archive/0.04.tar.gz">Download TAR</a></li>
+          <li class="download"><a class="buttons" href="https://github.com/eghuro/crawlcheck/archive/1.0.0.zip">Download ZIP</a></li>
+          <li class="download"><a class="buttons" href="https://github.com/eghuro/crawlcheck/archive/1.0.0.tar.gz">Download TAR</a></li>
           <li><a class="buttons github" href="https://github.com/eghuro/crawlcheck">View On GitHub</a></li>
           <li><a href="#installation">Install</a></li>
           <li><a href="#configuration">Configure</a></li>
@@ -39,7 +39,7 @@
 
 <p>Crawlcheck is a web crawler invoking plugins on received content. It's intended for verification of websites prior to deployment. The process of verification is customisable by configuration script that allows complex specification which plugins should check particular URIs and content-types.</p>
 
-<p>Last released snapshot was <a href="https://github.com/eghuro/crawlcheck/releases/tag/0.04">0.04</a> from Jul 25, 2016</p>
+<p>Last released snapshot was <a href="https://github.com/eghuro/crawlcheck/releases/tag/1.0.0">1.0.0</a> from Jul 21, 2017 which corresponds to the undergraduate thesis submitted at Charles University in Prague.</p>
 
 <h3>Dependencies</h3>
 <p>Crawlcheck's engine currently runs on Python 3.5 and uses SQLite3 as a database backend. Crawlcheck uses a number of open source projects to work properly. Python dependencies are listed in <a href="https://github.com/eghuro/crawlcheck/blob/master/requirements.txt">requirements.txt</a></p>
@@ -50,6 +50,9 @@
 <a id="installation" class="anchor" href="#installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installation</h3>
 
 <p>
+0) You will need python3, python-pip and sqlite3, virtualenv, libmagic, libtidy, libxml2 and libxslt installed. All dev or devel versions.</p>
+
+<p>
 1) Fetch sources</p>
 
 <div class="highlight highlight-sh"><pre> git clone https://github.com/eghuro/crawlcheck crawlcheck</pre></div>
@@ -58,8 +61,6 @@
 
 <div class="highlight highlight-sh"><pre><span class="pl-c1">cd</span> crawlcheck
 pip install -r requirements.txt</pre></div>
-
-<p>You will need python 3, python-pip and sqlite3, virtualenv, libmagic, libtidy, libxml2 and libxslt installed. All dev or devel versions.</p>
 
 <h3>
 <a id="configuration" class="anchor" href="#configuration" aria-hidden="true"><span class="octicon octicon-link"></span></a>Configuration</h3>
