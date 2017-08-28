@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="cs">
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" type='text/css' media='all' href="stylesheets/webslides.css">
+    <link rel="stylesheet" type='text/css' media='all' href="stylesheets/svg-icons.css">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100,100i,300,300i,400,400i,700,700i%7CMaitree:200,300,400,600,700&amp;subset=latin-ext" rel="stylesheet">
+    <title>Inspektor webových stránek</title>
+</head>
+<body>
+<main role="main">
+  <article id="webslides">
+    <section class="bg-black aligncenter">
+        <h1><strong>Inspektor webových stránek</strong></h1>
+        <p>Crawlcheck - rozšiřitelný webový robot.</p>
+        <p><a target="_blank" href="https://github.com/eghuro/crawlcheck/"><span class="try">
+                <svg class="fa-github">
+                  <use xlink:href="#fa-github"></use>
+                </svg> Github</span>
+              </a>
+    </section>
+
+    <section class="slide-top content-center">
+        <h1>Problém</h1>
+        <div class="wrap bg-white shadow">    
+            <ul class="flexblock specs">
+                <li><h2>Dlouhodobě udržovaný, rozsáhlý web.</h2></li>
+                <li><h2>Provázanost odkazů.</h2></li>
+                <li><h2>Standardy.</h2></li>
+            </ul>
+        </div>
+    </section>
+
+    <section class="slide-top content-center">
+        <h1>Cíle práce</h1>
+        <div class="wrap bg-white shadow">
+            <ul class="flexblock specs">
+                <li><h2>Automatická kontrola webových celků.</h2></li>
+                <li><h2>Konfigurovatelnost.</h2></li>
+                <li><h2>Různé typy kontrol, rozšiřitelnost.</h2></li>
+                <li><h2>Výstup.</h2></li>
+            </ul>
+        </div>
+    </section>
+
+    <section class="slide-top content-center">
+        <h1>Řešení</h1>
+        <div class="wrap bg-white shadow">
+            <div class="grid vertical-align">
+                <div class="column">
+                    <ul class="flexblock specs">
+                        <li><h2>Webový robot</h2></li>
+                        <li><h2>Pluginy a existující nástroje</h2></li>
+                        <li><h2>Konfigurace</h2></li>
+                    </ul>
+                </div>
+                <div class="column">
+                    <figure><img class="aligncenter" src="images/obr1a.png" />
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="slide-top content-center">
+        <h1>Řešení: konfigurace</h1>
+        <div class="wrap bg-white shadow">
+            <ul class="flexblock specs">
+                <li><h2>Rozsah kontrol</h2><p>Co kontrolovat? Jaké kontroly provést?</p></li>
+                <li><h2>Pravidla pro adresy</h2><p>Jaké stránky kontrolovat? Jaké aplikovat pluginy?</p></li>
+                <li><h2>Pravidla pro typy obsahu</h2></li>
+                <li><h2>Filtry</h2></li>
+                <li><h2>Parametry</h2></li>
+            </ul>
+        </div>
+    </section>
+
+    <section class="slide-top content-center">
+        <h1>Řešení: pluginy</h1>
+        <div class="wrap bg-white shadow">
+            <div class="grid vertical-align">
+                <div class="column">
+                    <!--<h2>Kategorie</h2>-->
+                    <ul class="flexblock specs">
+                        <li><h3>Checker</h3><p>Kontrola obsahu.</p></li>
+                        <li><h3>Crawler</h3><p>Hledání odkazů.</p></li>
+                        <li><h3>Filter</h3><p>Filtr (např. hloubka zanoření, robots.txt)</p></li>
+                        <li><h3>Header</h3><p>Filtr na základě hlaviček HTTP.</p></li>
+                        <li><h3>Postprocessor</h3><p>Výstup.</p>
+                    </ul>
+                </div>
+                <div class="column">
+                    <figure><img class="aligncenter" src="images/obr2.png" /></figure>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="slide-top content-center">
+        <h1>Řešení: komunikace</h1>
+        <div class="wrap bg-white shadow">
+            <ul class="flexblock specs">
+                <li><h3>Stahovat jen to, co chceme</h3><p>Pravidla, filtry, kontroly hlaviček.</p></li>
+                <li><h3>Stahovat efektivně</h3><p>Connection pooling, keep-alive.</p></li>
+                <li><h3>Vyřešit problémy reálného světa</h3></li>
+            </ul>
+        </div>
+    </section>
+
+    <section class="slide-top content-center">
+        <h1>Řešení: problémy komunikace</h1>
+        <div class="wrap bg-white shadow">
+            <ul class="flexblock specs">
+                <li><h3>Náhodné chyby spojení nebo neplatný odkaz?</h3><p>Konfigurovatelný timeout a opakování spojení.</p></li>
+                <li><h3>Neuvedený nebo chybný typ obsahu.</h3><p>Omezení maximální velikosti souboru.</p></li>
+                <li><h3>Jedna stránka - více adres.</h3><p>Aliasy - kanonická URL, přesměrování</p></li>
+                <li><h3>Nekonečně zanořené odkazy.</h3><p>Omezení hloubky</p></li>
+            </ul>
+        </div>
+    </section>
+
+    <section class="slide-top content-center">
+        <h1>Typy kontrol</h1>
+        <div class="wrap bg-white shadow">
+            <ul class="flexblock specs">
+                <li><h2>Existující knihonvy, které řeší problém.</h2><p>Validace syntaxe HTML, CSS.</p></li>
+                <li><h2>Existující knihovny, které parsují formát.</h2><p>Nutná vlastní logika nebo větší integrace.</p><p>Robots.txt, sitemap.xml</p><p>HTML: detekce odkazů a další kontroly.</p></li>
+                <li><h2>Implementace.</h2><p>Detekce duplikátů.</p></li>
+            </ul>
+        </div>
+    </section>
+  </article>
+</main>
+<script src="javascripts/webslides.min.js"></script>
+<script>
+    window.ws = new WebSlides();
+</script>
+<script defer src="javascripts/svg-icons.js"></script>
+</body>
+</html>
