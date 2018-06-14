@@ -3,6 +3,7 @@ from requests.exceptions import InvalidSchema, ConnectionError
 from requests.exceptions import MissingSchema, Timeout, TooManyRedirects
 from urllib.parse import urlparse, urlencode
 import os
+import backoff
 import tempfile
 import magic
 import logging
@@ -37,26 +38,27 @@ class StatusError(Exception):
     def __str__(self):
         return repr(self.value)
 
+def lookup_max_tries():
+    return Network.max_tries
+
+def lookup_timeout():
+    return Network.max_tries * Network.timeout
+
+def giveup(details):
+    msg = "All {tries} attempts failed.".format(**details) # (str(max_attempts))
+    Network.journal.foundDefect(Network.idno, "neterr", "Network error", msg, 0.9)
+    raise NetworkError("{tries} attempts failed".format(**details)) from sys.last_value
 
 class Network(object):
 
     __allowed_schemata = set(['http', 'https'])
+    max_tries = 1
 
     @staticmethod
     def __check_schema(uri):
         s = urlparse(uri).scheme
         if s not in Network.__allowed_schemata:
             raise UrlError(s + " is not an allowed schema")
-
-    @staticmethod
-    def __backoff(attempt, max_attempts, log, e):
-        if (attempt + 1) < max_attempts:
-            log.info("Retrying!")
-            wait = math.pow(10, attempt)
-            time.sleep(wait)
-        else:
-            raise NetworkError("%s attempts failed" %
-                               str(max_attempts)) from e
 
     @staticmethod
     def testLink(tr, journal, conf, session, acceptedTypes):
@@ -76,31 +78,32 @@ class Network(object):
         tr.headers["Accept"] = accept
 
         log.debug("Timeout set to: %s" % (str(conf.getProperty("timeout"))))
-        attempt = 0
-        max_attempts = conf.getProperty("maxAttempts")
-        while attempt < max_attempts:
-            try:
-                log.debug("Requesting")
-                r = session.request(tr.method,
-                                    tr.uri + Network.__gen_param(tr),
-                                    headers=tr.headers,
-                                    timeout=conf.getProperty("timeout"),
-                                    cookies=tr.cookies,
-                                    verify=conf.getProperty("verifyHttps"),
-                                    stream=True)
-            except TooManyRedirects as e:
-                log.exception("Error while downloading: too many redirects", e)
-                raise NetworkError("Too many redirects") from e
-            except (ConnectionError, Timeout) as e:
-                log.warn("Error while downloading: %s" % e)
-                Network.__backoff(attempt, max_attempts, log, e)
-                attempt = attempt + 1
-            else:
-                return Network.__process_link(tr, r, journal, log)
-        msg = "All %s attempts to get %s failed." % (str(max_attempts),
-                                                     tr.uri)
-        journal.foundDefect(tr.idno, "neterr", "Network error", msg, 0.9)
-        raise NetworkError(msg)
+        Network.max_tries = conf.getProperty("maxAttempts")
+        Network.timeout = conf.getProperty("timeout")
+        return Network.__do_request(tr, conf, log, journal, session)
+
+
+    @staticmethod
+    @backoff.on_exception(backoff.expo, (ConnectionError, Timeout),
+                          max_tries=lookup_max_tries,
+                          max_time=lookup_timeout,
+                          on_giveup=giveup)
+    def __do_request(tr, conf, log, journal, session):
+        try:
+            log.debug("Requesting")
+            Network.idno = tr.idno
+            r = session.request(tr.method,
+                                tr.uri + Network.__gen_param(tr),
+                                headers=tr.headers,
+                                #timeout=conf.getProperty("timeout"),
+                                cookies=tr.cookies,
+                                verify=conf.getProperty("verifyHttps"),
+                                stream=True)
+        except TooManyRedirects as e:
+            log.exception("Error while downloading: too many redirects", e)
+            raise NetworkError("Too many redirects") from e
+        else:
+            return Network.__process_link(tr, r, journal, log)
 
     @staticmethod
     def __process_link(transaction, r, journal, log):
