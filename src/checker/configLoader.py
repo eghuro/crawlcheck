@@ -119,9 +119,19 @@ class ConfigLoader(object):
 
         # Grab lists
         self.__set_entry_points(root)
-        self.filters = self.__set_plugins(root, 'filters', self.filters)
-        self.postprocess = self.__set_plugins(root, 'postprocess',
-                                              self.postprocess)
+
+        if type(root['filters']) is bool:
+            self.properties['all_filters'] = root['filters']
+        else:
+            self.properties['all_filters'] = False
+            self.filters = self.__set_plugins(root, 'filters', self.filters)
+
+        if type(root['postprocess']) is bool:
+            self.properties['all_postprocess'] = root['postprocess']
+        else:
+            self.properties['all_postprocess'] = False
+            self.postprocess = self.__set_plugins(root, 'postprocess',
+                                                  self.postprocess)
 
         # Grab properties
         used_keys = set(['database', cts, 'regexes', 'version', 'entryPoints',

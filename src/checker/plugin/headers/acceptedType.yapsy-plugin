@@ -1,8 +1,0 @@
-[Core]
-Name = Test that content type might be accepted
-Module = acceptedType
-
-[Documentation]
-Author = Alexandr Mansurov
-Version = 0.0
-Description = Filter out transactions with content-type that won't be matched by any available rule

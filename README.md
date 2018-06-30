@@ -103,11 +103,19 @@ filters: #Filters (plugins of category header and filter) that can be used
  - uri_normalizer
  - expectedType
 
+# filters: True
+# alternative option to allow all available filters
+# can be passed on command line using --param
+
 postprocess:
  - sitemap_generator
  - report_exporter
  - yaml_exporter
  - TexReporter
+
+# postprocess: True
+# alternative option to allow all available postprocessors
+# can be passed on command line using --param
 
 entryPoints: # where to start
 # Note, that once URI get's to the database it's no longer being requested

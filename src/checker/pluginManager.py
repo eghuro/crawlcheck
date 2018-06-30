@@ -131,14 +131,14 @@ def __load_plugin(pluginInfo, log, conf, filter_lists, filter_categories,
     log.info("%s (%s)" % (pluginInfo.name, pluginInfo.plugin_object.id))
 
     if pluginInfo.plugin_object.category in filter_categories:
-        if pluginInfo.plugin_object.id in allowed_filters:
+        if pluginInfo.plugin_object.id in allowed_filters or conf.properties['all_filters']:
             filter_lists[pluginInfo.plugin_object.category].append(pluginInfo.plugin_object)
     elif pluginInfo.plugin_object.category in plugin_categories:
         log.debug("General plugin")
         plugins.append(pluginInfo.plugin_object)
     elif pluginInfo.plugin_object.category == PluginType.POSTPROCESS:
         log.debug("Postprocessor")
-        if pluginInfo.plugin_object.id in conf.postprocess:
+        if pluginInfo.plugin_object.id in conf.postprocess or conf.properties['all_postprocess']:
             postprocess.append(pluginInfo.plugin_object)
         else:
             log.debug("Not allowed in conf")

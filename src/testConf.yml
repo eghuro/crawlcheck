@@ -34,19 +34,9 @@ regexes:
     regex: "https?://(?!ksp.mff.cuni.cz/(sksp|profil|forum)).+" #test links (HEAD request) only
     plugins:
 
-filters:
- - depth
- - robots
- - contentLength
- - canonical
- - acceptedUri
- - uri_normalizer
- - expectedType
+filters: True
 
-postprocess:
- - report_exporter
- - yaml_exporter
- - sitemap_generator
+postprocess: True
 
 entryPoints:
  - "http://ksp.mff.cuni.cz/"
