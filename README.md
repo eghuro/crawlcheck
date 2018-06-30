@@ -190,7 +190,6 @@ Crawlcheck is currently extended with the following plugins:
 * contentLength (header)
 * expectedType (header)
 * canonical (header)
-* acceptedType (header)
 * acceptedUri (header)
 * uri_normalizer (header)
 * depth (filter)
