@@ -190,7 +190,6 @@ Crawlcheck is currently extended with the following plugins:
 * report_exporter (postprocessor)
 * yaml_exporter (postprocessor)
 * sitemap_generator (postprocessor)
-* TexReporter (postprocessor)
 
 ## How to write a plugin
 
