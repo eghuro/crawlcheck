@@ -8,11 +8,11 @@ content-types.
 
 ## Version
 
-1.0.1
+1.1.0
 
 ## Dependencies
 
-Crawlcheck's engine currently runs on Python 3.5 and uses SQLite3 as a
+Crawlcheck's engine currently runs on Python 3.5 and 3.6 and uses SQLite3 as a
 database backend. Crawlcheck uses a number of open source projects to work
 properly. Python dependencies are listed in
 [requirements.txt](https://github.com/eghuro/crawlcheck/blob/master/requirements.txt)
@@ -46,7 +46,7 @@ A configuration file is a YAML file defined as follows:
 version: 1.05                   # configuration format version
 database: crawlcheck.sqlite     # SQLite database file
 maxDepth: 10                    # max amount of links followed from any entry point (default: 0 meaning unlimited)
-agent: "Crawlcheck/1.05"        # user agent used (default: Crawlcheck/1.05)
+agent: "Crawlcheck/1.1"         # user agent used (default: Crawlcheck/1.1)
 logfile: cc.log                 # where to store logs
 maxContentLength: 2000000       # max file size to download
 pluginDir: plugin               # where to look for plugins (including subfolders, default: 'plugin')
@@ -73,33 +73,6 @@ yaml-out-file: "cc.yml"         # where to write YAML report
 report-file: "report"           # where to write PDF report (.pdf will be added automatically)
 
 # other parameters used by plugins written as ```key: value```
-
-content-types:
- -
-    "content-type": "text/html"
-    plugins: # plugins to use for given content-type
-       - linksFinder
-       - tidyHtmlValidator
-       - css_scraper
-       - formChecker
-       - seoimg
-       - seometa
-       - dupdetect
-       - non_semantic_html
- -
-    "content-type": "text/css"
-    plugins:
-       - tinycss
-       - dupdetect
- -
-    "content-type": "application/gzip"
-    plugins:
-       - sitemapScanner
--
-    "content-type": "application/xml"
-    plugins:
-       - sitemapScanner
-       - dupdetect
 
 urls:
  -
@@ -139,6 +112,35 @@ entryPoints: # where to start
 # (beware of repeated starts, if entry point remains in the database execution won't
 # start from this entry point)
  - "http://mj.ucw.cz/vyuka/"
+
+#additional content type rules can be still specified and take precedence over plugin defined rules
+content-types:
+ -
+    "content-type": "text/html"
+    plugins: # plugins to use for given content-type
+       - linksFinder
+       - tidyHtmlValidator
+       - css_scraper
+       - formChecker
+       - seoimg
+       - seometa
+       - dupdetect
+       - non_semantic_html
+ -
+    "content-type": "text/css"
+    plugins:
+       - tinycss
+       - dupdetect
+ -
+    "content-type": "application/gzip"
+    plugins:
+       - sitemapScanner
+-
+    "content-type": "application/xml"
+    plugins:
+       - sitemapScanner
+       - dupdetect
+
 ```
 
 ## Running crawlcheck
@@ -213,6 +215,10 @@ class MyPlugin(IPlugin):
 
     category = PluginType.CHECKER # pick appropriate type
     id = myPlugin
+    contentTypes = ["text/html"] #accepted content types (checkers & crawlers)
+
+    def acceptType(ctype): #alternatively a method resolving more complex content-type rules
+        return True
 
     def setJournal(self, journal):
         # record journal somewhere - all categories
