@@ -6,6 +6,7 @@ class NonSemanticHtml(IPlugin):
 
     category = PluginType.CHECKER
     id = "non_semantic_html"
+    contentTypes = ["text/html"]
 
     def __init__(self):
         self.__journal = None

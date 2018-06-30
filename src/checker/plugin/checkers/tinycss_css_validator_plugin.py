@@ -8,6 +8,7 @@ class CssValidator(IPlugin):
 
     category = PluginType.CHECKER
     id = "tinycss"
+    contentTypes = ["text/css"]
 
     def __init__(self):
         self.__journal = None

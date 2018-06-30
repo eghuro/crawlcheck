@@ -8,6 +8,7 @@ class Tidy_HTML_Validator(IPlugin):
 
     category = PluginType.CHECKER
     id = "tidyHtmlValidator"
+    contentTypes = ["text/html"]
 
     def __init__(self):
         self.__journal = None

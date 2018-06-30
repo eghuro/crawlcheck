@@ -8,6 +8,7 @@ class LinksFinder(IPlugin):
 
     category = PluginType.CRAWLER
     id = "linksFinder"
+    contentTypes = ["text/html"]
 
     def __init__(self):
         self.__queue = None

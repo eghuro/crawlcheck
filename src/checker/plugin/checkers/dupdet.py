@@ -23,6 +23,10 @@ class DuplicateDetector(IPlugin):
     category = PluginType.CHECKER
     id = "dupdetect"
 
+    @staticmethod
+    def acceptType(ctype):
+        return True
+
     def __init__(self):
         self.__journal = None
         self.__size_dups = dict()

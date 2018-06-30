@@ -10,6 +10,7 @@ class SitemapScanner(IPlugin):
 
     category = PluginType.CRAWLER
     id = "sitemapScanner"
+    contentTypes = ["application/gzip", "text/xml", "application/xml"]
 
     # https://www.sitemaps.org/protocol.html
     __limit_size = 50000000  # 50 MB

@@ -24,7 +24,8 @@ class ConfigLoader(object):
         get_configuration().
     """
 
-    __VERSION = 1.05
+    __CONFIG_VERSION = 1.05
+    __APP_VERSION = 1.01
 
     def __init__(self):
         self.__dbconf = DatabaseConfiguration()
@@ -39,7 +40,7 @@ class ConfigLoader(object):
 
         # defaults
         self.properties["pluginDir"] = "plugin"
-        self.properties["agent"] = "Crawlcheck/"+str(ConfigLoader.__VERSION)
+        self.properties["agent"] = "Crawlcheck/"+str(ConfigLoader.__APP_VERSION)
         self.properties["maxDepth"] = 0
         self.properties["timeout"] = 1
         self.properties["maxVolume"] = sys.maxsize
@@ -76,12 +77,12 @@ class ConfigLoader(object):
         version_check = False
         if 'version' not in root:
             self.__log.error("Version not specified")
-        elif str(root['version']) == str(ConfigLoader.__VERSION):
+        elif str(root['version']) == str(ConfigLoader.__CONFIG_VERSION):
             version_check = True
         else:
             self.__log.error("Configuration version doesn't match (got " +
                              str(root['version']) + ", expected: " +
-                             str(ConfigLoader.__VERSION) + ")")
+                             str(ConfigLoader.__CONFIG_VERSION) + ")")
         return version_check
 
     def __set_entry_points(self, root):
@@ -134,9 +135,12 @@ class ConfigLoader(object):
     def __get_acceptor(self, tags_string, tag_string, description, root):
         acceptor = Acceptor()
         if tags_string in root:
+            acceptor.empty = False
             tags = root[tags_string]
             if tags:
                 self.__run_tags(tags, description, acceptor, tag_string)
+        else:
+            acceptor.empty = True
         return acceptor
 
     def __run_tags(self, tags, description, acceptor, tag_string):

@@ -7,6 +7,7 @@ class MetaTagValidator(IPlugin):
 
     category = PluginType.CHECKER
     id = "seometa"
+    contentTypes = ["text/html"]
 
     __defects = {"seo:multidsc": "Multiple description meta tags found",
                  "seo:nodsc": "No description meta tag found",

@@ -6,7 +6,7 @@ initdb: True
 pluginDir: plugin  # defaults to 'plugin'
 maxDepth: 10
 maxContentLength: 2000000
-agent: "Crawlcheck/0.05"
+agent: "Crawlcheck/1.01"
 logfile: cc-ksp.log
 report: "http://localhost:5000"
 cleanreport: True
@@ -17,37 +17,6 @@ sitemap-file: "sitemap.xml"
 sitemap-regex: "https?://ksp.mff.cuni.cz(/.*)?"
 yaml-out-file: 'cc-ksp.yml'
 verifyHttps: True
-
-content-types:
- - 
-   "content-type": "text/html"
-   plugins:
-     - linksFinder
-     - tidyHtmlValidator
-     - css_scraper
-     - formChecker
-     - seoimg
-     - seometa
-     - dupdetect
- -
-   "content-type": "text/css"
-   plugins:
-     - tinycss
-     - dupdetect
- -
-  "content-type": "application/gzip"
-  plugins:
-    - sitemapScanner
- -
-   "content-type": "text/xml"
-   plugins:
-     - sitemapScanner
-     - dupdetect
- -
-   "content-type": "application/xml"
-   plugins:
-     - sitemapScanner
-     - dupdetect
 
 regexes:
  -
@@ -70,7 +39,6 @@ filters:
  - robots
  - contentLength
  - canonical
- - acceptedType
  - acceptedUri
  - uri_normalizer
  - expectedType

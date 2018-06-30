@@ -7,6 +7,7 @@ class ImageTagValidator(IPlugin):
 
     category = PluginType.CHECKER
     id = "seoimg"
+    contentTypes = ["text/html"]
 
     def __init__(self):
         self.__journal = None

@@ -368,7 +368,13 @@ class Rack:
     def accept(self, transaction, plugin):
         """Is the transaction accepted by the plugin?"""
 
-        type_cond = self.typeAcceptor.accept(str(transaction.type), plugin.id)
+        if not self.typeAcceptor.empty:
+            self.typeAcceptor.accept(str(transaction.type), plugin.id)
+        else:
+            try:
+                type_cond = str(transaction.type) in plugin.contentTypes
+            except AttributeError:
+                type_cond = plugin.acceptType(str(transaction.type))
         regex_cond = self.regexAcceptor.accept(transaction.uri, plugin.id)
         return type_cond and regex_cond
 

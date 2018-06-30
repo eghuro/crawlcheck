@@ -6,6 +6,7 @@ class CssScraper(IPlugin):
 
     category = PluginType.CHECKER
     id = "css_scraper"
+    contentTypes = ["text/html"]
 
     def __init__(self):
         self.__journal = None
