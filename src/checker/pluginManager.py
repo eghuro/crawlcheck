@@ -4,7 +4,7 @@
 """
 from yapsy.PluginManager import PluginManager
 
-from configLoader import ConfigLoader
+from configLoader import ConfigLoader, EntryPointRecord
 from core import Core
 from common import PluginType
 
@@ -215,16 +215,24 @@ def __run_checker(log, plugins, headers, filters, pps, conf, export_only):
     else:
         core_instance.postprocess()
 
+def validate_param(ctx, param, values):
+    try:
+        for value in values:
+            key, val = value.split('=', 2)
+            yield (key, val)
+    except ValueError:
+        raise click.BadParameter('parameters need to be in format key=value')
 
 @click.command()
-@click.option('-e', is_flag=True)
-@click.option('-d', is_flag=True)
+@click.option('-e', '--export', is_flag=True, help="Just run postprocessing on existing database.")
+@click.option('-d', '--debug', is_flag=True, help="Write detailed information into log file.")
+@click.option('-p', '--param', multiple=True, callback=validate_param, help="Additional configuration parameters.")
+@click.option('--entry', multiple=True, help="Additional entry points.")
 @click.argument('cfile', type=click.Path(exists=True))
-def main(e, d, cfile):
+def main(export, debug, param, entry, cfile):
     """ Load configuration, find plugins, run core.
     """
-    export_only = e
-    debug = d
+    export_only = export
 
     gc.enable()
     global core_instance
@@ -238,6 +246,16 @@ def main(e, d, cfile):
     conf, cl = __load_configuration(cfile, log)
     if conf is None:
         return
+
+    for ep in entry:
+        conf.entry_points.append(EntryPointRecord(ep))
+
+    # load flags onto configuration
+    for p in param:
+        if p[0] == 'database':
+            conf.dbconf.setDbname(p[1])
+        else:
+            conf.properties[p[0]] = p[1]
 
     try:
         __configure_logger(conf, debug=debug)

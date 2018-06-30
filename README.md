@@ -73,6 +73,8 @@ yaml-out-file: "cc.yml"         # where to write YAML report
 report-file: "report"           # where to write PDF report (.pdf will be added automatically)
 
 # other parameters used by plugins written as ```key: value```
+# these parameters can be also specified on command line using --param key=value
+# command line parameters override configuration ones
 
 urls:
  -
@@ -111,6 +113,8 @@ entryPoints: # where to start
 # Note, that once URI get's to the database it's no longer being requested
 # (beware of repeated starts, if entry point remains in the database execution won't
 # start from this entry point)
+#
+# Entry points can also be specified via command line parameter --entry=url
  - "http://mj.ucw.cz/vyuka/"
 
 #additional content type rules can be still specified and take precedence over plugin defined rules
