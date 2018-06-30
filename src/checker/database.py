@@ -203,6 +203,8 @@ class DBAPI(object):
                 for qtype in qtypes:
                     cursor.executemany(queries[qtype], logs[qtype])
 
+                con.commit()
+
                 if vacuum:
                     log.debug("Vacuum")
                     cursor.execute("VACUUM")
