@@ -27,6 +27,7 @@ class YamlExporter(IPlugin):
             with open(self.__conf.getProperty('yaml-out-file'), 'w',
                       encoding="utf-8") as out:
                 out.write(yaml.dump(self.__db.create_report_payload(
-                                    self.__conf.getProperty("cores", 4))))
+                                    self.__conf.getProperty("cores", 4),
+                                    self.__conf.getProperty("loglink", True))))
         else:
             self.__log.info("Reporting not required")

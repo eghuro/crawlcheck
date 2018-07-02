@@ -258,7 +258,7 @@ class DBAPI(object):
         c.execute(q)
         return c.fetchall()
 
-    def create_report_payload(self, cores=4):
+    def create_report_payload(self, cores=4, loglink=False):
         log = logging.getLogger(__name__)
         log.info("Creating report")
         if not cores:
@@ -266,7 +266,7 @@ class DBAPI(object):
         qt = Queue()
         tproc = Process(name="Transaction report",
                         target=DBAPI.__create_transactions,
-                        args=(self.conf.getDbname(), qt, cores))
+                        args=(self.conf.getDbname(), qt, cores, loglink))
 
         ql = Queue()
         lproc = Process(name="Link report",
@@ -335,7 +335,7 @@ class DBAPI(object):
         return self.__fetchall(query)
 
     @staticmethod
-    def __create_transactions(dbname, queue, allowance):
+    def __create_transactions(dbname, queue, allowance, loglink):
         log = logging.getLogger(__name__)
         if allowance < 1:
             log.error("Wrong amount of processes: " + str(allowance))
@@ -365,7 +365,7 @@ class DBAPI(object):
                      (str(len(transactions)), str(allowance)))
 
             with Pool(allowance) as pool:
-                partial_process = partial(process_transaction, dbname=dbname)
+                partial_process = partial(process_transaction, dbname=dbname, loglink=loglink)
                 queue.put(pool.map(partial_process, transactions))
 
     @staticmethod
@@ -433,10 +433,10 @@ class DBAPI(object):
             queue.put(defects)
 
 
-def process_transaction(t, dbname):
+def process_transaction(t, dbname, loglink):
     with mdb.connect(dbname) as con:
         c = con.cursor()
-        if t['depth'] > 0:
+        if t['depth'] > 0 and loglink:
             q = ('SELECT link.responseId FROM link '
                  'WHERE link.requestId = ? '
                  'AND link.processed = "true" LIMIT 1')

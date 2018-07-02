@@ -421,7 +421,7 @@ class TransactionQueue:
             log.warn("Not logging link, because limit was reached")
             return
 
-        if parent is not None:
+        if self.__conf.getProperty('logLink', False) and parent is not None:
             self.__db.log_link(parent.idno, transaction.uri, transaction.idno)
 
     def push_link(self, uri, parent, expected=None):
@@ -446,7 +446,8 @@ class TransactionQueue:
 
         t = createTransaction(uri, parent.depth + 1, parent.idno)
         self.__mark_seen(t)
-        self.__db.log_link(parent.idno, uri, t.idno)
+        if self.__conf.getProperty('loglink', False):
+            self.__db.log_link(parent.idno, uri, t.idno)
         return t
 
     def push_rescheduled(self, transaction):

@@ -36,7 +36,8 @@ class ReportExporter(IPlugin):
 
             # prepare YAML payload
             payload = yaml.dump(self.__db.create_report_payload(
-                                    self.__conf.getProperty("cores", 4)))
+                                    self.__conf.getProperty("cores", 4),
+                                    self.__conf.getProperty("loglink", True)))
             self.__log.info("Payload size: " + str(len(payload)))
             self.__log.debug(payload)
 
