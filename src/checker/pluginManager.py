@@ -121,6 +121,9 @@ def __load_plugins(cl, log, conf):
             __load_plugin(pluginInfo, log, conf, filter_lists,
                           filter_categories, plugin_categories,
                           allowed_filters, plugins, postprocess)
+        log.debug("Loaded headers: %s" % str(headers))
+        log.debug("Loaded filters: %s" % str(filters))
+        log.debug("Loaded postprocessors: %s" % str(postprocess))
     else:
         log.warn("No plugins found")
     return plugins, headers, filters, postprocess

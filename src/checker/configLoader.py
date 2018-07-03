@@ -140,8 +140,8 @@ class ConfigLoader(object):
                 self.postprocess = []
             else:
                 self.properties['all_postprocess'] = False
-            self.postprocess = self.__set_plugins(root, 'postprocess',
-                                                  self.postprocess)
+                self.postprocess = self.__set_plugins(root, 'postprocess',
+                                                      self.postprocess)
 
         # Grab properties
         used_keys = set(['database', cts, 'regexes', 'version', 'entryPoints',

@@ -2,8 +2,6 @@ from common import PluginType
 from yapsy.IPlugin import IPlugin
 import logging
 import hashlib
-import filecmp
-import os
 
 
 class DuplicateDetector(IPlugin):
@@ -54,8 +52,7 @@ class DuplicateDetector(IPlugin):
         if fsize in self.__size_dups:
             h = self.__hashfile(transaction.file)
             self.__hash[transaction.file] = h
-            for x in self.__compare(fsize, transaction, h):
-                self.__size_dups[fsize].remove(x)
+            self.__compare(fsize, transaction, h)
             self.__size_dups[fsize].add(transaction.file)
         else:
             self.__size_dups[fsize] = set([transaction.file])
@@ -68,48 +65,23 @@ class DuplicateDetector(IPlugin):
         (possibly due to tmp limit)
         """
 
-        rem = []
         for f in self.__size_dups[fsize]:
             if self.__are_different(f, transaction):
                 if f not in self.__hash:
                     self.__hash[f] = self.__hashfile(transaction.file)
                 if self.__hash[f] == reference_hash:
-                    if self.__file_cmp(f, transaction):
-                        rem.append(f)
-        return rem
+                    #if self.__file_cmp(f, transaction):
+                    self.__journal.foundDefect(transaction.idno,
+                                               "dup",
+                                               "Duplicate pages",
+                                               self.__urls[f], 0.7)
 
     def __are_different(self, f, transaction):
         return f != transaction.file and self.__urls[f] != transaction.uri
 
-    def __file_cmp(self, f, transaction):
-        """Stage 3 of the duplication testing.
-        Compare a candidate with the transaction file.
-        Report a possible duplicate through journal.
-        Return whether a candidate file should be removed.
-        """
-
-        try:
-            if filecmp.cmp(f, transaction.file):
-                # duplicate (same size, hash, content)
-                self.__journal.foundDefect(transaction.idno,
-                                           "dup",
-                                           "Duplicate pages",
-                                           self.__urls[f], 0.7)
-        except FileNotFoundError as e:
-            self.__log.warn("File not found: %s" % (str(e)))
-            if not os.path.isfile(f):
-                self.__log.debug("Removed missing file " + f +
-                                 "from set")
-                return True
-            else:
-                self.__log.debug("Missing transaction file " +
-                                 transaction.file +
-                                 " - THIS IS NOT GOOD!!!")
-        return False
-
     def __hashfile(self, path, blocksize=65536):
         with open(path, 'rb') as afile:
-            hasher = hashlib.md5()
+            hasher = hashlib.sha512()
             buf = afile.read(blocksize)
             while len(buf) > 0:
                 hasher.update(buf)

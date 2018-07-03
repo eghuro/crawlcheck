@@ -446,7 +446,7 @@ class TransactionQueue:
 
         t = createTransaction(uri, parent.depth + 1, parent.idno)
         self.__mark_seen(t)
-        if self.__conf.getProperty('loglink', False):
+        if self.__conf.getProperty('loglink', True):
             self.__db.log_link(parent.idno, uri, t.idno)
         return t
 
