@@ -42,8 +42,6 @@ class RobotsFilter(IPlugin):
             # link robots.txt from transaction, but mark transaction as visited
             robots_url = Robots.robots_url(tran.uri)
 
-            self.__record_sitemaps(tran, robots_url)
-
             self.__log.debug("Testing robots.txt for " + tran.uri)
             agent = self.__conf.getProperty("agent")
 
@@ -52,6 +50,7 @@ class RobotsFilter(IPlugin):
                                  "prevent " + agent + " from fetching it")
                 raise FilterException()
             else:
+                self.__record_sitemaps(tran, robots_url)
                 self.__crawl_delay(tran, agent, robots_url)
         except TypeError as e:
             self.__log.warning("Error while handling robots.txt for " +
