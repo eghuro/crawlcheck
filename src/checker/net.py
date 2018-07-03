@@ -45,14 +45,15 @@ def lookup_timeout():
     return Network.max_tries * Network.timeout
 
 def giveup(details):
-    msg = "All {tries} attempts failed.".format(**details) # (str(max_attempts))
+    msg = "All %s attempts to get %s failed.".format(**details) # (str(max_attempts))
     Network.journal.foundDefect(Network.idno, "neterr", "Network error", msg, 0.9)
-    raise NetworkError("{tries} attempts failed".format(**details)) from sys.last_value
+    raise NetworkError(msg) from sys.exc_info()[1]
 
 class Network(object):
 
     __allowed_schemata = set(['http', 'https'])
     max_tries = 1
+    journal = None
 
     @staticmethod
     def __check_schema(uri):
@@ -89,6 +90,7 @@ class Network(object):
                           max_time=lookup_timeout,
                           on_giveup=giveup)
     def __do_request(tr, conf, log, journal, session):
+        Network.journal = journal
         try:
             log.debug("Requesting")
             Network.idno = tr.idno
@@ -100,9 +102,11 @@ class Network(object):
                                 verify=conf.getProperty("verifyHttps"),
                                 stream=True)
         except TooManyRedirects as e:
+            Network.journal = None
             log.exception("Error while downloading: too many redirects", e)
             raise NetworkError("Too many redirects") from e
         else:
+            Network.journal = None
             return Network.__process_link(tr, r, journal, log)
 
     @staticmethod
