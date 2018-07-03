@@ -114,7 +114,7 @@ def __load_plugins(cl, log, conf):
     manager.collectPlugins()
 
     if len(manager.getAllPlugins()) > 0:
-        log.info("Loaded plugins:")
+        log.debug("Loaded plugins:")
         filter_lists = {PluginType.FILTER: filters,
                         PluginType.HEADER: headers}
         for pluginInfo in manager.getAllPlugins():
@@ -122,13 +122,13 @@ def __load_plugins(cl, log, conf):
                           filter_categories, plugin_categories,
                           allowed_filters, plugins, postprocess)
     else:
-        log.info("No plugins found")
+        log.warn("No plugins found")
     return plugins, headers, filters, postprocess
 
 
 def __load_plugin(pluginInfo, log, conf, filter_lists, filter_categories,
                   plugin_categories, allowed_filters, plugins, postprocess):
-    log.info("%s (%s)" % (pluginInfo.name, pluginInfo.plugin_object.id))
+    log.debug("%s (%s)" % (pluginInfo.name, pluginInfo.plugin_object.id))
 
     if pluginInfo.plugin_object.category in filter_categories:
         if pluginInfo.plugin_object.id in allowed_filters or conf.properties['all_filters']:
@@ -138,7 +138,12 @@ def __load_plugin(pluginInfo, log, conf, filter_lists, filter_categories,
         plugins.append(pluginInfo.plugin_object)
     elif pluginInfo.plugin_object.category == PluginType.POSTPROCESS:
         log.debug("Postprocessor")
-        if pluginInfo.plugin_object.id in conf.postprocess or conf.properties['all_postprocess']:
+        if 'all_postprocess' in conf.properties:
+            if conf.properties['all_postprocess']:
+                postprocess.append(pluginInfo.plugin_object)
+            else:
+                log.debug("Not allowed in conf")
+        elif pluginInfo.plugin_object.id in conf.postprocess:
             postprocess.append(pluginInfo.plugin_object)
         else:
             log.debug("Not allowed in conf")
