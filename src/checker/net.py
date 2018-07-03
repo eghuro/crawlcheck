@@ -10,6 +10,9 @@ import logging
 import math
 import time
 import sys
+import redis
+import uuid
+
 
 # We handle and log exceptions from libraries.
 # This is to prevent libraries to write their messages to the log.
@@ -154,11 +157,11 @@ class Network(object):
 
         log = logging.getLogger(__name__)
         try:
-            with tempfile.NamedTemporaryFile(delete=False,
-                                             prefix=conf.getProperty("tmpPrefix"),
-                                             suffix=conf.getProperty("tmpSuffix"),
-                                             dir=conf.getProperty("tmpDir", "/tmp/")) as tmp:
-                Network.__download(transaction, conf, tmp, journal, log)
+            #with tempfile.NamedTemporaryFile(delete=False,
+            #                                 prefix=conf.getProperty("tmpPrefix"),
+            #                                 suffix=conf.getProperty("tmpSuffix"),
+            #                                 dir=conf.getProperty("tmpDir", "/tmp/")) as tmp:
+            Network.__download(transaction, conf, journal, log)
         except ConnectionError as e:
             log.debug("Connection error: %s" % (format(e)))
             journal.foundDefect(transaction.srcId, "badlink", "Invalid link",
@@ -170,8 +173,9 @@ class Network(object):
                                 "Link timed out", transaction.uri, 0.9)
             raise NetworkError() from e
         else:
+            red = redis.StrictRedis(host=conf.getProperty('redisHost', 'localhost'), port=conf.getProperty('redisPort', 6379), db=conf.getProperty('redisDb', 0)) 
             match, mime = Network.__test_content_type(transaction.type,
-                                                      transaction.file)
+                                                      transaction.file, red)
             if not match:
                 journal.foundDefect(transaction.idno, "type-mishmash",
                                     "Declared content-type doesn't match detected one",
@@ -179,11 +183,14 @@ class Network(object):
                                     0.3)
 
     @staticmethod
-    def __download(transaction, conf, tmp, journal, log):
+    def __download(transaction, conf, journal, log):
             MAX_CHSIZE = 10000000
-            transaction.file = tmp.name
+            key = str(uuid.uuid4())
+            red = redis.StrictRedis(host=conf.getProperty('redisHost', 'localhost'), port=conf.getProperty('redisPort', 6379), db=conf.getProperty('redisDb', 0)) 
+            transaction.file = key
+            #transaction.file = tmp.name
             log.info("Downloading %s" % transaction.uri)
-            log.debug("Downloading chunks into %s" % tmp.name)
+            log.debug("Downloading chunks into redis key %s" % key)
             limit = conf.getProperty("maxContentLength", sys.maxsize)
             # Note that the default value here is sys.maxsize.
             # This is to handle the case when maxContentLength is not set.
@@ -191,9 +198,15 @@ class Network(object):
             # If we don't specify our default value, it would be None.
             # But limit cannot be None, it would cause exception in min call.
             chsize = min(limit, MAX_CHSIZE)
+
+            inserted = 0
             for chunk in transaction.request.iter_content(chunk_size=chsize):
                 if chunk:
-                    tmp.write(chunk)
+                    red.append(key, chunk)
+                    inserted = inserted + len(chunk)
+                    #tmp.write(chunk)
+            red.expire(key, conf.getProperty('redisExpireContent', 10))
+            transaction.size = inserted
             log.debug("%s downloaded." % transaction.uri)
 
     @staticmethod
@@ -218,6 +231,6 @@ class Network(object):
         transaction.cookies = cookies
 
     @staticmethod
-    def __test_content_type(ctype, fname):
-        mime = magic.from_file(fname, mime=True)
+    def __test_content_type(ctype, fname, red):
+        mime = magic.from_buffer(red.get(fname), mime=True)
         return (mime == ctype), mime

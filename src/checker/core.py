@@ -57,7 +57,7 @@ class Core:
         for entryPoint in self.conf.entry_points:
             self.log.debug("Pushing to queue: %s, data: %s" %
                            (entryPoint.url, str(entryPoint.data)))
-            self.queue.push(createTransaction(entryPoint.url, 0, -1,
+            self.queue.push(createTransaction(self.conf, entryPoint.url, 0, -1,
                                               entryPoint.method,
                                               entryPoint.data))
 
@@ -152,15 +152,15 @@ class Core:
             sub.markStart(start, transaction.uri)
         self.files.append(transaction.file)
         transaction.cache = dict()
-        transaction.cache['size'] = os.path.getsize(transaction.file)
-        self.volume = self.volume + transaction.cache['size']
+        transaction.cache['size'] = transaction.size
+        #self.volume = self.volume + transaction.cache['size']
         self.journal.startChecking(transaction)
         self.rack.run(transaction)
         self.journal.stopChecking(transaction, VerificationStatus.done_ok)
-        if self.volume > self.conf.getProperty("maxVolume"):
+        #if self.volume > self.conf.getProperty("maxVolume"):
             # call cleanup only if there are files to remove
             # ensures gc.collect() is called once in a while but not often
-            self.__cleanup()
+            #self.__cleanup()
 
     def __cleanup(self):
         while self.volume > (self.conf.getProperty("maxVolume") / 2):

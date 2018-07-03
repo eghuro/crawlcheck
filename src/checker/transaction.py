@@ -18,7 +18,7 @@ class TouchException(Exception):
 class Transaction:
     """ Information about a web page is represented by this class."""
 
-    def __init__(self, uri, depth, srcId, idno, method="GET", data=None):
+    def __init__(self, conf, uri, depth, srcId, idno, method="GET", data=None, size=0):
         # Use the factory method below!!
         self.uri = uri
         self.aliases = set([uri])
@@ -29,17 +29,19 @@ class Transaction:
         self.srcId = srcId
         self.method = method
         self.data = data
+        self.size = size
         self.status = None
         self.cookies = None
         self.request = None
         self.expected = None
         self.headers = dict()
         self.cache = None
+        self.conf = conf
 
     @staticmethod
-    def from_json(jsn):
+    def from_json(jsn, conf):
         jsn = json.loads(jsn)
-        t = Transaction(jsn['uri'], jsn['depth'], jsn['srcId'], jsn['idno'], jsn['method'], jsn['data'])
+        t = Transaction(conf, jsn['uri'], jsn['depth'], jsn['srcId'], jsn['idno'], jsn['method'], jsn['data'], len(jsn['data']))
         t.aliases = set(jsn['aliases'])
         t.type = jsn['type']
         t.file = jsn['file']
@@ -86,9 +88,13 @@ class Transaction:
     def getContent(self):
         """Read content from underlying file as string."""
         try:
-            with codecs.open(self.file, 'r', 'utf-8') as f:
-                data = f.read()
-                return str(data)
+            #with codecs.open(self.file, 'r', 'utf-8') as f:
+            #    data = f.read()
+            #    return str(data)
+            r = redis.StrictRedis(host=self.conf.getProperty('redisHost', 'localhost'),
+                                  port=self.conf.getProperty('redisPort', 6379),
+                                  db=self.conf.getProperty('redisDb', 0))
+            return r.get(self.file)
         except UnicodeDecodeError as e:
             logging.getLogger(__name__).error("Error loading content for %s" %
                                               self.uri)
@@ -115,14 +121,14 @@ class Transaction:
 transactionId = 0
 
 
-def createTransaction(uri, depth=0, parentId=-1, method='GET', params=dict(),
+def createTransaction(conf, uri, depth=0, parentId=-1, method='GET', params=dict(),
                       expected=None):
     """ Factory method for creating Transaction objects. """
 
     assert (type(params) is dict) or (params is None)
     global transactionId
     decoded = str(urllib.parse.unquote(urllib.parse.unquote(uri)))
-    tr = Transaction(decoded, depth, parentId, transactionId, method, params)
+    tr = Transaction(conf, decoded, depth, parentId, transactionId, method, params)
     tr.expected = expected
     transactionId = transactionId + 1
     return tr
@@ -269,7 +275,7 @@ class RedisTransactionQueue:
             return None
         self.__log.debug(str(x))
 
-        t = Transaction.from_json(x)
+        t = Transaction.from_json(x, self.__conf)
         self.__db.log(Query.transactions_status, ("PROCESSING", t.idno))
         self.__db.log(Query.link_status, (str("true"), str(t.uri)))
         return t
@@ -286,9 +292,7 @@ class RedisTransactionQueue:
         
         if cnt == len(transaction.aliases): #-> not seen
             self.__log.debug("Not seen")
-            tr = copy.deepcopy(transaction)
-            tr.aliases = list(tr.aliases)
-            self.__redis.lpush("transactions", json.dumps(tr.__dict__).encode('utf8'))
+            self.__enqueue(transaction)
             self.__db.log(Query.transactions,
                           (str(transaction.idno), transaction.method,
                            transaction.uri, "REQUESTED",
@@ -308,10 +312,10 @@ class RedisTransactionQueue:
         """
 
         if parent is None:
-            self.push(createTransaction(uri, 0, -1, 'GET', dict(), expected),
+            self.push(createTransaction(self.__conf, uri, 0, -1, 'GET', dict(), expected),
                       None)
         else:
-            t = createTransaction(uri, parent.depth + 1, parent.idno, 'GET',
+            t = createTransaction(self.__conf, uri, parent.depth + 1, parent.idno, 'GET',
                                   dict(), expected)
             t.headers['Referer'] = parent.uri
             self.push(t, parent)
@@ -322,8 +326,8 @@ class RedisTransactionQueue:
         Doesn't push the queue.
         """
 
-        t = createTransaction(uri, parent.depth + 1, parent.idno)
-        self.__redis.pfadd('seen', transaction.uri)
+        t = createTransaction(self.__conf, uri, parent.depth + 1, parent.idno)
+        self.__redis.pfadd('seen', t.uri)
         if self.__conf.getProperty('loglink', True):
             self.__db.log_link(parent.idno, uri, t.idno)
         return t
@@ -333,8 +337,14 @@ class RedisTransactionQueue:
         Transaction must've been seen previously.
         """
         assert self.__redis.pfcount('seen', transaction.uri) > 0
+        self.__enqueue(transaction)
+
+    def __enqueue(self, transaction):
+        conf = transaction.conf
+        transaction.conf = None
         tr = copy.deepcopy(transaction)
-        tr['aliases'] = list(tr['aliases'])
+        tr.aliases = list(tr.aliases)
+        transaction.conf = conf
         self.__redis.lpush("transactions", json.dumps(tr.__dict__).encode('utf8'))
 
     def __record_params(self, transaction):

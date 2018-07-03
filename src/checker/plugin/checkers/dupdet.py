@@ -50,12 +50,13 @@ class DuplicateDetector(IPlugin):
         """
 
         if fsize in self.__size_dups:
-            h = self.__hashfile(transaction.file)
+            h = self.__hashfile(transaction)
             self.__hash[transaction.file] = h
-            self.__compare(fsize, transaction, h)
-            self.__size_dups[fsize].add(transaction.file)
+            for x in self.__compare(fsize, transaction, h):
+                self.__size_dups[fsize].remove(x)
+            self.__size_dups[fsize].add(transaction)
         else:
-            self.__size_dups[fsize] = set([transaction.file])
+            self.__size_dups[fsize] = set([transaction])
 
     def __compare(self, fsize, transaction, reference_hash):
         """Stage 2 of the duplication testing.
@@ -65,25 +66,37 @@ class DuplicateDetector(IPlugin):
         (possibly due to tmp limit)
         """
 
-        for f in self.__size_dups[fsize]:
-            if self.__are_different(f, transaction):
-                if f not in self.__hash:
-                    self.__hash[f] = self.__hashfile(transaction.file)
-                if self.__hash[f] == reference_hash:
-                    #if self.__file_cmp(f, transaction):
-                    self.__journal.foundDefect(transaction.idno,
-                                               "dup",
-                                               "Duplicate pages",
-                                               self.__urls[f], 0.7)
+        rem = [] # this is needed as using yield will cause RuntimeError: Set changed size during iteration
+        for t in self.__size_dups[fsize]:
+            if self.__are_different(t.file, transaction):
+                if t.file not in self.__hash:
+                    self.__hash[t.file] = self.__hashfile(transaction)
+                if self.__hash[t.file] == reference_hash:
+                    if self.__file_cmp(t, transaction):
+                        rem.append(t)
+        return rem
 
-    def __are_different(self, f, transaction):
-        return f != transaction.file and self.__urls[f] != transaction.uri
+    def __are_different(self, file, transaction):
+        return file != transaction.file and self.__urls[file] != transaction.uri
 
-    def __hashfile(self, path, blocksize=65536):
-        with open(path, 'rb') as afile:
-            hasher = hashlib.sha512()
-            buf = afile.read(blocksize)
-            while len(buf) > 0:
-                hasher.update(buf)
-                buf = afile.read(blocksize)
-            return hasher.hexdigest()
+    def __file_cmp(self, f, transaction):
+        """Stage 3 of the duplication testing.
+        Compare a candidate with the transaction file.
+        Report a possible duplicate through journal.
+        Return whether a candidate file should be removed.
+        """
+
+        if f.getContent() == transaction.getContent():
+            # duplicate (same size, hash, content)
+            self.__journal.foundDefect(transaction.idno,
+                                       "dup",
+                                       "Duplicate pages",
+                                       self.__urls[f.file], 0.7)
+            return False
+        else:
+            return True
+
+    def __hashfile(self, tr, blocksize=65536):
+        hasher = hashlib.sha512()
+        hasher.update(tr.getContent())
+        return hasher.hexdigest()
