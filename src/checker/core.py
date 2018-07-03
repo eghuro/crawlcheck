@@ -8,7 +8,7 @@ from database import DBAPI, VerificationStatus
 from common import PluginType, PluginTypeError
 from net import Network, NetworkError, ConditionError, StatusError
 from filter import FilterException, Reschedule
-from transaction import Transaction, createTransaction, TouchException, TransactionQueue, Journal
+from transaction import Transaction, createTransaction, TouchException, RedisTransactionQueue, Journal
 import gc
 from rfc3987 import match
 
@@ -34,7 +34,7 @@ class Core:
         self.header_filters = headers
         self.postprocessers = postprocess
 
-        self.queue = TransactionQueue(self.db, self.conf)
+        self.queue = RedisTransactionQueue(self.db, self.conf)
 
         self.journal = Journal(self.db, self.conf)
 
@@ -285,5 +285,3 @@ class Rack:
                 type_cond = plugin.acceptType(str(transaction.type))
         regex_cond = self.regexAcceptor.accept(transaction.uri, plugin.id)
         return type_cond and regex_cond
-
-

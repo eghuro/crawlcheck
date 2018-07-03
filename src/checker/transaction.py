@@ -36,6 +36,19 @@ class Transaction:
         self.headers = dict()
         self.cache = None
 
+    @staticmethod
+    def from_json(jsn):
+        jsn = json.loads(jsn)
+        t = Transaction(jsn['uri'], jsn['depth'], jsn['srcId'], jsn['idno'], jsn['method'], jsn['data'])
+        t.aliases = set(jsn['aliases'])
+        t.type = jsn['type']
+        t.file = jsn['file']
+        t.status = jsn['status']
+        t.cookies = jsn['cookies']
+        t.expected = jsn['expected']
+        t.headers = jsn['headers']
+        return t
+
     def changePrimaryUri(self, new_uri):
         """Add a new alias and represent it as a primary URI."""
         uri = urldefrag(new_uri)[0]
@@ -231,6 +244,103 @@ class TransactionQueue:
             if not self.__been_seen(transaction):
                 self.__set_seen(transaction)
                 self.seenlen = self.seenlen + 1
+
+
+class RedisTransactionQueue:
+    """Transactons are stored here. Queue is stored locally. Operations are
+    written through to database.
+    """
+    def __init__(self, db, conf):
+        self.__db = db
+        self.__conf = conf
+        self.__redis = redis.StrictRedis(host=conf.getProperty('redisHost', 'localhost'), port=conf.getProperty('redisPort', 6379), db=conf.getProperty('redisDb', 0))
+        self.__redis.flushdb()
+        self.__log = logging.getLogger(__name__)
+
+    def isEmpty(self):
+        return self.len() == 0
+
+    def len(self):
+        return self.__redis.llen('transactions')
+
+    def pop(self):
+        x = self.__redis.rpop('transactions').decode('utf-8')
+        if x == None:
+            return None
+        self.__log.debug(str(x))
+
+        t = Transaction.from_json(x)
+        self.__db.log(Query.transactions_status, ("PROCESSING", t.idno))
+        self.__db.log(Query.link_status, (str("true"), str(t.uri)))
+        return t
+
+    def push(self, transaction, parent=None):
+        """Push transaction into queue."""
+        transaction.uri = urldefrag(transaction.uri)[0]
+
+        self.__log.debug("Marking as seen: %s" % transaction.uri)
+
+        cnt = 0
+        for uri in transaction.aliases:
+            cnt = cnt + self.__redis.pfadd('seen', uri)
+        
+        if cnt == len(transaction.aliases): #-> not seen
+            self.__log.debug("Not seen")
+            tr = copy.deepcopy(transaction)
+            tr.aliases = list(tr.aliases)
+            self.__redis.lpush("transactions", json.dumps(tr.__dict__).encode('utf8'))
+            self.__db.log(Query.transactions,
+                          (str(transaction.idno), transaction.method,
+                           transaction.uri, "REQUESTED",
+                           str(transaction.depth), str(transaction.expected)))
+            for uri in transaction.aliases:
+                self.__db.log(Query.aliases, (str(transaction.idno), uri))
+            self.__record_params(transaction)
+        else:
+            self.__log.debug("Seen")
+
+        if self.__conf.getProperty('logLink', False) and parent is not None:
+            self.__db.log_link(parent.idno, transaction.uri, transaction.idno)
+
+    def push_link(self, uri, parent, expected=None):
+        """Push link into queue.
+        Transactions are created, proper Referer header is set.
+        """
+
+        if parent is None:
+            self.push(createTransaction(uri, 0, -1, 'GET', dict(), expected),
+                      None)
+        else:
+            t = createTransaction(uri, parent.depth + 1, parent.idno, 'GET',
+                                  dict(), expected)
+            t.headers['Referer'] = parent.uri
+            self.push(t, parent)
+
+    def push_virtual_link(self, uri, parent):
+        """Push virtual link into queue.
+        Mark URI as seen, log link, write it all into DB.
+        Doesn't push the queue.
+        """
+
+        t = createTransaction(uri, parent.depth + 1, parent.idno)
+        self.__redis.pfadd('seen', transaction.uri)
+        if self.__conf.getProperty('loglink', True):
+            self.__db.log_link(parent.idno, uri, t.idno)
+        return t
+
+    def push_rescheduled(self, transaction):
+        """Force put transaction into queue, no further checks.
+        Transaction must've been seen previously.
+        """
+        assert self.__redis.pfcount('seen', transaction.uri) > 0
+        tr = copy.deepcopy(transaction)
+        tr['aliases'] = list(tr['aliases'])
+        self.__redis.lpush("transactions", json.dumps(tr.__dict__).encode('utf8'))
+
+    def __record_params(self, transaction):
+        if self.__conf.getProperty('recordParams', True):
+            for key, value in transaction.data.items():
+                self.__db.log_param(transaction.idno, key, value)
 
 
 class Journal:
