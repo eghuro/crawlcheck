@@ -2,6 +2,8 @@ from common import PluginType
 from yapsy.IPlugin import IPlugin
 import logging
 import hashlib
+import redis
+import json
 
 
 class DuplicateDetector(IPlugin):
@@ -27,10 +29,8 @@ class DuplicateDetector(IPlugin):
 
     def __init__(self):
         self.__journal = None
-        self.__size_dups = dict()
-        self.__hash = dict()
-        self.__urls = dict()
         self.__log = logging.getLogger(__name__)
+        self.__red = None
 
     def setJournal(self, journal):
         self.__journal = journal
@@ -38,8 +38,12 @@ class DuplicateDetector(IPlugin):
     def check(self, transaction):
         """Check if the content matches any page we've already seen."""
 
+        if self.__red is None:
+            self.__red = redis.StrictRedis(host=transaction.conf.getProperty('redisHost', 'localhost'),
+                                           port=transaction.conf.getProperty('redisPort', 6379),
+                                           db=transaction.conf.getProperty('redisDb', 0))
         fsize = transaction.cache['size']
-        self.__urls[transaction.file] = transaction.uri
+        self.__red.hset("dupurl", transaction.file, transaction.uri)
         self.__duptest(fsize, transaction)
         return
 
@@ -49,13 +53,15 @@ class DuplicateDetector(IPlugin):
         Otherwise just record the size.
         """
 
-        if fsize in self.__size_dups:
+        if self.__red.hexists("dupsize", fsize):
             h = self.__hashfile(transaction)
-            self.__hash[transaction.file] = h
+            self.__red.hset("duphash", transaction.file, h)
             self.__compare(fsize, transaction, h)
-            self.__size_dups[fsize].add(transaction.file)
+            lst = set(json.loads(self.__red.hget("dupsize", fsize)))
+            lst.add(transaction.file)
+            self.__red.hset("dupsize", fsize, json.dumps(list(lst)))
         else:
-            self.__size_dups[fsize] = set([transaction.file])
+            self.__red.hset("dupsize", fsize, json.dumps([transaction.file]))
 
     def __compare(self, fsize, transaction, reference_hash):
         """Stage 2 of the duplication testing.
@@ -65,19 +71,19 @@ class DuplicateDetector(IPlugin):
         (possibly due to tmp limit)
         """
 
-        for f in self.__size_dups[fsize]: #set(file)
+        for f in json.loads(self.__red.hget("dupsize", fsize)):
             if self.__are_different(f, transaction):
-                if f not in self.__hash:
-                    self.__hash[f] = self.__hashfile(transaction)
-                if self.__hash[f] == reference_hash:
-                    #if self.__file_cmp(f, transaction):
+                if not self.__red.hexists("duphash", f):
+                    self.__red.hset("duphash", f, self.__hashfile(transaction))
+                if self.__red.hget("duphash", f) == reference_hash:
                     self.__journal.foundDefect(transaction.idno,
                                                "dup",
                                                "Duplicate pages",
-                                               self.__urls[f], 0.7)
+                                               self.__red.hget("dupurl", f),
+                                               0.7)
 
     def __are_different(self, file, transaction):
-        return file != transaction.file and self.__urls[file] != transaction.uri
+        return file != transaction.file and self.__red.hget("dupurl", file) != transaction.uri
 
     def __hashfile(self, tr, blocksize=65536):
         hasher = hashlib.sha512()
