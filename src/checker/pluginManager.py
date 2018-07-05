@@ -102,9 +102,6 @@ def __load_plugins(cl, log, conf):
     headers = []
     postprocess = []
 
-    filter_categories = [PluginType.FILTER, PluginType.HEADER]
-    plugin_categories = [PluginType.CHECKER, PluginType.CRAWLER]
-
     __print_allowed_filters(log, allowed_filters)
 
     # load plugins
@@ -114,30 +111,39 @@ def __load_plugins(cl, log, conf):
     __plugin_dirs(path, log, manager)
     manager.collectPlugins()
 
-    if len(manager.getAllPlugins()) > 0:
-        log.debug("Loaded plugins:")
-        filter_lists = {PluginType.FILTER: filters,
-                        PluginType.HEADER: headers}
-        for pluginInfo in manager.getAllPlugins():
-            t = set(conf.regex_acceptor.getAllPlugins())
-            if not conf.type_acceptor.empty:
-                t.intersection(conf.type_acceptor.getAllPlugins())
-            t.update(conf.postprocess)
-
-            if pluginInfo.plugin_object.id in t or \
-               (pluginInfo.plugin_object.category in filter_categories and conf.getProperty('all_filters')) or \
-               (pluginInfo.plugin_object.category == PluginType.POSTPROCESS and conf.getProperty('all_postprocess')):
-                __load_plugin(pluginInfo, log, conf, filter_lists,
-                              filter_categories, plugin_categories,
-                              allowed_filters, plugins, postprocess)
-            else:
-                log.debug("Found plugin %s that no rule in config mentions - skipping" % str(pluginInfo.plugin_object.id))
-        log.debug("Loaded headers: %s" % str(headers))
-        log.debug("Loaded filters: %s" % str(filters))
-        log.debug("Loaded postprocessors: %s" % str(postprocess))
+    p = manager.getAllPlugins()
+    if len(p) > 0:
+        __do_load_plugins(p, plugins, conf, log, allowed_filters, filters, headers, postprocess)
     else:
         log.warn("No plugins found")
     return plugins, headers, filters, postprocess
+
+
+def __do_load_plugins(all_plugs, plugins, conf, log, allowed_filters, filters, headers, postprocess):
+    filter_categories = [PluginType.FILTER, PluginType.HEADER]
+    plugin_categories = [PluginType.CHECKER, PluginType.CRAWLER]
+
+    log.debug("Loaded plugins:")
+    filter_lists = {PluginType.FILTER: filters,
+                    PluginType.HEADER: headers}
+    for pluginInfo in all_plugs:
+        t = set(conf.regex_acceptor.getAllPlugins())
+        if not conf.type_acceptor.empty:
+            t.intersection(conf.type_acceptor.getAllPlugins())
+        t.update(conf.postprocess)
+
+        if pluginInfo.plugin_object.id in t or \
+           (pluginInfo.plugin_object.category in filter_categories and conf.getProperty('all_filters')) or \
+           (pluginInfo.plugin_object.category == PluginType.POSTPROCESS and conf.getProperty('all_postprocess')):
+            __load_plugin(pluginInfo, log, conf, filter_lists,
+                          filter_categories, plugin_categories,
+                          allowed_filters, plugins, postprocess)
+        else:
+            log.debug("Found plugin %s that no rule in config mentions - skipping" % str(pluginInfo.plugin_object.id))
+
+    log.debug("Loaded headers: %s" % str(headers))
+    log.debug("Loaded filters: %s" % str(filters))
+    log.debug("Loaded postprocessors: %s" % str(postprocess))
 
 
 def __load_plugin(pluginInfo, log, conf, filter_lists, filter_categories,
@@ -162,11 +168,8 @@ def __load_filter(pluginInfo, allowed_filters, conf, filter_lists):
 
 def __load_postprocessor(pluginInfo, log, conf, postprocess):
     log.debug("Postprocessor")
-    if 'all_postprocess' in conf.properties:
-        if conf.properties['all_postprocess']:
-            postprocess.append(pluginInfo.plugin_object)
-        else:
-            log.debug("Not allowed in conf")
+    if 'all_postprocess' in conf.properties and conf.properties['all_postprocess']:
+        postprocess.append(pluginInfo.plugin_object)
     elif pluginInfo.plugin_object.id in conf.postprocess:
         postprocess.append(pluginInfo.plugin_object)
     else:
@@ -242,6 +245,7 @@ def __run_checker(log, plugins, headers, filters, pps, conf, export_only):
     else:
         core_instance.postprocess()
 
+
 def validate_param(ctx, param, values):
     try:
         for value in values:
@@ -249,6 +253,7 @@ def validate_param(ctx, param, values):
             yield (key, val)
     except ValueError:
         raise click.BadParameter('parameters need to be in format key=value')
+
 
 def __loadFlags(param, conf):
     for p in param:
@@ -260,7 +265,7 @@ def __loadFlags(param, conf):
 
 def __loadEntryPoints(entry, conf):
     for ep in entry:
-        conf.entry_points.append(EntryPointRecord(ep)) 
+        conf.entry_points.append(EntryPointRecord(ep))
 
 
 @click.command()
@@ -287,7 +292,7 @@ def main(export, debug, param, entry, cfile):
     if conf is None:
         return
 
-    __load_entry_points(entry, conf)
+    __loadEntryPoints(entry, conf)
 
     # load flags onto configuration
     __loadFlags(param, conf)

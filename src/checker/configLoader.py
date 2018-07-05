@@ -112,7 +112,7 @@ class ConfigLoader(object):
                 self.filters = self.__set_plugins(root, 'filters', self.filters)
 
 
-    def __greb_postprocess(self, root):
+    def __grab_postprocess(self, root):
         if 'postprocess' not in root or not root['postprocess']:
             self.properties['all_postprocess'] = False
             self.postprocess = []
