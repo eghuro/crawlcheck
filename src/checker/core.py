@@ -236,15 +236,20 @@ class Core:
         except AttributeError:
             pass
 
-        if plugin.category in set([PluginType.FILTER, PluginType.HEADER,
-                                   PluginType.POSTPROCESS]):
+        try:
             plugin.setConf(self.conf)
-            if plugin.category == PluginType.POSTPROCESS:
-                plugin.setDb(self.db)
-            try:
-                plugin.setAcceptable(types, extended)
-            except:
-                pass
+        except AttributeError:
+            pass
+
+        try:
+            plugin.setDb(self.db)
+        except AttributeError:
+            pass
+
+        try:
+            plugin.setAcceptable(types, extended)
+        except AttributeError:
+            pass
 
 
 class TouchException(Exception):

@@ -1,0 +1,8 @@
+[Core]
+Name = E-mail address detector
+Module = mailer
+
+[Documentation]
+Author = Alexandr Mansurov
+Version = 0.0
+Description = Check links to mailto: and other e-mail addresses

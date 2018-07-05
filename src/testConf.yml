@@ -19,6 +19,10 @@ yaml-out-file: 'cc-ksp.yml'
 verifyHttps: True
 loglink: False
 timeout: 1
+mailer.mx: True
+mailer.exists: True
+mailer.full: True
+
 
 regexes:
  -
@@ -33,6 +37,7 @@ regexes:
        - seometa
        - noscript
        - sitemapScanner
+       - mailer
  -
     regex: "https?://(?!ksp.mff.cuni.cz/(sksp|profil|forum|auth)).+" #test links (HEAD request) only
     plugins:

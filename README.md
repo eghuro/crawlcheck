@@ -188,6 +188,7 @@ Crawlcheck is currently extended with the following plugins:
 * dupdetect (checker)
 * non_semantic_html (checker)
 * noscript (checker)
+* mailer (checker)
 * contentLength (header)
 * expectedType (header)
 * canonical (header)
