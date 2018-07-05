@@ -1,0 +1,8 @@
+[Core]
+Name = Noscript tag detector
+Module = no_script
+
+[Documentation]
+Author = Alexandr Mansurov
+Version = 0.0
+Description = Check <script> is followed by <noscript> as well as content inside <script> is within html comment

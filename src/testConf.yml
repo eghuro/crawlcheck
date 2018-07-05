@@ -17,10 +17,12 @@ sitemap-file: "sitemap.xml"
 sitemap-regex: "https?://ksp.mff.cuni.cz(/.*)?"
 yaml-out-file: 'cc-ksp.yml'
 verifyHttps: True
+loglink: False
+timeout: 1
 
 regexes:
  -
-    regex: "http://ksp.mff.cuni.cz/(?!sksp|profil|forum).*"
+    regex: "http://ksp.mff.cuni.cz/(?!sksp|profil|forum|auth).*"
     plugins:
        - linksFinder
        - tidyHtmlValidator
@@ -29,14 +31,16 @@ regexes:
        - formChecker
        - seoimg
        - seometa
-       - dupdetect
+       - noscript
+       - sitemapScanner
  -
-    regex: "https?://(?!ksp.mff.cuni.cz/(sksp|profil|forum)).+" #test links (HEAD request) only
+    regex: "https?://(?!ksp.mff.cuni.cz/(sksp|profil|forum|auth)).+" #test links (HEAD request) only
     plugins:
 
 filters: True
 
-postprocess: True
+postprocess:
+ - yaml_exporter
 
 entryPoints:
  - "http://ksp.mff.cuni.cz/"
