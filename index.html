@@ -20,8 +20,8 @@
         <p class="header">Extendable web checker</p>
 
         <ul>
-          <li class="download"><a class="buttons" href="https://github.com/eghuro/crawlcheck/archive/v1.0.1.zip">Download ZIP</a></li>
-          <li class="download"><a class="buttons" href="https://github.com/eghuro/crawlcheck/archive/v1.0.1.tar.gz">Download TAR</a></li>
+          <li class="download"><a class="buttons" href="https://github.com/eghuro/crawlcheck/archive/v1.1.zip">Download ZIP</a></li>
+          <li class="download"><a class="buttons" href="https://github.com/eghuro/crawlcheck/archive/v1.1.tar.gz">Download TAR</a></li>
           <li><a class="buttons github" href="https://github.com/eghuro/crawlcheck">View On GitHub</a></li>
           <li><a href="#installation">Install</a></li>
           <li><a href="#configuration">Configure</a></li>
@@ -39,12 +39,14 @@
 
 <p>Crawlcheck is a web crawler invoking plugins on received content. It's intended for verification of websites prior to deployment. The process of verification is customisable by configuration script that allows complex specification which plugins should check particular URIs and content-types.</p>
 
-<p>Last released snapshot was <a href="https://github.com/eghuro/crawlcheck/releases/tag/v1.0.1">1.0.1</a> from Mar 6, 2018.
-While having up-to-date dependencies, it corresponds to the <a href="http://hdl.handle.net/20.500.11956/91596">undergraduate thesis</a> (in Czech language) defended in September 2017 at Charles University in Prague.
+<p>Latest released version was <a href="https://github.com/eghuro/crawlcheck/releases/tag/v1.1">1.1</a> from Jul 5, 2018.</p>
+
+<p>This project started as a software project at Charles University in Prague.
+There is also an <a href="http://hdl.handle.net/20.500.11956/91596">undergraduate thesis</a> about it (in Czech language) defended there in September 2017.
 Slides from defense (in Czech language) are <a href="slides.pdf">also available</a>.</p>
 
 <h3>Dependencies</h3>
-<p>Crawlcheck's engine currently runs on Python 3.5 and uses SQLite3 as a database backend. Crawlcheck uses a number of open source projects to work properly. Python dependencies are listed in <a href="https://github.com/eghuro/crawlcheck/blob/master/requirements.txt">requirements.txt</a></p>
+<p>Crawlcheck's engine currently runs on Python 3.5 or 3.6 and uses SQLite3 as a database backend. Crawlcheck uses a number of open source projects to work properly. Python dependencies are listed in <a href="https://github.com/eghuro/crawlcheck/blob/master/requirements.txt">requirements.txt</a></p>
 
 <p>For a web report there's <a href="https://github.com/eghuro/crawlcheck-report">separate project</a>.</p>
 
@@ -71,10 +73,10 @@ pip install -r requirements.txt</pre></div>
 Configuration file is a Configuration file is a YAML file defined as follows:</p>
 
 <div class="highlight highlight-sh"><pre>---
-version: 1.05                   <span class="pl-c"># configuration format version</span>
+version: 1.6                    <span class="pl-c"># configuration format version</span>
 database: crawlcheck.sqlite     <span class="pl-c"># sqlite database file</span>
 maxDepth: 10                    <span class="pl-c"># max amount of links followed from any entry point (default: 0 meaning unlimited)</span>
-agent: "Crawlcheck/1.05"        <span class="pl-c"># user agent used (default: Crawlcheck/1.05)</span>
+agent: "Crawlcheck/1.1"         <span class="pl-c"># user agent used (default: Crawlcheck/1.1)</span>
 logfile: cc.log                 <span class="pl-c"># where to store logs</span>
 maxContentLength: 2000000       <span class="pl-c"># max file size to download</span>
 pluginDir: plugin               <span class="pl-c"># where to look for plugins (including subfolders, default: 'plugin')</span>
@@ -103,34 +105,6 @@ report-file: "report"           <span class="pl-c"># where to write PDF report (
 
 <span class="pl-c"># other parameters used by plugins written as ```key: value```</span>
 
-content-types:
- -
-   <span class="pl-s"><span class="pl-pds">"</span>content-type<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>text/html<span class="pl-pds">"</span></span>
-   plugins: <span class="pl-c"># plugins to use for given content-type</span>
-     - linksFinder
-     - tidyHtmlValidator
-     - css_scraper
-     - formChecker
-     - seoimg
-     - seometa
-     - dupdetect
-     - non_semantic_html
-
- -
-   <span class="pl-s"><span class="pl-pds">"</span>content-type<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>text/css<span class="pl-pds">"</span></span>
-   plugins:
-     - tinycss
-     - dupdetect
- -
-   <span class="pl-s"><span class="pl-pds">"</span>content-type<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>application/gzip<span class="pl-pds">"</span></span>
-   plugins:
-     - sitemapScanner
- -
-   <span class="pl-s"><span class="pl-pds">"</span>content-type<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>application/xml<span class="pl-pds">"</span></span>
-   plugins:
-     - sitemapScanner
-     - dupdetect
-
 urls:
  -
   url: <span class="pl-s"><span class="pl-pds">"</span>http://mj.ucw.cz/vyuka/.+<span class="pl-pds">"</span></span>
@@ -158,16 +132,52 @@ filters: <span class="pl-c"> #Filters (plugins of category header and filter) th
  - uri_normalizer
  - expectedType
 
+<span class="pl-c"># filters: True</span>
+<span class="pl-c"># alternative option to allow all available filters</span>
+<span class="pl-c"># can be passed on command line using --param</span>
+
 postprocess:
  - sitemap_generator
  - report_exporter
  - yaml_exporter
+
+<span class="pl-c"># postprocess: True</span>
+<span class="pl-c"># alternative option to allow all available postprocessors</span>
+<span class="pl-c"># can be passed on command line using --param</span>
 
 entryPoints: <span class="pl-c"># where to start</span>
 <span class="pl-c"># Note, that once URI get's to the database it's no longer being requested </span>
 <span class="pl-c"># (beware of repeated starts, if entry point remains in the database execution won't </span>
 <span class="pl-c"># start from this entry point)</span>
  - <span class="pl-s"><span class="pl-pds">"</span>http://mj.ucw.cz/vyuka/<span class="pl-pds">"</span></span></pre></div>
+
+<span class="pl-c">#additional content type rules can be still specified and take precedence over plugin defined rules</span>
+content-types:
+ -
+    "content-type": "text/html"
+    plugins: <span class="pl-c"># plugins to use for given content-type</span>
+       - linksFinder
+       - tidyHtmlValidator
+       - css_scraper
+       - formChecker
+       - seoimg
+       - seometa
+       - dupdetect
+       - non_semantic_html
+ -
+    "content-type": "text/css"
+    plugins:
+       - tinycss
+       - dupdetect
+ -
+    "content-type": "application/gzip"
+    plugins:
+       - sitemapScanner
+-
+    "content-type": "application/xml"
+    plugins:
+       - sitemapScanner
+       - dupdetect
 
 <h3>
 <a id="running-crawlcheck" class="anchor" href="#running-crawlcheck" aria-hidden="true"><span class="octicon octicon-link"></span></a>Running crawlcheck</h3>
@@ -197,6 +207,8 @@ $ python checker/ [config.yml]</pre></div>
 <li>seometa (checker)</li>
 <li>dupdetect (checker)</li>
 <li>non_semantic_html (checker)</li>
+<li>noscript (checker)</li>
+<li>mailer (checker)</li>
 <li>contentLength (header)</li>
 <li>expectedType (header)</li>
 <li>canonical (header)</li>
@@ -236,6 +248,10 @@ class MyPlugin(IPlugin):
 
     category = PluginType.CHECKER <span class="pl-c"># pick appropriate type</span>
     id = myPlugin
+    contentTypes = ["text/html"] <span class="pl-c"># accepted content types (checkers & crawlers)</span>
+
+    def acceptType(ctype): <span class="pl-c"># alternatively a method resolving more complex content-type rules</span>
+        return True
 
     def setJournal(self, journal):
         <span class="pl-c"># record journal somewhere - all categories</span>
@@ -266,7 +282,7 @@ class MyPlugin(IPlugin):
 <a id="license" class="anchor" href="#license" aria-hidden="true"><span class="octicon octicon-link"></span></a>License</h2>
 
 <p>MIT</p>
-<p>Copyright (c) 2015-2017 Alexandr Mansurov</p>
+<p>Copyright (c) 2015-2018 Alexandr Mansurov</p>
 <p>Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:</p>
 <p>The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.</p>
 <p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
