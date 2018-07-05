@@ -99,6 +99,32 @@ class ConfigLoader(object):
             for ep in epSet:
                 self.entryPoints.append(EntryPointRecord(ep))
 
+    def __grab_filters(self, root):
+        if 'filters' not in root or not root['filters']:
+            self.properties['all_filters'] = False
+            self.filters = []
+        else:
+            if type(root['filters']) is bool:
+                self.properties['all_filters'] = root['filters']
+                self.filters = []
+            else:
+                self.properties['all_filters'] = False
+                self.filters = self.__set_plugins(root, 'filters', self.filters)
+
+
+    def __greb_postprocess(self, root):
+        if 'postprocess' not in root or not root['postprocess']:
+            self.properties['all_postprocess'] = False
+            self.postprocess = []
+        else:
+            if type(root['postprocess']) is bool:
+                self.properties['all_postprocess'] = root['postprocess']
+                self.postprocess = []
+            else:
+                self.postprocess = self.__set_plugins(root, 'postprocess',
+                                                      self.postprocess)
+
+
     def __set_plugins(self, root, tag, lst):
         if tag in root:
             for p in root[tag]:
@@ -124,27 +150,8 @@ class ConfigLoader(object):
         # Grab lists
         self.__set_entry_points(root)
 
-        if 'filters' not in root or not root['filters']:
-            self.properties['all_filters'] = False
-            self.filters = []
-        else:
-            if type(root['filters']) is bool:
-                self.properties['all_filters'] = root['filters']
-                self.filters = []
-            else:
-                self.properties['all_filters'] = False
-                self.filters = self.__set_plugins(root, 'filters', self.filters)
-
-        if 'postprocess' not in root or not root['postprocess']:
-            self.properties['all_postprocess'] = False
-            self.postprocess = []
-        else:
-            if type(root['postprocess']) is bool:
-                self.properties['all_postprocess'] = root['postprocess']
-                self.postprocess = []
-            else:
-                self.postprocess = self.__set_plugins(root, 'postprocess',
-                                                      self.postprocess)
+        self.__grab_filters(root)
+        self.__grab_postprocess(root)
 
         # Grab properties
         used_keys = set(['database', cts, 'regexes', 'version', 'entryPoints',

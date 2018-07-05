@@ -28,25 +28,26 @@ class Mailer(IPlugin):
         if not self.__full:
             soup = getSoup(transaction)
             for link in soup.find_all('a'):
-                url = link.get('href')
-                if url is not None:
-                    if url.startswith('mailto:'):
-                        self.__check_mail(transaction, link)
+                self.__check_link(link, transaction)
         else:
             # see: https://stackoverflow.com/questions/17681670/extract-email-sub-strings-from-large-document#17681902
             for e in re.findall(r'[\w\.-]+@[\w\.-]+\.\w+', transaction.getContent()):
-                is_valid, mx, verify = self.__validate(e)
-                severity = Mailer.__severities[sum([int(is_valid), int(mx), int(verify)])]
-                description = "mail: " + str(e) + ", valid: " + str(is_valid) + " (checked SMTP server: " + str(mx) + ", verified existence: " + str(verify) + ")"
-                self.__journal.foundDefect(transaction.idno, 'mail', 'Found e-mail', description, severity)
+                self.__process(transaction, e, "mail: " + str(e))
         return
 
-    def __check_mail(self, transaction, link):
-        mail = link['href'][7:]
+    def __check_link(self, link, transaction):
+        url = link.get('href')
+        if url is not None:
+            if url.startswith('mailto:'):
+                self.__process(transaction, link['href'][7:], "Link: " + str(link))
+
+
+    def __process(self, transaction, mail, intro):
         is_valid, mx, verify = self.__validate(mail)
         severity = Mailer.__severities[sum([int(is_valid), int(mx), int(verify)])]
-        description = "Link: " + str(link) + ", valid: " + str(is_valid) + " (checked SMTP server: " + str(mx) + ", verified existence: " + str(verify) + ")"
-        self.__journal.foundDefect(transaction.idno, 'mail', 'Found e-mail (mailto link)', description, severity)
+        description = intro + ", valid: " + str(is_valid) + " (checked SMTP server: " + str(mx) + ", verified existence: " + str(verify) + ")"
+        self.__journal.foundDefect(transaction.idno, 'mail', 'Found e-mail', description, severity)
+
 
     @functools.lru_cache()
     def __validate(self, mail):

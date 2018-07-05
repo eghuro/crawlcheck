@@ -31,20 +31,23 @@ class LinksFinder(IPlugin):
 
         soup = getSoup(transaction)
         self.__updateCanonical(soup, transaction)
-
         self.__check_links(soup.find_all(self.__tags.keys()), transaction,
                            self.__tags)
-
         return
 
     def __updateCanonical(self, soup, transaction):
         for html in soup.find_all('html', limit=1):
             for head in html.find_all('head', limit=1):
-                for link in head.find_all('link'):
-                    if ('rel' in link.attrs) and ('href' in link.attrs):
-                        if link['rel'] == 'canonical':
-                            transaction.changePrimaryUri(link['href'])
-                            return
+                if self.__canonical_test(head, transaction):
+                    return
+
+    def __canonical_test(self, head, transaction):
+        for link in head.find_all('link'):
+            if ('rel' in link.attrs) and ('href' in link.attrs):
+                if link['rel'] == 'canonical':
+                    transaction.changePrimaryUri(link['href'])
+                    return True
+        return False
 
     def __check_links(self, links, transaction, tags):
         for link in links:

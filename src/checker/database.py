@@ -79,51 +79,55 @@ class TableError(LookupError):
 class DBAPI(object):
     """ API for access to the underlying database.
     """
+
+    query_types = [Query.defect_types, Query.transactions,
+                   Query.transactions_load, Query.transactions_status,
+                   Query.aliases,  Query.link, Query.link_status,
+                   Query.defect, Query.cookies, Query.headers,
+                   Query.params]
+
+    queries = { Query.link: ('INSERT INTO link (findingId, toUri, '
+                             'requestId, responseId) VALUES (?,?,?,?)'),
+                Query.defect_types: ('INSERT INTO defectType (id, type,'
+                                     'description) VALUES (?, ?, ?)'),
+                Query.defect: ('INSERT INTO defect (findingId, type, '
+                               'evidence, severity, responseId) VALUES '
+                               '(?, ?, ?, ?, ?)'),
+                Query.cookies: ('INSERT INTO cookies (findingId, '
+                                'name, value, responseId, secure, '
+                                'httpOnly, path) VALUES (?, ?, ?, ?, '
+                                '?, ?, ?)'),
+                Query.aliases: ('INSERT INTO aliases (transactionId, '
+                                'uri) VALUES (?, ?)'),
+                Query.transactions: ('INSERT INTO transactions (id, '
+                                     'method, uri, verificationStatus,'
+                                     'depth, expected) VALUES '
+                                     '(?, ?, ?, ?, ?, ?)'),
+                Query.transactions_load: ('UPDATE transactions SET '
+                                          'verificationStatus = ?, '
+                                          'uri = ?, contentType = ?, '
+                                          'responseStatus = ? WHERE '
+                                          'id = ?'),
+                Query.transactions_status: ('UPDATE transactions SET '
+                                            'verificationStatus = ? '
+                                            'WHERE id = ?'),
+                Query.link_status: ('UPDATE link SET processed = ? '
+                                    'WHERE toUri = ?'),
+                Query.headers: ('INSERT INTO headers (findingId, '
+                                'name, value, responseId) VALUES (?, ?,'
+                                ' ?, ?)'),
+                Query.params: ('INSERT into param (findingId, '
+                               'responseId, key, value) VALUES (?, ?, '
+                               '?, ?)')
+    }
+
+
     def __init__(self, conf):
         self.conf = conf
         self.limit = conf.getLimit()
         self.findingId = -1
-        self.query_types = [Query.defect_types, Query.transactions,
-                            Query.transactions_load, Query.transactions_status,
-                            Query.aliases,  Query.link, Query.link_status,
-                            Query.defect, Query.cookies, Query.headers,
-                            Query.params]
-        self.queries = dict()
-        self.queries[Query.link] = ('INSERT INTO link (findingId, toUri, '
-                                    'requestId, responseId) VALUES (?,?,?,?)')
-        self.queries[Query.defect_types] = ('INSERT INTO defectType (id, type,'
-                                            'description) VALUES (?, ?, ?)')
-        self.queries[Query.defect] = ('INSERT INTO defect (findingId, type, '
-                                      'evidence, severity, responseId) VALUES '
-                                      '(?, ?, ?, ?, ?)')
-        self.queries[Query.cookies] = ('INSERT INTO cookies (findingId, '
-                                       'name, value, responseId, secure, '
-                                       'httpOnly, path) VALUES (?, ?, ?, ?, '
-                                       '?, ?, ?)')
-        self.queries[Query.aliases] = ('INSERT INTO aliases (transactionId, '
-                                       'uri) VALUES (?, ?)')
-        self.queries[Query.transactions] = ('INSERT INTO transactions (id, '
-                                            'method, uri, verificationStatus,'
-                                            'depth, expected) VALUES '
-                                            '(?, ?, ?, ?, ?, ?)')
-        self.queries[Query.transactions_load] = ('UPDATE transactions SET '
-                                                 'verificationStatus = ?, '
-                                                 'uri = ?, contentType = ?, '
-                                                 'responseStatus = ? WHERE '
-                                                 'id = ?')
-        self.queries[Query.transactions_status] = ('UPDATE transactions SET '
-                                                   'verificationStatus = ? '
-                                                   'WHERE id = ?')
-        self.queries[Query.link_status] = ('UPDATE link SET processed = ? '
-                                           'WHERE toUri = ?')
-        self.queries[Query.headers] = ('INSERT INTO headers (findingId, '
-                                       'name, value, responseId) VALUES (?, ?,'
-                                       ' ?, ?)')
-        self.queries[Query.params] = ('INSERT into param (findingId, '
-                                      'responseId, key, value) VALUES (?, ?, '
-                                      '?, ?)')
         self.logs = dict()
-        for qtype in self.query_types:
+        for qtype in DBAPI.query_types:
             self.logs[qtype] = []
         self.defect_types = []
         self.defectId = -1
@@ -185,7 +189,7 @@ class DBAPI(object):
                  (str(self.findingId), str(transactionId), key, value))
 
     @staticmethod
-    def syncer(dbname, qtypes, queries, logs, vacuum=True):
+    def syncer(dbname, qtypes, logs, vacuum=True):
         """Sync records into DB. Worker."""
         log = logging.getLogger(__name__)
         log.info("Writing into database")
@@ -201,7 +205,7 @@ class DBAPI(object):
                 # https://www.sqlite.org/pragma.html#pragma_page_size
 
                 for qtype in qtypes:
-                    cursor.executemany(queries[qtype], logs[qtype])
+                    cursor.executemany(DBAPI.queries[qtype], logs[qtype])
 
                 con.commit()
 
@@ -227,12 +231,11 @@ class DBAPI(object):
         vacuum = (self.__sync_cnt % 100 == 0)
         sproc = Process(name="DB sync worker",
                         target=DBAPI.syncer, args=(self.conf.getDbname(),
-                                                   self.query_types,
-                                                   self.queries,
+                                                   DBAPI.query_types,
                                                    logs, vacuum))
         self.__syncer_worker = sproc
         sproc.start()
-        for qtype in self.query_types:
+        for qtype in DBAPI.query_types:
             self.logs[qtype] = []
             self.bufferedQueries = 0
 

@@ -145,24 +145,32 @@ def __load_plugin(pluginInfo, log, conf, filter_lists, filter_categories,
     log.debug("%s (%s)" % (pluginInfo.name, pluginInfo.plugin_object.id))
 
     if pluginInfo.plugin_object.category in filter_categories:
-        if pluginInfo.plugin_object.id in allowed_filters or conf.properties['all_filters']:
-            filter_lists[pluginInfo.plugin_object.category].append(pluginInfo.plugin_object)
+        __load_filter(pluginInfo, allowed_filters, conf, filter_lists)
     elif pluginInfo.plugin_object.category in plugin_categories:
         log.debug("General plugin")
         plugins.append(pluginInfo.plugin_object)
     elif pluginInfo.plugin_object.category == PluginType.POSTPROCESS:
-        log.debug("Postprocessor")
-        if 'all_postprocess' in conf.properties:
-            if conf.properties['all_postprocess']:
-                postprocess.append(pluginInfo.plugin_object)
-            else:
-                log.debug("Not allowed in conf")
-        elif pluginInfo.plugin_object.id in conf.postprocess:
+        __load_postprocessor(pluginInfo, log, conf, postprocess)
+    else:
+        log.error("Unknown category for " + pluginInfo.name)
+
+
+def __load_filter(pluginInfo, allowed_filters, conf, filter_lists):
+    if pluginInfo.plugin_object.id in allowed_filters or conf.properties['all_filters']:
+        filter_lists[pluginInfo.plugin_object.category].append(pluginInfo.plugin_object)
+
+
+def __load_postprocessor(pluginInfo, log, conf, postprocess):
+    log.debug("Postprocessor")
+    if 'all_postprocess' in conf.properties:
+        if conf.properties['all_postprocess']:
             postprocess.append(pluginInfo.plugin_object)
         else:
             log.debug("Not allowed in conf")
+    elif pluginInfo.plugin_object.id in conf.postprocess:
+        postprocess.append(pluginInfo.plugin_object)
     else:
-        log.error("Unknown category for " + pluginInfo.name)
+        log.debug("Not allowed in conf")
 
 
 def __load_configuration(cfile, log):
@@ -242,6 +250,19 @@ def validate_param(ctx, param, values):
     except ValueError:
         raise click.BadParameter('parameters need to be in format key=value')
 
+def __loadFlags(param, conf):
+    for p in param:
+        if p[0] == 'database':
+            conf.dbconf.setDbname(p[1])
+        else:
+            conf.properties[p[0]] = p[1]
+
+
+def __loadEntryPoints(entry, conf):
+    for ep in entry:
+        conf.entry_points.append(EntryPointRecord(ep)) 
+
+
 @click.command()
 @click.option('-e', '--export', is_flag=True, help="Just run postprocessing on existing database.")
 @click.option('-d', '--debug', is_flag=True, help="Write detailed information into log file.")
@@ -266,15 +287,10 @@ def main(export, debug, param, entry, cfile):
     if conf is None:
         return
 
-    for ep in entry:
-        conf.entry_points.append(EntryPointRecord(ep))
+    __load_entry_points(entry, conf)
 
     # load flags onto configuration
-    for p in param:
-        if p[0] == 'database':
-            conf.dbconf.setDbname(p[1])
-        else:
-            conf.properties[p[0]] = p[1]
+    __loadFlags(param, conf)
 
     try:
         __configure_logger(conf, debug=debug)
