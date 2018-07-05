@@ -4,6 +4,7 @@
 * configLoader - Parses the configuration file.
 * core
   - Core class with the main loop.
+* transaction
   - Transaction class containing information about a web page with its factory
     method.
   - TransactionQueue and Journal. TransactionQueue is a wrapper over Python's
