@@ -139,7 +139,6 @@ class ConfigLoader(object):
                 self.properties['all_postprocess'] = root['postprocess']
                 self.postprocess = []
             else:
-                self.properties['all_postprocess'] = False
                 self.postprocess = self.__set_plugins(root, 'postprocess',
                                                       self.postprocess)
 

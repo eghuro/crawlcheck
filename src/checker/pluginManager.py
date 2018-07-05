@@ -94,6 +94,7 @@ def __plugin_dirs(path, log, manager):
 
 
 def __load_plugins(cl, log, conf):
+    log.debug(conf.postprocess)
     allowed_filters = set(cl.get_allowed_filters())
 
     plugins = []
@@ -121,6 +122,7 @@ def __load_plugins(cl, log, conf):
             t = set(conf.regex_acceptor.getAllPlugins())
             if not conf.type_acceptor.empty:
                 t.intersection(conf.type_acceptor.getAllPlugins())
+            t.update(conf.postprocess)
 
             if pluginInfo.plugin_object.id in t or \
                (pluginInfo.plugin_object.category in filter_categories and conf.getProperty('all_filters')) or \
