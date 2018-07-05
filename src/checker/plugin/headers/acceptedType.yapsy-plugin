@@ -4,5 +4,5 @@ Module = acceptedType
 
 [Documentation]
 Author = Alexandr Mansurov
-Version = 0.0
+Version = 0.1
 Description = Filter out transactions with content-type that won't be matched by any available rule

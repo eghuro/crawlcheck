@@ -4,5 +4,5 @@ Module = non_semantic_html
 
 [Documentation]
 Author = Alexandr Mansurov
-Version = 0.0
+Version = 0.1
 Description = Detect non-semantic HTML tags

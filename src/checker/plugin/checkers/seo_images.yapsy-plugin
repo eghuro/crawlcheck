@@ -4,5 +4,5 @@ Module = seo_images
 
 [Documentation]
 Author = Alexandr Mansurov
-Version = 0.0
+Version = 0.1
 Description = Check IMG tags follow best practices
