@@ -43,8 +43,16 @@ class Core:
 
         self.journal = Journal(self.db, self.conf)
 
+        types = set()
+        extended = []
+        for plugin in self.plugins:
+            try:
+                types.update(plugin.contentTypes)
+            except:
+                extended.append(plugin)
+
         for plugin in self.plugins+headers+filters+postprocess:
-            self.__initializePlugin(plugin)
+            self.__initializePlugin(plugin, types, extended)
 
         self.__push_entry_points()
         self.rack = Rack(self.conf.type_acceptor, self.conf.regex_acceptor,
@@ -214,7 +222,7 @@ class Core:
         self.__queue = None
         gc.collect()
 
-    def __initializePlugin(self, plugin):
+    def __initializePlugin(self, plugin, types, extended):
         plugin.setJournal(self.journal)
         known_categories = set([PluginType.CRAWLER, PluginType.CHECKER,
                                 PluginType.FILTER, PluginType.HEADER,
@@ -233,6 +241,10 @@ class Core:
             plugin.setConf(self.conf)
             if plugin.category == PluginType.POSTPROCESS:
                 plugin.setDb(self.db)
+            try:
+                plugin.setAcceptable(types, extended)
+            except:
+                pass
 
 
 class TouchException(Exception):

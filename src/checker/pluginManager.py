@@ -118,9 +118,18 @@ def __load_plugins(cl, log, conf):
         filter_lists = {PluginType.FILTER: filters,
                         PluginType.HEADER: headers}
         for pluginInfo in manager.getAllPlugins():
-            __load_plugin(pluginInfo, log, conf, filter_lists,
-                          filter_categories, plugin_categories,
-                          allowed_filters, plugins, postprocess)
+            t = set(conf.regex_acceptor.getAllPlugins())
+            if not conf.type_acceptor.empty:
+                t.intersection(conf.type_acceptor.getAllPlugins())
+
+            if pluginInfo.plugin_object.id in t or \
+               (pluginInfo.plugin_object.category in filter_categories and conf.getProperty('all_filters')) or \
+               (pluginInfo.plugin_object.category == PluginType.POSTPROCESS and conf.getProperty('all_postprocess')):
+                __load_plugin(pluginInfo, log, conf, filter_lists,
+                              filter_categories, plugin_categories,
+                              allowed_filters, plugins, postprocess)
+            else:
+                log.debug("Found plugin %s that no rule in config mentions - skipping" % str(pluginInfo.plugin_object.id))
         log.debug("Loaded headers: %s" % str(headers))
         log.debug("Loaded filters: %s" % str(filters))
         log.debug("Loaded postprocessors: %s" % str(postprocess))

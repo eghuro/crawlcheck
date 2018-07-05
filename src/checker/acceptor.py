@@ -65,6 +65,9 @@ class RegexAcceptor(object):
         else:
             self.__regexes[plugin] = [p]
 
+    def getAllPlugins(self):
+        return self.__regexes.keys()
+
 
 class Acceptor(object):
     """Acceptor handles the business rules.
@@ -180,3 +183,6 @@ class Acceptor(object):
                 positive_reverse.add(value[::-1])
         self.uris = reverse
         self.__positive_uris = positive_reverse
+
+    def getAllPlugins(self):
+        return self.__pluginUri.keys()
