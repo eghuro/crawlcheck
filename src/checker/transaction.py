@@ -8,6 +8,9 @@ from urllib.parse import urldefrag
 from net import Network, NetworkError, ConditionError, StatusError
 from database import Query
 import sqlite3 as mdb
+import copy
+import json
+import redis
 
 
 class TouchException(Exception):
