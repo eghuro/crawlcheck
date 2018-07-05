@@ -6,7 +6,7 @@ initdb: True
 pluginDir: plugin  # defaults to 'plugin'
 maxDepth: 10
 maxContentLength: 2000000
-agent: "Crawlcheck/1.01"
+agent: "Crawlcheck/1.1"
 logfile: cc-ksp.log
 report: "http://localhost:5000"
 cleanreport: True
