@@ -43,7 +43,7 @@ A configuration file is a YAML file defined as follows:
 
 ```sh
 ---
-version: 1.05                   # configuration format version
+version: 1.6                    # configuration format version
 database: crawlcheck.sqlite     # SQLite database file
 maxDepth: 10                    # max amount of links followed from any entry point (default: 0 meaning unlimited)
 agent: "Crawlcheck/1.1"         # user agent used (default: Crawlcheck/1.1)

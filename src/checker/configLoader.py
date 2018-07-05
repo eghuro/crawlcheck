@@ -5,6 +5,7 @@ from ruamel import yaml
 from database import DatabaseConfiguration
 from acceptor import Acceptor, RegexAcceptor
 from common import ConfigurationError
+from distutils.version import StrictVersion
 import logging
 import sys
 import re
@@ -24,8 +25,9 @@ class ConfigLoader(object):
         get_configuration().
     """
 
-    __CONFIG_VERSION = 1.05
-    __APP_VERSION = 1.01
+    __CONFIG_VERSION_MIN = 1.5
+    __CONFIG_VERSION_MAX = 1.6
+    __APP_VERSION = 1.1
 
     def __init__(self):
         self.__dbconf = DatabaseConfiguration()
@@ -77,12 +79,14 @@ class ConfigLoader(object):
         version_check = False
         if 'version' not in root:
             self.__log.error("Version not specified")
-        elif str(root['version']) == str(ConfigLoader.__CONFIG_VERSION):
+        elif StrictVersion(str(ConfigLoader.__CONFIG_VERSION_MAX)) >= StrictVersion(str(root['version'])) >= StrictVersion(str(ConfigLoader.__CONFIG_VERSION_MIN)):
             version_check = True
         else:
             self.__log.error("Configuration version doesn't match (got " +
-                             str(root['version']) + ", expected: " +
-                             str(ConfigLoader.__CONFIG_VERSION) + ")")
+                             str(root['version']) + ", min compatible: " +
+                             str(ConfigLoader.__CONFIG_VERSION_MIN) +
+                             ", max compatible: " +
+                             str(ConfigLoader.__CONFIG_VERSION_MAX) + ")")
         return version_check
 
     def __set_entry_points(self, root):
