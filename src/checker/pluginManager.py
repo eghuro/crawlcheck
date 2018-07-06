@@ -236,6 +236,7 @@ def __run_checker(log, plugins, headers, filters, pps, conf):
     except:
         log.exception("Unexpected exception")
     finally:
+        gc.collect()
         try:
             __prepare_database(conf, log)
         except:
@@ -299,18 +300,16 @@ def main(debug, param, entry, cfile):
 
     # load flags onto configuration
     __loadFlags(param, conf)
+    execute(conf, cl, debug)
 
+
+def execute(conf, cl, debug):
     try:
         __configure_logger(conf, debug=debug)
     except FileNotFoundError:
         return
 
-    if not export_only:
-        try:
-            __prepare_database(conf, log)
-        except:
-            return
-
+    log = logging.getLogger(__name__)
     plugins, headers, filters, pps = __load_plugins(cl, log, conf)
     cl = None
     gc.collect()
