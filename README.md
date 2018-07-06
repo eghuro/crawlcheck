@@ -76,9 +76,9 @@ report-file: "report"           # where to write PDF report (.pdf will be added 
 # these parameters can be also specified on command line using --param key=value
 # command line parameters override configuration ones
 
-urls:
+regexes:
  -
-    url: "http://mj.ucw.cz/vyuka/.+"
+    regex: "http://ksp.mff.cuni.cz/(?!sksp|profil|forum|auth).*"
     plugins: # which plugins are allowed for given URL
        - linksFinder
        - tidyHtmlValidator
@@ -90,7 +90,7 @@ urls:
        - dupdeteict
        - non_semantic_html
  -
-    url: "http://mj.ucw.cz/" #test links (HEAD request) only
+    regex: "https?://(?!ksp.mff.cuni.cz/(sksp|profil|forum|auth)).+" #test links (HEAD request) only
     plugins:
 
 filters: #Filters (plugins of category header and filter) that can be used
@@ -123,7 +123,7 @@ entryPoints: # where to start
 # start from this entry point)
 #
 # Entry points can also be specified via command line parameter --entry=url
- - "http://mj.ucw.cz/vyuka/"
+ - "http://ksp.mff.cuni.cz/"
 
 #additional content type rules can be still specified and take precedence over plugin defined rules
 content-types:
