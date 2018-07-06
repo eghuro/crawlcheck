@@ -359,9 +359,10 @@ class RedisTransactionQueue:
 class Journal:
     """Journal logs events and writes them through to the DB."""
 
-    def __init__(self, db, conf):
+    def __init__(self, db, conf, defectTypes):
         self.__db = db
         self.__conf = conf
+        self.__defTyp = defectTypes
 
     def startChecking(self, transaction):
         """Change status as we've started checking a transaction.
@@ -388,6 +389,12 @@ class Journal:
         self.__db.log(Query.transactions_status,
                       (str(status), transaction.idno))
 
+    def getKnownDefectTypes(self):
+        """Get currently known defect types."""
+        #with mdb.connect(self.__conf.dbconf.getDbname()) as con:
+        #    return self.__db.get_known_defect_types(con)
+        return self.__defTyp
+
     def foundDefect(self, transaction, defect, evidence, severity=0.5):
         """Log a defect."""
         self.foundDefect(transaction.idno, defect.name, defect.additional,
@@ -398,10 +405,6 @@ class Journal:
         assert type(trId) == int
         self.__db.log_defect(trId, name, additional, evidence, severity)
 
-    def getKnownDefectTypes(self):
-        """Get currently known defect types."""
-        with mdb.connect(self.__conf.dbconf.getDbname()) as con:
-            return self.__db.get_known_defect_types(con)
 
     def gotCookie(self, transaction, name, value, secure, httpOnly, path):
         """Log a discovered cookie."""

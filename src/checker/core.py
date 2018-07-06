@@ -9,14 +9,13 @@ from common import PluginType, PluginTypeError
 from net import Network, NetworkError, ConditionError, StatusError
 from filter import FilterException, Reschedule
 from transaction import Transaction, createTransaction, TouchException, RedisTransactionQueue, Journal
-import gc
 from rfc3987 import match
 
 
 class Core:
     """ The core of the application. Main loop is implemented here."""
 
-    def __init__(self, plugins, filters, headers, postprocess, conf):
+    def __init__(self, plugins, filters, headers, conf, defTyp):
         self.plugins = plugins
         self.log = logging.getLogger(__name__)
         self.conf = conf
@@ -32,11 +31,10 @@ class Core:
             except AttributeError:
                 pass
         self.header_filters = headers
-        self.postprocessers = postprocess
 
         self.queue = RedisTransactionQueue(self.db, self.conf)
 
-        self.journal = Journal(self.db, self.conf)
+        self.journal = Journal(self.db, self.conf, defTyp)
 
         types = set()
         extended = []
@@ -46,7 +44,7 @@ class Core:
             except:
                 extended.append(plugin)
 
-        for plugin in self.plugins+headers+filters+postprocess:
+        for plugin in self.plugins+headers+filters:
             self.__initializePlugin(plugin, types, extended)
 
         self.__push_entry_points()
@@ -153,76 +151,14 @@ class Core:
         self.files.append(transaction.file)
         transaction.cache = dict()
         transaction.cache['size'] = transaction.size
-        #self.volume = self.volume + transaction.cache['size']
         self.journal.startChecking(transaction)
         self.rack.run(transaction)
         self.journal.stopChecking(transaction, VerificationStatus.done_ok)
-        #if self.volume > self.conf.getProperty("maxVolume"):
-            # call cleanup only if there are files to remove
-            # ensures gc.collect() is called once in a while but not often
-            #self.__cleanup()
-
-    def __cleanup(self):
-        while self.volume > (self.conf.getProperty("maxVolume") / 2):
-            self.log.debug("CLEANUP ... Size of tmps: %s, limit: %s" %
-                           (str(self.volume),
-                            str(self.conf.getProperty("maxVolume"))))
-            f = self.files[0]
-            if f:
-                l = os.path.getsize(f)
-                os.remove(f)
-                self.volume = self.volume - l
-            self.files.pop(0)
-        self.log.debug("Size of tmps after cleanup: %s" % (str(self.volume)))
-        self.log.info("Enqueued: %s transactions" % (str(self.queue.len())))
-        self.log.info("Buffered: %s DB queries" %
-                      (str(self.db.bufferedQueries)))
-        self.log.info("Seen: %s addresses" % (str(self.queue.seenlen)))
-        gc.collect()
-
-    def finalize(self):
-        self.log.debug("Finalizing")
-        try:
-            # write to database
-            self.db.sync(final=True)
-        except:
-            self.log.exception("Unexpected exception while syncing")
-        finally:
-            # clean tmp files and queue & list of seen addresses
-            self.clean()
-            # run postprocessing
-            self.postprocess()
-
-    def postprocess(self):
-        """ Run postprocessing. """
-
-        self.log.info("Postprocessing")
-        for pp in self.postprocessers:
-            self.log.debug(pp.id)
-            pp.process()
-
-    def clean_tmps(self):
-        """ Clean temporary files allocated by core. """
-
-        for filename in self.files:
-            try:
-                os.remove(filename)
-            except OSError:
-                continue
-            except TypeError:
-                continue
-
-    def clean(self):
-        """ Cleanup. Clean temporary files and run garbage collection. """
-        self.clean_tmps()
-        self.__queue = None
-        gc.collect()
 
     def __initializePlugin(self, plugin, types, extended):
         plugin.setJournal(self.journal)
         known_categories = set([PluginType.CRAWLER, PluginType.CHECKER,
-                                PluginType.FILTER, PluginType.HEADER,
-                                PluginType.POSTPROCESS])
+                                PluginType.FILTER, PluginType.HEADER])
 
         if plugin.category not in known_categories:
             raise PluginTypeError

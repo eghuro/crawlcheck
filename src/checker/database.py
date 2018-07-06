@@ -7,7 +7,6 @@ Class DBAPI represents the database API.
 import sqlite3 as mdb
 from enum import Enum, IntEnum
 import logging
-import gc
 from multiprocessing import Process, Queue, Pool
 from functools import partial
 import copy
@@ -119,35 +118,29 @@ class DBAPI(object):
                                '?, ?)')
     }
 
-    __KEY_BASE = "dblogbuf"
+    KEY_BASE = "dblogbuf"
 
 
     def __init__(self, conf):
         self.__redis = redis.StrictRedis(host=conf.getProperty('redisHost', 'localhost'),
                                          port=conf.getProperty('redisPort', 6379),
                                          db=conf.getProperty('redisDb', 0))
-        self.__conf = conf
-        self.conf = conf.dbconf
-        self.limit = self.conf.getLimit()
-        self.__syncer_worker = None
-        self.__sync_cnt = 0
+
 
     def log(self, query, query_params):
         """Log a query."""
-        key = DBAPI.__KEY_BASE + str(int(query))
+        key = DBAPI.KEY_BASE + str(int(query))
         self.__redis.lpush(key, json.dumps(query_params))
 
-        qcount = sum(self.__redis.llen(DBAPI.__KEY_BASE + str(int(qt))) for qt in self.query_types)
+        qcount = sum(self.__redis.llen(DBAPI.KEY_BASE + str(int(qt))) for qt in DBAPI.query_types)
 
-        if qcount > self.limit:
-            self.sync()
-            gc.collect()
 
     def log_link(self, parent_id, uri, new_id):
         """Log link from parent_id to uri with new_id."""
         fid = self.__redis.incr("findingId")
         self.log(Query.link,
                  (str(fid), uri, str(new_id), str(parent_id)))
+
 
     def log_defect(self, transactionId, name, additional, evidence,
                    severity=0.5):
@@ -163,6 +156,7 @@ class DBAPI(object):
         self.log(Query.defect,
                  (str(fid), str(did), str(evidence), str(severity), str(transactionId)))
 
+
     def log_cookie(self, transactionId, name, value, secure, httpOnly, path):
         """Log a cookie."""
         fid = self.__redis.incr("findingId")
@@ -170,16 +164,32 @@ class DBAPI(object):
                  (str(fid), str(name), str(value),
                   str(transactionId), str(secure), str(httpOnly), str(path)))
 
+
     def log_header(self, transactionId, name, value):
         """ Log a header. """
         fid = self.__redis.incr("findingId")
         self.log(Query.headers,
                  (str(fid), str(name), str(value), str(transactionId)))
 
+
     def log_param(self, transactionId, key, value):
         """ Log an URI parameter. """
         fid = self.__redis.incr("findingId")
         self.log(Query.param, (str(fid), str(transactionId), key, value))
+
+
+class DBSyncer(object):
+
+
+    def __init__(self, conf):
+        self.__redis = redis.StrictRedis(host=conf.getProperty('redisHost', 'localhost'),
+                                         port=conf.getProperty('redisPort', 6379),
+                                         db=conf.getProperty('redisDb', 0))
+        self.__conf = conf
+        self.conf = conf.dbconf
+        self.__syncer_worker = None
+        self.__sync_cnt = 0
+
 
     @staticmethod
     def syncer(conf, dbname, qtypes, vacuum=True):
@@ -219,6 +229,7 @@ class DBAPI(object):
                 pipe.execute()
                 log.info("Sync successful")
 
+
     def sync(self, final=False):
         """ Actually write cached queries into the database. """
         log = logging.getLogger(__name__)
@@ -228,25 +239,25 @@ class DBAPI(object):
             self.__syncer_worker.join()
 
         vacuum = (self.__sync_cnt % 100 == 0)
-        for qtype in self.query_types:
-            oldKey = DBAPI.__KEY_BASE + str(int(qtype))
+        for qtype in DBAPI.query_types:
+            oldKey = DBAPI.KEY_BASE + str(int(qtype))
             newKey = "dbbuf" + str(int(qtype))
             if self.__redis.exists(oldKey) == 1:
                 self.__redis.rename(oldKey, newKey)
 
         sproc = Process(name="DB sync worker",
-                        target=DBAPI.syncer, args=(self.__conf, self.conf.getDbname(),
-                                                   DBAPI.query_types,
-                                                   vacuum))
+                        target=DBSyncer.syncer, args=(self.__conf, self.conf.getDbname(),
+                                                      DBAPI.query_types, vacuum))
         self.__syncer_worker = sproc
         sproc.start()
         for qtype in DBAPI.query_types:
-            key = DBAPI.__KEY_BASE + str(int(qtype))
+            key = DBAPI.KEY_BASE + str(int(qtype))
             self.__redis.delete(key)
 
         if final:
             log.info("Waiting for DB sync worker to finish")
             sproc.join()
+
 
     def get_urls(self):
         with mdb.connect(self.conf.getDbname()) as con:
@@ -255,11 +266,13 @@ class DBAPI(object):
             c.execute(q)
             return [x[0] for x in c.fetchall()]
 
+
     def get_known_defect_types(self, con):
         q = 'SELECT type, description FROM defectType'
         c = con.cursor()
         c.execute(q)
         return c.fetchall()
+
 
     def create_report_payload(self, cores=4, loglink=False):
         log = logging.getLogger(__name__)
@@ -268,17 +281,17 @@ class DBAPI(object):
             log.error("Cores: none")
         qt = Queue()
         tproc = Process(name="Transaction report",
-                        target=DBAPI.__create_transactions,
+                        target=DBSyncer.__create_transactions,
                         args=(self.conf.getDbname(), qt, cores, loglink))
 
         ql = Queue()
         lproc = Process(name="Link report",
-                        target=DBAPI.__create_links,
+                        target=DBSyncer.__create_links,
                         args=(self.conf.getDbname(), ql))
 
         qd = Queue()
         dproc = Process(name="Defect report",
-                        target=DBAPI.__create_defects,
+                        target=DBSyncer.__create_defects,
                         args=(self.conf.getDbname(), qd))
 
         log.debug("Starting report worker processes")
@@ -302,11 +315,13 @@ class DBAPI(object):
 
         return payload
 
+
     def __fetchall(self, q):
         with mdb.connect(self.conf.getDbname()) as con:
             c = con.cursor()
             c.execute(q)
             return c.fetchall()
+
 
     def get_invalid_links(self):
         q = ('select transactions.uri, defect.evidence, defectType.type '
@@ -318,6 +333,7 @@ class DBAPI(object):
              'order by defect.severity, transactions.uri')
 
         return self.__fetchall(q)
+
 
     def get_other_defects(self):
         query = ('select transactions.uri, defect.evidence, '
@@ -331,11 +347,13 @@ class DBAPI(object):
 
         return self.__fetchall(query)
 
+
     def get_cookies(self):
         query = ('select transactions.uri, cookies.name, cookies.value '
                  'from cookies inner join transactions '
                  'on cookies.responseId = transactions.id')
         return self.__fetchall(query)
+
 
     @staticmethod
     def __create_transactions(dbname, queue, allowance, loglink):
@@ -368,8 +386,9 @@ class DBAPI(object):
                      (str(len(transactions)), str(allowance)))
 
             with Pool(allowance) as pool:
-                partial_process = partial(process_transaction, dbname=dbname, loglink=loglink)
+                partial_process = partial(DBSyncer.process_transaction, dbname=dbname, loglink=loglink)
                 queue.put(pool.map(partial_process, transactions))
+
 
     @staticmethod
     def __create_links(dbname, queue):
@@ -411,6 +430,7 @@ class DBAPI(object):
                 perc0 = proc0 / total0 * 100.0
             queue.put(links)
 
+
     @staticmethod
     def __create_defects(dbname, queue):
         with mdb.connect(dbname) as con:
@@ -436,24 +456,25 @@ class DBAPI(object):
             queue.put(defects)
 
 
-def process_transaction(t, dbname, loglink):
-    with mdb.connect(dbname) as con:
-        c = con.cursor()
-        if t['depth'] > 0 and loglink:
-            q = ('SELECT link.responseId FROM link '
-                 'WHERE link.requestId = ? '
-                 'AND link.processed = "true" LIMIT 1')
-            c.execute(q, [t['id']])
-            try:
-                t['parentId'] = c.fetchone()[0]
-            except TypeError:
-                t['parentId'] = -1
-                logging.getLogger(__name__).error("No parent for link with " +
-                                                  "requestId: %s (depth: %s)" %
-                                                  (str(t['id']),
-                                                   str(t['depth'])))
+    @staticmethod
+    def process_transaction(t, dbname, loglink):
+        with mdb.connect(dbname) as con:
+            c = con.cursor()
+            if t['depth'] > 0 and loglink:
+                q = ('SELECT link.responseId FROM link '
+                     'WHERE link.requestId = ? '
+                     'AND link.processed = "true" LIMIT 1')
+                c.execute(q, [t['id']])
+                try:
+                    t['parentId'] = c.fetchone()[0]
+                except TypeError:
+                    t['parentId'] = -1
+                    logging.getLogger(__name__).error("No parent for link with " +
+                                                      "requestId: %s (depth: %s)" %
+                                                      (str(t['id']),
+                                                       str(t['depth'])))
 
-        q = ('SELECT uri FROM aliases WHERE transactionId = ?')
-        c.execute(q, [t['id']])
-        t['aliases'] = [row[0] for row in c.fetchall()]
-        return t
+            q = ('SELECT uri FROM aliases WHERE transactionId = ?')
+            c.execute(q, [t['id']])
+            t['aliases'] = [row[0] for row in c.fetchall()]
+            return t

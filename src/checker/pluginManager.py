@@ -7,6 +7,7 @@ from yapsy.PluginManager import PluginManager
 from configLoader import ConfigLoader, EntryPointRecord
 from core import Core
 from common import PluginType
+from database import DBSyncer
 
 import click
 import logging
@@ -228,22 +229,31 @@ def __initialize_database(log, conf):
         raise
 
 
-def __run_checker(log, plugins, headers, filters, pps, conf, export_only):
+def __run_checker(log, plugins, headers, filters, pps, conf):
     global core_instance
     log.info("Running checker")
-    core_instance = Core(plugins, filters, headers, pps, conf)
-    if not export_only:
+    core_instance = Core(plugins, filters, headers, conf, [])
+    try:
+        t = time.time()
+        core_instance.run()
+        log.debug("Execution lasted: " + str(time.time() - t))
+    except:
+        log.exception("Unexpected exception")
+    finally:
         try:
-            t = time.time()
-            core_instance.run()
-            log.debug("Execution lasted: " + str(time.time() - t))
-        except Exception as e:
-            log.exception("Unexpected exception")
-        finally:
-            core_instance.finalize()
+            __prepare_database(conf, log)
+        except:
+            log.exception("Failed to prepare database, session data are only in redis")
+        else:
+            db = DBSyncer(conf)        
+            db.sync(final=True)
+            log.info("Postprocessing")
+            for pp in pps:
+                log.debug(pp.id)
+                pp.setConf(conf)
+                pp.setDb(db)
+                pp.process()
             log.info("The End.")
-    else:
-        core_instance.postprocess()
 
 
 def validate_param(ctx, param, values):
@@ -269,16 +279,13 @@ def __loadEntryPoints(entry, conf):
 
 
 @click.command()
-@click.option('-e', '--export', is_flag=True, help="Just run postprocessing on existing database.")
 @click.option('-d', '--debug', is_flag=True, help="Write detailed information into log file.")
 @click.option('-p', '--param', multiple=True, callback=validate_param, help="Additional configuration parameters.")
 @click.option('--entry', multiple=True, help="Additional entry points.")
 @click.argument('cfile', type=click.Path(exists=True))
-def main(export, debug, param, entry, cfile):
+def main(debug, param, entry, cfile):
     """ Load configuration, find plugins, run core.
     """
-    export_only = export
-
     gc.enable()
     global core_instance
     core_instance = None
@@ -312,7 +319,7 @@ def main(export, debug, param, entry, cfile):
     cl = None
     gc.collect()
 
-    __run_checker(log, plugins, headers, filters, pps, conf, export_only)
+    __run_checker(log, plugins, headers, filters, pps, conf)
 
 if __name__ == "__main__":
     main()
