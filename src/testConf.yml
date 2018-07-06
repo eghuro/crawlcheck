@@ -1,28 +1,26 @@
 ---
 version: 1.6
-database: crawlcheck-ksp.sqlite
+database: olga.sqlite
 cleandb: True
 initdb: True
 pluginDir: plugin  # defaults to 'plugin'
 maxDepth: 10
 maxContentLength: 2000000
 agent: "Crawlcheck/1.1"
-logfile: cc-ksp.log
+logfile: cc-olga.log
 report: "http://localhost:5000"
 cleanreport: True
 maxVolume: 100000000 #max 100MB of tmp files
 maxAttempts: 2
 dbCacheLimit: 1000000 #cache up to 1M of DB queries
-sitemap-file: "sitemap.xml"
-sitemap-regex: "https?://ksp.mff.cuni.cz(/.*)?"
-yaml-out-file: 'cc-ksp.yml'
+yaml-out-file: 'cc-olga.yml'
 verifyHttps: True
 loglink: False
 timeout: 1
 
 regexes:
  -
-    regex: "http://ksp.mff.cuni.cz/(?!sksp|profil|forum|auth).*"
+    regex: "http://olga.majling.eu/"
     plugins:
        - linksFinder
        - tidyHtmlValidator
@@ -35,7 +33,7 @@ regexes:
        - sitemapScanner
        - mailer
  -
-    regex: "https?://(?!ksp.mff.cuni.cz/(sksp|profil|forum|auth)).+" #test links (HEAD request) only
+    regex: "https?://(?!olga.majling.eu).+" #test links (HEAD request) only
     plugins:
 
 filters: True
@@ -44,4 +42,4 @@ postprocess:
  - yaml_exporter
 
 entryPoints:
- - "http://ksp.mff.cuni.cz/"
+ - "http://olga.majling.eu/"

@@ -5,12 +5,14 @@ Class DBAPI represents the database API.
 """
 
 import sqlite3 as mdb
-from enum import Enum
+from enum import Enum, IntEnum
 import logging
 import gc
 from multiprocessing import Process, Queue, Pool
 from functools import partial
 import copy
+import json
+import redis
 
 
 class DatabaseConfiguration(object):
@@ -58,7 +60,7 @@ class VerificationStatus(Enum):
     done_ignored = "DONE - IGNORED"
 
 
-class Query(Enum):
+class Query(IntEnum):
     transactions = 1
     link = 2
     defect = 5
@@ -70,10 +72,6 @@ class Query(Enum):
     link_status = 0
     headers = 9
     params = 10
-
-
-class TableError(LookupError):
-    pass
 
 
 class DBAPI(object):
@@ -121,79 +119,77 @@ class DBAPI(object):
                                '?, ?)')
     }
 
+    __KEY_BASE = "dblogbuf"
+
 
     def __init__(self, conf):
-        self.conf = conf
-        self.limit = conf.getLimit()
-        self.findingId = -1
-        self.logs = dict()
-        for qtype in DBAPI.query_types:
-            self.logs[qtype] = []
-        self.defect_types = []
-        self.defectId = -1
-        self.defectTypesWithId = dict()
-        self.bufferedQueries = 0
+        self.__redis = redis.StrictRedis(host=conf.getProperty('redisHost', 'localhost'),
+                                         port=conf.getProperty('redisPort', 6379),
+                                         db=conf.getProperty('redisDb', 0))
+        self.__conf = conf
+        self.conf = conf.dbconf
+        self.limit = self.conf.getLimit()
         self.__syncer_worker = None
         self.__sync_cnt = 0
 
     def log(self, query, query_params):
         """Log a query."""
-        if query in self.logs:
-            self.logs[query].append(query_params)
-            self.bufferedQueries = self.bufferedQueries + 1
-            if self.bufferedQueries > self.limit:
-                self.sync()
-                gc.collect()
-        else:
-            raise TableError()
+        key = DBAPI.__KEY_BASE + str(int(query))
+        self.__redis.lpush(key, json.dumps(query_params))
+
+        qcount = sum(self.__redis.llen(DBAPI.__KEY_BASE + str(int(qt))) for qt in self.query_types)
+
+        if qcount > self.limit:
+            self.sync()
+            gc.collect()
 
     def log_link(self, parent_id, uri, new_id):
         """Log link from parent_id to uri with new_id."""
-        self.findingId = self.findingId + 1
+        fid = self.__redis.incr("findingId")
         self.log(Query.link,
-                 (str(self.findingId), uri, str(new_id), str(parent_id)))
+                 (str(fid), uri, str(new_id), str(parent_id)))
 
     def log_defect(self, transactionId, name, additional, evidence,
                    severity=0.5):
         """Log a defect."""
-        self.findingId = self.findingId + 1
-        if name not in self.defect_types:
-            self.defectId = self.defectId + 1
-            self.log(Query.defect_types,
-                     (str(self.defectId), str(name), str(additional)))
-            self.defect_types.append(name)
-            self.defectTypesWithId[name] = self.defectId
-        defId = self.defectTypesWithId[name]
+        fid = self.__redis.incr("findingId")
+        if self.__redis.hexists("defectType", name) == 1:
+            did = self.__redis.hget("defectType", name)
+        else:
+            did = self.__redis.incr("defectId")
+            self.__redis.hset("defectType", name, did)
+            self.log(Query.defect_types, (str(did), str(name), str(additional)))
+
         self.log(Query.defect,
-                 (str(self.findingId), str(defId), str(evidence),
-                  str(severity), str(transactionId)))
+                 (str(fid), str(did), str(evidence), str(severity), str(transactionId)))
 
     def log_cookie(self, transactionId, name, value, secure, httpOnly, path):
         """Log a cookie."""
-        self.findingId = self.findingId + 1
+        fid = self.__redis.incr("findingId")
         self.log(Query.cookies,
-                 (str(self.findingId), str(name), str(value),
+                 (str(fid), str(name), str(value),
                   str(transactionId), str(secure), str(httpOnly), str(path)))
 
     def log_header(self, transactionId, name, value):
         """ Log a header. """
-        self.findingId = self.findingId + 1
+        fid = self.__redis.incr("findingId")
         self.log(Query.headers,
-                 (str(self.findingId), str(name), str(value),
-                  str(transactionId)))
+                 (str(fid), str(name), str(value), str(transactionId)))
 
     def log_param(self, transactionId, key, value):
         """ Log an URI parameter. """
-        self.findingId = self.findingId + 1
-        self.log(Query.param,
-                 (str(self.findingId), str(transactionId), key, value))
+        fid = self.__redis.incr("findingId")
+        self.log(Query.param, (str(fid), str(transactionId), key, value))
 
     @staticmethod
-    def syncer(dbname, qtypes, logs, vacuum=True):
+    def syncer(conf, dbname, qtypes, vacuum=True):
         """Sync records into DB. Worker."""
         log = logging.getLogger(__name__)
         log.info("Writing into database")
-        with mdb.connect(dbname) as con:
+        red = redis.StrictRedis(host=conf.getProperty('redisHost', 'localhost'),
+                                port=conf.getProperty('redisPort', 6379),
+                                db=conf.getProperty('redisDb', 0))
+        with mdb.connect(dbname) as con, red.pipeline() as pipe:
             try:
                 cursor = con.cursor()
 
@@ -205,7 +201,10 @@ class DBAPI(object):
                 # https://www.sqlite.org/pragma.html#pragma_page_size
 
                 for qtype in qtypes:
-                    cursor.executemany(DBAPI.queries[qtype], logs[qtype])
+                    key = "dbbuf" + str(int(qtype))
+                    log.debug("Query: %s, key: %s" % (str(qtype), key))
+                    cursor.executemany(DBAPI.queries[qtype], [json.loads(x) for x in red.lrange(key, 0, -1)])
+                    pipe.delete(key)
 
                 con.commit()
 
@@ -217,6 +216,7 @@ class DBAPI(object):
                 con.rollback()
                 log.error("SQL Error: "+str(e))
             else:
+                pipe.execute()
                 log.info("Sync successful")
 
     def sync(self, final=False):
@@ -227,26 +227,26 @@ class DBAPI(object):
             log.info("Waiting for DB sync worker to finish")
             self.__syncer_worker.join()
 
-        logs = copy.deepcopy(self.logs)
         vacuum = (self.__sync_cnt % 100 == 0)
+        for qtype in self.query_types:
+            oldKey = DBAPI.__KEY_BASE + str(int(qtype))
+            newKey = "dbbuf" + str(int(qtype))
+            if self.__redis.exists(oldKey) == 1:
+                self.__redis.rename(oldKey, newKey)
+
         sproc = Process(name="DB sync worker",
-                        target=DBAPI.syncer, args=(self.conf.getDbname(),
+                        target=DBAPI.syncer, args=(self.__conf, self.conf.getDbname(),
                                                    DBAPI.query_types,
-                                                   logs, vacuum))
+                                                   vacuum))
         self.__syncer_worker = sproc
         sproc.start()
         for qtype in DBAPI.query_types:
-            self.logs[qtype] = []
-            self.bufferedQueries = 0
+            key = DBAPI.__KEY_BASE + str(int(qtype))
+            self.__redis.delete(key)
 
         if final:
             log.info("Waiting for DB sync worker to finish")
             sproc.join()
-
-    def error(self, e, con):
-        con.rollback()
-        log = logging.getLogger(__name__)
-        log.error("SQL Error: "+str(e))
 
     def get_urls(self):
         with mdb.connect(self.conf.getDbname()) as con:

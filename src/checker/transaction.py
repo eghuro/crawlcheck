@@ -306,7 +306,7 @@ class RedisTransactionQueue:
         else:
             self.__log.debug("Seen")
 
-        if self.__conf.getProperty('logLink', False) and parent is not None:
+        if self.__conf.getProperty('loglink', True) and parent is not None:
             self.__db.log_link(parent.idno, transaction.uri, transaction.idno)
 
     def push_link(self, uri, parent, expected=None):

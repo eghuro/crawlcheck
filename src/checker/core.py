@@ -20,7 +20,7 @@ class Core:
         self.plugins = plugins
         self.log = logging.getLogger(__name__)
         self.conf = conf
-        self.db = DBAPI(conf.dbconf)
+        self.db = DBAPI(conf)
         self.files = []
         self.__time_subscribers = []
         self.volume = 0
