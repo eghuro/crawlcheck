@@ -52,9 +52,17 @@ class Tidy_HTML_Validator(IPlugin):
         # lines is a list of strings that looks like:
         # line 54 column 37 - Warning: replacing invalid character code 153
         for line in lines:
-            loc, desc = line.split(' - ', 1)
-            err_warn, msg = desc.split(': ', 1)
-            self.__record(transaction, loc, err_warn, msg)
+            try:
+                if '-' in line:
+                    loc, desc = line.split(' - ', 1)
+                    err_warn, msg = desc.split(': ', 1)
+                else:
+                    err_warn, msg = line.split(':', 1)
+                    loc = None
+            except ValueError:
+                logging.getLogger(__name__).exception("Failed to parse result! Line was: %s" % line)
+            else:
+                self.__record(transaction, loc, err_warn, msg)
 
     def __record(self, transaction, loc, cat, desc):
         code = self.__get_code(cat, desc)

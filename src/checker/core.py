@@ -3,6 +3,7 @@ import queue
 import os
 import time
 import requests
+from urllib.parse import quote
 from database import DBAPI, VerificationStatus
 from common import PluginType, PluginTypeError
 from net import Network, NetworkError, ConditionError, StatusError
@@ -101,13 +102,14 @@ class Core:
                 self.log.info("Processing %s" % (transaction.uri))
 
                 if not match(transaction.uri):
-                    self.log.error("Invalid URI: %s" % (transaction.uri))
-                    self.journal.foundDefect(transaction.idno, "invaliduri",
-                                             "URI is invalid",
-                                             transaction.uri, 1.0)
-                    self.journal.stopChecking(transaction,
-                                              VerificationStatus.done_ko)
-                    continue
+                    if not match(quote(transaction.uri)):
+                        self.log.error("Invalid URI: %s" % (transaction.uri))
+                        self.journal.foundDefect(transaction.idno, "invaliduri",
+                                                 "URI is invalid",
+                                                 transaction.uri, 1.0)
+                        self.journal.stopChecking(transaction,
+                                                  VerificationStatus.done_ko)
+                        continue
 
                 if not transaction.isWorthIt(self.conf):
                     # neni zadny plugin, ktery by prijal
