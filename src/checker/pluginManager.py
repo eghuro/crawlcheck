@@ -24,12 +24,8 @@ import gc
 
 def handler(signum, frame):
     """ Handle signal. """
-    print("Caught signal")
-    if core_instance is not None:
-        core_instance.clean()
-        core_instance.db.sync(final=True)
-        # on kill signal just rm tmp files, sync db and leave
-    sys.exit(0)
+    print("Caught signal - data remain only in redis")
+    sys.exit(1)
 
 
 def __get_level(log, debug):
