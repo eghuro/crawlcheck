@@ -5,12 +5,15 @@ import datrie
 import string
 import urllib
 from urllib.parse import urldefrag
-from net import Network, NetworkError, ConditionError, StatusError
-from database import Query
 import sqlite3 as mdb
 import copy
 import json
 import redis
+from cachetools import cached, LRUCache
+try:
+    from .net import Network, NetworkError, ConditionError, StatusError
+except ImportError:
+    from net import Network, NetworkError, ConditionError, StatusError
 
 
 class TouchException(Exception):
@@ -88,12 +91,10 @@ class Transaction:
         except (NetworkError, ConditionError, StatusError):
             raise
 
+    @cached(LRUCache(maxsize=1))
     def getContent(self):
         """Read content from underlying file as string."""
         try:
-            #with codecs.open(self.file, 'r', 'utf-8') as f:
-            #    data = f.read()
-            #    return str(data)
             r = redis.StrictRedis(host=self.conf.getProperty('redisHost', 'localhost'),
                                   port=self.conf.getProperty('redisPort', 6379),
                                   db=self.conf.getProperty('redisDb', 0))
@@ -121,138 +122,21 @@ class Transaction:
         return y
 
 
-transactionId = 0
-
-
-def createTransaction(conf, uri, depth=0, parentId=-1, method='GET', params=dict(),
+def createTransaction(red, conf, uri, depth=0, parentId=-1, method='GET', params=dict(),
                       expected=None):
     """ Factory method for creating Transaction objects. """
 
     assert (type(params) is dict) or (params is None)
-    global transactionId
     decoded = str(urllib.parse.unquote(urllib.parse.unquote(uri)))
+    transactionId = red.incr("transactionId")
     tr = Transaction(conf, decoded, depth, parentId, transactionId, method, params)
     tr.expected = expected
-    transactionId = transactionId + 1
     return tr
 
 
 class SeenLimit(Exception):
     """ Reached a limit on amount of seen transactions. """
     pass
-
-
-class TransactionQueue:
-    """Transactons are stored here. Queue is stored locally. Operations are
-    written through to database.
-    """
-    def __init__(self, db, conf):
-        self.__db = db
-        self.__conf = conf
-        self.__seen = datrie.Trie(string.printable)
-        self.__q = queue.Queue()
-        self.seenlen = 0
-
-    def isEmpty(self):
-        return self.__q.empty()
-
-    def len(self):
-        return self.__q.qsize()
-
-    def pop(self):
-        try:
-            t = self.__q.get(block=True, timeout=1)
-        except queue.Empty:
-            raise
-        else:
-            self.__db.log(Query.transactions_status, ("PROCESSING", t.idno))
-            self.__db.log(Query.link_status, (str("true"), str(t.uri)))
-            return t
-
-    def push(self, transaction, parent=None):
-        """Push transaction into queue."""
-        transaction.uri = urldefrag(transaction.uri)[0]
-
-        try:
-            self.__mark_seen(transaction)
-        except SeenLimit:
-            log.warn("Not logging link, because limit was reached")
-            return
-
-        if self.__conf.getProperty('loglink', True) and parent is not None:
-            self.__db.log_link(parent.idno, transaction.uri, transaction.idno)
-
-    def push_link(self, uri, parent, expected=None):
-        """Push link into queue.
-        Transactions are created, proper Referer header is set.
-        """
-
-        if parent is None:
-            self.push(createTransaction(uri, 0, -1, 'GET', dict(), expected),
-                      None)
-        else:
-            t = createTransaction(uri, parent.depth + 1, parent.idno, 'GET',
-                                  dict(), expected)
-            t.headers['Referer'] = parent.uri
-            self.push(t, parent)
-
-    def push_virtual_link(self, uri, parent):
-        """Push virtual link into queue.
-        Mark URI as seen, log link, write it all into DB.
-        Doesn't push the queue.
-        """
-
-        t = createTransaction(uri, parent.depth + 1, parent.idno)
-        self.__mark_seen(t)
-        if self.__conf.getProperty('loglink', True):
-            self.__db.log_link(parent.idno, uri, t.idno)
-        return t
-
-    def push_rescheduled(self, transaction):
-        """Force put transaction into queue, no further checks.
-        Transaction must've been seen previously.
-        """
-        assert self.__been_seen(transaction)
-        self.__q.put(transaction)
-
-    def __been_seen(self, transaction):
-        if transaction.uri in self.__seen:
-            return transaction.method in self.__seen[transaction.uri]
-        return False
-
-    def __set_seen(self, transaction):
-        if transaction.uri in self.__seen:
-            self.__seen[transaction.uri].add(transaction.method)
-        else:
-            self.__seen[transaction.uri] = set([transaction.method])
-
-    def __record_params(self, transaction):
-        if self.__conf.getProperty('recordParams', True):
-            for key, value in transaction.data.items():
-                self.__db.log_param(transaction.idno, key, value)
-
-    def __test_url_limit(self):
-        if self.__conf.getProperty('urlLimit') is not None:
-            if self.seenlen >= self.__conf.getProperty('urlLimit'):
-                raise SeenLimit()
-
-    def __mark_seen(self, transaction):
-        if not self.__been_seen(transaction):
-            self.__test_url_limit()
-            self.__q.put(transaction)
-            self.__db.log(Query.transactions,
-                          (str(transaction.idno), transaction.method,
-                           transaction.uri, "REQUESTED",
-                           str(transaction.depth), str(transaction.expected)))
-            for uri in transaction.aliases:
-                self.__db.log(Query.aliases, (str(transaction.idno), uri))
-            self.__record_params(transaction)
-        # co kdyz jsme pristupovali s jinymi parametry?
-        # mark all known aliases as seen
-        for uri in transaction.aliases:
-            if not self.__been_seen(transaction):
-                self.__set_seen(transaction)
-                self.seenlen = self.seenlen + 1
 
 
 class RedisTransactionQueue:
@@ -263,48 +147,35 @@ class RedisTransactionQueue:
         self.__db = db
         self.__conf = conf
         self.__redis = redis.StrictRedis(host=conf.getProperty('redisHost', 'localhost'), port=conf.getProperty('redisPort', 6379), db=conf.getProperty('redisDb', 0))
-        self.__redis.flushdb()
         self.__log = logging.getLogger(__name__)
 
     def isEmpty(self):
         return self.len() == 0
 
     def len(self):
-        return self.__redis.llen('transactions')
+        return self.__redis.llen('transactions' + self.__conf.getProperty('runIdentifier'))
 
     def pop(self):
-        x = self.__redis.rpop('transactions').decode('utf-8')
+        x = self.__redis.rpop('transactions' + self.__conf.getProperty('runIdentifier')).decode('utf-8')
         if x == None:
             return None
         self.__log.debug(str(x))
 
         t = Transaction.from_json(x, self.__conf)
-        self.__db.log(Query.transactions_status, ("PROCESSING", t.idno))
-        self.__db.log(Query.link_status, (str("true"), str(t.uri)))
         return t
 
     def push(self, transaction, parent=None):
         """Push transaction into queue."""
         transaction.uri = urldefrag(transaction.uri)[0]
 
-        self.__log.debug("Marking as seen: %s" % transaction.uri)
-
         cnt = 0
         for uri in transaction.aliases:
-            cnt = cnt + self.__redis.pfadd('seen', uri)
+            cnt = cnt + self.__redis.pfadd('seen' + self.__conf.getProperty('runIdentifier'), uri)
         
         if cnt == len(transaction.aliases): #-> not seen
-            self.__log.debug("Not seen")
-            self.__enqueue(transaction)
-            self.__db.log(Query.transactions,
-                          (str(transaction.idno), transaction.method,
-                           transaction.uri, "REQUESTED",
-                           str(transaction.depth), str(transaction.expected)))
-            for uri in transaction.aliases:
-                self.__db.log(Query.aliases, (str(transaction.idno), uri))
+            self.__db.log_transaction(transaction.idno, transaction.method, transaction.uri, transaction.depth, transaction.expected, transaction.aliases)
             self.__record_params(transaction)
-        else:
-            self.__log.debug("Seen")
+            self.__enqueue(transaction)
 
         if self.__conf.getProperty('loglink', True) and parent is not None:
             self.__db.log_link(parent.idno, transaction.uri, transaction.idno)
@@ -315,10 +186,10 @@ class RedisTransactionQueue:
         """
 
         if parent is None:
-            self.push(createTransaction(self.__conf, uri, 0, -1, 'GET', dict(), expected),
+            self.push(createTransaction(self.__redis, self.__conf, uri, 0, -1, 'GET', dict(), expected),
                       None)
         else:
-            t = createTransaction(self.__conf, uri, parent.depth + 1, parent.idno, 'GET',
+            t = createTransaction(self.__redis, self.__conf, uri, parent.depth + 1, parent.idno, 'GET',
                                   dict(), expected)
             t.headers['Referer'] = parent.uri
             self.push(t, parent)
@@ -329,17 +200,23 @@ class RedisTransactionQueue:
         Doesn't push the queue.
         """
 
-        t = createTransaction(self.__conf, uri, parent.depth + 1, parent.idno)
-        self.__redis.pfadd('seen', t.uri)
+        t = createTransaction(self.__redis, self.__conf, uri, parent.depth + 1, parent.idno)
+        self.__redis.pfadd('seen' + self.__conf.getProperty('runIdentifier'), t.uri)
         if self.__conf.getProperty('loglink', True):
             self.__db.log_link(parent.idno, uri, t.idno)
         return t
+
+    def push_entrypoint(self, entryPoint):
+        t = createTransaction(self.__redis, self.__conf,
+                              entryPoint.url, 0, -1,
+                              entryPoint.method, entryPoint.data) 
+        self.push(t, None)
 
     def push_rescheduled(self, transaction):
         """Force put transaction into queue, no further checks.
         Transaction must've been seen previously.
         """
-        assert self.__redis.pfcount('seen', transaction.uri) > 0
+        assert self.__redis.pfcount('seen' + self.__conf.getProperty('runIdentifier'), transaction.uri) > 0
         self.__enqueue(transaction)
 
     def __enqueue(self, transaction):
@@ -348,7 +225,7 @@ class RedisTransactionQueue:
         tr = copy.deepcopy(transaction)
         tr.aliases = list(tr.aliases)
         transaction.conf = conf
-        self.__redis.lpush("transactions", json.dumps(tr.__dict__).encode('utf8'))
+        self.__redis.lpush("transactions" + self.__conf.getProperty('runIdentifier'), json.dumps(tr.__dict__).encode('utf8'))
 
     def __record_params(self, transaction):
         if self.__conf.getProperty('recordParams', True):
@@ -371,10 +248,6 @@ class Journal:
 
         logging.getLogger(__name__).debug("Starting checking %s" %
                                           (transaction.uri))
-        self.__db.log(Query.transactions_load,
-                      ("VERIFYING", transaction.uri, transaction.type,
-                       transaction.status, transaction.idno))
-
         # zapsat ziskane hlavicky
         if self.__conf.getProperty('recordHeaders', True):
             for key, value in transaction.headers.items():
@@ -386,13 +259,11 @@ class Journal:
 
         logging.getLogger(__name__).debug("Stopped checking %s" %
                                           (transaction.uri))
-        self.__db.log(Query.transactions_status,
-                      (str(status), transaction.idno))
+        self.__db.session.commit()
+        self.__db.log_transaction_data(transaction.idno, transaction.status, transaction.type, transaction.size, status)
 
     def getKnownDefectTypes(self):
         """Get currently known defect types."""
-        #with mdb.connect(self.__conf.dbconf.getDbname()) as con:
-        #    return self.__db.get_known_defect_types(con)
         return self.__defTyp
 
     def foundDefect(self, transaction, defect, evidence, severity=0.5):

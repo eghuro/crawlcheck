@@ -1,7 +1,10 @@
 from yapsy.IPlugin import IPlugin
 from tidylib import tidy_document
-from common import PluginType
 import logging
+try:
+    from crawlcheck.checker.common import PluginType
+except ImportError:
+    from common import PluginType
 
 
 class Tidy_HTML_Validator(IPlugin):
@@ -43,6 +46,7 @@ class Tidy_HTML_Validator(IPlugin):
                     logging.getLogger(__name__).warn("Unknown letter: " +
                                                      letter)
             except ValueError:
+                logging.getLogger(__name__).exception("Code not found")
                 continue
 
     def check(self, transaction):
@@ -53,16 +57,16 @@ class Tidy_HTML_Validator(IPlugin):
         # line 54 column 37 - Warning: replacing invalid character code 153
         for line in lines:
             try:
-                if '-' in line:
-                    loc, desc = line.split(' - ', 1)
-                    err_warn, msg = desc.split(': ', 1)
-                else:
+                loc, desc = line.split(' - ', 1)
+                err_warn, msg = desc.split(': ', 1)
+                self.__record(transaction, loc, err_warn, msg)
+            except:
+                try:
                     err_warn, msg = line.split(':', 1)
                     loc = None
-            except ValueError:
-                logging.getLogger(__name__).exception("Failed to parse result! Line was: %s" % line)
-            else:
-                self.__record(transaction, loc, err_warn, msg)
+                    self.__record(transaction, loc, err_warn, msg)
+                except ValueError:
+                    logging.getLogger(__name__).exception("Failed to parse result! Line was: %s" % line)
 
     def __record(self, transaction, loc, cat, desc):
         code = self.__get_code(cat, desc)

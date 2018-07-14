@@ -2,13 +2,23 @@
 """Configuration Loader loads configuration from external YAML file.
 """
 from ruamel import yaml
-from database import DatabaseConfiguration
-from acceptor import Acceptor, RegexAcceptor
-from common import ConfigurationError
 from distutils.version import StrictVersion
 import logging
 import sys
 import re
+try:
+    from .database import DatabaseConfiguration
+    from .acceptor import Acceptor, RegexAcceptor
+    from .common import ConfigurationError
+except ImportError:
+    try:
+        from database import DatabaseConfiguration
+        from acceptor import Acceptor, RegexAcceptor
+        from common import ConfigurationError
+    except ModuleNotFoundError:
+        from crawlcheck.checker.database import DatabaseConfiguration
+        from crawlcheck.checker.acceptor import Acceptor, RegexAcceptor
+        from crawlcheck.checker.common import ConfigurationError
 
 
 class EntryPointRecord(object):
@@ -68,6 +78,13 @@ class ConfigLoader(object):
 
         cfile.close()
 
+    def load_from_json(self, jsn):
+        db_check = self.__db_check(jsn)
+        version_check = self.__version_check(jsn)
+        if db_check and version_check:
+            self.loaded = self.__set_up(jsn)
+        return self.loaded
+
     def __db_check(self, root):
         if 'database' not in root:
             self.__log.error("Database not specified")
@@ -95,11 +112,16 @@ class ConfigLoader(object):
         elif not root['entryPoints']:
             self.__log.warning("At least one entry point should be specified")
         else:
-            epSet = root['entryPoints']
+            epSet = set(root['entryPoints'])
             for ep in epSet:
                 self.entryPoints.append(EntryPointRecord(ep))
 
     def __grab_filters(self, root):
+        if 'filters' in root:
+            self.__log.debug("Filters: %s" % str(root['filters']))
+        else:
+            self.__log.debug("Filters not present!")
+
         if 'filters' not in root or not root['filters']:
             self.properties['all_filters'] = False
             self.filters = []

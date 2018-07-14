@@ -1,4 +1,7 @@
-from common import PluginType, getSoup
+try:
+    from crawlcheck.checker.common import PluginType, getSoup
+except ImportError:
+    from common import PluginType, getSoup
 from yapsy.IPlugin import IPlugin
 import logging
 
@@ -13,7 +16,7 @@ class MetaTagValidator(IPlugin):
                  "seo:nodsc": "No description meta tag found",
                  "seo:multikeys": "Multiple keywords meta tags found",
                  "seo:nokeys": "No keywords meta tags found"}
-    __severity = 0.8
+    __severity = 0.4
 
     def __init__(self):
         self.__journal = None

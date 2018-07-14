@@ -1,4 +1,7 @@
-from common import PluginType
+try:
+    from crawlcheck.checker.common import PluginType
+except ImportError:
+    from common import PluginType
 from yapsy.IPlugin import IPlugin
 import logging
 import hashlib
@@ -44,12 +47,13 @@ class DuplicateDetector(IPlugin):
                                            db=transaction.conf.getProperty('redisDb', 0))
         h = self.__hashfile(transaction)
         if self.__red.pfadd("duphash", h) == 1:
-            # duplicate
-            self.__journal.foundDefect(transaction.idno,
-                                       "dup",
-                                       "Duplicate pages",
-                                       self.__red.hget("dupname", h),
-                                       0.7)
+            if self.__red.hget("dupname", h) != None:
+                # duplicate
+                self.__journal.foundDefect(transaction.idno,
+                                           "dup",
+                                           "Duplicit pages",
+                                           self.__red.hget("dupname", h),
+                                           0.7)
         else:
             self.__red.hset("dupname", h, transaction.uri)
         return

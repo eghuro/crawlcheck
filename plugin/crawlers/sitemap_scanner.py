@@ -1,4 +1,7 @@
-from common import PluginType
+try:
+    from crawlcheck.checker.common import PluginType
+except ImportError:
+    from common import PluginType
 from bs4 import BeautifulSoup
 from yapsy.IPlugin import IPlugin
 from urllib.parse import urlparse

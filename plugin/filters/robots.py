@@ -1,5 +1,9 @@
-from filter import FilterException, Reschedule
-from common import PluginType
+try:
+    from crawlcheck.checker.filter import FilterException, Reschedule
+    from crawlcheck.checker.common import PluginType
+except ImportError:
+    from filter import FilterException, Reschedule
+    from common import PluginType
 from yapsy.IPlugin import IPlugin
 import reppy
 from reppy.robots import Robots

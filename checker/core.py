@@ -4,12 +4,19 @@ import os
 import time
 import requests
 from urllib.parse import quote
-from database import DBAPI, VerificationStatus
-from common import PluginType, PluginTypeError
-from net import Network, NetworkError, ConditionError, StatusError
-from filter import FilterException, Reschedule
-from transaction import Transaction, createTransaction, TouchException, RedisTransactionQueue, Journal
 from rfc3987 import match
+try:
+    from .database import DBAPI, VerificationStatus
+    from .common import PluginType, PluginTypeError
+    from .net import Network, NetworkError, ConditionError, StatusError
+    from .filter import FilterException, Reschedule
+    from .transaction import Transaction, createTransaction, TouchException, RedisTransactionQueue, Journal
+except ImportError:
+    from database import DBAPI, VerificationStatus
+    from common import PluginType, PluginTypeError
+    from net import Network, NetworkError, ConditionError, StatusError
+    from filter import FilterException, Reschedule
+    from transaction import Transaction, createTransaction, TouchException, RedisTransactionQueue, Journal
 
 
 class Core:
@@ -55,9 +62,7 @@ class Core:
         for entryPoint in self.conf.entry_points:
             self.log.debug("Pushing to queue: %s, data: %s" %
                            (entryPoint.url, str(entryPoint.data)))
-            self.queue.push(createTransaction(self.conf, entryPoint.url, 0, -1,
-                                              entryPoint.method,
-                                              entryPoint.data))
+            self.queue.push_entrypoint(entryPoint)
 
     def run(self):
         """ Run the checker. """
@@ -87,6 +92,7 @@ class Core:
 
     def __run(self, session):
         # Queue
+        self.log.debug("Runner")
         while not self.queue.isEmpty():
             try:
                 transaction = self.queue.pop()
@@ -144,6 +150,7 @@ class Core:
                 continue
             else:  # Plugins
                 self.__process(transaction, start)
+        self.log.debug("Queue is empty now")
 
     def __process(self, transaction, start):
         for sub in self.__time_subscribers:
@@ -152,8 +159,13 @@ class Core:
         transaction.cache = dict()
         transaction.cache['size'] = transaction.size
         self.journal.startChecking(transaction)
-        self.rack.run(transaction)
-        self.journal.stopChecking(transaction, VerificationStatus.done_ok)
+        try:
+            self.rack.run(transaction)
+        except:
+            self.journal.stopChecking(transaction, VerificationStatus.done_ko)
+            raise
+        else:
+            self.journal.stopChecking(transaction, VerificationStatus.done_ok)
 
     def __initializePlugin(self, plugin, types, extended):
         plugin.setJournal(self.journal)

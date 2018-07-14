@@ -5,11 +5,16 @@ Acceptor module contains business rules to decide if a transaction will be
 checked by a plugin.
 """
 
-from common import ConfigurationError
+try:
+    from .common import ConfigurationError
+except ImportError:
+    from common import ConfigurationError
+
 import marisa_trie
 import re
 from enum import Enum
 import sre_constants
+import logging
 
 
 class Resolution(Enum):
@@ -27,8 +32,11 @@ class RegexAcceptor(object):
         self.__regexes = dict()
 
     def canTouch(self, value):
+        log = logging.getLogger(__name__)
+        log.debug("Can touch (%s), %s" % (value, len(self.__regexes.keys())))
         for plugin in self.__regexes.keys():
             for regex in self.__regexes[plugin]:
+                log.debug("Plugin: %s | Regex: %s | Value: %s" % (plugin, regex, value))
                 if regex.match(value):
                     return True
         return False

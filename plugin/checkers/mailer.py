@@ -1,4 +1,7 @@
-from common import PluginType, getSoup
+try:
+    from crawlcheck.checker.common import PluginType, getSoup
+except ImportError:
+    from common import PluginType, getSoup
 from yapsy.IPlugin import IPlugin
 from validate_email import validate_email
 import functools

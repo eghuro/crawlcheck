@@ -4,10 +4,21 @@
 """
 from yapsy.PluginManager import PluginManager
 
-from configLoader import ConfigLoader, EntryPointRecord
-from core import Core
-from common import PluginType
-from database import DBSyncer
+try:
+    from .configLoader import ConfigLoader, EntryPointRecord
+    from .core import Core
+    from .common import PluginType
+except ImportError:
+    try:
+        from configLoader import ConfigLoader, EntryPointRecord
+        from core import Core
+        from common import PluginType
+    except ModuleNotFoundError:
+        from crawlcheck.checker.configLoader import ConfigLoader, EntryPointRecord
+        from crawlcheck.checker.core import Core
+        from crawlchheck.checker.common import PluginType
+
+from crawlcheck.checker.database import DBAPI
 
 import click
 import logging
@@ -71,7 +82,7 @@ def __configure_logger(conf, debug=False):
             raise
 
     sh = logging.StreamHandler()
-    sh.setLevel(logging.INFO)
+    sh.setLevel(level)
     sh.setFormatter(formatter)
     log.addHandler(sh)
 
@@ -84,10 +95,7 @@ def __print_allowed_filters(log, allowed_filters):
 
 def __plugin_dirs(path, log, manager):
     log.info("Plugin directory set to: "+path)
-    dirList = [x[0] for x in os.walk(path)]
-    for d in dirList:
-        log.info("Looking for plugins in "+d)
-    manager.setPluginPlaces(dirList)  # pluginDir and all subdirs
+    manager.setPluginPlaces([path])  # pluginDir and all subdirs
 
 
 def __load_plugins(cl, log, conf):
@@ -103,32 +111,51 @@ def __load_plugins(cl, log, conf):
 
     # load plugins
     manager = PluginManager()
-    path = os.path.join(os.path.abspath("checker/"),
-                        conf.getProperty('pluginDir'))
+    path = conf.getProperty('pluginDir')
+    log.debug("Plugin dirs")
     __plugin_dirs(path, log, manager)
+    log.debug("Collect plugins")
     manager.collectPlugins()
+    log.debug("Collected")
 
     p = manager.getAllPlugins()
     if len(p) > 0:
         __do_load_plugins(p, plugins, conf, log, allowed_filters, filters, headers, postprocess)
     else:
         log.warn("No plugins found")
+    log.debug("Loaded plugins: %s" % str(plugins))
+    log.debug("Loaded headers: %s" % str(headers))
+    log.debug("Loaded filters: %s" % str(filters))
+    log.debug("Loaded postprocessors: %s" % str(postprocess))
     return plugins, headers, filters, postprocess
+
+
+def list_plugins(path):
+    manager = PluginManager()
+    __plugin_dirs(path, logging.getLogger(__name__), manager)
+    manager.collectPlugins()
+
+    typenames = { PluginType.FILTER: 'filter', PluginType.HEADER: 'header', PluginType.CHECKER: 'checker', PluginType.CRAWLER: 'crawler' }
+    for p in manager.getAllPlugins():
+        if p.plugin_object.category in typenames:
+            yield {'type': typenames[p.plugin_object.category], 'tag': p.plugin_object.id, 'description': p.name, 'checked': True}
 
 
 def __do_load_plugins(all_plugs, plugins, conf, log, allowed_filters, filters, headers, postprocess):
     filter_categories = [PluginType.FILTER, PluginType.HEADER]
     plugin_categories = [PluginType.CHECKER, PluginType.CRAWLER]
 
-    log.debug("Loaded plugins:")
+    log.debug("Loading plugins")
     filter_lists = {PluginType.FILTER: filters,
                     PluginType.HEADER: headers}
-    for pluginInfo in all_plugs:
-        t = set(conf.regex_acceptor.getAllPlugins())
-        if not conf.type_acceptor.empty:
-            t.intersection(conf.type_acceptor.getAllPlugins())
-        t.update(conf.postprocess)
+    t = set(conf.regex_acceptor.getAllPlugins())
+    log.debug(t) 
+    if not conf.type_acceptor.empty:
+        t.intersection(conf.type_acceptor.getAllPlugins())
+    t.update(conf.postprocess)
+    t.update(allowed_filters)
 
+    for pluginInfo in all_plugs:
         if pluginInfo.plugin_object.id in t or \
            (pluginInfo.plugin_object.category in filter_categories and conf.getProperty('all_filters')) or \
            (pluginInfo.plugin_object.category == PluginType.POSTPROCESS and conf.getProperty('all_postprocess')):
@@ -137,10 +164,6 @@ def __do_load_plugins(all_plugs, plugins, conf, log, allowed_filters, filters, h
                           allowed_filters, plugins, postprocess)
         else:
             log.debug("Found plugin %s that no rule in config mentions - skipping" % str(pluginInfo.plugin_object.id))
-
-    log.debug("Loaded headers: %s" % str(headers))
-    log.debug("Loaded filters: %s" % str(filters))
-    log.debug("Loaded postprocessors: %s" % str(postprocess))
 
 
 def __load_plugin(pluginInfo, log, conf, filter_lists, filter_categories,
@@ -185,46 +208,6 @@ def __load_configuration(cfile, log):
         return conf, cl
 
 
-def __clean_database(conf, log):
-    if os.path.isfile(conf.dbconf.getDbname()) and conf.getProperty('cleandb'):
-        log.info("Removing database file %s as configured" %
-                 conf.dbconf.getDbname())
-        os.remove(conf.dbconf.getDbname())
-        return True
-    return False
-
-
-def __prepare_database(conf, log):
-    # if database file exists and user wanted to clean it, remove it
-    cleaned = __clean_database(conf, log)
-
-    # if database file doesn't exist, create & initialize it - or warn use
-    if not os.path.isfile(conf.dbconf.getDbname()):
-        if conf.getProperty('initdb') or cleaned:
-            __initialize_database(log, conf)
-        else:
-            log.error("Database file %s doesn't exist"
-                      % conf.dbconf.getDbname())
-
-
-def __initialize_database(log, conf):
-    log.info('Initializing database file ' + conf.dbconf.getDbname())
-    try:
-        with open('checker/mysql_tables.sql', 'r') as tables, \
-             sqlite3.connect(conf.dbconf.getDbname()) as conn:
-            qry0 = tables.read().split(';')
-            c = conn.cursor()
-            for q in qry0:
-                c.execute(q)
-            conn.commit()
-            c.close()
-            log.info("Successfully initialized database: " +
-                     conf.dbconf.getDbname())
-    except:
-        log.exception("Failed to initialize database")
-        raise
-
-
 def __run_checker(log, plugins, headers, filters, pps, conf):
     global core_instance
     log.info("Running checker")
@@ -237,20 +220,6 @@ def __run_checker(log, plugins, headers, filters, pps, conf):
         log.exception("Unexpected exception")
     finally:
         gc.collect()
-        try:
-            __prepare_database(conf, log)
-        except:
-            log.exception("Failed to prepare database, session data are only in redis")
-        else:
-            db = DBSyncer(conf)        
-            db.sync(final=True)
-            log.info("Postprocessing")
-            for pp in pps:
-                log.debug(pp.id)
-                pp.setConf(conf)
-                pp.setDb(db)
-                pp.process()
-            log.info("The End.")
 
 
 def validate_param(ctx, param, values):
@@ -318,3 +287,4 @@ def execute(conf, cl, debug):
 
 if __name__ == "__main__":
     main()
+

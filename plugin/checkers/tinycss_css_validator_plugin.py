@@ -1,4 +1,7 @@
-from common import PluginType
+try:
+    from crawlcheck.checker.common import PluginType
+except ImportError:
+    from common import PluginType
 import tinycss
 from yapsy.IPlugin import IPlugin
 import logging
