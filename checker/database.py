@@ -4,6 +4,7 @@ Configuration is represented by DatabaseConfiguration object.
 Class DBAPI represents the database API.
 """
 
+import sys
 import logging
 import bleach
 from enum import Enum, IntEnum
@@ -95,18 +96,20 @@ class DBAPI(object):
         self.session.add(link)
 
 
-    def log_defect(self, transactionId, name, additional, evidence,
+    def log_defect(self, transactionId, in_name, in_additional, in_evidence,
                    severity=0.5):
         """Log a defect."""
-        name = bleach.clean(str(name))
-        additional = bleach.clean(str(additional))
-        evidence = bleach.clean(str(evidence))
+        name = bleach.clean(str(in_name), tags=[], attributes=[], styles=[])
+        additional = bleach.clean(str(in_additional), tags=[], attributes=[], styles=[])
+        evidence = bleach.clean(str(in_evidence), tags=[], attributes=[], styles=[])
 
         try:
             defect_type = self.session.query(DefectType).filter_by(name=name, additional=additional).one()
         except NoResultFound:
+            self.__log.exception("Defect type not found, creating new.\nSeverity: %s\nName: %s\nAdditional: %s\nEvidence: %s" % (severity, name, additional, evidence))
             defect_type = DefectType(name, additional)
             self.session.add(defect_type)
+            self.session.commit()
 
         self.session.add(Defect(self.__conf.getProperty("runIdentifier"),transactionId, defect_type.id, evidence, str(severity)))
 
