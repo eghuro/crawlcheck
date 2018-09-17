@@ -1,6 +1,7 @@
 from yapsy.IPlugin import IPlugin
 from tidylib import tidy_document
 import logging
+import redis
 try:
     from crawlcheck.checker.common import PluginType
 except ImportError:
@@ -15,21 +16,25 @@ class Tidy_HTML_Validator(IPlugin):
 
     def __init__(self):
         self.__journal = None
-        self.__codes = dict()
-        self.__max_err = 0
-        self.__max_warn = 0
-        self.__max_inf = 0
         self.__severity = dict()
         self.__severity['Warning'] = 0.5
         self.__severity['Error'] = 1.0
         self.__severity['Info'] = 0.3
+        self.__redis = None
+
+    def setConf(self, conf):
+        self.__redis = redis.StrictRedis(host=conf.getProperty('redisHost', 'localhost'),
+                                         port=conf.getProperty('redisPort', 6379),
+                                         db=conf.getProperty('redisDb', 0))
+
 
     def setJournal(self, journal):
         self.__journal = journal
 
-        maxes = {'W': self.__max_warn,
-                 'E': self.__max_err,
-                 'I': self.__max_inf}
+        maxes = {'W': self.__redis.get('tidyMaxWarn'),
+                 'E': self.__redis.get('tidyMaxErr'),
+                 'I': self.__redis.get('tidyMaxInfo'),
+                 'X': self.__redis.get('tidyMaxUnknown')}
 
         for dt in journal.getKnownDefectTypes():
             # dt[0] type, dt[1] description
@@ -41,7 +46,7 @@ class Tidy_HTML_Validator(IPlugin):
                 if letter in maxes:
                     if number > maxes[letter]:
                         maxes[letter] = number
-                    self.__codes[dt[1]] = dt[0]
+                    self.__redis.hset('tidyCodes', dt[1], dt[0])
                 else:
                     logging.getLogger(__name__).warn("Unknown letter: " +
                                                      letter)
@@ -55,18 +60,26 @@ class Tidy_HTML_Validator(IPlugin):
         lines = res[1].splitlines()
         # lines is a list of strings that looks like:
         # line 54 column 37 - Warning: replacing invalid character code 153
+        # Warning: adjacent hyphens within comment
         for line in lines:
-            try:
-                loc, desc = line.split(' - ', 1)
-                err_warn, msg = desc.split(': ', 1)
-                self.__record(transaction, loc, err_warn, msg)
-            except:
+            if not '-' in line:
+                err_warn, msg = line.split(':', 1)
+                self.__record(transaction, None, err_warn.strip(), msg.strip())
+            else:
                 try:
-                    err_warn, msg = line.split(':', 1)
-                    loc = None
-                    self.__record(transaction, loc, err_warn, msg)
-                except ValueError:
-                    logging.getLogger(__name__).exception("Failed to parse result! Line was: %s" % line)
+                    loc, desc = line.split(' - ', 1)
+                    err_warn, msg = desc.split(': ', 1)
+                    self.__record(transaction, loc, err_warn.strip(), msg.strip())
+                except:
+                    try:
+                        loc, desc = line.split('-')
+                        err_warn, msg = desc.split(':', 1)
+                        if len(msg.strip()) == 0:
+                            logging.getLogger(__name__).warning("No description! Line was: %s" % line)
+                            msg = "Generic HTML syntax " + err_warn.to_lower()
+                        self.__record(transaction, loc, err_warn.strip(), msg.strip())
+                    except ValueError:
+                        logging.getLogger(__name__).exception("Failed to parse result! Line was: %s" % line)
 
     def __record(self, transaction, loc, cat, desc):
         code = self.__get_code(cat, desc)
@@ -77,28 +90,21 @@ class Tidy_HTML_Validator(IPlugin):
         self.__journal.foundDefect(transaction.idno, code, desc, [cat, loc],
                                    sev)
 
-    def __generate_code(self, letter, number, desc):
-        code = letter + str(number)
-        self.__codes[desc] = code
-        return code
-
     def __get_code(self, cat, desc):
-        code = None
-        if desc in self.__codes:
-            code = self.__codes[desc]
+        if self.__redis.hexists('tidyCodes', desc):
+            code = self.__redis.hget('tidyCodes', desc)
         else:
             if cat == 'Warning':
-                num = self.__max_warn
-                self.__max_warn = self.__max_warn + 1
+                num = self.__redis.incr('tidyMaxWarn')
             elif cat == 'Error':
-                num = self.__max_err
-                self._max_err = self.__max_err + 1
+                num = self.__redis.incr('tidyMaxErr')
             elif cat == 'Info':
-                num = self.__max_inf
-                self.__max_inf = self.__max_inf + 1
+                num = self.__redis.incr('tidyMaxInfo')
             else:
                 log = logging.getLogger(__name__)
                 log.error("Unknown category: " + cat)
-                return None
-            code = self.__generate_code(cat[0], num, desc)
+                cat = 'X'
+                num = self.__redis.incr('tidyMaxUnknown')
+            code = cat[0] + str(num)
+            self.__redis.hset('tidyCodes', desc, code)
         return code
