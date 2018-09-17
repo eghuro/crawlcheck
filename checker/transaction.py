@@ -169,16 +169,33 @@ class RedisTransactionQueue:
         transaction.uri = urldefrag(transaction.uri)[0]
 
         cnt = 0
+        trId = transaction.idno
         for uri in transaction.aliases:
-            cnt = cnt + self.__redis.pfadd('seen' + self.__conf.getProperty('runIdentifier'), uri)
+            if 0 == self.__redis.pfadd('seen' + self.__conf.getProperty('runIdentifier'), uri):
+                if uri is not transaction.uri:
+                    self.__log.warn("Transaction id " + str(transaction.idno) + " was previously seen under different alias: " + uri +".\nTransaction URI: " + transaction.uri +"\nAliases:\n"+ "\n".join(transaction.aliases))
+                iden = self.__redis.hget('transactionId' + self.__conf.getProperty('runIdentifier'), uri)
+                if iden is not None:
+                    trId = int(iden.decode('utf-8'))
+                    self.__log.debug("Using transaction id: " + str(trId) + " for " + uri + "(was: " + str(transaction.idno) + ")")
+                    break
+                else:
+                    self.__log.warn("Previous transaction ID was not recorded for " + uri + " (transaction id: " + str(trId) + ")")
+                    cnt = cnt + 1
+            else:
+                cnt = cnt + 1
         
-        if cnt == len(transaction.aliases): #-> not seen
+        #cnt je pocet novych aliasu
+        if cnt == len(transaction.aliases): #vsechny aliasy nove -> stranku vidime prvne
             self.__db.log_transaction(transaction.idno, transaction.method, transaction.uri, transaction.depth, transaction.expected, transaction.aliases)
             self.__record_params(transaction)
             self.__enqueue(transaction)
+            for alias in transaction.aliases:
+                self.__redis.hset('transactionId' + self.__conf.getProperty('runIdentifier'), alias, str(transaction.idno))
 
         if self.__conf.getProperty('loglink', True) and parent is not None:
-            self.__db.log_link(parent.idno, transaction.uri, transaction.idno)
+            if 1 == self.__redis.sadd('links' + self.__conf.getProperty('runIdentifier'), str(parent.idno) + ';' + str(trId)):
+                self.__db.log_link(parent.idno, transaction.uri, trId) # trId je bud transaction.idno a stranku jsme logovali nebo jine, "primarni id" stranky
 
     def push_link(self, uri, parent, expected=None):
         """Push link into queue.

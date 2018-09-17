@@ -216,8 +216,6 @@ def __run_checker(log, plugins, headers, filters, pps, conf):
         t = time.time()
         core_instance.run()
         log.debug("Execution lasted: " + str(time.time() - t))
-    except:
-        log.exception("Unexpected exception")
     finally:
         gc.collect()
 
@@ -269,8 +267,10 @@ def main(debug, param, entry, cfile):
 
     # load flags onto configuration
     __loadFlags(param, conf)
-    execute(conf, cl, debug)
-
+    try:
+        execute(conf, cl, debug)
+    except:
+        pass
 
 def execute(conf, cl, debug):
     try:

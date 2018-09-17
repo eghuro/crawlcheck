@@ -1,0 +1,8 @@
+[Core]
+Name = Log progress into redis
+Module = redis-progress
+
+[Documentation]
+Author = Alexandr Mansurov
+Version = 0.0
+Description = Log progress into redis to present user on a worker page
