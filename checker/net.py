@@ -1,5 +1,5 @@
 import requests
-from requests.exceptions import InvalidSchema, ConnectionError
+from requests.exceptions import InvalidSchema, ConnectionError, SSLError
 from requests.exceptions import MissingSchema, Timeout, TooManyRedirects
 from urllib.parse import urlparse, urlencode
 import os
@@ -108,6 +108,9 @@ class Network(object):
             Network.journal = None
             log.exception("Error while downloading: too many redirects", e)
             raise NetworkError("Too many redirects") from e
+        except SSLError as e:
+            journal.foundDefect(transaction.srcId, "sslverify", "SSL verification failed", str(e), 0.9)
+            raise
         else:
             Network.journal = None
             return Network.__process_link(tr, r, journal, log)
