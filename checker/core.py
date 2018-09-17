@@ -168,6 +168,11 @@ class Core:
             self.journal.stopChecking(transaction, VerificationStatus.done_ok)
 
     def __initializePlugin(self, plugin, types, extended):
+        try:
+            plugin.setConf(self.conf)
+        except AttributeError:
+            pass
+
         plugin.setJournal(self.journal)
         known_categories = set([PluginType.CRAWLER, PluginType.CHECKER,
                                 PluginType.FILTER, PluginType.HEADER])
@@ -177,11 +182,6 @@ class Core:
 
         try:
             plugin.setQueue(self.queue)
-        except AttributeError:
-            pass
-
-        try:
-            plugin.setConf(self.conf)
         except AttributeError:
             pass
 
