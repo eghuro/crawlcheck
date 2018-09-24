@@ -13,7 +13,7 @@ class DuplicateDetector(IPlugin):
     """Duplicate detector plugin.
     Look for possible duplicates in the pages that pass through.
 
-    We compare file size, then hashes and then compare files themselves.
+    We compare just SHA512 hashes.
 
     Limitation: Detection is done partially by comparing individual downloaded
     files. If the limit on temp files is reached and some files are removed we
@@ -44,18 +44,28 @@ class DuplicateDetector(IPlugin):
         if self.__red is None:
             self.__red = redis.StrictRedis(host=transaction.conf.getProperty('redisHost', 'localhost'),
                                            port=transaction.conf.getProperty('redisPort', 6379),
-                                           db=transaction.conf.getProperty('redisDb', 0))
+                                           db=transaction.conf.getProperty('redisDb', 0),
+                                           charset="utf-8", decode_responses=True)
         h = self.__hashfile(transaction)
-        if self.__red.pfadd("duphash", h) == 1:
-            if self.__red.hget("dupname", h) != None:
-                # duplicate
+        duphash = "duphash" + transaction.conf.getProperty("runIdentifier")
+        dupname = "dupname" + transaction.conf.getProperty("runIdentifier")
+
+        if self.__red.pfadd(duphash, h) == 0: #exists
+            p = self.__red.hget(dupname, h)
+            if p != None:
+                if str(p) in transaction.aliases:
+                    self.__log.error("Same URI visited twice: " + p + " & " +transaction.uri)
+                    return
+                # duplicity
                 self.__journal.foundDefect(transaction.idno,
                                            "dup",
                                            "Duplicit pages",
-                                           self.__red.hget("dupname", h),
-                                           0.7)
+                                           str(p), 0.7)
+            else:
+                self.__log.warn("Hash was in hyperloglog but no name mapping. URL: " + transaction.uri)
+                self.__red.hset(dupname, h, transaction.uri)
         else:
-            self.__red.hset("dupname", h, transaction.uri)
+            self.__red.hset(dupname, h, transaction.uri)
         return
 
     def __hashfile(self, tr, blocksize=65536):
