@@ -16,7 +16,7 @@ except ImportError:
     except ModuleNotFoundError:
         from crawlcheck.checker.configLoader import ConfigLoader, EntryPointRecord
         from crawlcheck.checker.core import Core
-        from crawlchheck.checker.common import PluginType
+        from crawlcheck.checker.common import PluginType
 
 from crawlcheck.checker.database import DBAPI
 
@@ -28,7 +28,6 @@ import sys
 import signal
 import os
 import os.path
-import sqlite3
 import time
 import gc
 
@@ -149,7 +148,7 @@ def __do_load_plugins(all_plugs, plugins, conf, log, allowed_filters, filters, h
     filter_lists = {PluginType.FILTER: filters,
                     PluginType.HEADER: headers}
     t = set(conf.regex_acceptor.getAllPlugins())
-    log.debug(t) 
+    log.debug(t)
     if not conf.type_acceptor.empty:
         t.intersection(conf.type_acceptor.getAllPlugins())
     t.update(conf.postprocess)
@@ -287,4 +286,3 @@ def execute(conf, cl, debug):
 
 if __name__ == "__main__":
     main()
-

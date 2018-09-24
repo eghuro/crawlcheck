@@ -116,21 +116,14 @@ class DBAPI(object):
 
     def log_cookie(self, transactionId, name, value, secure, httpOnly, path):
         """Log a cookie."""
-        name = bleach.clean(str(name))
-        value = bleach.clean(str(value))
-        path = bleach.clean(str(path))
-        self.session.add(Cookie(transactionId, name, value, secure, httpOnly, path))
+        self.__log.warn("Skipping a cookie record")
 
 
     def log_header(self, transactionId, name, value):
         """ Log a header. """
-        name = bleach.clean(str(name))
-        value = bleach.clean(str(value))
-        self.session.add(Header(transactionId, name, value))
+        self.__log.warn("Skipping a header record")
 
 
     def log_param(self, transactionId, key, value):
         """ Log an URI parameter. """
-        key = bleach.clean(key)
-        value = bleach.clean(value)
-        self.session.add(Param(transactionId, key, value))
+        self.__log.warn("Skipping a param record")

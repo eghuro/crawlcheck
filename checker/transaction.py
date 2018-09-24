@@ -5,7 +5,6 @@ import datrie
 import string
 import urllib
 from urllib.parse import urldefrag
-import sqlite3 as mdb
 import copy
 import json
 import redis
@@ -184,7 +183,7 @@ class RedisTransactionQueue:
                     cnt = cnt + 1
             else:
                 cnt = cnt + 1
-        
+
         #cnt je pocet novych aliasu
         if cnt == len(transaction.aliases): #vsechny aliasy nove -> stranku vidime prvne
             self.__db.log_transaction(transaction.idno, transaction.method, transaction.uri, transaction.depth, transaction.expected, transaction.aliases)
@@ -226,7 +225,7 @@ class RedisTransactionQueue:
     def push_entrypoint(self, entryPoint):
         t = createTransaction(self.__redis, self.__conf,
                               entryPoint.url, 0, -1,
-                              entryPoint.method, entryPoint.data) 
+                              entryPoint.method, entryPoint.data)
         self.push(t, None)
 
     def push_rescheduled(self, transaction):
