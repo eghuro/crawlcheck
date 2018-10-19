@@ -4,5 +4,5 @@ Module = seo_meta
 
 [Documentation]
 Author = Alexandr Mansurov
-Version = 0.1
+Version = 0.2
 Description = Check meta tags for SEO
