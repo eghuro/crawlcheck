@@ -15,7 +15,7 @@ python-dateutil==2.6.1
 python-magic==0.4.15
 pytidylib==0.3.2
 reppy==0.4.9
-requests==2.19.1
+requests>=2.20.0
 rfc3987==1.3.7
 ruamel.yaml==0.15.35
 six==1.11.0
