@@ -16,6 +16,7 @@ class Tidy_HTML_Validator(IPlugin):
         self.__max_err = 0
         self.__max_warn = 0
         self.__max_inf = 0
+        self.__max_unk = 0
         self.__severity = dict()
         self.__severity['Warning'] = 0.5
         self.__severity['Error'] = 1.0
@@ -26,7 +27,8 @@ class Tidy_HTML_Validator(IPlugin):
 
         maxes = {'W': self.__max_warn,
                  'E': self.__max_err,
-                 'I': self.__max_inf}
+                 'I': self.__max_inf,
+                 'X': self.__max_unk}
 
         for dt in journal.getKnownDefectTypes():
             # dt[0] type, dt[1] description
@@ -52,9 +54,24 @@ class Tidy_HTML_Validator(IPlugin):
         # lines is a list of strings that looks like:
         # line 54 column 37 - Warning: replacing invalid character code 153
         for line in lines:
-            loc, desc = line.split(' - ', 1)
-            err_warn, msg = desc.split(': ', 1)
-            self.__record(transaction, loc, err_warn, msg)
+            if not '-' in line:
+                err_warn, msg = line.split(':', 1)
+                self.__record(transaction, None, err_warn.strip(), msg.strip())
+            else:
+                try:
+                    loc, desc = line.split(' - ', 1)
+                    err_warn, msg = desc.split(': ', 1)
+                    self.__record(transaction, loc, err_warn.strip(), msg.strip())
+                except:
+                    try:
+                        loc, desc = line.split('-')
+                        err_warn, msg = desc.split(':', 1)
+                        if len(msg.strip()) == 0:
+                            logging.getLogger(__name__).warning("No description! Line was: %s" % line)
+                            msg = "Generic HTML syntax " + err_warn.to_lower()
+                        self.__record(transaction, loc, err_warn.strip(), msg.strip())
+                    except ValueError:
+                        logging.getLogger(__name__).exception("Failed to parse result! Line was: %s" % line)
 
     def __record(self, transaction, loc, cat, desc):
         code = self.__get_code(cat, desc)
@@ -87,6 +104,8 @@ class Tidy_HTML_Validator(IPlugin):
             else:
                 log = logging.getLogger(__name__)
                 log.error("Unknown category: " + cat)
-                return None
+                cat = 'X'
+                num = self.__max_unk
+                self.__max_unk = self.__max_unk + 1
             code = self.__generate_code(cat[0], num, desc)
         return code
