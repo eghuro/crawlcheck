@@ -8,7 +8,7 @@ click==6.7
 datrie==0.7.1
 future==0.16.0
 idna==2.6
-lxml==4.1.1
+lxml==4.7.0
 marisa-trie==0.7.4
 py3dns==3.1.0
 python-dateutil==2.6.1
